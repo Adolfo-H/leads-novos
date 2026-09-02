@@ -28,6 +28,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     )->name('companies.create');
 
     Route::livewire(
+        '/empresas/{company:uuid}/editar',
+        'pages::companies.edit'
+    )->name('companies.edit');
+
+    Route::livewire(
         '/empresas/{company:uuid}',
         'pages::companies.show'
     )->name('companies.show');

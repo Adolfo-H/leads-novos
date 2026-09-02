@@ -149,14 +149,13 @@ new class extends Component
 
         </div>
 
-        <button
-            type="button"
-            disabled
-            title="Será habilitado quando criarmos a edição"
-            class="inline-flex cursor-not-allowed items-center justify-center rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-400 dark:border-zinc-700"
-        >
-            Editar
-        </button>
+<a
+    href="{{ route('companies.edit', $company) }}"
+    wire:navigate
+    class="inline-flex items-center justify-center rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+>
+    Editar
+</a>
 
     </div>
 

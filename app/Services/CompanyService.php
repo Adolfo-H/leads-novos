@@ -292,4 +292,198 @@ final class CompanyService
                 ]);
         });
     }
+
+    public function updateCompanyAndMatrix(
+        Company $company,
+        array $companyData,
+        array $establishmentData,
+    ): Company {
+        return DB::transaction(function () use (
+            $company,
+            $companyData,
+            $establishmentData,
+        ): Company {
+            if (
+                empty(
+                    $companyData['corporate_name']
+                )
+            ) {
+                throw new InvalidArgumentException(
+                    'A razão social é obrigatória.'
+                );
+            }
+
+            $establishment = $company
+                ->establishments()
+                ->where('type', 'matrix')
+                ->first();
+
+            /*
+             * Empresas importadas poderão, em casos
+             * excepcionais, chegar inicialmente sem
+             * estabelecimento marcado como matriz.
+             *
+             * Nesse caso utilizamos o primeiro
+             * estabelecimento até a regularização.
+             */
+            if (! $establishment) {
+                $establishment = $company
+                    ->establishments()
+                    ->orderBy('id')
+                    ->first();
+            }
+
+            if (! $establishment) {
+                throw new InvalidArgumentException(
+                    'A empresa não possui estabelecimento cadastrado.'
+                );
+            }
+
+            $company->fill([
+                'corporate_name' => trim(
+                    $companyData[
+                        'corporate_name'
+                    ]
+                ),
+
+                'legal_nature_code' => $companyData[
+                        'legal_nature_code'
+                    ] ?? null,
+
+                'legal_nature_description' => $companyData[
+                        'legal_nature_description'
+                    ] ?? null,
+
+                'responsible_qualification_code' => $companyData[
+                        'responsible_qualification_code'
+                    ] ?? null,
+
+                'share_capital' => $companyData[
+                        'share_capital'
+                    ] ?? null,
+
+                'size_code' => $companyData[
+                        'size_code'
+                    ] ?? null,
+
+                'size_description' => $companyData[
+                        'size_description'
+                    ] ?? null,
+
+                'federative_entity' => $companyData[
+                        'federative_entity'
+                    ] ?? null,
+            ]);
+
+            $company->save();
+
+            $email =
+                $establishmentData[
+                    'email'
+                ] ?? null;
+
+            $state =
+                $establishmentData[
+                    'state'
+                ] ?? null;
+
+            $establishment->fill([
+                'fantasy_name' => $establishmentData[
+                        'fantasy_name'
+                    ] ?? null,
+
+                'registration_status_code' => $establishmentData[
+                        'registration_status_code'
+                    ] ?? null,
+
+                'registration_status' => $establishmentData[
+                        'registration_status'
+                    ] ?? null,
+
+                'registration_status_date' => $establishmentData[
+                        'registration_status_date'
+                    ] ?? null,
+
+                'registration_status_reason_code' => $establishmentData[
+                        'registration_status_reason_code'
+                    ] ?? null,
+
+                'start_date' => $establishmentData[
+                        'start_date'
+                    ] ?? null,
+
+                'address_type' => $establishmentData[
+                        'address_type'
+                    ] ?? null,
+
+                'street' => $establishmentData[
+                        'street'
+                    ] ?? null,
+
+                'number' => $establishmentData[
+                        'number'
+                    ] ?? null,
+
+                'complement' => $establishmentData[
+                        'complement'
+                    ] ?? null,
+
+                'neighborhood' => $establishmentData[
+                        'neighborhood'
+                    ] ?? null,
+
+                'zip_code' => $establishmentData[
+                        'zip_code'
+                    ] ?? null,
+
+                'state' => $state
+                        ? mb_strtoupper(
+                            trim($state)
+                        )
+                        : null,
+
+                'municipality_code' => $establishmentData[
+                        'municipality_code'
+                    ] ?? null,
+
+                'municipality_name' => $establishmentData[
+                        'municipality_name'
+                    ] ?? null,
+
+                'phone_1' => $establishmentData[
+                        'phone_1'
+                    ] ?? null,
+
+                'phone_2' => $establishmentData[
+                        'phone_2'
+                    ] ?? null,
+
+                'fax' => $establishmentData[
+                        'fax'
+                    ] ?? null,
+
+                'email' => $email
+                        ? mb_strtolower(
+                            trim($email)
+                        )
+                        : null,
+
+                'special_situation' => $establishmentData[
+                        'special_situation'
+                    ] ?? null,
+
+                'special_situation_date' => $establishmentData[
+                        'special_situation_date'
+                    ] ?? null,
+            ]);
+
+            $establishment->save();
+
+            return $company
+                ->fresh()
+                ->load([
+                    'establishments.cnaes',
+                ]);
+        });
+    }
 }
