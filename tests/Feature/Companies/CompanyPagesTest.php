@@ -2,6 +2,7 @@
 
 use App\Models\Company;
 use App\Models\User;
+use App\Services\CompanyService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -105,4 +106,97 @@ it('rejects an invalid cnpj in the creation page', function () {
         ->assertHasErrors(['cnpj']);
 
     expect(Company::count())->toBe(0);
+});
+
+it('renders the company dossier', function () {
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+    ]);
+
+    $service = app(
+        CompanyService::class
+    );
+
+    $company = $service
+        ->createOrUpdateFromEstablishment(
+            [
+                'corporate_name' => 'Cooperativa Dossiê Teste',
+
+                'share_capital' => 3500000,
+            ],
+            [
+                'cnpj' => '11.222.333/0001-81',
+
+                'type' => 'matrix',
+
+                'registration_status' => 'ATIVA',
+
+                'state' => 'PR',
+
+                'municipality_name' => 'Palotina',
+            ],
+            [
+                [
+                    'code' => '4622200',
+
+                    'description' => 'Comércio atacadista de soja',
+
+                    'is_primary' => true,
+                ],
+            ]
+        );
+
+    $this
+        ->actingAs($user)
+        ->get(
+            route(
+                'companies.show',
+                $company
+            )
+        )
+        ->assertSuccessful()
+        ->assertSee(
+            'Cooperativa Dossiê Teste'
+        )
+        ->assertSee(
+            '11.222.333/0001-81'
+        )
+        ->assertSee(
+            'Inteligência comercial'
+        )
+        ->assertSee(
+            'Não verificado'
+        )
+        ->assertSee(
+            '4622200'
+        );
+});
+
+it('does not allow guests to open a company dossier', function () {
+    $service = app(
+        CompanyService::class
+    );
+
+    $company = $service
+        ->createOrUpdateFromEstablishment(
+            [
+                'corporate_name' => 'Empresa Protegida',
+            ],
+            [
+                'cnpj' => '11.222.333/0001-81',
+
+                'type' => 'matrix',
+            ]
+        );
+
+    $this
+        ->get(
+            route(
+                'companies.show',
+                $company
+            )
+        )
+        ->assertRedirect(
+            route('login')
+        );
 });

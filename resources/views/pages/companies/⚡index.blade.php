@@ -426,9 +426,13 @@ new class extends Component
 
                             <td class="px-5 py-4">
 
-                                <div class="font-medium text-zinc-900 dark:text-white">
+                                <a
+                                    href="{{ route('companies.show', $company) }}"
+                                    wire:navigate
+                                    class="font-medium text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400"
+                                >
                                     {{ $company->corporate_name }}
-                                </div>
+                                </a>
 
                                 @if ($establishment?->fantasy_name)
                                     <div class="mt-1 text-sm text-zinc-500">

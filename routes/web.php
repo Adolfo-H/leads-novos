@@ -26,4 +26,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         '/empresas/nova',
         'pages::companies.create'
     )->name('companies.create');
+
+    Route::livewire(
+        '/empresas/{company:uuid}',
+        'pages::companies.show'
+    )->name('companies.show');
 });
