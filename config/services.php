@@ -35,4 +35,25 @@ return [
         ],
     ],
 
+    'brasilapi' => [
+        'base_url' => env(
+            'BRASILAPI_BASE_URL',
+            'https://brasilapi.com.br/api'
+        ),
+    ],
+
+    'apibrasil' => [
+        'token' => env('APIBRASIL_BEARER_TOKEN'),
+
+        'base_url' => env(
+            'APIBRASIL_BASE_URL',
+            'https://gateway.apibrasil.io/api/v2'
+        ),
+
+        'cnpj_type' => env(
+            'APIBRASIL_CNPJ_TYPE',
+            'cnpj-cadastral'
+        ),
+    ],
+
 ];

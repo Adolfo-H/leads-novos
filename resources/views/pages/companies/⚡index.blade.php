@@ -65,6 +65,7 @@ new class extends Component
                         )
                         ->orderBy('id');
                 },
+
                 'establishments.cnaes',
             ])
 
@@ -95,11 +96,13 @@ new class extends Component
                                         .'%',
                                     ]
                                 )
+
                                 ->orWhere(
                                     'cnpj_root',
                                     'like',
                                     '%'.$cnpjSearch.'%'
                                 )
+
                                 ->orWhereHas(
                                     'establishments',
                                     function ($establishmentQuery) use (
@@ -114,6 +117,7 @@ new class extends Component
                                                 .$cnpjSearch
                                                 .'%'
                                             )
+
                                             ->orWhereRaw(
                                                 'LOWER(fantasy_name) LIKE ?',
                                                 [
@@ -122,6 +126,7 @@ new class extends Component
                                                     .'%',
                                                 ]
                                             )
+
                                             ->orWhereRaw(
                                                 'LOWER(municipality_name) LIKE ?',
                                                 [
@@ -197,65 +202,164 @@ new class extends Component
 };
 ?>
 
-<div class="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+<div class="ec-page-shell">
 
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    {{-- CABEÇALHO --}}
+    <div class="ec-page-header">
 
         <div>
-            <p class="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+
+            <div class="ec-page-kicker">
                 Inteligência de Leads
-            </p>
+            </div>
 
-            <h1 class="mt-1 text-2xl font-semibold text-zinc-900 dark:text-white">
-                Empresas
-            </h1>
+            <div class="mt-1 flex flex-wrap items-center gap-3">
 
-            <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                <h1 class="ec-page-title">
+                    Empresas
+                </h1>
+
+                <span class="ec-count-badge">
+                    {{ $this->companies->total() }}
+                </span>
+
+            </div>
+
+            <p class="ec-page-description">
                 Base empresarial utilizada pelo processo de prospecção.
             </p>
+
         </div>
 
         <a
             href="{{ route('companies.create') }}"
             wire:navigate
-            class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            class="ec-button-primary"
         >
-            + Nova empresa
+
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="size-4"
+            >
+                <path d="M12 5v14M5 12h14" />
+            </svg>
+
+            Nova empresa
+
         </a>
 
     </div>
 
+
+    {{-- MENSAGEM --}}
     @if (session('success'))
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
-            {{ session('success') }}
+
+        <div class="ec-alert-success">
+
+            <span class="ec-alert-dot"></span>
+
+            <span>
+                {{ session('success') }}
+            </span>
+
         </div>
+
     @endif
 
-    <section class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
 
-        <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
+    {{-- FILTROS --}}
+    <section class="ec-filter-panel">
 
+        <div class="ec-filter-header">
+
+            <div>
+
+                <h2 class="ec-filter-title">
+                    Filtros
+                </h2>
+
+                <p class="ec-filter-description">
+                    Refine a base para localizar empresas específicas.
+                </p>
+
+            </div>
+
+            @if (
+                $search !== ''
+                || $state !== ''
+                || $type !== ''
+                || $status !== ''
+            )
+
+                <button
+                    type="button"
+                    wire:click="clearFilters"
+                    class="ec-filter-clear"
+                >
+                    Limpar filtros
+                </button>
+
+            @endif
+
+        </div>
+
+
+        <div class="ec-filter-grid">
+
+            {{-- PESQUISA --}}
             <div class="lg:col-span-2">
+
                 <label
                     for="search"
-                    class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-500"
+                    class="ec-field-label"
                 >
                     Pesquisar
                 </label>
 
-                <input
-                    id="search"
-                    type="search"
-                    wire:model.live.debounce.400ms="search"
-                    placeholder="Razão social, CNPJ, fantasia ou município"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
-                >
+                <div class="ec-search-wrap">
+
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        class="ec-search-icon"
+                    >
+                        <circle
+                            cx="11"
+                            cy="11"
+                            r="7"
+                        />
+
+                        <path
+                            d="m20 20-3.5-3.5"
+                        />
+                    </svg>
+
+                    <input
+                        id="search"
+                        type="search"
+                        wire:model.live.debounce.400ms="search"
+                        placeholder="Razão social, CNPJ, fantasia ou município"
+                        class="ec-input ec-input-search"
+                    >
+
+                </div>
+
             </div>
 
+
+            {{-- UF --}}
             <div>
+
                 <label
                     for="state"
-                    class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-500"
+                    class="ec-field-label"
                 >
                     UF
                 </label>
@@ -263,24 +367,32 @@ new class extends Component
                 <select
                     id="state"
                     wire:model.live="state"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                    class="ec-input"
                 >
+
                     <option value="">
                         Todas
                     </option>
 
                     @foreach ($this->states as $uf)
+
                         <option value="{{ $uf }}">
                             {{ $uf }}
                         </option>
+
                     @endforeach
+
                 </select>
+
             </div>
 
+
+            {{-- ESTABELECIMENTO --}}
             <div>
+
                 <label
                     for="type"
-                    class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-500"
+                    class="ec-field-label"
                 >
                     Estabelecimento
                 </label>
@@ -288,8 +400,9 @@ new class extends Component
                 <select
                     id="type"
                     wire:model.live="type"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                    class="ec-input"
                 >
+
                     <option value="">
                         Todos
                     </option>
@@ -301,13 +414,18 @@ new class extends Component
                     <option value="branch">
                         Filial
                     </option>
+
                 </select>
+
             </div>
 
+
+            {{-- SITUAÇÃO --}}
             <div>
+
                 <label
                     for="status"
-                    class="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-zinc-500"
+                    class="ec-field-label"
                 >
                     Situação
                 </label>
@@ -315,8 +433,9 @@ new class extends Component
                 <select
                     id="status"
                     wire:model.live="status"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                    class="ec-input"
                 >
+
                     <option value="">
                         Todas
                     </option>
@@ -340,67 +459,88 @@ new class extends Component
                     <option value="NULA">
                         Nula
                     </option>
+
                 </select>
+
             </div>
 
         </div>
 
-        @if (
-            $search !== ''
-            || $state !== ''
-            || $type !== ''
-            || $status !== ''
-        )
-            <div class="mt-3 flex justify-end">
-                <button
-                    type="button"
-                    wire:click="clearFilters"
-                    class="text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                    Limpar filtros
-                </button>
-            </div>
-        @endif
-
     </section>
 
-    <section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+
+    {{-- TABELA --}}
+    <section class="ec-table-panel">
+
+        <div class="ec-table-toolbar">
+
+            <div>
+
+                <h2 class="ec-table-title">
+                    Base empresarial
+                </h2>
+
+                <p class="ec-table-description">
+
+                    @if ($this->companies->total() === 1)
+
+                        1 empresa encontrada
+
+                    @else
+
+                        {{ $this->companies->total() }}
+                        empresas encontradas
+
+                    @endif
+
+                </p>
+
+            </div>
+
+            <div class="ec-table-meta">
+                Até 20 por página
+            </div>
+
+        </div>
+
 
         <div class="overflow-x-auto">
 
-            <table class="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800">
+            <table class="ec-table">
 
-                <thead class="bg-zinc-50 dark:bg-zinc-950/50">
+                <thead>
 
                     <tr>
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+
+                        <th>
                             Empresa
                         </th>
 
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        <th>
                             CNPJ
                         </th>
 
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        <th>
                             Localização
                         </th>
 
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        <th>
                             CNAE principal
                         </th>
 
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        <th>
                             Situação
                         </th>
 
-                        <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                        <th class="text-right">
                             Origem
                         </th>
+
                     </tr>
 
                 </thead>
 
-                <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <tbody>
 
                     @forelse ($this->companies as $company)
 
@@ -421,85 +561,193 @@ new class extends Component
 
                         <tr
                             wire:key="company-{{ $company->id }}"
-                            class="transition hover:bg-zinc-50 dark:hover:bg-zinc-800/40"
                         >
 
-                            <td class="px-5 py-4">
+                            {{-- EMPRESA --}}
+                            <td>
 
-                                <a
-                                    href="{{ route('companies.show', $company) }}"
-                                    wire:navigate
-                                    class="font-medium text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400"
-                                >
-                                    {{ $company->corporate_name }}
-                                </a>
+                                <div class="ec-company-cell">
 
-                                @if ($establishment?->fantasy_name)
-                                    <div class="mt-1 text-sm text-zinc-500">
-                                        {{ $establishment->fantasy_name }}
+                                    <div class="ec-company-avatar">
+
+                                        {{ mb_strtoupper(
+                                            mb_substr(
+                                                $company->corporate_name,
+                                                0,
+                                                1
+                                            )
+                                        ) }}
+
                                     </div>
-                                @endif
+
+                                    <div class="min-w-0">
+
+                                        <a
+                                            href="{{ route('companies.show', $company) }}"
+                                            wire:navigate
+                                            class="ec-company-link"
+                                        >
+                                            {{ $company->corporate_name }}
+                                        </a>
+
+                                        @if ($establishment?->fantasy_name)
+
+                                            <div class="ec-company-fantasy">
+                                                {{ $establishment->fantasy_name }}
+                                            </div>
+
+                                        @else
+
+                                            <div class="ec-company-fantasy">
+                                                Sem nome fantasia
+                                            </div>
+
+                                        @endif
+
+                                    </div>
+
+                                </div>
 
                             </td>
 
-                            <td class="whitespace-nowrap px-5 py-4 text-sm text-zinc-600 dark:text-zinc-300">
-                                @if ($establishment)
-                                    {{ Cnpj::format($establishment->cnpj) }}
-                                @else
-                                    —
-                                @endif
+
+                            {{-- CNPJ --}}
+                            <td class="whitespace-nowrap">
+
+                                <span class="ec-table-primary-text">
+
+                                    @if ($establishment)
+
+                                        {{ Cnpj::format(
+                                            $establishment->cnpj
+                                        ) }}
+
+                                    @else
+                                        —
+                                    @endif
+
+                                </span>
+
                             </td>
 
-                            <td class="whitespace-nowrap px-5 py-4 text-sm text-zinc-600 dark:text-zinc-300">
+
+                            {{-- LOCALIZAÇÃO --}}
+                            <td class="whitespace-nowrap">
+
                                 @if ($establishment)
-                                    {{ $establishment->municipality_name ?: '—' }}
+
+                                    <span class="ec-table-primary-text">
+                                        {{ $establishment->municipality_name ?: '—' }}
+                                    </span>
 
                                     @if ($establishment->state)
-                                        / {{ $establishment->state }}
+
+                                        <span class="ec-table-muted">
+                                            / {{ $establishment->state }}
+                                        </span>
+
                                     @endif
+
                                 @else
                                     —
                                 @endif
+
                             </td>
 
-                            <td class="px-5 py-4 text-sm text-zinc-600 dark:text-zinc-300">
+
+                            {{-- CNAE --}}
+                            <td>
 
                                 @if ($primaryCnae)
-                                    <div class="font-medium">
+
+                                    <div class="ec-cnae-code">
                                         {{ $primaryCnae->code }}
                                     </div>
 
-                                    <div class="mt-1 max-w-xs text-xs text-zinc-500">
+                                    <div class="ec-cnae-description">
                                         {{ $primaryCnae->description }}
                                     </div>
+
                                 @else
-                                    —
+
+                                    <span class="ec-table-muted">
+                                        Não informado
+                                    </span>
+
                                 @endif
 
                             </td>
 
-                            <td class="whitespace-nowrap px-5 py-4">
 
-                                @if ($establishment?->registration_status === 'ATIVA')
+                            {{-- SITUAÇÃO --}}
+                            <td class="whitespace-nowrap">
 
-                                    <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                                @if (
+                                    $establishment
+                                        ?->registration_status
+                                        === 'ATIVA'
+                                )
+
+                                    <span class="ec-status ec-status-active">
+
+                                        <span></span>
+
                                         Ativa
+
                                     </span>
 
-                                @elseif ($establishment?->registration_status)
+                                @elseif (
+                                    $establishment
+                                        ?->registration_status
+                                    === 'SUSPENSA'
+                                )
 
-                                    <span class="inline-flex rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                                        {{ $establishment->registration_status }}
+                                    <span class="ec-status ec-status-warning">
+
+                                        <span></span>
+
+                                        Suspensa
+
+                                    </span>
+
+                                @elseif (
+                                    $establishment
+                                        ?->registration_status
+                                )
+
+                                    <span class="ec-status ec-status-inactive">
+
+                                        <span></span>
+
+                                        {{
+                                            ucfirst(
+                                                mb_strtolower(
+                                                    $establishment
+                                                        ->registration_status
+                                                )
+                                            )
+                                        }}
+
                                     </span>
 
                                 @else
-                                    —
+
+                                    <span class="ec-table-muted">
+                                        —
+                                    </span>
+
                                 @endif
 
                             </td>
 
-                            <td class="whitespace-nowrap px-5 py-4 text-right text-sm text-zinc-500">
-                                {{ $company->source }}
+
+                            {{-- ORIGEM --}}
+                            <td class="whitespace-nowrap text-right">
+
+                                <span class="ec-source-badge">
+                                    {{ ucfirst($company->source) }}
+                                </span>
+
                             </td>
 
                         </tr>
@@ -507,18 +755,44 @@ new class extends Component
                     @empty
 
                         <tr>
+
                             <td
                                 colspan="6"
-                                class="px-6 py-16 text-center"
+                                class="!py-20 text-center"
                             >
-                                <div class="text-base font-medium text-zinc-800 dark:text-zinc-200">
+
+                                <div class="ec-empty-icon">
+
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="1.5"
+                                        class="size-7"
+                                    >
+                                        <path d="M3 21h18" />
+                                        <path d="M6 21V4h12v17" />
+                                        <path d="M9 8h2" />
+                                        <path d="M13 8h2" />
+                                        <path d="M9 12h2" />
+                                        <path d="M13 12h2" />
+                                        <path d="M9 16h2" />
+                                        <path d="M13 16h2" />
+                                    </svg>
+
+                                </div>
+
+                                <div class="ec-empty-title">
                                     Nenhuma empresa encontrada
                                 </div>
 
-                                <p class="mt-2 text-sm text-zinc-500">
+                                <p class="ec-empty-description">
                                     Cadastre uma empresa ou ajuste os filtros.
                                 </p>
+
                             </td>
+
                         </tr>
 
                     @endforelse
@@ -529,10 +803,13 @@ new class extends Component
 
         </div>
 
+
         @if ($this->companies->hasPages())
-            <div class="border-t border-zinc-200 px-5 py-4 dark:border-zinc-800">
+
+            <div class="ec-pagination">
                 {{ $this->companies->links() }}
             </div>
+
         @endif
 
     </section>
