@@ -200,3 +200,198 @@ it('does not allow guests to open a company dossier', function () {
             route('login')
         );
 });
+
+it('renders the company edit page', function () {
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+    ]);
+
+    $service = app(
+        CompanyService::class
+    );
+
+    $company = $service
+        ->createOrUpdateFromEstablishment(
+            [
+                'corporate_name' => 'Empresa Editável',
+            ],
+            [
+                'cnpj' => '11.222.333/0001-81',
+
+                'type' => 'matrix',
+
+                'state' => 'PR',
+            ]
+        );
+
+    $this
+        ->actingAs($user)
+        ->get(
+            route(
+                'companies.edit',
+                $company
+            )
+        )
+        ->assertSuccessful()
+        ->assertSee(
+            'Editar empresa'
+        )
+        ->assertSee(
+            '11.222.333/0001-81'
+        );
+});
+
+it('updates company and matrix data', function () {
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+    ]);
+
+    $service = app(
+        CompanyService::class
+    );
+
+    $company = $service
+        ->createOrUpdateFromEstablishment(
+            [
+                'corporate_name' => 'Empresa Antes',
+            ],
+            [
+                'cnpj' => '11.222.333/0001-81',
+
+                'type' => 'matrix',
+
+                'state' => 'PR',
+
+                'municipality_name' => 'Toledo',
+            ]
+        );
+
+    Livewire::actingAs(
+        $user
+    )
+        ->test(
+            'pages::companies.edit',
+            [
+                'company' => $company,
+            ]
+        )
+        ->set(
+            'corporateName',
+            'Empresa Depois'
+        )
+        ->set(
+            'fantasyName',
+            'Empresa Atualizada'
+        )
+        ->set(
+            'shareCapital',
+            '5.000.000,00'
+        )
+        ->set(
+            'state',
+            'SP'
+        )
+        ->set(
+            'municipalityName',
+            'Campinas'
+        )
+        ->set(
+            'email',
+            'FISCAL@EMPRESA.COM.BR'
+        )
+        ->set(
+            'street',
+            'Avenida Central'
+        )
+        ->set(
+            'number',
+            '1500'
+        )
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertRedirect(
+            route(
+                'companies.show',
+                $company
+            )
+        );
+
+    $company->refresh();
+
+    expect(
+        $company->corporate_name
+    )->toBe(
+        'Empresa Depois'
+    );
+
+    expect(
+        $company->share_capital
+    )->toBe(
+        '5000000.00'
+    );
+
+    $matrix = $company
+        ->establishments()
+        ->where(
+            'type',
+            'matrix'
+        )
+        ->firstOrFail();
+
+    expect(
+        $matrix->fantasy_name
+    )->toBe(
+        'Empresa Atualizada'
+    );
+
+    expect(
+        $matrix->state
+    )->toBe('SP');
+
+    expect(
+        $matrix->municipality_name
+    )->toBe(
+        'Campinas'
+    );
+
+    expect(
+        $matrix->email
+    )->toBe(
+        'fiscal@empresa.com.br'
+    );
+
+    expect(
+        $matrix->street
+    )->toBe(
+        'Avenida Central'
+    );
+});
+
+it('does not allow guests to edit companies', function () {
+    $service = app(
+        CompanyService::class
+    );
+
+    $company = $service
+        ->createOrUpdateFromEstablishment(
+            [
+                'corporate_name' => 'Empresa Protegida',
+            ],
+            [
+                'cnpj' => '11.222.333/0001-81',
+
+                'type' => 'matrix',
+            ]
+        );
+
+    $this
+        ->get(
+            route(
+                'companies.edit',
+                $company
+            )
+        )
+        ->assertRedirect(
+            route('login')
+        );
+});
