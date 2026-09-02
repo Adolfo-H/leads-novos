@@ -1,0 +1,77 @@
+<?php
+
+namespace App\Models;
+
+use App\Support\TextNormalizer;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
+
+class Company extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'cnpj_root',
+        'corporate_name',
+        'normalized_name',
+        'legal_nature_code',
+        'legal_nature_description',
+        'responsible_qualification_code',
+        'share_capital',
+        'size_code',
+        'size_description',
+        'federative_entity',
+        'source',
+        'source_updated_at',
+        'metadata',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'share_capital' => 'decimal:2',
+            'source_updated_at' => 'datetime',
+            'metadata' => 'array',
+        ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Company $company): void {
+            $company->uuid ??= (string) Str::uuid();
+        });
+
+        static::saving(function (Company $company): void {
+            $company->cnpj_root = mb_strtoupper(
+                trim($company->cnpj_root)
+            );
+
+            $company->normalized_name =
+                TextNormalizer::companyName(
+                    $company->corporate_name
+                );
+        });
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
+    public function establishments(): HasMany
+    {
+        return $this->hasMany(
+            Establishment::class
+        );
+    }
+
+    public function matrix(): HasOne
+    {
+        return $this->hasOne(
+            Establishment::class
+        )->where('type', 'matrix');
+    }
+}
