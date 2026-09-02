@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Cnae;
 use App\Models\Company;
+use App\Services\EstablishmentService;
 use App\Support\Cnpj;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
@@ -9,6 +11,14 @@ use Livewire\Component;
 new class extends Component
 {
     public Company $company;
+
+    public string $newCnaeCode = '';
+
+public string $newCnaeDescription = '';
+
+public bool $newCnaePrimary = false;
+
+public bool $showCnaeForm = false;
 
     public function mount(Company $company): void
     {
@@ -58,6 +68,179 @@ new class extends Component
             )
             ->values();
     }
+
+public function toggleCnaeForm(): void
+{
+    $this->showCnaeForm =
+        ! $this->showCnaeForm;
+
+    if (! $this->showCnaeForm) {
+        $this->resetCnaeForm();
+    }
+}
+
+public function addCnae(
+    EstablishmentService $service
+): void {
+    $validated = $this->validate([
+        'newCnaeCode' => [
+            'required',
+            'string',
+            'max:20',
+        ],
+
+        'newCnaeDescription' => [
+            'nullable',
+            'string',
+            'max:255',
+        ],
+
+        'newCnaePrimary' => [
+            'boolean',
+        ],
+    ]);
+
+    if (! $this->matrix) {
+        $this->addError(
+            'newCnaeCode',
+            'A empresa não possui matriz cadastrada.'
+        );
+
+        return;
+    }
+
+    try {
+        $service->addCnae(
+            $this->matrix,
+            [
+                'code' =>
+                    $validated[
+                        'newCnaeCode'
+                    ],
+
+                'description' =>
+                    $validated[
+                        'newCnaeDescription'
+                    ] ?: null,
+
+                'is_primary' =>
+                    $validated[
+                        'newCnaePrimary'
+                    ],
+            ]
+        );
+    } catch (\InvalidArgumentException $exception) {
+        $this->addError(
+            'newCnaeCode',
+            $exception->getMessage()
+        );
+
+        return;
+    }
+
+    $this->reloadCompany();
+
+    $this->resetCnaeForm();
+
+    $this->showCnaeForm = false;
+
+    session()->flash(
+        'success',
+        'CNAE adicionado com sucesso.'
+    );
+}
+
+public function makeCnaePrimary(
+    int $cnaeId,
+    EstablishmentService $service
+): void {
+    if (! $this->matrix) {
+        return;
+    }
+
+    $cnae = $this->matrix
+        ->cnaes
+        ->firstWhere(
+            'id',
+            $cnaeId
+        );
+
+    if (! $cnae) {
+        return;
+    }
+
+    try {
+        $service->setPrimaryCnae(
+            $this->matrix,
+            $cnae
+        );
+    } catch (\InvalidArgumentException) {
+        return;
+    }
+
+    $this->reloadCompany();
+
+    session()->flash(
+        'success',
+        'CNAE principal atualizado.'
+    );
+}
+
+public function removeCnae(
+    int $cnaeId,
+    EstablishmentService $service
+): void {
+    if (! $this->matrix) {
+        return;
+    }
+
+    $cnae = $this->matrix
+        ->cnaes
+        ->firstWhere(
+            'id',
+            $cnaeId
+        );
+
+    if (! $cnae) {
+        return;
+    }
+
+    $service->removeCnae(
+        $this->matrix,
+        $cnae
+    );
+
+    $this->reloadCompany();
+
+    session()->flash(
+        'success',
+        'CNAE removido.'
+    );
+}
+
+private function resetCnaeForm(): void
+{
+    $this->newCnaeCode = '';
+
+    $this->newCnaeDescription = '';
+
+    $this->newCnaePrimary = false;
+
+    $this->resetValidation([
+        'newCnaeCode',
+        'newCnaeDescription',
+        'newCnaePrimary',
+    ]);
+}
+
+private function reloadCompany(): void
+{
+    $this->company = $this->company
+        ->fresh()
+        ->load([
+            'establishments.cnaes',
+        ]);
+}
 
     public function formatMoney(
         mixed $value
@@ -459,7 +642,21 @@ new class extends Component
                 </div>
 
                 <span class="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                    {{ $company->establishments->count() }}
+                    <div class="flex items-center gap-3">
+
+    <span class="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+        {{ $company->establishments->count() }}
+    </span>
+
+    <a
+        href="{{ route('companies.branches.create', $company) }}"
+        wire:navigate
+        class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+    >
+        + Adicionar filial
+    </a>
+
+</div>
                 </span>
 
             </div>
@@ -567,49 +764,199 @@ new class extends Component
 
     </section>
 
-    {{-- CNAES --}}
-    <section class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+ {{-- CNAES --}}
+<section class="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
 
-        <div class="mb-5">
+    <div class="flex flex-col gap-3 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between">
+
+        <div>
 
             <h2 class="text-base font-semibold text-zinc-900 dark:text-white">
                 CNAEs da matriz
             </h2>
 
             <p class="mt-1 text-sm text-zinc-500">
-                Esses dados serão utilizados posteriormente no cálculo do ICP.
+                Atividades econômicas utilizadas posteriormente no cálculo do ICP.
             </p>
 
         </div>
 
-        @if ($this->primaryCnae)
+        <button
+            type="button"
+            wire:click="toggleCnaeForm"
+            class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+            @if ($showCnaeForm)
+                Cancelar
+            @else
+                + Adicionar CNAE
+            @endif
+        </button>
 
-            <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30">
+    </div>
 
-                <p class="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-                    Principal
-                </p>
+    @if ($showCnaeForm)
 
-                <div class="mt-2 font-semibold text-zinc-900 dark:text-white">
-                    {{ $this->primaryCnae->code }}
+        <div class="border-b border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950/40">
+
+            <form
+                wire:submit="addCnae"
+                class="space-y-4"
+            >
+
+                <div class="grid gap-4 md:grid-cols-3">
+
+                    <div>
+
+                        <label
+                            for="newCnaeCode"
+                            class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                        >
+                            Código CNAE
+                        </label>
+
+                        <input
+                            id="newCnaeCode"
+                            wire:model.blur="newCnaeCode"
+                            placeholder="4622200"
+                            maxlength="20"
+                            class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                        >
+
+                        @error('newCnaeCode')
+                            <p class="mt-1 text-sm text-red-600">
+                                {{ $message }}
+                            </p>
+                        @enderror
+
+                    </div>
+
+                    <div class="md:col-span-2">
+
+                        <label
+                            for="newCnaeDescription"
+                            class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                        >
+                            Descrição
+                        </label>
+
+                        <input
+                            id="newCnaeDescription"
+                            wire:model.blur="newCnaeDescription"
+                            placeholder="Ex.: Comércio atacadista de soja"
+                            class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                        >
+
+                    </div>
+
                 </div>
 
-                <div class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                    {{ $this->primaryCnae->description ?: 'Sem descrição' }}
+                <label class="flex cursor-pointer items-center gap-3">
+
+                    <input
+                        type="checkbox"
+                        wire:model="newCnaePrimary"
+                        class="h-4 w-4 rounded border-zinc-300"
+                    >
+
+                    <span class="text-sm text-zinc-700 dark:text-zinc-300">
+                        Definir como CNAE principal
+                    </span>
+
+                </label>
+
+                <div class="flex justify-end">
+
+                    <button
+                        type="submit"
+                        wire:loading.attr="disabled"
+                        wire:target="addCnae"
+                        class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+
+                        <span
+                            wire:loading.remove
+                            wire:target="addCnae"
+                        >
+                            Salvar CNAE
+                        </span>
+
+                        <span
+                            wire:loading
+                            wire:target="addCnae"
+                        >
+                            Salvando...
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    @endif
+
+    <div class="p-5">
+
+        @if ($this->primaryCnae)
+
+            <div>
+
+                <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    CNAE principal
+                </p>
+
+                <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30">
+
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+                        <div>
+
+                            <div class="flex flex-wrap items-center gap-2">
+
+                                <span class="font-semibold text-zinc-900 dark:text-white">
+                                    {{ $this->primaryCnae->code }}
+                                </span>
+
+                                <span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                                    Principal
+                                </span>
+
+                            </div>
+
+                            <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+                                {{ $this->primaryCnae->description ?: 'Sem descrição' }}
+                            </p>
+
+                        </div>
+
+                        <button
+                            type="button"
+                            wire:click="removeCnae({{ $this->primaryCnae->id }})"
+                            wire:confirm="Deseja realmente remover este CNAE da matriz?"
+                            class="text-sm font-medium text-red-600 hover:text-red-700"
+                        >
+                            Remover
+                        </button>
+
+                    </div>
+
                 </div>
 
             </div>
 
         @else
 
-            <div class="rounded-xl border border-dashed border-zinc-300 px-5 py-8 text-center dark:border-zinc-700">
+            <div class="rounded-xl border border-dashed border-zinc-300 px-5 py-7 text-center dark:border-zinc-700">
 
                 <p class="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    CNAE principal ainda não cadastrado
+                    Nenhum CNAE principal definido
                 </p>
 
                 <p class="mt-1 text-sm text-zinc-500">
-                    Será preenchido manualmente ou durante o enriquecimento cadastral.
+                    Adicione um CNAE ou torne um CNAE secundário o principal.
                 </p>
 
             </div>
@@ -618,27 +965,52 @@ new class extends Component
 
         @if ($this->secondaryCnaes->isNotEmpty())
 
-            <div class="mt-5">
+            <div class="mt-6">
 
-                <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
                     CNAEs secundários
                 </p>
 
-                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div class="divide-y divide-zinc-200 overflow-hidden rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
 
                     @foreach ($this->secondaryCnaes as $cnae)
 
                         <div
-                            wire:key="cnae-{{ $cnae->id }}"
-                            class="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+                            wire:key="cnae-secondary-{{ $cnae->id }}"
+                            class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
                         >
 
-                            <div class="text-sm font-semibold text-zinc-900 dark:text-white">
-                                {{ $cnae->code }}
+                            <div>
+
+                                <p class="font-semibold text-zinc-900 dark:text-white">
+                                    {{ $cnae->code }}
+                                </p>
+
+                                <p class="mt-1 text-sm text-zinc-500">
+                                    {{ $cnae->description ?: 'Sem descrição' }}
+                                </p>
+
                             </div>
 
-                            <div class="mt-1 text-xs text-zinc-500">
-                                {{ $cnae->description ?: 'Sem descrição' }}
+                            <div class="flex flex-wrap items-center gap-3">
+
+                                <button
+                                    type="button"
+                                    wire:click="makeCnaePrimary({{ $cnae->id }})"
+                                    class="text-sm font-medium text-blue-600 hover:text-blue-700"
+                                >
+                                    Tornar principal
+                                </button>
+
+                                <button
+                                    type="button"
+                                    wire:click="removeCnae({{ $cnae->id }})"
+                                    wire:confirm="Deseja remover este CNAE da matriz?"
+                                    class="text-sm font-medium text-red-600 hover:text-red-700"
+                                >
+                                    Remover
+                                </button>
+
                             </div>
 
                         </div>
@@ -651,6 +1023,27 @@ new class extends Component
 
         @endif
 
-    </section>
+        @if (
+            ! $this->primaryCnae
+            && $this->secondaryCnaes->isEmpty()
+        )
+
+            <div class="mt-3 text-center">
+
+                <button
+                    type="button"
+                    wire:click="toggleCnaeForm"
+                    class="text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                    + Cadastrar primeiro CNAE
+                </button>
+
+            </div>
+
+        @endif
+
+    </div>
+
+</section>
 
 </div>
