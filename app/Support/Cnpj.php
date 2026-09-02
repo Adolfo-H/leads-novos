@@ -54,6 +54,24 @@ final class Cnpj
             return false;
         }
 
+        /*
+         * CNPJs numéricos formados pelo mesmo dígito
+         * em todas as 14 posições são inválidos.
+         *
+         * Exemplos:
+         * 00.000.000/0000-00
+         * 11.111.111/1111-11
+         * 22.222.222/2222-22
+         */
+        if (
+            preg_match(
+                '/^([0-9])\1{13}$/',
+                $value
+            ) === 1
+        ) {
+            return false;
+        }
+
         $base = substr($value, 0, 12);
         $digits = substr($value, 12, 2);
 

@@ -91,6 +91,20 @@ it('rejects incorrect check digits', function () {
     )->toBeFalse();
 });
 
+it('rejects repeated numeric cnpj sequences', function () {
+    expect(
+        Cnpj::isValid(
+            '00.000.000/0000-00'
+        )
+    )->toBeFalse();
+
+    expect(
+        Cnpj::isValid(
+            '11.111.111/1111-11'
+        )
+    )->toBeFalse();
+});
+
 it('throws when base has invalid length', function () {
     Cnpj::calculateCheckDigits(
         '123'

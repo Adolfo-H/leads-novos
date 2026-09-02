@@ -9,3 +9,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+
+/*
+|--------------------------------------------------------------------------
+| Prospector ExportControl - Empresas
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::livewire(
+        '/empresas',
+        'pages::companies.index'
+    )->name('companies.index');
+
+    Route::livewire(
+        '/empresas/nova',
+        'pages::companies.create'
+    )->name('companies.create');
+});

@@ -56,6 +56,15 @@
                     <flux:sidebar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard')  }}
                     </flux:sidebar.item>
+
+                    <flux:sidebar.item
+                        icon="building-office"
+                        :href="route('companies.index')"
+                        :current="request()->routeIs('companies.*')"
+                        wire:navigate
+                    >
+                        Empresas
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
