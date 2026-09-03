@@ -2,6 +2,7 @@
 
 use App\Contracts\CrmCompanyProvider;
 use App\Models\Company;
+use App\Models\CustomerRegistryEntry;
 use App\Services\CompanyService;
 use App\Services\CrmCheckService;
 
@@ -296,4 +297,91 @@ it('updates the existing CRM check instead of duplicating it', function () {
             ->firstOrFail()
             ->status
     )->toBe('client');
+});
+
+it('prioritizes the ExportControl customer registry over CRM opportunity status', function () {
+    $company =
+        crmCompanyForTest();
+
+    CustomerRegistryEntry::query()
+        ->create([
+            'cnpj_root' => $company->cnpj_root,
+
+            'cnpj' => $company
+                ->establishments()
+                ->firstOrFail()
+                ->cnpj,
+
+            'corporate_name' => $company->corporate_name,
+
+            'normalized_name' => $company->normalized_name,
+
+            'source' => 'exportcontrol-clientes',
+
+            'enabled' => true,
+        ]);
+
+    $provider =
+        fakeCrmProvider(
+            crmResult([
+                'lifecycle_stage' => 'opportunity',
+
+                'associated_deals_count' => 3,
+            ])
+        );
+
+    $check = app(
+        CrmCheckService::class
+    )->check(
+        $company,
+        $provider
+    );
+
+    expect(
+        $check->status
+    )->toBe('client');
+
+    /*
+     * Mantemos a informação original
+     * do HubSpot para auditoria.
+     */
+    expect(
+        $check->lifecycle_stage
+    )->toBe(
+        'opportunity'
+    );
+
+    expect(
+        data_get(
+            $check->metadata,
+            'status_source'
+        )
+    )->toBe(
+        'exportcontrol_customer_registry'
+    );
+
+    expect(
+        data_get(
+            $check->metadata,
+            'crm_reported_status'
+        )
+    )->toBe(
+        'opportunity'
+    );
+
+    expect(
+        data_get(
+            $check->metadata,
+            'crm_conflict'
+        )
+    )->toBeTrue();
+
+    expect(
+        data_get(
+            $check->metadata,
+            'customer_registry.matched_by'
+        )
+    )->toBe(
+        'cnpj_root'
+    );
 });
