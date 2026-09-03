@@ -1,0 +1,652 @@
+<?php
+
+namespace App\Services\Providers;
+
+use App\Contracts\CrmCompanyProvider;
+use App\Models\Company;
+use App\Support\TextNormalizer;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Http;
+use RuntimeException;
+
+final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
+{
+    /**
+     * @var list<string>
+     */
+    private const PROPERTIES = [
+        'name',
+        'domain',
+        'lifecyclestage',
+        'hubspot_owner_id',
+        'num_contacted_notes',
+        'num_associated_deals',
+        'notes_last_contacted',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    private const PUBLIC_EMAIL_DOMAINS = [
+        'gmail.com',
+        'hotmail.com',
+        'outlook.com',
+        'yahoo.com',
+        'icloud.com',
+        'live.com',
+        'uol.com.br',
+        'bol.com.br',
+        'terra.com.br',
+    ];
+
+    public function name(): string
+    {
+        return 'hubspot';
+    }
+
+    public function findCompany(
+        Company $company
+    ): array {
+        $this->assertConfigured();
+
+        $domains =
+            $this->candidateDomains(
+                $company
+            );
+
+        /*
+         * Estratégia 1:
+         * domínio corporativo.
+         */
+        if ($domains !== []) {
+            $results =
+                $this->searchByDomains(
+                    $domains
+                );
+
+            $match =
+                $this->domainMatch(
+                    $results,
+                    $domains
+                );
+
+            if ($match !== null) {
+                return $this->result(
+                    $match,
+                    'domain',
+                    mb_strtolower(
+                        trim(
+                            (string) data_get(
+                                $match,
+                                'properties.domain'
+                            )
+                        )
+                    ),
+                    [
+                        'search_strategy' => 'domain',
+
+                        'candidate_domains' => $domains,
+
+                        'hubspot_result_count' => count($results),
+                    ],
+                );
+            }
+        }
+
+        /*
+         * Estratégia 2:
+         * nome da empresa.
+         *
+         * O HubSpot faz busca textual;
+         * depois nós validamos o nome
+         * normalizado para evitar falso positivo.
+         */
+        $results =
+            $this->searchByName(
+                $company
+                    ->corporate_name
+            );
+
+        $match =
+            $this->nameMatch(
+                $company,
+                $results
+            );
+
+        if ($match !== null) {
+            return $this->result(
+                $match,
+                'name',
+                (string) data_get(
+                    $match,
+                    'properties.name'
+                ),
+                [
+                    'search_strategy' => 'name',
+
+                    'candidate_domains' => $domains,
+
+                    'hubspot_result_count' => count($results),
+                ],
+            );
+        }
+
+        return [
+            'found' => false,
+
+            'external_id' => null,
+
+            'name' => null,
+
+            'domain' => null,
+
+            'lifecycle_stage' => null,
+
+            'owner_id' => null,
+
+            'contacted_count' => 0,
+
+            'associated_deals_count' => 0,
+
+            'last_contacted_at' => null,
+
+            'matched_by' => null,
+
+            'matched_value' => null,
+
+            'external_url' => null,
+
+            'metadata' => [
+                'search_strategy' => 'domain_then_name',
+
+                'candidate_domains' => $domains,
+            ],
+        ];
+    }
+
+    /**
+     * @param  list<string>  $domains
+     * @return list<array<string, mixed>>
+     */
+    private function searchByDomains(
+        array $domains
+    ): array {
+        $filterGroups = [];
+
+        foreach (
+            array_slice(
+                $domains,
+                0,
+                3
+            ) as $domain
+        ) {
+            $filterGroups[] = [
+                'filters' => [
+                    [
+                        'propertyName' => 'domain',
+
+                        'operator' => 'EQ',
+
+                        'value' => $domain,
+                    ],
+                ],
+            ];
+        }
+
+        return $this->search([
+            'filterGroups' => $filterGroups,
+
+            'properties' => self::PROPERTIES,
+
+            'limit' => 10,
+        ]);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function searchByName(
+        string $name
+    ): array {
+        return $this->search([
+            'query' => mb_substr(
+                trim($name),
+                0,
+                200
+            ),
+
+            'properties' => self::PROPERTIES,
+
+            'limit' => 10,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return list<array<string, mixed>>
+     */
+    private function search(
+        array $payload
+    ): array {
+        $baseUrl = rtrim(
+            (string) config(
+                'services.hubspot.base_url'
+            ),
+            '/'
+        );
+
+        $token = trim(
+            (string) config(
+                'services.hubspot.access_token'
+            )
+        );
+
+        try {
+            $response =
+                Http::withToken(
+                    $token
+                )
+                    ->acceptJson()
+                    ->asJson()
+                    ->connectTimeout(5)
+                    ->timeout(30)
+                    ->post(
+                        $baseUrl
+                        .'/crm/v3/objects/companies/search',
+                        $payload
+                    );
+        } catch (
+            ConnectionException $exception
+        ) {
+            throw new RuntimeException(
+                'Não foi possível conectar ao HubSpot.',
+                previous: $exception,
+            );
+        }
+
+        if ($response->status() === 401) {
+            throw new RuntimeException(
+                'Token do HubSpot inválido ou expirado.'
+            );
+        }
+
+        if ($response->status() === 403) {
+            throw new RuntimeException(
+                'O token do HubSpot não possui permissão para consultar empresas.'
+            );
+        }
+
+        if ($response->status() === 429) {
+            throw new RuntimeException(
+                'Limite de consultas do HubSpot atingido.'
+            );
+        }
+
+        if ($response->serverError()) {
+            throw new RuntimeException(
+                'HubSpot temporariamente indisponível. HTTP '
+                .$response->status()
+                .'.'
+            );
+        }
+
+        if ($response->failed()) {
+            throw new RuntimeException(
+                'Erro ao consultar HubSpot. HTTP '
+                .$response->status()
+                .'.'
+            );
+        }
+
+        $data =
+            $response->json();
+
+        if (! is_array($data)) {
+            throw new RuntimeException(
+                'O HubSpot retornou uma resposta inválida.'
+            );
+        }
+
+        $results =
+            $data['results']
+            ?? [];
+
+        if (! is_array($results)) {
+            return [];
+        }
+
+        $valid = [];
+
+        foreach ($results as $result) {
+            if (is_array($result)) {
+                $valid[] = $result;
+            }
+        }
+
+        return $valid;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $results
+     * @param  list<string>  $domains
+     * @return array<string, mixed>|null
+     */
+    private function domainMatch(
+        array $results,
+        array $domains,
+    ): ?array {
+        foreach ($results as $result) {
+            $domain = mb_strtolower(
+                trim(
+                    (string) data_get(
+                        $result,
+                        'properties.domain'
+                    )
+                )
+            );
+
+            if (
+                $domain !== ''
+                && in_array(
+                    $domain,
+                    $domains,
+                    true
+                )
+            ) {
+                return $result;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $results
+     * @return array<string, mixed>|null
+     */
+    private function nameMatch(
+        Company $company,
+        array $results,
+    ): ?array {
+        $expected =
+            TextNormalizer::companyName(
+                $company
+                    ->corporate_name
+            );
+
+        foreach ($results as $result) {
+            $name =
+                data_get(
+                    $result,
+                    'properties.name'
+                );
+
+            if (! is_string($name)) {
+                continue;
+            }
+
+            if (
+                TextNormalizer::companyName(
+                    $name
+                )
+                === $expected
+            ) {
+                return $result;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function candidateDomains(
+        Company $company
+    ): array {
+        $company->loadMissing(
+            'establishments'
+        );
+
+        $counts = [];
+
+        foreach (
+            $company
+                ->establishments as $establishment
+        ) {
+            /*
+             * Se sabemos que a unidade
+             * não está ativa, ignoramos
+             * o contato cadastral dela.
+             */
+            $status = trim(
+                (string)
+                    $establishment
+                        ->registration_status_code
+            );
+
+            if (
+                $status !== ''
+                && $status !== '02'
+            ) {
+                continue;
+            }
+
+            $email = mb_strtolower(
+                trim(
+                    (string)
+                        $establishment
+                            ->email
+                )
+            );
+
+            if (
+                $email === ''
+                || filter_var(
+                    $email,
+                    FILTER_VALIDATE_EMAIL
+                ) === false
+            ) {
+                continue;
+            }
+
+            $parts = explode(
+                '@',
+                $email
+            );
+
+            $domain =
+                mb_strtolower(
+                    trim(
+                        (string)
+                            end($parts)
+                    )
+                );
+
+            if (
+                $domain === ''
+                || ! str_contains(
+                    $domain,
+                    '.'
+                )
+                || in_array(
+                    $domain,
+                    self::PUBLIC_EMAIL_DOMAINS,
+                    true
+                )
+            ) {
+                continue;
+            }
+
+            $counts[$domain] =
+                ($counts[$domain] ?? 0)
+                + 1;
+        }
+
+        arsort(
+            $counts
+        );
+
+        return array_keys(
+            $counts
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $record
+     * @param  array<string, mixed>  $metadata
+     * @return array{
+     *     found: bool,
+     *     external_id: string|null,
+     *     name: string|null,
+     *     domain: string|null,
+     *     lifecycle_stage: string|null,
+     *     owner_id: string|null,
+     *     contacted_count: int,
+     *     associated_deals_count: int,
+     *     last_contacted_at: string|null,
+     *     matched_by: string|null,
+     *     matched_value: string|null,
+     *     external_url: string|null,
+     *     metadata: array<string, mixed>
+     * }
+     */
+    private function result(
+        array $record,
+        string $matchedBy,
+        string $matchedValue,
+        array $metadata,
+    ): array {
+        $properties =
+            data_get(
+                $record,
+                'properties',
+                []
+            );
+
+        if (! is_array($properties)) {
+            $properties = [];
+        }
+
+        $id =
+            isset($record['id'])
+                ? (string)
+                    $record['id']
+                : null;
+
+        return [
+            'found' => true,
+
+            'external_id' => $id,
+
+            'name' => $this->nullable(
+                $properties[
+                    'name'
+                ] ?? null
+            ),
+
+            'domain' => $this->nullable(
+                $properties[
+                    'domain'
+                ] ?? null
+            ),
+
+            'lifecycle_stage' => $this->nullable(
+                $properties[
+                    'lifecyclestage'
+                ] ?? null
+            ),
+
+            'owner_id' => $this->nullable(
+                $properties[
+                    'hubspot_owner_id'
+                ] ?? null
+            ),
+
+            'contacted_count' => (int) (
+                $properties[
+                    'num_contacted_notes'
+                ] ?? 0
+            ),
+
+            'associated_deals_count' => (int) (
+                $properties[
+                    'num_associated_deals'
+                ] ?? 0
+            ),
+
+            'last_contacted_at' => $this->nullable(
+                $properties[
+                    'notes_last_contacted'
+                ] ?? null
+            ),
+
+            'matched_by' => $matchedBy,
+
+            'matched_value' => $matchedValue,
+
+            'external_url' => $id !== null
+                    ? $this->recordUrl(
+                        $id
+                    )
+                    : null,
+
+            'metadata' => $metadata,
+        ];
+    }
+
+    private function recordUrl(
+        string $id
+    ): ?string {
+        $portalId = trim(
+            (string) config(
+                'services.hubspot.portal_id'
+            )
+        );
+
+        if ($portalId === '') {
+            return null;
+        }
+
+        return sprintf(
+            'https://app.hubspot.com/contacts/%s/record/0-2/%s',
+            rawurlencode(
+                $portalId
+            ),
+            rawurlencode(
+                $id
+            ),
+        );
+    }
+
+    private function nullable(
+        mixed $value
+    ): ?string {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = trim(
+            (string) $value
+        );
+
+        return $value !== ''
+            ? $value
+            : null;
+    }
+
+    private function assertConfigured(): void
+    {
+        if (
+            trim(
+                (string) config(
+                    'services.hubspot.access_token'
+                )
+            ) === ''
+        ) {
+            throw new RuntimeException(
+                'HUBSPOT_ACCESS_TOKEN não configurado.'
+            );
+        }
+    }
+}

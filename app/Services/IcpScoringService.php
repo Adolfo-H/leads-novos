@@ -5,11 +5,12 @@ namespace App\Services;
 use App\Models\Company;
 use App\Models\CompanyIcpScore;
 use App\Models\Establishment;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 final class IcpScoringService
 {
-    public const VERSION = 'v1';
+    public const VERSION = 'v2';
 
     /**
      * @var list<string>
@@ -38,10 +39,6 @@ final class IcpScoringService
     ];
 
     /**
-     * 204-6 Sociedade Anônima Aberta
-     * 205-4 Sociedade Anônima Fechada
-     * 214-3 Cooperativa
-     *
      * @var list<string>
      */
     private const PRIORITY_LEGAL_NATURES = [
@@ -57,9 +54,10 @@ final class IcpScoringService
             'establishments.cnaes',
         ]);
 
-        $matrix = $this->matrix(
-            $company
-        );
+        $establishments =
+            $this->eligibleEstablishments(
+                $company
+            );
 
         $score = 0;
 
@@ -70,86 +68,66 @@ final class IcpScoringService
 
         /*
         |--------------------------------------------------------------------------
-        | CNAE — até 30 pontos
+        | CNAE do grupo — até 30
         |--------------------------------------------------------------------------
         */
 
-        $primaryCnae = $matrix
-            ?->cnaes
-            ->first(
-                fn ($cnae): bool => (bool) data_get($cnae, 'pivot.is_primary', false)
-            );
+        $cnae = $this->cnaeFactor(
+            $establishments
+        );
 
-        $secondaryFocus = $matrix
-            ?->cnaes
-            ->first(
-                fn ($cnae): bool => ! (bool) data_get($cnae, 'pivot.is_primary', false)
-                    && in_array(
-                        $cnae->code,
-                        self::FOCUS_CNAES,
-                        true
-                    )
-            );
-
-        $cnaePoints = 0;
-        $matchedCnae = null;
-        $cnaeReason =
-            'Nenhum CNAE foco identificado.';
-
-        if (
-            $primaryCnae
-            && in_array(
-                $primaryCnae->code,
-                self::FOCUS_CNAES,
-                true
-            )
-        ) {
-            $cnaePoints = 30;
-            $matchedCnae =
-                $primaryCnae->code;
-
-            $cnaeReason =
-                'CNAE principal prioritário.';
-        } elseif ($secondaryFocus) {
-            $cnaePoints = 20;
-            $matchedCnae =
-                $secondaryFocus->code;
-
-            $cnaeReason =
-                'CNAE secundário prioritário.';
-        }
-
-        $score += $cnaePoints;
+        $score += $cnae['points'];
 
         $factors['cnae'] = [
-            'points' => $cnaePoints,
+            'points' => $cnae['points'],
+
             'max' => 30,
-            'matched' => $matchedCnae,
-            'reason' => $cnaeReason,
+
+            'matched' => $cnae['code'],
+
+            'establishment_cnpj' => $cnae['cnpj'],
+
+            'reason' => $cnae['reason'],
         ];
 
         /*
         |--------------------------------------------------------------------------
-        | Estado — 15 pontos
+        | Presença geográfica do grupo — 15
         |--------------------------------------------------------------------------
         */
 
-        $state = $matrix?->state
-            ? mb_strtoupper(
-                $matrix->state
-            )
-            : null;
+        $states = [];
 
-        $stateMatch =
-            $state !== null
-            && in_array(
-                $state,
-                self::PRIORITY_STATES,
-                true
+        foreach (
+            $establishments as $establishment
+        ) {
+            if (! $establishment->state) {
+                continue;
+            }
+
+            $states[] = mb_strtoupper(
+                trim(
+                    $establishment->state
+                )
+            );
+        }
+
+        $states = array_values(
+            array_unique(
+                $states
+            )
+        );
+
+        $matchedStates =
+            array_values(
+                array_intersect(
+                    $states,
+                    self::PRIORITY_STATES
+                )
             );
 
         $statePoints =
-            $stateMatch
+            $matchedStates !== []
                 ? 15
                 : 0;
 
@@ -157,34 +135,42 @@ final class IcpScoringService
 
         $factors['state'] = [
             'points' => $statePoints,
+
             'max' => 15,
-            'value' => $state,
-            'matched' => $stateMatch,
-            'reason' => $stateMatch
-                ? 'Estado prioritário.'
-                : 'Estado fora da lista prioritária.',
+
+            'states' => $states,
+
+            'matched_states' => $matchedStates,
+
+            'matched' => $matchedStates !== [],
+
+            'reason' => $matchedStates !== []
+                    ? 'O grupo possui unidade ativa em estado prioritário.'
+                    : 'Nenhuma unidade ativa do grupo está em estado prioritário.',
         ];
 
         /*
         |--------------------------------------------------------------------------
-        | Porte — 15 pontos
+        | Porte — 15
         |--------------------------------------------------------------------------
         */
 
         $sizeCode = preg_replace(
             '/\D/',
             '',
-            (string) $company->size_code
+            (string)
+                $company->size_code
         );
 
-        $sizeCode = $sizeCode !== ''
-            ? str_pad(
-                $sizeCode,
-                2,
-                '0',
-                STR_PAD_LEFT
-            )
-            : null;
+        $sizeCode =
+            $sizeCode !== ''
+                ? str_pad(
+                    $sizeCode,
+                    2,
+                    '0',
+                    STR_PAD_LEFT
+                )
+                : null;
 
         $sizeMatch =
             $sizeCode === '05';
@@ -198,27 +184,33 @@ final class IcpScoringService
 
         $factors['size'] = [
             'points' => $sizePoints,
+
             'max' => 15,
+
             'value' => $sizeCode,
-            'description' => $company->size_description,
+
+            'description' => $company
+                ->size_description,
 
             'matched' => $sizeMatch,
 
             'reason' => $sizeMatch
-                ? 'Porte 05 - Demais.'
-                : 'Porte fora do perfil prioritário.',
+                    ? 'Porte 05 - Demais.'
+                    : 'Porte fora do perfil prioritário.',
         ];
 
         /*
         |--------------------------------------------------------------------------
-        | Capital social — 15 pontos
+        | Capital social — 15
         |--------------------------------------------------------------------------
         */
 
         $capital =
-            $company->share_capital !== null
-                ? (float) $company
-                    ->share_capital
+            $company
+                ->share_capital !== null
+                ? (float)
+                    $company
+                        ->share_capital
                 : null;
 
         $capitalMatch =
@@ -234,18 +226,21 @@ final class IcpScoringService
 
         $factors['capital'] = [
             'points' => $capitalPoints,
+
             'max' => 15,
+
             'value' => $capital,
+
             'matched' => $capitalMatch,
 
             'reason' => $capitalMatch
-                ? 'Capital social acima de R$ 1 milhão.'
-                : 'Capital social não supera R$ 1 milhão.',
+                    ? 'Capital social acima de R$ 1 milhão.'
+                    : 'Capital social não supera R$ 1 milhão.',
         ];
 
         /*
         |--------------------------------------------------------------------------
-        | Natureza jurídica — 15 pontos
+        | Natureza jurídica — 15
         |--------------------------------------------------------------------------
         */
 
@@ -290,28 +285,29 @@ final class IcpScoringService
 
         $factors['legal_nature'] = [
             'points' => $naturePoints,
+
             'max' => 15,
+
             'code' => $legalCode ?: null,
+
             'description' => $company
                 ->legal_nature_description,
 
             'matched' => $natureMatch,
 
             'reason' => $natureMatch
-                ? 'Cooperativa ou Sociedade Anônima.'
-                : 'Natureza jurídica fora do perfil prioritário.',
+                    ? 'Cooperativa ou Sociedade Anônima.'
+                    : 'Natureza jurídica fora do perfil prioritário.',
         ];
 
         /*
         |--------------------------------------------------------------------------
-        | Relevância regional — até 10 pontos
+        | Relevância regional — 10
         |--------------------------------------------------------------------------
         */
 
         $establishmentCount =
-            $company
-                ->establishments
-                ->count();
+            $establishments->count();
 
         $regionalMatch =
             $establishmentCount > 1;
@@ -323,16 +319,40 @@ final class IcpScoringService
 
         $score += $regionalPoints;
 
-        $factors['regional_relevance'] = [
+        $factors[
+            'regional_relevance'
+        ] = [
             'points' => $regionalPoints,
+
             'max' => 10,
+
             'establishments' => $establishmentCount,
+
+            'states' => count($states),
 
             'matched' => $regionalMatch,
 
             'reason' => $regionalMatch
-                ? 'Empresa com múltiplos estabelecimentos conhecidos.'
-                : 'Ainda não há múltiplos estabelecimentos conhecidos.',
+                    ? 'Grupo com múltiplos estabelecimentos operacionais.'
+                    : 'Grupo sem múltiplos estabelecimentos operacionais conhecidos.',
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Metadados do cálculo
+        |--------------------------------------------------------------------------
+        */
+
+        $factors['_meta'] = [
+            'scope' => 'company_group',
+
+            'eligible_establishments' => $establishmentCount,
+
+            'total_establishments' => $company
+                ->establishments
+                ->count(),
+
+            'version' => self::VERSION,
         ];
 
         $score = min(
@@ -367,18 +387,141 @@ final class IcpScoringService
             );
     }
 
-    private function matrix(
+    /**
+     * Usa somente estabelecimentos ativos quando
+     * a fonte possui informação cadastral.
+     *
+     * Para cadastros manuais/testes sem status,
+     * mantém todos os estabelecimentos elegíveis.
+     *
+     * @return Collection<int, Establishment>
+     */
+    private function eligibleEstablishments(
         Company $company
-    ): ?Establishment {
-        return $company
+    ): Collection {
+        $all = $company
             ->establishments
-            ->firstWhere(
-                'type',
-                'matrix'
+            ->values();
+
+        $hasKnownStatus =
+            $all->contains(
+                function (
+                    Establishment $establishment
+                ): bool {
+                    return
+                        trim(
+                            (string)
+                                $establishment
+                                    ->registration_status_code
+                        ) !== ''
+                        || trim(
+                            (string)
+                                $establishment
+                                    ->registration_status
+                        ) !== '';
+                }
+            );
+
+        if (! $hasKnownStatus) {
+            return $all;
+        }
+
+        return $all
+            ->filter(
+                function (
+                    Establishment $establishment
+                ): bool {
+                    $code = trim(
+                        (string)
+                            $establishment
+                                ->registration_status_code
+                    );
+
+                    if ($code !== '') {
+                        return $code === '02';
+                    }
+
+                    return $this->normalizeText(
+                        $establishment
+                            ->registration_status
+                    ) === 'ATIVA';
+                }
             )
-            ?? $company
-                ->establishments
-                ->first();
+            ->values();
+    }
+
+    /**
+     * @param  Collection<int, Establishment>  $establishments
+     * @return array{
+     *     points: int,
+     *     code: string|null,
+     *     cnpj: string|null,
+     *     reason: string
+     * }
+     */
+    private function cnaeFactor(
+        Collection $establishments
+    ): array {
+        $secondary = null;
+
+        foreach (
+            $establishments as $establishment
+        ) {
+            foreach (
+                $establishment->cnaes as $cnae
+            ) {
+                if (
+                    ! in_array(
+                        $cnae->code,
+                        self::FOCUS_CNAES,
+                        true
+                    )
+                ) {
+                    continue;
+                }
+
+                $isPrimary =
+                    (bool) data_get(
+                        $cnae,
+                        'pivot.is_primary',
+                        false
+                    );
+
+                if ($isPrimary) {
+                    return [
+                        'points' => 30,
+
+                        'code' => $cnae->code,
+
+                        'cnpj' => $establishment
+                            ->cnpj,
+
+                        'reason' => 'CNAE principal prioritário encontrado em unidade operacional do grupo.',
+                    ];
+                }
+
+                $secondary ??= [
+                    'points' => 20,
+
+                    'code' => $cnae->code,
+
+                    'cnpj' => $establishment
+                        ->cnpj,
+
+                    'reason' => 'CNAE secundário prioritário encontrado em unidade operacional do grupo.',
+                ];
+            }
+        }
+
+        return $secondary ?? [
+            'points' => 0,
+
+            'code' => null,
+
+            'cnpj' => null,
+
+            'reason' => 'Nenhum CNAE prioritário encontrado nas unidades operacionais do grupo.',
+        ];
     }
 
     private function grade(

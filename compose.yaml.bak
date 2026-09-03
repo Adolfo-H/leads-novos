@@ -25,34 +25,6 @@ services:
             - pgsql
             - redis
             - mailpit
-    receita-data:
-        build:
-            context: ./tools/receita
-            dockerfile: Dockerfile
-        ports:
-            - '${FORWARD_RECEITA_DATA_PORT:-8091}:8000'
-        environment:
-            RECEITA_DATA_DIR: '/real-data/processed/${RECEITA_DATA_PERIOD:-2026-08}'
-            RFB_WEBDAV_BASE: '${RFB_WEBDAV_BASE:-https://arquivos.receitafederal.gov.br/public.php/webdav}'
-            RFB_CNPJ_PATH: '${RFB_CNPJ_PATH:-Dados/Cadastros/CNPJ}'
-            RFB_SHARE_TOKEN: '${RFB_SHARE_TOKEN:-gn672Ad4CF8N6TK}'
-        volumes:
-            - './tools/receita:/app'
-            - './tools/receita/fixtures:/data:ro'
-            - './tools/receita/data:/real-data'
-        networks:
-            - sail
-        healthcheck:
-            test:
-                - CMD
-                - python
-                - -c
-                - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"
-            interval: 10s
-            timeout: 5s
-            retries: 5
-            start_period: 5s
-
     pgsql:
         image: 'postgres:18-alpine'
         ports:

@@ -1,7 +1,11 @@
 <?php
 
 use App\Contracts\CnpjDataProvider;
+use App\Contracts\CnpjGroupDataProvider;
+use App\Contracts\CrmCompanyProvider;
+use App\Exceptions\CnpjNotFoundException;
 use App\Jobs\EnrichImportItem;
+use App\Models\Company;
 use App\Services\CnpjImportService;
 use App\Services\ImportQueueService;
 use App\Support\Cnpj;
@@ -106,6 +110,28 @@ it('enriches a queued cnpj into a company', function () {
         $provider
     );
 
+    $groupProvider =
+        new class implements CnpjGroupDataProvider
+        {
+            public function name(): string
+            {
+                return 'fake-receita';
+            }
+
+            public function lookupRoot(
+                string $cnpjRoot
+            ): array {
+                throw new CnpjNotFoundException(
+                    'Não encontrado na fixture.'
+                );
+            }
+        };
+
+    app()->instance(
+        CnpjGroupDataProvider::class,
+        $groupProvider
+    );
+
     $base =
         '223334440001';
 
@@ -180,4 +206,356 @@ it('enriches a queued cnpj into a company', function () {
             ->cnaes()
             ->count()
     )->toBe(2);
+});
+
+it('enriches an imported cnpj with its complete company group', function () {
+    $matrixBase =
+        '334445550001';
+
+    $branchBase =
+        '334445550002';
+
+    $matrixCnpj =
+        $matrixBase
+        .Cnpj::calculateCheckDigits(
+            $matrixBase
+        );
+
+    $branchCnpj =
+        $branchBase
+        .Cnpj::calculateCheckDigits(
+            $branchBase
+        );
+
+    $groupProvider =
+        new class($matrixCnpj, $branchCnpj) implements CnpjGroupDataProvider
+        {
+            public function __construct(
+                private readonly string $matrix,
+                private readonly string $branch,
+            ) {}
+
+            public function name(): string
+            {
+                return 'receita-local-fake';
+            }
+
+            public function lookupRoot(
+                string $cnpjRoot
+            ): array {
+                return [
+                    'company' => [
+                        'corporate_name' => 'COOPERATIVA GRUPO AUTOMATICO',
+
+                        'legal_nature_code' => '2143',
+
+                        'legal_nature_description' => 'Cooperativa',
+
+                        'share_capital' => 5000000,
+
+                        'size_code' => '05',
+
+                        'size_description' => 'Demais',
+
+                        'source' => $this->name(),
+                    ],
+
+                    'establishments' => [
+                        [
+                            'establishment' => [
+                                'cnpj' => $this->matrix,
+
+                                'type' => 'matrix',
+
+                                'registration_status_code' => '02',
+
+                                'registration_status' => 'ATIVA',
+
+                                'state' => 'MT',
+
+                                'municipality_name' => 'SORRISO',
+
+                                'source' => $this->name(),
+                            ],
+
+                            'cnaes' => [
+                                [
+                                    'code' => '4622200',
+
+                                    'description' => 'Comércio atacadista de soja',
+
+                                    'is_primary' => true,
+                                ],
+                            ],
+                        ],
+
+                        [
+                            'establishment' => [
+                                'cnpj' => $this->branch,
+
+                                'type' => 'branch',
+
+                                'registration_status_code' => '02',
+
+                                'registration_status' => 'ATIVA',
+
+                                'state' => 'GO',
+
+                                'municipality_name' => 'RIO VERDE',
+
+                                'source' => $this->name(),
+                            ],
+
+                            'cnaes' => [],
+                        ],
+                    ],
+                ];
+            }
+        };
+
+    app()->instance(
+        CnpjGroupDataProvider::class,
+        $groupProvider
+    );
+
+    $batch = app(
+        CnpjImportService::class
+    )->import([
+        $matrixCnpj,
+    ]);
+
+    $item =
+        $batch
+            ->items()
+            ->firstOrFail();
+
+    $item->update([
+        'status' => 'queued',
+    ]);
+
+    EnrichImportItem::dispatchSync(
+        $item->id
+    );
+
+    $item->refresh();
+
+    expect(
+        $item->status
+    )->toBe(
+        'completed'
+    );
+
+    expect(
+        data_get(
+            $item->metadata,
+            'provider'
+        )
+    )->toBe(
+        'receita-local-fake'
+    );
+
+    expect(
+        data_get(
+            $item->metadata,
+            'group_enrichment'
+        )
+    )->toBeTrue();
+
+    expect(
+        data_get(
+            $item->metadata,
+            'establishments'
+        )
+    )->toBe(2);
+
+    $company =
+        $item->company()
+            ->firstOrFail();
+
+    expect(
+        $company
+            ->establishments()
+            ->count()
+    )->toBe(2);
+});
+
+it('checks CRM automatically after group enrichment', function () {
+    $base =
+        '445556660001';
+
+    $cnpj =
+        $base
+        .Cnpj::calculateCheckDigits(
+            $base
+        );
+
+    $groupProvider =
+        new class($cnpj) implements CnpjGroupDataProvider
+        {
+            public function __construct(
+                private readonly string $cnpj
+            ) {}
+
+            public function name(): string
+            {
+                return 'receita-local-fake';
+            }
+
+            public function lookupRoot(
+                string $cnpjRoot
+            ): array {
+                return [
+                    'company' => [
+                        'corporate_name' => 'COOPERATIVA CRM AUTOMATICA',
+
+                        'legal_nature_code' => '2143',
+
+                        'legal_nature_description' => 'Cooperativa',
+
+                        'share_capital' => 5000000,
+
+                        'size_code' => '05',
+
+                        'size_description' => 'Demais',
+                    ],
+
+                    'establishments' => [
+                        [
+                            'establishment' => [
+                                'cnpj' => $this->cnpj,
+
+                                'type' => 'matrix',
+
+                                'registration_status_code' => '02',
+
+                                'registration_status' => 'ATIVA',
+
+                                'state' => 'MT',
+
+                                'email' => 'fiscal@crm-automatica.com.br',
+                            ],
+
+                            'cnaes' => [
+                                [
+                                    'code' => '4622200',
+
+                                    'description' => 'Comércio atacadista de soja',
+
+                                    'is_primary' => true,
+                                ],
+                            ],
+                        ],
+                    ],
+                ];
+            }
+        };
+
+    app()->instance(
+        CnpjGroupDataProvider::class,
+        $groupProvider
+    );
+
+    app()->instance(
+        CrmCompanyProvider::class,
+        new class implements CrmCompanyProvider
+        {
+            public function name(): string
+            {
+                return 'hubspot-fake';
+            }
+
+            public function findCompany(
+                Company $company
+            ): array {
+                return [
+                    'found' => true,
+
+                    'external_id' => '987654',
+
+                    'name' => 'Cooperativa CRM Automatica',
+
+                    'domain' => 'crm-automatica.com.br',
+
+                    'lifecycle_stage' => 'customer',
+
+                    'owner_id' => '123',
+
+                    'contacted_count' => 12,
+
+                    'associated_deals_count' => 3,
+
+                    'last_contacted_at' => '2026-09-01T10:00:00Z',
+
+                    'matched_by' => 'domain',
+
+                    'matched_value' => 'crm-automatica.com.br',
+
+                    'external_url' => 'https://example.test/987654',
+
+                    'metadata' => [],
+                ];
+            }
+        }
+    );
+
+    $batch = app(
+        CnpjImportService::class
+    )->import([
+        $cnpj,
+    ]);
+
+    $item =
+        $batch
+            ->items()
+            ->firstOrFail();
+
+    $item->update([
+        'status' => 'queued',
+    ]);
+
+    EnrichImportItem::dispatchSync(
+        $item->id
+    );
+
+    $item->refresh();
+
+    expect(
+        $item->status
+    )->toBe('completed');
+
+    expect(
+        data_get(
+            $item->metadata,
+            'crm.checked'
+        )
+    )->toBeTrue();
+
+    expect(
+        data_get(
+            $item->metadata,
+            'crm.status'
+        )
+    )->toBe('client');
+
+    $company =
+        $item
+            ->company()
+            ->firstOrFail();
+
+    $crm =
+        $company
+            ->crmCheck()
+            ->firstOrFail();
+
+    expect(
+        $crm->status
+    )->toBe('client');
+
+    expect(
+        $crm->external_id
+    )->toBe('987654');
+
+    expect(
+        $crm->contacted_count
+    )->toBe(12);
 });

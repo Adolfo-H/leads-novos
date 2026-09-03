@@ -3,7 +3,11 @@
 namespace App\Providers;
 
 use App\Contracts\CnpjDataProvider;
+use App\Contracts\CnpjGroupDataProvider;
+use App\Contracts\CrmCompanyProvider;
 use App\Services\Providers\BrasilApiCnpjProvider;
+use App\Services\Providers\HubSpotCrmCompanyProvider;
+use App\Services\Providers\ReceitaLocalCnpjGroupProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +25,16 @@ class AppServiceProvider extends ServiceProvider
             CnpjDataProvider::class,
             BrasilApiCnpjProvider::class
         );
+
+        $this->app->bind(
+            CnpjGroupDataProvider::class,
+            ReceitaLocalCnpjGroupProvider::class
+        );
+        $this->app->bind(
+            CrmCompanyProvider::class,
+            HubSpotCrmCompanyProvider::class
+        );
+
     }
 
     /**

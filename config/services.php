@@ -55,5 +55,26 @@ return [
             'cnpj-cadastral'
         ),
     ],
+    'receita_local' => [
+        'base_url' => env(
+            'RECEITA_LOCAL_BASE_URL',
+            'http://receita-data:8000'
+        ),
+    ],
+
+    'hubspot' => [
+        'access_token' => env(
+            'HUBSPOT_ACCESS_TOKEN'
+        ),
+
+        'base_url' => env(
+            'HUBSPOT_BASE_URL',
+            'https://api.hubapi.com'
+        ),
+
+        'portal_id' => env(
+            'HUBSPOT_PORTAL_ID'
+        ),
+    ],
 
 ];

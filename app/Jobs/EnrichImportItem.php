@@ -3,10 +3,15 @@
 namespace App\Jobs;
 
 use App\Contracts\CnpjDataProvider;
+use App\Contracts\CnpjGroupDataProvider;
+use App\Contracts\CrmCompanyProvider;
 use App\Exceptions\CnpjNotFoundException;
 use App\Exceptions\CnpjProviderTemporaryException;
+use App\Models\Company;
 use App\Models\ImportItem;
 use App\Services\CnpjEnrichmentService;
+use App\Services\CompanyGroupEnrichmentService;
+use App\Services\CrmCheckService;
 use App\Services\IcpScoringService;
 use App\Services\ImportQueueService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -19,13 +24,15 @@ class EnrichImportItem implements ShouldQueue
 
     public int $tries = 4;
 
-    public int $timeout = 60;
+    public int $timeout = 300;
 
     public function __construct(
         public int $importItemId
     ) {}
 
-    /** @return list<int> */
+    /**
+     * @return list<int>
+     */
     public function backoff(): array
     {
         return [
@@ -36,8 +43,12 @@ class EnrichImportItem implements ShouldQueue
     }
 
     public function handle(
-        CnpjDataProvider $provider,
-        CnpjEnrichmentService $enrichment,
+        CnpjGroupDataProvider $groupProvider,
+        CompanyGroupEnrichmentService $groupEnrichment,
+        CnpjDataProvider $pointProvider,
+        CnpjEnrichmentService $pointEnrichment,
+        CrmCompanyProvider $crmProvider,
+        CrmCheckService $crmCheck,
         ImportQueueService $queue,
         IcpScoringService $icp,
     ): void {
@@ -68,21 +79,96 @@ class EnrichImportItem implements ShouldQueue
         ]);
 
         try {
-            $data = $provider
-                ->lookup(
-                    $item->normalized_cnpj
+            try {
+                /*
+                 * Fonte principal:
+                 * base local mensal da Receita.
+                 *
+                 * Enriquece a raiz inteira:
+                 * matriz + filiais + CNAEs.
+                 */
+                $company =
+                    $groupEnrichment
+                        ->enrich(
+                            $item
+                                ->normalized_cnpj,
+                            $groupProvider,
+                        );
+
+                $metadata = [
+                    'provider' => $groupProvider
+                        ->name(),
+
+                    'group_enrichment' => true,
+
+                    'establishments' => $company
+                        ->establishments
+                        ->count(),
+
+                    'processed_at' => now()
+                        ->toIso8601String(),
+                ];
+
+            } catch (
+                CnpjNotFoundException
+            ) {
+                /*
+                 * Empresa muito nova pode ainda
+                 * não existir na fotografia mensal.
+                 *
+                 * BrasilAPI fica como fallback
+                 * para consulta pontual.
+                 */
+                $data =
+                    $pointProvider
+                        ->lookup(
+                            $item
+                                ->normalized_cnpj
+                        );
+
+                $company =
+                    $pointEnrichment
+                        ->enrich(
+                            $item
+                                ->normalized_cnpj,
+                            $data,
+                            $pointProvider
+                                ->name(),
+                        );
+
+                $icp->calculate(
+                    $company
                 );
 
-            $company = $enrichment
-                ->enrich(
-                    $item->normalized_cnpj,
-                    $data,
-                    $provider->name(),
-                );
+                $metadata = [
+                    'provider' => $pointProvider
+                        ->name(),
 
-            $icp->calculate(
-                $company
-            );
+                    'group_enrichment' => false,
+
+                    'fallback_reason' => 'not_found_in_local_receita',
+
+                    'response' => $data,
+
+                    'processed_at' => now()
+                        ->toIso8601String(),
+                ];
+            }
+
+            /*
+             * A CompanyGroupEnrichmentService
+             * já recalcula o ICP.
+             *
+             * No fallback pontual ele foi
+             * calculado explicitamente acima.
+             */
+
+            $metadata['crm'] =
+                $this->checkCrm(
+                    $company,
+                    $crmProvider,
+                    $crmCheck,
+                );
 
             $item->update([
                 'status' => 'completed',
@@ -91,21 +177,12 @@ class EnrichImportItem implements ShouldQueue
 
                 'error_message' => null,
 
-                'metadata' => [
-                    'provider' => $provider->name(),
-
-                    'response' => $data,
-
-                    'processed_at' => now()
-                        ->toIso8601String(),
-                ],
+                'metadata' => $metadata,
             ]);
+
         } catch (
             CnpjNotFoundException $exception
         ) {
-            /*
-             * Não adianta tentar novamente.
-             */
             $item->update([
                 'status' => 'failed',
 
@@ -116,16 +193,10 @@ class EnrichImportItem implements ShouldQueue
                     2000
                 ),
             ]);
+
         } catch (
             CnpjProviderTemporaryException $exception
         ) {
-            /*
-             * Mantemos como queued.
-             *
-             * Como a exceção é relançada,
-             * Laravel respeitará o backoff
-             * e tentará novamente.
-             */
             $item->update([
                 'status' => 'queued',
 
@@ -138,11 +209,9 @@ class EnrichImportItem implements ShouldQueue
             ]);
 
             throw $exception;
-        } catch (Throwable $exception) {
-            /*
-             * Erro permanente de conteúdo,
-             * normalização ou configuração.
-             */
+        } catch (
+            Throwable $exception
+        ) {
             $item->update([
                 'status' => 'failed',
 
@@ -153,10 +222,68 @@ class EnrichImportItem implements ShouldQueue
                     2000
                 ),
             ]);
+
         } finally {
             $queue->refreshBatch(
                 $item->import_batch_id
             );
+        }
+    }
+
+    /**
+     * O CRM é enriquecimento comercial.
+     *
+     * Uma indisponibilidade do HubSpot
+     * não deve invalidar os dados já
+     * obtidos da Receita.
+     *
+     * @return array<string, mixed>
+     */
+    private function checkCrm(
+        Company $company,
+        CrmCompanyProvider $provider,
+        CrmCheckService $service,
+    ): array {
+        try {
+            $check =
+                $service->check(
+                    $company,
+                    $provider,
+                );
+
+            return [
+                'checked' => true,
+
+                'provider' => $check->provider,
+
+                'status' => $check->status,
+
+                'external_id' => $check->external_id,
+
+                'matched_by' => $check->matched_by,
+
+                'matched_value' => $check->matched_value,
+
+                'checked_at' => (string) $check->checked_at,
+            ];
+
+        } catch (
+            Throwable $exception
+        ) {
+            return [
+                'checked' => false,
+
+                'provider' => $provider->name(),
+
+                'status' => 'error',
+
+                'error' => mb_substr(
+                    $exception
+                        ->getMessage(),
+                    0,
+                    1000
+                ),
+            ];
         }
     }
 
@@ -183,7 +310,8 @@ class EnrichImportItem implements ShouldQueue
             'status' => 'failed',
 
             'error_message' => mb_substr(
-                $exception->getMessage(),
+                $exception
+                    ->getMessage(),
                 0,
                 2000
             ),

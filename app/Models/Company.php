@@ -84,6 +84,16 @@ class Company extends Model
     }
 
     /**
+     * @return HasOne<CompanyCrmCheck, $this>
+     */
+    public function crmCheck(): HasOne
+    {
+        return $this->hasOne(
+            CompanyCrmCheck::class
+        );
+    }
+
+    /**
      * @return HasOne<Establishment, $this>
      */
     public function matrix(): HasOne
