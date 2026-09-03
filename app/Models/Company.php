@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\TextNormalizer;
+use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,6 +12,7 @@ use Illuminate\Support\Str;
 
 class Company extends Model
 {
+    /** @use HasFactory<CompanyFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -61,6 +63,9 @@ class Company extends Model
         return 'uuid';
     }
 
+    /**
+     * @return HasMany<Establishment, $this>
+     */
     public function establishments(): HasMany
     {
         return $this->hasMany(
@@ -68,6 +73,9 @@ class Company extends Model
         );
     }
 
+    /**
+     * @return HasOne<Establishment, $this>
+     */
     public function matrix(): HasOne
     {
         return $this->hasOne(

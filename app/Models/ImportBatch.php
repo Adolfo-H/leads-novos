@@ -34,6 +34,7 @@ class ImportBatch extends Model
         ];
     }
 
+    /** @return list<string> */
     public function uniqueIds(): array
     {
         return ['uuid'];
@@ -44,11 +45,13 @@ class ImportBatch extends Model
         return 'uuid';
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasMany<ImportItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(ImportItem::class);

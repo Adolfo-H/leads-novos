@@ -11,6 +11,7 @@ use InvalidArgumentException;
 
 final class EstablishmentService
 {
+    /** @param array<string, mixed> $data */
     public function createBranch(
         Company $company,
         array $data,
@@ -50,7 +51,8 @@ final class EstablishmentService
                 );
             }
 
-            return $company
+            /** @var Establishment $branch */
+            $branch = $company
                 ->establishments()
                 ->create(
                     $this->establishmentData(
@@ -59,9 +61,12 @@ final class EstablishmentService
                         'branch',
                     )
                 );
+
+            return $branch;
         });
     }
 
+    /** @param array<string, mixed> $data */
     public function update(
         Establishment $establishment,
         array $data,
@@ -87,6 +92,7 @@ final class EstablishmentService
         });
     }
 
+    /** @param array<string, mixed> $data */
     public function addCnae(
         Establishment $establishment,
         array $data,
@@ -205,6 +211,10 @@ final class EstablishmentService
         });
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
     private function establishmentData(
         string $cnpj,
         array $data,
@@ -231,6 +241,10 @@ final class EstablishmentService
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
     private function editableData(
         array $data,
     ): array {

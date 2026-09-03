@@ -16,6 +16,7 @@ final class BrasilApiCnpjProvider implements CnpjDataProvider
         return 'brasilapi';
     }
 
+    /** @return array<string, mixed> */
     public function lookup(string $cnpj): array
     {
         $cnpj = preg_replace(

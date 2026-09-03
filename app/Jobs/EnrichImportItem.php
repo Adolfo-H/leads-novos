@@ -24,6 +24,7 @@ class EnrichImportItem implements ShouldQueue
         public int $importItemId
     ) {}
 
+    /** @return list<int> */
     public function backoff(): array
     {
         return [

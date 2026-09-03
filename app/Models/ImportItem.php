@@ -25,6 +25,7 @@ class ImportItem extends Model
         ];
     }
 
+    /** @return BelongsTo<ImportBatch, $this> */
     public function batch(): BelongsTo
     {
         return $this->belongsTo(
@@ -33,6 +34,7 @@ class ImportItem extends Model
         );
     }
 
+    /** @return BelongsTo<Company, $this> */
     public function company(): BelongsTo
     {
         return $this->belongsTo(

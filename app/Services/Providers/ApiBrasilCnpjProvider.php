@@ -13,6 +13,7 @@ final class ApiBrasilCnpjProvider implements CnpjDataProvider
         return 'apibrasil';
     }
 
+    /** @return array<string, mixed> */
     public function lookup(string $cnpj): array
     {
         $token = config(

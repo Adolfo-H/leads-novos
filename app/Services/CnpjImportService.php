@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 
 final class CnpjImportService
 {
+    /**
+     * @param  array<int, string|int|float>  $values
+     */
     public function import(
         array $values,
         ?int $userId = null,
@@ -20,7 +23,7 @@ final class CnpjImportService
             $userId,
             $sourceType,
             $filename,
-        ) {
+        ): ImportBatch {
             $batch = ImportBatch::create([
                 'user_id' => $userId,
                 'source_type' => $sourceType,
@@ -28,6 +31,7 @@ final class CnpjImportService
                 'status' => 'processing',
             ]);
 
+            /** @var array<string, true> $seen */
             $seen = [];
 
             $valid = 0;
@@ -54,24 +58,12 @@ final class CnpjImportService
                 $error = null;
                 $companyId = null;
 
-                if (
-                    ! Cnpj::isValid(
-                        $normalized
-                    )
-                ) {
+                if (! Cnpj::isValid($normalized)) {
                     $status = 'invalid';
-
-                    $error =
-                        'CNPJ inválido.';
-
+                    $error = 'CNPJ inválido.';
                     $invalid++;
-                } elseif (
-                    isset(
-                        $seen[$normalized]
-                    )
-                ) {
+                } elseif (isset($seen[$normalized])) {
                     $status = 'duplicate';
-
                     $duplicates++;
                 } else {
                     $seen[$normalized] = true;
@@ -88,13 +80,11 @@ final class CnpjImportService
                         $status = 'existing';
 
                         $companyId =
-                            $establishment
-                                ->company_id;
+                            $establishment->company_id;
 
                         $existing++;
                     } else {
                         $status = 'ready';
-
                         $valid++;
                     }
                 }
@@ -138,20 +128,31 @@ final class CnpjImportService
         });
     }
 
+    /**
+     * @return list<string>
+     */
     public function parseText(
         string $input
     ): array {
-        return collect(
-            preg_split(
-                '/[\r\n,;]+/',
-                $input
-            )
-        )
+        $parts = preg_split(
+            '/[\r\n,;]+/',
+            $input
+        );
+
+        if ($parts === false) {
+            return [];
+        }
+
+        $values = collect($parts)
             ->map(
-                fn ($value) => trim($value)
+                fn (string $value): string => trim($value)
             )
-            ->filter()
+            ->filter(
+                fn (string $value): bool => $value !== ''
+            )
             ->values()
             ->all();
+
+        return array_values($values);
     }
 }

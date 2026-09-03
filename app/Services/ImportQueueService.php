@@ -18,6 +18,7 @@ final class ImportQueueService
             ->get();
 
         foreach ($items as $item) {
+            /** @var ImportItem $item */
             $item->update([
                 'status' => 'queued',
                 'error_message' => null,

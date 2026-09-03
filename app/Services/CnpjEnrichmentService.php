@@ -11,6 +11,7 @@ final class CnpjEnrichmentService
         private readonly CompanyService $companies,
     ) {}
 
+    /** @param array<string, mixed> $data */
     public function enrich(
         string $cnpj,
         array $data,
@@ -102,30 +103,30 @@ final class CnpjEnrichmentService
                     'source_updated_at' => now(),
 
                     'metadata' => [
-                    'provider' => $source,
+                        'provider' => $source,
 
-                    'qsa' => $data['qsa']
-                        ?? null,
+                        'qsa' => $data['qsa']
+                            ?? null,
 
-                    'regime_tributario' => $data[
-                            'regime_tributario'
-                        ] ?? null,
+                        'regime_tributario' => $data[
+                                'regime_tributario'
+                            ] ?? null,
 
-                    'opcao_pelo_simples' => $data[
-                            'opcao_pelo_simples'
-                        ] ?? null,
+                        'opcao_pelo_simples' => $data[
+                                'opcao_pelo_simples'
+                            ] ?? null,
 
-                    'opcao_pelo_mei' => $data[
-                            'opcao_pelo_mei'
-                        ] ?? null,
+                        'opcao_pelo_mei' => $data[
+                                'opcao_pelo_mei'
+                            ] ?? null,
 
-                    'data_opcao_pelo_simples' => $data[
-                            'data_opcao_pelo_simples'
-                        ] ?? null,
+                        'data_opcao_pelo_simples' => $data[
+                                'data_opcao_pelo_simples'
+                            ] ?? null,
 
-                    'data_exclusao_do_simples' => $data[
-                            'data_exclusao_do_simples'
-                        ] ?? null,
+                        'data_exclusao_do_simples' => $data[
+                                'data_exclusao_do_simples'
+                            ] ?? null,
                     ],
                 ],
                 [
@@ -317,23 +318,23 @@ final class CnpjEnrichmentService
                     'source_updated_at' => now(),
 
                     'metadata' => [
-                    'provider' => $source,
+                        'provider' => $source,
 
-                    'identificador_matriz_filial' => $data[
-                            'identificador_matriz_filial'
-                        ] ?? null,
+                        'identificador_matriz_filial' => $data[
+                                'identificador_matriz_filial'
+                            ] ?? null,
 
-                    'descricao_identificador_matriz_filial' => $data[
-                            'descricao_identificador_matriz_filial'
-                        ] ?? null,
+                        'descricao_identificador_matriz_filial' => $data[
+                                'descricao_identificador_matriz_filial'
+                            ] ?? null,
 
-                    'codigo_municipio_ibge' => $data[
-                            'codigo_municipio_ibge'
-                        ] ?? null,
+                        'codigo_municipio_ibge' => $data[
+                                'codigo_municipio_ibge'
+                            ] ?? null,
 
-                    'descricao_motivo_situacao_cadastral' => $data[
-                            'descricao_motivo_situacao_cadastral'
-                        ] ?? null,
+                        'descricao_motivo_situacao_cadastral' => $data[
+                                'descricao_motivo_situacao_cadastral'
+                            ] ?? null,
                     ],
                 ],
                 $this->cnaes(
@@ -342,6 +343,7 @@ final class CnpjEnrichmentService
             );
     }
 
+    /** @param array<string, mixed> $data */
     private function establishmentType(
         string $cnpj,
         array $data,
@@ -387,6 +389,7 @@ final class CnpjEnrichmentService
                 : 'branch';
     }
 
+    /** @param array<string, mixed> $data */
     private function registrationStatus(
         array $data
     ): ?string {
@@ -432,6 +435,10 @@ final class CnpjEnrichmentService
         };
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return list<array{code: string, description: ?string, is_primary: bool}>
+     */
     private function cnaes(
         array $data
     ): array {
@@ -538,6 +545,9 @@ final class CnpjEnrichmentService
         );
     }
 
+    /**
+     * @param  array<string, array{code: string, description: ?string, is_primary: bool}>  $result
+     */
     private function addCnae(
         array &$result,
         mixed $code,
@@ -610,6 +620,7 @@ final class CnpjEnrichmentService
         );
     }
 
+    /** @param array<string, mixed> $data */
     private function phone(
         array $data,
         int $number,
@@ -688,6 +699,10 @@ final class CnpjEnrichmentService
             : null;
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  list<string>  $paths
+     */
     private function first(
         array $data,
         array $paths,

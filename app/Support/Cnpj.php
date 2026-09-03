@@ -190,6 +190,7 @@ final class Cnpj
         ) === 1;
     }
 
+    /** @param list<int> $weights */
     private static function calculateDigit(
         string $value,
         array $weights

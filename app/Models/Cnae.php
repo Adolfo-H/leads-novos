@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\CnaeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Cnae extends Model
 {
+    /** @use HasFactory<CnaeFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -15,6 +17,9 @@ class Cnae extends Model
         'description',
     ];
 
+    /**
+     * @return BelongsToMany<Establishment, $this>
+     */
     public function establishments(): BelongsToMany
     {
         return $this->belongsToMany(
