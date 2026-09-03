@@ -4,12 +4,18 @@ namespace App\Services;
 
 use App\Models\Cnae;
 use App\Models\Company;
+use App\Models\Establishment;
 use App\Support\Cnpj;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 final class CompanyService
 {
+    /**
+     * @param  array<string, mixed>  $companyData
+     * @param  array<string, mixed>  $establishmentData
+     * @param  array<int, array<string, mixed>>  $cnaes
+     */
     public function createOrUpdateFromEstablishment(
         array $companyData,
         array $establishmentData,
@@ -109,6 +115,7 @@ final class CompanyService
                 );
             }
 
+            /** @var Establishment $establishment */
             $establishment = $company
                 ->establishments()
                 ->updateOrCreate(
@@ -293,6 +300,10 @@ final class CompanyService
         });
     }
 
+    /**
+     * @param  array<string, mixed>  $companyData
+     * @param  array<string, mixed>  $establishmentData
+     */
     public function updateCompanyAndMatrix(
         Company $company,
         array $companyData,

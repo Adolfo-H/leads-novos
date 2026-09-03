@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\CnpjDataProvider;
+use App\Services\Providers\BrasilApiCnpjProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +17,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            CnpjDataProvider::class,
+            BrasilApiCnpjProvider::class
+        );
     }
 
     /**

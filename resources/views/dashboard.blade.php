@@ -1,18 +1,491 @@
 <x-layouts::app :title="__('Dashboard')">
-    <div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl">
-        <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
+
+    @php
+        $companiesTotal =
+            \App\Models\Company::query()->count();
+
+        $establishmentsTotal =
+            \App\Models\Establishment::query()->count();
+
+        $activeTotal =
+            \App\Models\Establishment::query()
+                ->where('registration_status', 'ATIVA')
+                ->count();
+
+        $matrixTotal =
+            \App\Models\Establishment::query()
+                ->where('type', 'matrix')
+                ->count();
+
+        $branchesTotal =
+            \App\Models\Establishment::query()
+                ->where('type', 'branch')
+                ->count();
+
+        $cnaesTotal =
+            \App\Models\Cnae::query()
+                ->whereHas('establishments')
+                ->count();
+
+        $emailTotal =
+            \App\Models\Establishment::query()
+                ->whereNotNull('email')
+                ->where('email', '!=', '')
+                ->count();
+
+        $phoneTotal =
+            \App\Models\Establishment::query()
+                ->whereNotNull('phone_1')
+                ->where('phone_1', '!=', '')
+                ->count();
+
+        $activePercent = $establishmentsTotal > 0
+            ? round(
+                ($activeTotal / $establishmentsTotal) * 100
+            )
+            : 0;
+
+        $emailPercent = $establishmentsTotal > 0
+            ? round(
+                ($emailTotal / $establishmentsTotal) * 100
+            )
+            : 0;
+
+        $phonePercent = $establishmentsTotal > 0
+            ? round(
+                ($phoneTotal / $establishmentsTotal) * 100
+            )
+            : 0;
+    @endphp
+
+    <div class="ec-page-shell">
+
+        {{-- CABEÇALHO --}}
+        <div class="ec-page-header">
+
+            <div>
+
+                <div class="ec-page-kicker">
+                    Inteligência Comercial
+                </div>
+
+                <h1 class="ec-page-title mt-1">
+                    Dashboard
+                </h1>
+
+                <p class="ec-page-description">
+                    Visão geral da base utilizada pelo Prospector.
+                </p>
+
             </div>
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
+
+            <div class="ec-dashboard-status">
+
+                <span class="ec-dashboard-status-dot"></span>
+
+                Sistema operacional
+
             </div>
-            <div class="relative aspect-video overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-                <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
-            </div>
+
         </div>
-        <div class="relative h-full flex-1 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-700">
-            <x-placeholder-pattern class="absolute inset-0 size-full stroke-gray-900/20 dark:stroke-neutral-100/20" />
+
+
+        {{-- CARDS --}}
+        <div class="ec-dashboard-cards">
+
+            <div class="ec-dashboard-card">
+
+                <div class="ec-dashboard-card-top">
+
+                    <span>
+                        Empresas
+                    </span>
+
+                    <div class="ec-dashboard-card-icon">
+                        ◇
+                    </div>
+
+                </div>
+
+                <strong>
+                    {{ number_format($companiesTotal, 0, ',', '.') }}
+                </strong>
+
+                <small>
+                    Grupos empresariais cadastrados
+                </small>
+
+            </div>
+
+
+            <div class="ec-dashboard-card">
+
+                <div class="ec-dashboard-card-top">
+
+                    <span>
+                        Estabelecimentos
+                    </span>
+
+                    <div class="ec-dashboard-card-icon">
+                        ⌂
+                    </div>
+
+                </div>
+
+                <strong>
+                    {{ number_format($establishmentsTotal, 0, ',', '.') }}
+                </strong>
+
+                <small>
+                    Matriz e filiais
+                </small>
+
+            </div>
+
+
+            <div class="ec-dashboard-card">
+
+                <div class="ec-dashboard-card-top">
+
+                    <span>
+                        Estabelecimentos ativos
+                    </span>
+
+                    <div class="ec-dashboard-card-icon">
+                        ✓
+                    </div>
+
+                </div>
+
+                <strong>
+                    {{ number_format($activeTotal, 0, ',', '.') }}
+                </strong>
+
+                <small>
+                    {{ $activePercent }}% da base
+                </small>
+
+            </div>
+
+
+            <div class="ec-dashboard-card ec-dashboard-card-accent">
+
+                <div class="ec-dashboard-card-top">
+
+                    <span>
+                        CNAEs mapeados
+                    </span>
+
+                    <div class="ec-dashboard-card-icon">
+                        #
+                    </div>
+
+                </div>
+
+                <strong>
+                    {{ number_format($cnaesTotal, 0, ',', '.') }}
+                </strong>
+
+                <small>
+                    Atividades vinculadas à base
+                </small>
+
+            </div>
+
         </div>
+
+
+        {{-- PAINÉIS --}}
+        <div class="ec-dashboard-grid">
+
+            {{-- QUALIDADE DA BASE --}}
+            <section class="ec-dashboard-panel">
+
+                <div class="ec-dashboard-panel-header">
+
+                    <div>
+
+                        <h2>
+                            Qualidade da base
+                        </h2>
+
+                        <p>
+                            Cobertura atual dos dados empresariais.
+                        </p>
+
+                    </div>
+
+                    <span>
+                        Atual
+                    </span>
+
+                </div>
+
+
+                <div class="ec-dashboard-progress-list">
+
+                    <div>
+
+                        <div class="ec-dashboard-progress-head">
+
+                            <span>
+                                Situação ativa
+                            </span>
+
+                            <strong>
+                                {{ $activePercent }}%
+                            </strong>
+
+                        </div>
+
+                        <div class="ec-dashboard-progress">
+
+                            <span
+                                style="width: {{ $activePercent }}%"
+                            ></span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="ec-dashboard-progress-head">
+
+                            <span>
+                                E-mail cadastral
+                            </span>
+
+                            <strong>
+                                {{ $emailPercent }}%
+                            </strong>
+
+                        </div>
+
+                        <div class="ec-dashboard-progress">
+
+                            <span
+                                style="width: {{ $emailPercent }}%"
+                            ></span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="ec-dashboard-progress-head">
+
+                            <span>
+                                Telefone cadastral
+                            </span>
+
+                            <strong>
+                                {{ $phonePercent }}%
+                            </strong>
+
+                        </div>
+
+                        <div class="ec-dashboard-progress">
+
+                            <span
+                                style="width: {{ $phonePercent }}%"
+                            ></span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            {{-- COMPOSIÇÃO --}}
+            <section class="ec-dashboard-panel">
+
+                <div class="ec-dashboard-panel-header">
+
+                    <div>
+
+                        <h2>
+                            Estrutura empresarial
+                        </h2>
+
+                        <p>
+                            Composição dos estabelecimentos.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="ec-dashboard-structure">
+
+                    <div>
+
+                        <span class="ec-dashboard-structure-number">
+                            {{ $matrixTotal }}
+                        </span>
+
+                        <span class="ec-dashboard-structure-label">
+                            Matrizes
+                        </span>
+
+                    </div>
+
+
+                    <div class="ec-dashboard-structure-divider"></div>
+
+
+                    <div>
+
+                        <span class="ec-dashboard-structure-number">
+                            {{ $branchesTotal }}
+                        </span>
+
+                        <span class="ec-dashboard-structure-label">
+                            Filiais
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+
+        {{-- FLUXO FUTURO --}}
+        <section class="ec-dashboard-panel">
+
+            <div class="ec-dashboard-panel-header">
+
+                <div>
+
+                    <h2>
+                        Motor de prospecção
+                    </h2>
+
+                    <p>
+                        Etapas que transformarão os CNPJs em oportunidades comerciais.
+                    </p>
+
+                </div>
+
+                <span class="ec-dashboard-coming">
+                    Em construção
+                </span>
+
+            </div>
+
+
+            <div class="ec-pipeline">
+
+                <div class="ec-pipeline-step ec-pipeline-step-ready">
+
+                    <span>
+                        01
+                    </span>
+
+                    <strong>
+                        Base empresarial
+                    </strong>
+
+                    <small>
+                        Empresas, matriz, filiais e CNAEs
+                    </small>
+
+                </div>
+
+                <div class="ec-pipeline-arrow">
+                    →
+                </div>
+
+                <div class="ec-pipeline-step">
+
+                    <span>
+                        02
+                    </span>
+
+                    <strong>
+                        Importação
+                    </strong>
+
+                    <small>
+                        CNPJ, Excel e CSV
+                    </small>
+
+                </div>
+
+                <div class="ec-pipeline-arrow">
+                    →
+                </div>
+
+                <div class="ec-pipeline-step">
+
+                    <span>
+                        03
+                    </span>
+
+                    <strong>
+                        Enriquecimento
+                    </strong>
+
+                    <small>
+                        Dados cadastrais e CRM
+                    </small>
+
+                </div>
+
+                <div class="ec-pipeline-arrow">
+                    →
+                </div>
+
+                <div class="ec-pipeline-step">
+
+                    <span>
+                        04
+                    </span>
+
+                    <strong>
+                        Exportação
+                    </strong>
+
+                    <small>
+                        Direta, indireta e trading
+                    </small>
+
+                </div>
+
+                <div class="ec-pipeline-arrow">
+                    →
+                </div>
+
+                <div class="ec-pipeline-step">
+
+                    <span>
+                        05
+                    </span>
+
+                    <strong>
+                        Score
+                    </strong>
+
+                    <small>
+                        Fila comercial SDR
+                    </small>
+
+                </div>
+
+            </div>
+
+        </section>
+
     </div>
+
 </x-layouts::app>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\EstablishmentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +11,7 @@ use Illuminate\Support\Str;
 
 class Establishment extends Model
 {
+    /** @use HasFactory<EstablishmentFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -79,6 +81,9 @@ class Establishment extends Model
         return 'uuid';
     }
 
+    /**
+     * @return BelongsTo<Company, $this>
+     */
     public function company(): BelongsTo
     {
         return $this->belongsTo(
@@ -86,6 +91,9 @@ class Establishment extends Model
         );
     }
 
+    /**
+     * @return BelongsToMany<Cnae, $this>
+     */
     public function cnaes(): BelongsToMany
     {
         return $this->belongsToMany(
