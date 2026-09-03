@@ -240,3 +240,216 @@ it('classifies a low fit company as grade D', function () {
         'Baixa aderência'
     );
 });
+
+it('uses an active branch cnae and state when scoring the company group', function () {
+    $company = app(
+        CompanyService::class
+    )->createOrUpdateFromEstablishment(
+        [
+            'corporate_name' => 'GRUPO AGRO MULTIUF',
+
+            'share_capital' => 5000000,
+
+            'size_code' => '05',
+
+            'legal_nature_code' => '2143',
+
+            'legal_nature_description' => 'Cooperativa',
+        ],
+        [
+            'cnpj' => '11.222.333/0001-81',
+
+            'type' => 'matrix',
+
+            'registration_status_code' => '02',
+
+            'registration_status' => 'ATIVA',
+
+            'state' => 'PR',
+        ],
+        [
+            [
+                'code' => '4692300',
+
+                'description' => 'Comércio atacadista em geral',
+
+                'is_primary' => true,
+            ],
+        ]
+    );
+
+    $branchBase =
+        $company->cnpj_root.'0002';
+
+    $branchCnpj =
+        $branchBase
+        .Cnpj::calculateCheckDigits(
+            $branchBase
+        );
+
+    $branch = app(
+        EstablishmentService::class
+    )->createBranch(
+        $company,
+        [
+            'cnpj' => $branchCnpj,
+
+            'registration_status_code' => '02',
+
+            'registration_status' => 'ATIVA',
+
+            'state' => 'MS',
+        ]
+    );
+
+    app(
+        EstablishmentService::class
+    )->addCnae(
+        $branch,
+        [
+            'code' => '4632001',
+
+            'description' => 'Comércio atacadista de cereais',
+
+            'is_primary' => true,
+        ]
+    );
+
+    $result = app(
+        IcpScoringService::class
+    )->calculate(
+        $company->fresh()
+    );
+
+    expect(
+        data_get(
+            $result->factors,
+            'cnae.points'
+        )
+    )->toBe(30);
+
+    expect(
+        data_get(
+            $result->factors,
+            'cnae.establishment_cnpj'
+        )
+    )->toBe(
+        $branchCnpj
+    );
+
+    expect(
+        data_get(
+            $result->factors,
+            'state.points'
+        )
+    )->toBe(15);
+
+    expect(
+        data_get(
+            $result->factors,
+            'state.matched_states'
+        )
+    )->toContain('MS');
+
+    expect(
+        $result->score
+    )->toBe(100);
+
+    expect(
+        $result->grade
+    )->toBe('A');
+});
+
+it('ignores an inactive branch when calculating cnae and geography', function () {
+    $company = app(
+        CompanyService::class
+    )->createOrUpdateFromEstablishment(
+        [
+            'corporate_name' => 'GRUPO COM FILIAL BAIXADA',
+        ],
+        [
+            'cnpj' => '11.222.333/0001-81',
+
+            'type' => 'matrix',
+
+            'registration_status_code' => '02',
+
+            'registration_status' => 'ATIVA',
+
+            'state' => 'PR',
+        ],
+        [
+            [
+                'code' => '6201501',
+
+                'description' => 'Desenvolvimento de software',
+
+                'is_primary' => true,
+            ],
+        ]
+    );
+
+    $branchBase =
+        $company->cnpj_root.'0002';
+
+    $branchCnpj =
+        $branchBase
+        .Cnpj::calculateCheckDigits(
+            $branchBase
+        );
+
+    $branch = app(
+        EstablishmentService::class
+    )->createBranch(
+        $company,
+        [
+            'cnpj' => $branchCnpj,
+
+            'registration_status_code' => '08',
+
+            'registration_status' => 'BAIXADA',
+
+            'state' => 'MS',
+        ]
+    );
+
+    app(
+        EstablishmentService::class
+    )->addCnae(
+        $branch,
+        [
+            'code' => '4632001',
+
+            'description' => 'Comércio atacadista de cereais',
+
+            'is_primary' => true,
+        ]
+    );
+
+    $result = app(
+        IcpScoringService::class
+    )->calculate(
+        $company->fresh()
+    );
+
+    expect(
+        data_get(
+            $result->factors,
+            'cnae.points'
+        )
+    )->toBe(0);
+
+    expect(
+        data_get(
+            $result->factors,
+            'state.points'
+        )
+    )->toBe(0);
+
+    expect(
+        data_get(
+            $result->factors,
+            'regional_relevance.establishments'
+        )
+    )->toBe(1);
+});

@@ -3,6 +3,8 @@
 namespace App\Services\Providers;
 
 use App\Contracts\CnpjGroupDataProvider;
+use App\Exceptions\CnpjNotFoundException;
+use App\Exceptions\CnpjProviderTemporaryException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -39,28 +41,34 @@ final class ReceitaLocalCnpjGroupProvider implements CnpjGroupDataProvider
 
         try {
             $response = Http::acceptJson()
-                ->timeout(30)
+                ->connectTimeout(5)
+                ->timeout(60)
                 ->get(
                     $baseUrl
                     .'/groups/'
                     .rawurlencode($cnpjRoot)
                 );
         } catch (ConnectionException $exception) {
-            throw new RuntimeException(
+            throw new CnpjProviderTemporaryException(
                 'Não foi possível conectar ao serviço local da Receita.',
                 previous: $exception,
             );
         }
 
         if ($response->status() === 404) {
-            throw new RuntimeException(
+            throw new CnpjNotFoundException(
                 'Empresa não encontrada na base local da Receita.'
             );
         }
 
-        if ($response->status() === 503) {
-            throw new RuntimeException(
-                'A base local da Receita ainda não está disponível.'
+        if (
+            $response->status() === 429
+            || $response->serverError()
+        ) {
+            throw new CnpjProviderTemporaryException(
+                'O serviço local da Receita está temporariamente indisponível. HTTP '
+                .$response->status()
+                .'.'
             );
         }
 
@@ -80,7 +88,9 @@ final class ReceitaLocalCnpjGroupProvider implements CnpjGroupDataProvider
             );
         }
 
-        $company = $data['company'] ?? null;
+        $company =
+            $data['company']
+            ?? null;
 
         $establishments =
             $data['establishments']
@@ -96,9 +106,6 @@ final class ReceitaLocalCnpjGroupProvider implements CnpjGroupDataProvider
         }
 
         /**
-         * A API receita-data segue o contrato
-         * CnpjGroupDataProvider.
-         *
          * @var array{
          *     company: array<string, mixed>,
          *     establishments: list<array{
