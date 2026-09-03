@@ -55,5 +55,11 @@ return [
             'cnpj-cadastral'
         ),
     ],
+    'receita_local' => [
+        'base_url' => env(
+            'RECEITA_LOCAL_BASE_URL',
+            'http://receita-data:8000'
+        ),
+    ],
 
 ];
