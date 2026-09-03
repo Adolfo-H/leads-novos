@@ -23,6 +23,7 @@ public bool $showCnaeForm = false;
     {
         $this->company = $company->load([
             'establishments.cnaes',
+            'icpScore',
         ]);
     }
 
@@ -485,17 +486,53 @@ private function reloadCompany(): void
                         ICP
                     </span>
 
-                    <span class="ec-intelligence-dot"></span>
+                    @if ($company->icpScore)
+
+                        <span
+                            class="
+                                inline-flex size-7 items-center
+                                justify-center rounded-full
+                                text-xs font-bold
+                                {{ match ($company->icpScore->grade) {
+                                    'A' => 'bg-emerald-500/15 text-emerald-300',
+                                    'B' => 'bg-sky-500/15 text-sky-300',
+                                    'C' => 'bg-amber-500/15 text-amber-300',
+                                    default => 'bg-rose-500/15 text-rose-300',
+                                } }}
+                            "
+                        >
+                            {{ $company->icpScore->grade }}
+                        </span>
+
+                    @else
+
+                        <span class="ec-intelligence-dot"></span>
+
+                    @endif
 
                 </div>
 
-                <div class="ec-intelligence-value">
-                    Não calculado
-                </div>
+                @if ($company->icpScore)
 
-                <div class="ec-intelligence-caption">
-                    Perfil ideal
-                </div>
+                    <div class="ec-intelligence-value">
+                        {{ $company->icpScore->score }}/100
+                    </div>
+
+                    <div class="ec-intelligence-caption">
+                        {{ $company->icpScore->label }}
+                    </div>
+
+                @else
+
+                    <div class="ec-intelligence-value">
+                        Não calculado
+                    </div>
+
+                    <div class="ec-intelligence-caption">
+                        Perfil ideal
+                    </div>
+
+                @endif
 
             </div>
 
@@ -596,6 +633,158 @@ private function reloadCompany(): void
             </div>
 
         </div>
+
+        @if ($company->icpScore)
+
+            <details class="mt-4 overflow-hidden rounded-xl border border-white/5 bg-white/[0.025]">
+
+                <summary
+                    class="
+                        flex cursor-pointer list-none
+                        items-center justify-between
+                        px-5 py-4
+                        text-sm font-semibold
+                        text-[#d9ddef]
+                        transition
+                        hover:bg-white/[0.025]
+                    "
+                >
+                    <span>
+                        Detalhamento do ICP
+                    </span>
+
+                    <span class="text-xs font-medium text-[#7f87a7]">
+                        {{ $company->icpScore->grade }}
+                        •
+                        {{ $company->icpScore->score }}/100
+                    </span>
+                </summary>
+
+                <div class="border-t border-white/5 px-5 py-4">
+
+                    <div class="space-y-3">
+
+                        @foreach ([
+                            'cnae' => 'CNAE prioritário',
+                            'state' => 'Estado prioritário',
+                            'size' => 'Porte da empresa',
+                            'capital' => 'Capital social',
+                            'legal_nature' => 'Natureza jurídica',
+                            'regional_relevance' => 'Relevância regional',
+                        ] as $factorKey => $factorLabel)
+
+                            @php
+                                $factor = data_get(
+                                    $company->icpScore->factors,
+                                    $factorKey,
+                                    []
+                                );
+
+                                $points = (int) (
+                                    $factor['points']
+                                    ?? 0
+                                );
+
+                                $max = (int) (
+                                    $factor['max']
+                                    ?? 0
+                                );
+
+                                $reason =
+                                    $factor['reason']
+                                    ?? 'Sem informação.';
+                            @endphp
+
+                            <div
+                                class="
+                                    grid gap-3
+                                    rounded-lg
+                                    border border-white/5
+                                    bg-black/5
+                                    px-4 py-3
+                                    md:grid-cols-[180px_1fr_80px]
+                                    md:items-center
+                                "
+                            >
+
+                                <div class="text-sm font-medium text-[#d9ddef]">
+                                    {{ $factorLabel }}
+                                </div>
+
+                                <div class="text-xs text-[#838baa]">
+                                    {{ $reason }}
+                                </div>
+
+                                <div class="text-right">
+
+                                    <span
+                                        class="
+                                            inline-flex rounded-full
+                                            px-2.5 py-1
+                                            text-xs font-bold
+                                            {{ $points > 0
+                                                ? 'bg-emerald-500/10 text-emerald-300'
+                                                : 'bg-white/5 text-[#747c9b]'
+                                            }}
+                                        "
+                                    >
+                                        +{{ $points }}/{{ $max }}
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+                        @endforeach
+
+                    </div>
+
+                    <div
+                        class="
+                            mt-4 flex items-center
+                            justify-between
+                            border-t border-white/5
+                            pt-4
+                        "
+                    >
+
+                        <div>
+
+                            <div class="text-xs uppercase tracking-[0.12em] text-[#737b9c]">
+                                Classificação
+                            </div>
+
+                            <div class="mt-1 text-sm font-semibold text-white">
+                                {{ $company->icpScore->label }}
+                            </div>
+
+                        </div>
+
+                        <div class="text-right">
+
+                            <div class="text-xs text-[#737b9c]">
+                                Score cadastral
+                            </div>
+
+                            <div class="mt-1 text-2xl font-bold text-[#43b9a7]">
+                                {{ $company->icpScore->score }}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <p class="mt-4 text-xs leading-5 text-[#68708f]">
+                        Este score considera somente dados cadastrais e estruturais.
+                        Exportação, relação com tradings, CRM e contatos serão avaliados
+                        em etapas posteriores do Prospector.
+                    </p>
+
+                </div>
+
+            </details>
+
+        @endif
 
     </section>
 

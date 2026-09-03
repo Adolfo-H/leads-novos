@@ -74,6 +74,16 @@ class Company extends Model
     }
 
     /**
+     * @return HasOne<CompanyIcpScore, $this>
+     */
+    public function icpScore(): HasOne
+    {
+        return $this->hasOne(
+            CompanyIcpScore::class
+        );
+    }
+
+    /**
      * @return HasOne<Establishment, $this>
      */
     public function matrix(): HasOne

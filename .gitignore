@@ -22,3 +22,8 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/tools/receita/.venv/
+
+# Receita Federal - ambiente/dados locais
+/tools/receita/data/
+/tools/receita/fixtures/*.parquet

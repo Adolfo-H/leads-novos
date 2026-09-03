@@ -7,6 +7,7 @@ use App\Exceptions\CnpjNotFoundException;
 use App\Exceptions\CnpjProviderTemporaryException;
 use App\Models\ImportItem;
 use App\Services\CnpjEnrichmentService;
+use App\Services\IcpScoringService;
 use App\Services\ImportQueueService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -38,6 +39,7 @@ class EnrichImportItem implements ShouldQueue
         CnpjDataProvider $provider,
         CnpjEnrichmentService $enrichment,
         ImportQueueService $queue,
+        IcpScoringService $icp,
     ): void {
         $item = ImportItem::query()
             ->findOrFail(
@@ -77,6 +79,10 @@ class EnrichImportItem implements ShouldQueue
                     $data,
                     $provider->name(),
                 );
+
+            $icp->calculate(
+                $company
+            );
 
             $item->update([
                 'status' => 'completed',
