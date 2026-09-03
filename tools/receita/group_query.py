@@ -18,9 +18,9 @@ class CompanyNotFound(ReceitaDataError):
 
 def normalize_root(value: str) -> str:
     normalized = re.sub(
-        r"\D",
+        r"[^A-Z0-9]",
         "",
-        value,
+        value.upper(),
     )
 
     if len(normalized) == 14:
@@ -28,7 +28,15 @@ def normalize_root(value: str) -> str:
 
     if len(normalized) != 8:
         raise ValueError(
-            "A raiz do CNPJ deve possuir 8 dígitos."
+            "A raiz do CNPJ deve possuir 8 caracteres."
+        )
+
+    if not re.fullmatch(
+        r"[A-Z0-9]{8}",
+        normalized,
+    ):
+        raise ValueError(
+            "A raiz do CNPJ contém caracteres inválidos."
         )
 
     return normalized
