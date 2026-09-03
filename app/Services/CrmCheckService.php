@@ -5,17 +5,127 @@ namespace App\Services;
 use App\Contracts\CrmCompanyProvider;
 use App\Models\Company;
 use App\Models\CompanyCrmCheck;
+use Throwable;
 
 final class CrmCheckService
 {
+    public function __construct(
+        private readonly CustomerRegistryService $customers,
+    ) {}
+
     public function check(
         Company $company,
         CrmCompanyProvider $provider,
     ): CompanyCrmCheck {
-        $result =
-            $provider->findCompany(
+        /*
+         * A base oficial interna é a nossa
+         * fonte prioritária para saber se
+         * uma empresa já é cliente.
+         */
+        $customerMatch =
+            $this->customers->find(
                 $company
             );
+
+        $crmChecked = true;
+        $crmError = null;
+
+        try {
+            $result =
+                $provider->findCompany(
+                    $company
+                );
+        } catch (Throwable $exception) {
+            /*
+             * Se a empresa já está confirmada
+             * como cliente na base interna,
+             * uma indisponibilidade do CRM
+             * não pode apagar essa informação.
+             */
+            if (! $customerMatch) {
+                throw $exception;
+            }
+
+            $crmChecked = false;
+
+            $crmError = mb_substr(
+                $exception->getMessage(),
+                0,
+                1000
+            );
+
+            $result =
+                $this->emptyResult();
+        }
+
+        $crmReportedStatus =
+            $crmChecked
+                ? $this->status(
+                    $result
+                )
+                : null;
+
+        /*
+         * A base interna sempre ganha.
+         */
+        $status =
+            $customerMatch
+                ? 'client'
+                : (
+                    $crmReportedStatus
+                    ?? 'not_found'
+                );
+
+        $metadata =
+            $result['metadata'];
+
+        $metadata['status_source'] =
+            $customerMatch
+                ? 'exportcontrol_customer_registry'
+                : 'crm';
+
+        $metadata['crm_checked'] =
+            $crmChecked;
+
+        $metadata['crm_reported_status'] =
+            $crmReportedStatus;
+
+        $metadata['crm_conflict'] =
+            $customerMatch !== null
+            && $crmChecked
+            && $crmReportedStatus
+                !== 'client';
+
+        if ($customerMatch) {
+            $entry =
+                $customerMatch[
+                    'entry'
+                ];
+
+            $metadata[
+                'customer_registry'
+            ] = [
+                'entry_id' => $entry->id,
+
+                'source' => $entry->source,
+
+                'corporate_name' => $entry
+                    ->corporate_name,
+
+                'matched_by' => $customerMatch[
+                        'matched_by'
+                    ],
+
+                'matched_value' => $customerMatch[
+                        'matched_value'
+                    ],
+            ];
+        }
+
+        if ($crmError !== null) {
+            $metadata['crm_error'] =
+                $crmError;
+        }
 
         return CompanyCrmCheck::query()
             ->updateOrCreate(
@@ -25,10 +135,14 @@ final class CrmCheckService
                 [
                     'provider' => $provider->name(),
 
-                    'status' => $this->status(
-                        $result
-                    ),
+                    'status' => $status,
 
+                    /*
+                     * Continuamos armazenando
+                     * os dados reais do HubSpot,
+                     * mesmo quando a base interna
+                     * sobrescreve a classificação.
+                     */
                     'external_id' => $result[
                             'external_id'
                         ],
@@ -73,9 +187,7 @@ final class CrmCheckService
                             'external_url'
                         ],
 
-                    'metadata' => $result[
-                            'metadata'
-                        ],
+                    'metadata' => $metadata,
 
                     'checked_at' => now(),
                 ]
@@ -107,15 +219,17 @@ final class CrmCheckService
         }
 
         if (
-            $result['lifecycle_stage']
-            === 'customer'
+            $result[
+                'lifecycle_stage'
+            ] === 'customer'
         ) {
             return 'client';
         }
 
         if (
-            $result['lifecycle_stage']
-            === 'opportunity'
+            $result[
+                'lifecycle_stage'
+            ] === 'opportunity'
             || $result[
                 'associated_deals_count'
             ] > 0
@@ -135,5 +249,53 @@ final class CrmCheckService
         }
 
         return 'known';
+    }
+
+    /**
+     * @return array{
+     *     found: bool,
+     *     external_id: null,
+     *     name: null,
+     *     domain: null,
+     *     lifecycle_stage: null,
+     *     owner_id: null,
+     *     contacted_count: int,
+     *     associated_deals_count: int,
+     *     last_contacted_at: null,
+     *     matched_by: null,
+     *     matched_value: null,
+     *     external_url: null,
+     *     metadata: array<string, mixed>
+     * }
+     */
+    private function emptyResult(): array
+    {
+        return [
+            'found' => false,
+
+            'external_id' => null,
+
+            'name' => null,
+
+            'domain' => null,
+
+            'lifecycle_stage' => null,
+
+            'owner_id' => null,
+
+            'contacted_count' => 0,
+
+            'associated_deals_count' => 0,
+
+            'last_contacted_at' => null,
+
+            'matched_by' => null,
+
+            'matched_value' => null,
+
+            'external_url' => null,
+
+            'metadata' => [],
+        ];
     }
 }

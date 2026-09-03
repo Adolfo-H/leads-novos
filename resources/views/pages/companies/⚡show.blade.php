@@ -24,6 +24,7 @@ public bool $showCnaeForm = false;
         $this->company = $company->load([
             'establishments.cnaes',
             'icpScore',
+            'crmCheck',
         ]);
     }
 
@@ -239,6 +240,8 @@ private function reloadCompany(): void
         ->fresh()
         ->load([
             'establishments.cnaes',
+            'icpScore',
+            'crmCheck',
         ]);
 
     unset(
@@ -454,6 +457,60 @@ private function reloadCompany(): void
         <div class="ec-intelligence-grid">
 
             {{-- CRM --}}
+
+            @php
+                $crm = $company->crmCheck;
+
+                $crmStatusLabel = match ($crm?->status) {
+                    'client' => 'Cliente',
+                    'opportunity' => 'Oportunidade',
+                    'prospected' => 'Prospectado',
+                    'known' => 'Conhecido',
+                    'not_found' => 'Não encontrado',
+                    default => 'Não verificado',
+                };
+
+                $crmStatusClasses = match ($crm?->status) {
+                    'client' =>
+                        'bg-emerald-500/15 text-emerald-300',
+
+                    'opportunity' =>
+                        'bg-amber-500/15 text-amber-300',
+
+                    'prospected' =>
+                        'bg-sky-500/15 text-sky-300',
+
+                    'known' =>
+                        'bg-violet-500/15 text-violet-300',
+
+                    'not_found' =>
+                        'bg-white/5 text-[#9ba3c2]',
+
+                    default =>
+                        'bg-white/5 text-[#7f87a7]',
+                };
+
+                $crmCaption = match ($crm?->status) {
+                    'client' =>
+                        'Já é cliente no CRM',
+
+                    'opportunity' =>
+                        'Já possui oportunidade comercial',
+
+                    'prospected' =>
+                        'Já houve contato comercial',
+
+                    'known' =>
+                        'Registro localizado no CRM',
+
+                    'not_found' =>
+                        'Não localizado no HubSpot',
+
+                    default =>
+                        'Base comercial',
+                };
+            @endphp
+
             <div class="ec-intelligence-card">
 
                 <div class="ec-intelligence-top">
@@ -462,17 +519,57 @@ private function reloadCompany(): void
                         CRM
                     </span>
 
-                    <span class="ec-intelligence-dot"></span>
+                    @if ($crm)
+
+                        <span
+                            class="
+                                rounded-full px-2 py-1
+                                text-[10px] font-bold
+                                uppercase tracking-wide
+                                {{ $crmStatusClasses }}
+                            "
+                        >
+                            {{ $crmStatusLabel }}
+                        </span>
+
+                    @else
+
+                        <span class="ec-intelligence-dot"></span>
+
+                    @endif
 
                 </div>
 
                 <div class="ec-intelligence-value">
-                    Não verificado
+                    {{ $crmStatusLabel }}
                 </div>
 
                 <div class="ec-intelligence-caption">
-                    Base comercial
+                    {{ $crmCaption }}
                 </div>
+
+                @if (
+                    $crm?->matched_value
+                    || $crm?->external_domain
+                )
+
+                    <div
+                        class="
+                            mt-2 truncate text-[11px]
+                            text-[#7f87a7]
+                        "
+                        title="{{
+                            $crm->matched_value
+                            ?? $crm->external_domain
+                        }}"
+                    >
+                        {{
+                            $crm->matched_value
+                            ?? $crm->external_domain
+                        }}
+                    </div>
+
+                @endif
 
             </div>
 
@@ -633,6 +730,259 @@ private function reloadCompany(): void
             </div>
 
         </div>
+
+        @if ($company->crmCheck)
+
+            @php
+                $crm = $company->crmCheck;
+            @endphp
+
+            <details
+                class="
+                    mt-4 overflow-hidden rounded-xl
+                    border border-white/5
+                    bg-white/[0.025]
+                "
+            >
+
+                <summary
+                    class="
+                        flex cursor-pointer list-none
+                        items-center justify-between
+                        px-5 py-4
+                        text-sm font-semibold
+                        text-[#d9ddef]
+                        transition
+                        hover:bg-white/[0.025]
+                    "
+                >
+                    <span>
+                        Detalhamento do CRM
+                    </span>
+
+                    <span
+                        class="
+                            text-xs font-medium
+                            text-[#7f87a7]
+                        "
+                    >
+                        {{ $crmStatusLabel }}
+                        •
+                        {{ strtoupper($crm->provider) }}
+                    </span>
+                </summary>
+
+                <div
+                    class="
+                        border-t border-white/5
+                        px-5 py-5
+                    "
+                >
+
+                    <div
+                        class="
+                            grid gap-4
+                            sm:grid-cols-2
+                            xl:grid-cols-4
+                        "
+                    >
+
+                        <div>
+                            <div class="ec-field-label">
+                                Status comercial
+                            </div>
+
+                            <div
+                                class="
+                                    mt-1 text-sm font-semibold
+                                    text-[#eef1ff]
+                                "
+                            >
+                                {{ $crmStatusLabel }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="ec-field-label">
+                                Empresa no CRM
+                            </div>
+
+                            <div
+                                class="
+                                    mt-1 text-sm font-semibold
+                                    text-[#eef1ff]
+                                "
+                            >
+                                {{
+                                    $crm->external_name
+                                    ?: '—'
+                                }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="ec-field-label">
+                                Encontrado por
+                            </div>
+
+                            <div
+                                class="
+                                    mt-1 text-sm
+                                    text-[#d9ddef]
+                                "
+                            >
+                                @if ($crm->matched_by)
+
+                                    {{
+                                        match (
+                                            $crm->matched_by
+                                        ) {
+                                            'domain' =>
+                                                'Domínio',
+
+                                            'name' =>
+                                                'Nome',
+
+                                            default =>
+                                                ucfirst(
+                                                    $crm->matched_by
+                                                ),
+                                        }
+                                    }}
+
+                                    @if ($crm->matched_value)
+                                        ·
+                                        {{ $crm->matched_value }}
+                                    @endif
+
+                                @else
+                                    —
+                                @endif
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="ec-field-label">
+                                Lifecycle HubSpot
+                            </div>
+
+                            <div
+                                class="
+                                    mt-1 text-sm
+                                    text-[#d9ddef]
+                                "
+                            >
+                                {{
+                                    $crm->lifecycle_stage
+                                    ?: '—'
+                                }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="ec-field-label">
+                                Interações registradas
+                            </div>
+
+                            <div
+                                class="
+                                    mt-1 text-sm font-semibold
+                                    text-[#eef1ff]
+                                "
+                            >
+                                {{ $crm->contacted_count }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="ec-field-label">
+                                Negócios associados
+                            </div>
+
+                            <div
+                                class="
+                                    mt-1 text-sm font-semibold
+                                    text-[#eef1ff]
+                                "
+                            >
+                                {{
+                                    $crm
+                                        ->associated_deals_count
+                                }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="ec-field-label">
+                                Último contato
+                            </div>
+
+                            <div
+                                class="
+                                    mt-1 text-sm
+                                    text-[#d9ddef]
+                                "
+                            >
+                                {{
+                                    $crm->last_contacted_at
+                                        ?->format(
+                                            'd/m/Y H:i'
+                                        )
+                                    ?? '—'
+                                }}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="ec-field-label">
+                                Verificado em
+                            </div>
+
+                            <div
+                                class="
+                                    mt-1 text-sm
+                                    text-[#d9ddef]
+                                "
+                            >
+                                {{
+                                    $crm->checked_at
+                                        ?->format(
+                                            'd/m/Y H:i'
+                                        )
+                                    ?? '—'
+                                }}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    @if ($crm->external_url)
+
+                        <div class="mt-5">
+
+                            <a
+                                href="{{ $crm->external_url }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="ec-button-secondary"
+                            >
+                                Abrir no HubSpot
+
+                                <span aria-hidden="true">
+                                    ↗
+                                </span>
+                            </a>
+
+                        </div>
+
+                    @endif
+
+                </div>
+
+            </details>
+
+        @endif
+
 
         @if ($company->icpScore)
 
