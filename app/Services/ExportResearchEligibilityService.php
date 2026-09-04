@@ -7,6 +7,10 @@ use Carbon\CarbonImmutable;
 
 final class ExportResearchEligibilityService
 {
+    public function __construct(
+        private readonly CrmReprospectingPolicyService $reprospecting,
+    ) {}
+
     /**
      * @return array{
      *     eligible: bool,
@@ -64,6 +68,38 @@ final class ExportResearchEligibilityService
                     default => 'Empresa já está sendo trabalhada.',
                 }
             );
+        }
+
+        /*
+         * Prospectado pode voltar para pesquisa
+         * quando terminar o período de carência.
+         */
+        if (
+            $crm->status
+            === 'prospected'
+        ) {
+            $reprospecting =
+                $this->reprospecting
+                    ->evaluate(
+                        $crm
+                    );
+
+            if (
+                ! $reprospecting[
+                    'eligible'
+                ]
+            ) {
+                return $this->blocked(
+                    reason: 'crm_prospected_'
+                        .$reprospecting[
+                            'reason'
+                        ],
+
+                    message: $reprospecting[
+                            'message'
+                        ]
+                );
+            }
         }
 
         $icp =

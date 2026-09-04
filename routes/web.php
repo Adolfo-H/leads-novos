@@ -24,6 +24,11 @@ require __DIR__.'/settings.php';
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire(
+        '/leads',
+        'pages::leads.index'
+    )->name('leads.index');
+
+    Route::livewire(
         '/empresas',
         'pages::companies.index'
     )->name('companies.index');

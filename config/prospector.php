@@ -1,6 +1,18 @@
 <?php
 
 return [
+    'crm' => [
+        /*
+         * Depois deste período, empresas
+         * apenas prospectadas podem voltar
+         * automaticamente para a fila SDR.
+         */
+        'reprospecting_after_days' => (int) env(
+            'CRM_REPROSPECT_AFTER_DAYS',
+            180
+        ),
+    ],
+
     'export_research' => [
         /*
          * A pesquisa externa fica desligada
@@ -38,7 +50,6 @@ return [
         'blocked_crm_statuses' => [
             'client',
             'opportunity',
-            'prospected',
         ],
     ],
 ];

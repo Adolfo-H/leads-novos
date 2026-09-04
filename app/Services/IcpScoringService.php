@@ -47,6 +47,10 @@ final class IcpScoringService
         '2143',
     ];
 
+    public function __construct(
+        private readonly SdrScoringService $sdr,
+    ) {}
+
     public function calculate(
         Company $company
     ): CompanyIcpScore {
@@ -364,7 +368,7 @@ final class IcpScoringService
             $score
         );
 
-        return CompanyIcpScore::query()
+        $icpScore = CompanyIcpScore::query()
             ->updateOrCreate(
                 [
                     'company_id' => $company->id,
@@ -385,6 +389,23 @@ final class IcpScoringService
                     'calculated_at' => now(),
                 ]
             );
+
+        /*
+         * O ICP acabou de mudar.
+         *
+         * Garantimos que o Score SDR leia
+         * o novo resultado, e não uma relação
+         * previamente carregada.
+         */
+        $company->unsetRelation(
+            'icpScore'
+        );
+
+        $this->sdr->recalculate(
+            $company
+        );
+
+        return $icpScore->refresh();
     }
 
     /**
