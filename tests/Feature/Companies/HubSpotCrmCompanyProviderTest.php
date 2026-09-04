@@ -32,8 +32,8 @@ it('finds a company by corporate email domain', function () {
         ]
     );
 
-    Http::fake([
-        'api.hubapi.com/*' => Http::response([
+    Http::fakeSequence()
+        ->push([
             'total' => 1,
 
             'results' => [
@@ -57,8 +57,15 @@ it('finds a company by corporate email domain', function () {
                     ],
                 ],
             ],
-        ]),
-    ]);
+        ])
+        /*
+         * A empresa foi localizada,
+         * mas neste teste não precisamos
+         * carregar negócios reais.
+         */
+        ->push([
+            'results' => [],
+        ]);
 
     $result = app(
         HubSpotCrmCompanyProvider::class
@@ -88,7 +95,7 @@ it('finds a company by corporate email domain', function () {
         $result['contacted_count']
     )->toBe(10);
 
-    Http::assertSentCount(1);
+    Http::assertSentCount(2);
 });
 
 it('falls back to normalized company name', function () {
@@ -139,6 +146,13 @@ it('falls back to normalized company name', function () {
                     ],
                 ],
             ],
+        ])
+        /*
+         * Consulta das associações da
+         * empresa encontrada.
+         */
+        ->push([
+            'results' => [],
         ]);
 
     $result = app(
@@ -159,7 +173,7 @@ it('falls back to normalized company name', function () {
         $result['external_id']
     )->toBe('555');
 
-    Http::assertSentCount(2);
+    Http::assertSentCount(3);
 });
 
 it('returns not found when neither domain nor name match', function () {
@@ -203,4 +217,182 @@ it('returns not found when neither domain nor name match', function () {
     )->toBeNull();
 
     Http::assertSentCount(2);
+});
+
+it('loads associated deals with their real commercial state', function () {
+    $company = app(
+        CompanyService::class
+    )->createOrUpdateFromEstablishment(
+        [
+            'corporate_name' => 'ATVOS TESTE',
+        ],
+        [
+            'cnpj' => '08.070.566/0001-00',
+
+            'type' => 'matrix',
+
+            'registration_status_code' => '02',
+
+            'email' => 'fiscal@atvosteste.com.br',
+        ]
+    );
+
+    Http::fakeSequence()
+        /*
+         * Busca da empresa por domínio.
+         */
+        ->push([
+            'total' => 1,
+
+            'results' => [
+                [
+                    'id' => '8600495755',
+
+                    'properties' => [
+                        'name' => 'Atvos Teste',
+
+                        'domain' => 'atvosteste.com.br',
+
+                        'lifecyclestage' => 'customer',
+
+                        'hubspot_owner_id' => '123',
+
+                        'num_contacted_notes' => '10',
+
+                        'num_associated_deals' => '2',
+
+                        'notes_last_contacted' => '2026-09-01T10:00:00Z',
+                    ],
+                ],
+            ],
+        ])
+        /*
+         * Associações empresa -> negócios.
+         */
+        ->push([
+            'results' => [
+                [
+                    'id' => 'deal-open',
+                    'type' => 'company_to_deal',
+                ],
+                [
+                    'id' => 'deal-lost',
+                    'type' => 'company_to_deal',
+                ],
+            ],
+        ])
+        /*
+         * Batch read dos negócios.
+         */
+        ->push([
+            'results' => [
+                [
+                    'id' => 'deal-open',
+
+                    'properties' => [
+                        'dealname' => 'Atvos - Licenciamento',
+
+                        'dealstage' => '13185626',
+
+                        'pipeline' => 'default',
+
+                        'hs_is_closed' => 'false',
+
+                        'hs_is_closed_won' => 'false',
+
+                        'closedate' => null,
+                    ],
+                ],
+                [
+                    'id' => 'deal-lost',
+
+                    'properties' => [
+                        'dealname' => 'Atvos - Retroativas',
+
+                        'dealstage' => 'closedlost',
+
+                        'pipeline' => 'default',
+
+                        'hs_is_closed' => 'true',
+
+                        'hs_is_closed_won' => 'false',
+
+                        'closedate' => '2025-04-02T15:03:46Z',
+                    ],
+                ],
+            ],
+        ])
+        /*
+         * Pipelines / labels.
+         */
+        ->push([
+            'results' => [
+                [
+                    'id' => 'default',
+
+                    'label' => 'Pipeline Comercial',
+
+                    'stages' => [
+                        [
+                            'id' => '13185626',
+
+                            'label' => 'Proposta apresentada',
+                        ],
+                        [
+                            'id' => 'closedlost',
+
+                            'label' => 'Recusado',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+    $result = app(
+        HubSpotCrmCompanyProvider::class
+    )->findCompany(
+        $company
+    );
+
+    expect(
+        $result['deals']
+    )->toHaveCount(2);
+
+    expect(
+        $result[
+            'associated_deals_count'
+        ]
+    )->toBe(2);
+
+    expect(
+        $result['deals'][0]['name']
+    )->toBe(
+        'Atvos - Licenciamento'
+    );
+
+    expect(
+        $result['deals'][0]['stage_label']
+    )->toBe(
+        'Proposta apresentada'
+    );
+
+    expect(
+        $result['deals'][0]['is_closed']
+    )->toBeFalse();
+
+    expect(
+        $result['deals'][0]['is_closed_won']
+    )->toBeFalse();
+
+    expect(
+        $result['deals'][1]['stage_label']
+    )->toBe(
+        'Recusado'
+    );
+
+    expect(
+        $result['deals'][1]['is_closed']
+    )->toBeTrue();
+
+    Http::assertSentCount(4);
 });

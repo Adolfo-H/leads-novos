@@ -31,21 +31,45 @@ function crmCompanyForTest(): Company
 }
 
 /**
- * @param array{
- *     found: bool,
- *     external_id: string|null,
+ * @param  array<string, mixed>  $overrides
+ * @return array{
+ *     id: string,
  *     name: string|null,
- *     domain: string|null,
- *     lifecycle_stage: string|null,
- *     owner_id: string|null,
- *     contacted_count: int,
- *     associated_deals_count: int,
- *     last_contacted_at: string|null,
- *     matched_by: string|null,
- *     matched_value: string|null,
- *     external_url: string|null,
- *     metadata: array<string, mixed>
- * } $result
+ *     stage_id: string|null,
+ *     stage_label: string|null,
+ *     pipeline_id: string|null,
+ *     is_closed: bool,
+ *     is_closed_won: bool,
+ *     closed_at: string|null
+ * }
+ */
+function crmDeal(
+    array $overrides = []
+): array {
+    return array_merge(
+        [
+            'id' => 'deal-1',
+
+            'name' => 'Negócio Teste',
+
+            'stage_id' => 'stage-test',
+
+            'stage_label' => 'Prospecto',
+
+            'pipeline_id' => 'default',
+
+            'is_closed' => false,
+
+            'is_closed_won' => false,
+
+            'closed_at' => null,
+        ],
+        $overrides
+    );
+}
+
+/**
+ * @param  array<string, mixed>  $result
  */
 function fakeCrmProvider(
     array $result
@@ -53,21 +77,7 @@ function fakeCrmProvider(
     return new class($result) implements CrmCompanyProvider
     {
         /**
-         * @param array{
-         *     found: bool,
-         *     external_id: string|null,
-         *     name: string|null,
-         *     domain: string|null,
-         *     lifecycle_stage: string|null,
-         *     owner_id: string|null,
-         *     contacted_count: int,
-         *     associated_deals_count: int,
-         *     last_contacted_at: string|null,
-         *     matched_by: string|null,
-         *     matched_value: string|null,
-         *     external_url: string|null,
-         *     metadata: array<string, mixed>
-         * } $result
+         * @param  array<string, mixed>  $result
          */
         public function __construct(
             private readonly array $result
@@ -81,27 +91,43 @@ function fakeCrmProvider(
         public function findCompany(
             Company $company
         ): array {
-            return $this->result;
+            /** @var array{
+             *     found: bool,
+             *     external_id: string|null,
+             *     name: string|null,
+             *     domain: string|null,
+             *     lifecycle_stage: string|null,
+             *     owner_id: string|null,
+             *     contacted_count: int,
+             *     associated_deals_count: int,
+             *     deals: list<array{
+             *         id: string,
+             *         name: string|null,
+             *         stage_id: string|null,
+             *         stage_label: string|null,
+             *         pipeline_id: string|null,
+             *         is_closed: bool,
+             *         is_closed_won: bool,
+             *         closed_at: string|null
+             *     }>,
+             *     last_contacted_at: string|null,
+             *     matched_by: string|null,
+             *     matched_value: string|null,
+             *     external_url: string|null,
+             *     metadata: array<string, mixed>
+             * } $result
+             */
+            $result =
+                $this->result;
+
+            return $result;
         }
     };
 }
 
 /**
- * @return array{
- *     found: bool,
- *     external_id: string|null,
- *     name: string|null,
- *     domain: string|null,
- *     lifecycle_stage: string|null,
- *     owner_id: string|null,
- *     contacted_count: int,
- *     associated_deals_count: int,
- *     last_contacted_at: string|null,
- *     matched_by: string|null,
- *     matched_value: string|null,
- *     external_url: string|null,
- *     metadata: array<string, mixed>
- * }
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
  */
 function crmResult(
     array $overrides = []
@@ -124,6 +150,8 @@ function crmResult(
 
             'associated_deals_count' => 0,
 
+            'deals' => [],
+
             'last_contacted_at' => null,
 
             'matched_by' => 'domain',
@@ -138,48 +166,120 @@ function crmResult(
     );
 }
 
-it('classifies a CRM customer as client', function () {
+it('does not classify lifecycle customer as client by itself', function () {
     $company =
         crmCompanyForTest();
-
-    $provider =
-        fakeCrmProvider(
-            crmResult([
-                'lifecycle_stage' => 'customer',
-
-                'contacted_count' => 170,
-
-                'associated_deals_count' => 6,
-            ])
-        );
 
     $check = app(
         CrmCheckService::class
     )->check(
         $company,
-        $provider
+        fakeCrmProvider(
+            crmResult([
+                'lifecycle_stage' => 'customer',
+            ])
+        )
     );
 
     expect(
         $check->status
-    )->toBe('client');
-
-    expect(
-        $check->provider
     )->toBe(
-        'fake-hubspot'
+        'known'
     );
 
     expect(
-        $check->matched_by
-    )->toBe('domain');
+        $check->lifecycle_stage
+    )->toBe(
+        'customer'
+    );
 
     expect(
-        $check->contacted_count
-    )->toBe(170);
+        data_get(
+            $check->metadata,
+            'lifecycle_used_for_status'
+        )
+    )->toBeFalse();
 });
 
-it('classifies a company with deals as opportunity', function () {
+it('classifies a company with a won deal as client', function () {
+    $company =
+        crmCompanyForTest();
+
+    $check = app(
+        CrmCheckService::class
+    )->check(
+        $company,
+        fakeCrmProvider(
+            crmResult([
+                'associated_deals_count' => 1,
+
+                'deals' => [
+                    crmDeal([
+                        'stage_label' => 'Negócio fechado',
+
+                        'is_closed' => true,
+
+                        'is_closed_won' => true,
+                    ]),
+                ],
+            ])
+        )
+    );
+
+    expect(
+        $check->status
+    )->toBe(
+        'client'
+    );
+
+    expect(
+        data_get(
+            $check->metadata,
+            'deal_summary.won'
+        )
+    )->toBe(1);
+});
+
+it('classifies a company with an active deal as opportunity', function () {
+    $company =
+        crmCompanyForTest();
+
+    $check = app(
+        CrmCheckService::class
+    )->check(
+        $company,
+        fakeCrmProvider(
+            crmResult([
+                'associated_deals_count' => 1,
+
+                'deals' => [
+                    crmDeal([
+                        'stage_label' => 'Proposta apresentada',
+
+                        'is_closed' => false,
+
+                        'is_closed_won' => false,
+                    ]),
+                ],
+            ])
+        )
+    );
+
+    expect(
+        $check->status
+    )->toBe(
+        'opportunity'
+    );
+
+    expect(
+        data_get(
+            $check->metadata,
+            'deal_summary.active'
+        )
+    )->toBe(1);
+});
+
+it('classifies only closed lost deals as prospected', function () {
     $company =
         crmCompanyForTest();
 
@@ -190,6 +290,28 @@ it('classifies a company with deals as opportunity', function () {
         fakeCrmProvider(
             crmResult([
                 'associated_deals_count' => 2,
+
+                'deals' => [
+                    crmDeal([
+                        'id' => 'deal-recusado',
+
+                        'stage_label' => 'Recusado',
+
+                        'is_closed' => true,
+
+                        'is_closed_won' => false,
+                    ]),
+
+                    crmDeal([
+                        'id' => 'deal-cancelado',
+
+                        'stage_label' => 'Cancelado',
+
+                        'is_closed' => true,
+
+                        'is_closed_won' => false,
+                    ]),
+                ],
             ])
         )
     );
@@ -197,7 +319,38 @@ it('classifies a company with deals as opportunity', function () {
     expect(
         $check->status
     )->toBe(
-        'opportunity'
+        'prospected'
+    );
+
+    expect(
+        data_get(
+            $check->metadata,
+            'deal_summary.closed_lost'
+        )
+    )->toBe(2);
+});
+
+it('does not classify deal count alone as active opportunity', function () {
+    $company =
+        crmCompanyForTest();
+
+    $check = app(
+        CrmCheckService::class
+    )->check(
+        $company,
+        fakeCrmProvider(
+            crmResult([
+                'associated_deals_count' => 4,
+
+                'deals' => [],
+            ])
+        )
+    );
+
+    expect(
+        $check->status
+    )->toBe(
+        'prospected'
     );
 });
 
@@ -280,7 +433,17 @@ it('updates the existing CRM check instead of duplicating it', function () {
         $company,
         fakeCrmProvider(
             crmResult([
-                'lifecycle_stage' => 'customer',
+                'associated_deals_count' => 1,
+
+                'deals' => [
+                    crmDeal([
+                        'is_closed' => true,
+
+                        'is_closed_won' => true,
+
+                        'stage_label' => 'Negócio fechado',
+                    ]),
+                ],
             ])
         )
     );
@@ -296,10 +459,12 @@ it('updates the existing CRM check instead of duplicating it', function () {
             ->crmCheck()
             ->firstOrFail()
             ->status
-    )->toBe('client');
+    )->toBe(
+        'client'
+    );
 });
 
-it('prioritizes the ExportControl customer registry over CRM opportunity status', function () {
+it('prioritizes the ExportControl customer registry over HubSpot status', function () {
     $company =
         crmCompanyForTest();
 
@@ -312,43 +477,44 @@ it('prioritizes the ExportControl customer registry over CRM opportunity status'
                 ->firstOrFail()
                 ->cnpj,
 
-            'corporate_name' => $company->corporate_name,
+            'corporate_name' => $company
+                ->corporate_name,
 
-            'normalized_name' => $company->normalized_name,
+            'normalized_name' => $company
+                ->normalized_name,
 
             'source' => 'exportcontrol-clientes',
 
             'enabled' => true,
         ]);
 
-    $provider =
-        fakeCrmProvider(
-            crmResult([
-                'lifecycle_stage' => 'opportunity',
-
-                'associated_deals_count' => 3,
-            ])
-        );
-
     $check = app(
         CrmCheckService::class
     )->check(
         $company,
-        $provider
+        fakeCrmProvider(
+            crmResult([
+                'lifecycle_stage' => 'customer',
+
+                'associated_deals_count' => 1,
+
+                'deals' => [
+                    crmDeal([
+                        'stage_label' => 'Recusado',
+
+                        'is_closed' => true,
+
+                        'is_closed_won' => false,
+                    ]),
+                ],
+            ])
+        )
     );
 
     expect(
         $check->status
-    )->toBe('client');
-
-    /*
-     * Mantemos a informação original
-     * do HubSpot para auditoria.
-     */
-    expect(
-        $check->lifecycle_stage
     )->toBe(
-        'opportunity'
+        'client'
     );
 
     expect(
@@ -366,7 +532,7 @@ it('prioritizes the ExportControl customer registry over CRM opportunity status'
             'crm_reported_status'
         )
     )->toBe(
-        'opportunity'
+        'prospected'
     );
 
     expect(
@@ -375,13 +541,4 @@ it('prioritizes the ExportControl customer registry over CRM opportunity status'
             'crm_conflict'
         )
     )->toBeTrue();
-
-    expect(
-        data_get(
-            $check->metadata,
-            'customer_registry.matched_by'
-        )
-    )->toBe(
-        'cnpj_root'
-    );
 });

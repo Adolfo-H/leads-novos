@@ -484,6 +484,26 @@ it('checks CRM automatically after group enrichment', function () {
 
                     'associated_deals_count' => 3,
 
+                    'deals' => [
+                        [
+                            'id' => 'deal-won-987654',
+
+                            'name' => 'Cooperativa CRM Automatica - Fechado',
+
+                            'stage_id' => 'closedwon',
+
+                            'stage_label' => 'Negócio fechado',
+
+                            'pipeline_id' => 'default',
+
+                            'is_closed' => true,
+
+                            'is_closed_won' => true,
+
+                            'closed_at' => '2026-08-20T10:00:00Z',
+                        ],
+                    ],
+
                     'last_contacted_at' => '2026-09-01T10:00:00Z',
 
                     'matched_by' => 'domain',

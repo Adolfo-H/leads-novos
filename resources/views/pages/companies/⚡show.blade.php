@@ -1987,7 +1987,7 @@ private function reloadCompany(): void
 
                         <div>
                             <div class="ec-field-label">
-                                Lifecycle HubSpot
+                                Lifecycle HubSpot (informativo)
                             </div>
 
                             <div
@@ -2079,6 +2079,268 @@ private function reloadCompany(): void
                         </div>
 
                     </div>
+
+                    {{-- NEGÓCIOS HUBSPOT --}}
+                    @php
+                        $crmDeals =
+                            data_get(
+                                $crm->metadata,
+                                'deals',
+                                []
+                            );
+
+                        $dealSummary =
+                            data_get(
+                                $crm->metadata,
+                                'deal_summary',
+                                []
+                            );
+
+                        $crmDeals =
+                            is_array($crmDeals)
+                                ? $crmDeals
+                                : [];
+                    @endphp
+
+                    @if ($crmDeals !== [])
+
+                        <div
+                            class="
+                                mt-5 border-t
+                                border-white/5
+                                pt-5
+                            "
+                        >
+
+                            <div
+                                class="
+                                    flex flex-col gap-2
+                                    sm:flex-row
+                                    sm:items-center
+                                    sm:justify-between
+                                "
+                            >
+
+                                <div>
+
+                                    <div
+                                        class="
+                                            text-sm
+                                            font-semibold
+                                            text-[#eef1ff]
+                                        "
+                                    >
+                                        Negócios HubSpot
+                                    </div>
+
+                                    <div
+                                        class="
+                                            mt-0.5 text-xs
+                                            text-[#7f87a7]
+                                        "
+                                    >
+                                        Negócios associados
+                                        usados para classificar
+                                        o status comercial.
+                                    </div>
+
+                                </div>
+
+                                <div
+                                    class="
+                                        text-xs
+                                        font-medium
+                                        text-[#8f99bb]
+                                    "
+                                >
+                                    {{
+                                        data_get(
+                                            $dealSummary,
+                                            'active',
+                                            0
+                                        )
+                                    }}
+                                    ativo(s)
+
+                                    ·
+
+                                    {{
+                                        data_get(
+                                            $dealSummary,
+                                            'won',
+                                            0
+                                        )
+                                    }}
+                                    ganho(s)
+
+                                    ·
+
+                                    {{
+                                        data_get(
+                                            $dealSummary,
+                                            'closed_lost',
+                                            0
+                                        )
+                                    }}
+                                    encerrado(s)
+                                </div>
+
+                            </div>
+
+
+                            <div
+                                class="
+                                    mt-4 grid gap-3
+                                    lg:grid-cols-2
+                                "
+                            >
+
+                                @foreach (
+                                    $crmDeals
+                                    as $deal
+                                )
+
+                                    @php
+                                        $dealWon =
+                                            (bool) (
+                                                $deal[
+                                                    'is_closed_won'
+                                                ]
+                                                ?? false
+                                            );
+
+                                        $dealClosed =
+                                            (bool) (
+                                                $deal[
+                                                    'is_closed'
+                                                ]
+                                                ?? false
+                                            );
+
+                                        $dealState =
+                                            $dealWon
+                                                ? 'Ganho'
+                                                : (
+                                                    $dealClosed
+                                                        ? 'Encerrado'
+                                                        : 'Ativo'
+                                                );
+
+                                        $dealStateClasses =
+                                            $dealWon
+                                                ? 'bg-emerald-500/15 text-emerald-300'
+                                                : (
+                                                    $dealClosed
+                                                        ? 'bg-rose-500/15 text-rose-300'
+                                                        : 'bg-amber-500/15 text-amber-300'
+                                                );
+                                    @endphp
+
+                                    <div
+                                        class="
+                                            rounded-xl
+                                            border
+                                            border-white/[0.06]
+                                            bg-white/[0.025]
+                                            p-4
+                                        "
+                                    >
+
+                                        <div
+                                            class="
+                                                flex items-start
+                                                justify-between
+                                                gap-3
+                                            "
+                                        >
+
+                                            <div
+                                                class="
+                                                    min-w-0
+                                                "
+                                            >
+
+                                                <div
+                                                    class="
+                                                        truncate
+                                                        text-sm
+                                                        font-semibold
+                                                        text-[#eef1ff]
+                                                    "
+                                                    title="{{
+                                                        $deal[
+                                                            'name'
+                                                        ]
+                                                        ?? 'Negócio sem nome'
+                                                    }}"
+                                                >
+                                                    {{
+                                                        $deal[
+                                                            'name'
+                                                        ]
+                                                        ?? 'Negócio sem nome'
+                                                    }}
+                                                </div>
+
+                                                <div
+                                                    class="
+                                                        mt-1
+                                                        text-xs
+                                                        text-[#8f99bb]
+                                                    "
+                                                >
+                                                    Etapa:
+
+                                                    <span
+                                                        class="
+                                                            text-[#c8cee4]
+                                                        "
+                                                    >
+                                                        {{
+                                                            $deal[
+                                                                'stage_label'
+                                                            ]
+                                                            ?? $deal[
+                                                                'stage_id'
+                                                            ]
+                                                            ?? '—'
+                                                        }}
+                                                    </span>
+                                                </div>
+
+                                            </div>
+
+
+                                            <span
+                                                class="
+                                                    shrink-0
+                                                    rounded-full
+                                                    px-2.5 py-1
+                                                    text-[10px]
+                                                    font-bold
+                                                    uppercase
+                                                    {{
+                                                        $dealStateClasses
+                                                    }}
+                                                "
+                                            >
+                                                {{
+                                                    $dealState
+                                                }}
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                @endforeach
+
+                            </div>
+
+                        </div>
+
+                    @endif
+
 
                     @if ($crm->external_url)
 
