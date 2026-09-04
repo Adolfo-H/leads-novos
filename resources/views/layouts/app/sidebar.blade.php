@@ -100,27 +100,15 @@
                     </span>
                 </div>
 
-                <div
-                    class="
-                        mx-2 flex items-center justify-between
-                        rounded-lg px-3 py-2 text-sm
-                        text-[#777e9e]
-                    "
+                <flux:sidebar.item
+                    icon="user-group"
+                    :href="route('leads.index')"
+                    :current="request()->routeIs('leads.*')"
+                    wire:navigate
+                    class="ec-nav-item"
                 >
-                    <span>
-                        Leads
-                    </span>
-
-                    <span
-                        class="
-                            rounded bg-white/5 px-1.5 py-0.5
-                            text-[9px] font-semibold uppercase
-                            tracking-wide
-                        "
-                    >
-                        breve
-                    </span>
-                </div>
+                    Leads
+                </flux:sidebar.item>
 
             </flux:sidebar.group>
 

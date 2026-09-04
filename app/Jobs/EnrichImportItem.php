@@ -16,6 +16,7 @@ use App\Services\IcpScoringService;
 use App\Services\ImportQueueService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Throwable;
 
 class EnrichImportItem implements ShouldQueue
@@ -29,6 +30,26 @@ class EnrichImportItem implements ShouldQueue
     public function __construct(
         public int $importItemId
     ) {}
+
+    /**
+     * @return list<WithoutOverlapping>
+     */
+    public function middleware(): array
+    {
+        return [
+            (
+                new WithoutOverlapping(
+                    'import-item-'
+                    .$this->importItemId
+                )
+            )
+                ->dontRelease()
+                ->expireAfter(
+                    $this->timeout
+                    + 60
+                ),
+        ];
+    }
 
     /**
      * @return list<int>

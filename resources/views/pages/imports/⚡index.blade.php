@@ -102,13 +102,30 @@ new class extends Component
         );
     }
 
-    public function refreshCurrentBatch(): void
-    {
+    public function refreshCurrentBatch(
+        ImportQueueService $queue
+    ): void {
+        $batch =
+            $this->currentBatch;
+
+        if ($batch) {
+            /*
+             * Além de atualizar a tela,
+             * verifica se algum job ficou
+             * abandonado na fila.
+             */
+            $queue->recoverStale(
+                $batch
+            );
+        }
+
         unset(
             $this->currentBatch,
             $this->currentItems,
             $this->currentStatusCounts,
             $this->currentIntelligenceCounts,
+            $this->currentBatchIsProcessing,
+            $this->currentProcessedCount,
             $this->recentBatches,
         );
     }

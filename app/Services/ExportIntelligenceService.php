@@ -40,6 +40,7 @@ final class ExportIntelligenceService
 
     public function __construct(
         private readonly ExportIntelligenceScoringService $scoring,
+        private readonly SdrScoringService $sdr,
     ) {}
 
     public function ensure(
@@ -127,6 +128,19 @@ final class ExportIntelligenceService
 
         $intelligence->update(
             $updates
+        );
+
+        /*
+         * A classificação de exportação mudou,
+         * então a prioridade comercial também
+         * pode ter mudado.
+         */
+        $company->unsetRelation(
+            'exportIntelligence'
+        );
+
+        $this->sdr->recalculate(
+            $company
         );
 
         return $intelligence->refresh();
@@ -253,6 +267,19 @@ final class ExportIntelligenceService
                 company: $company,
                 dimension: $dimension,
             );
+
+        /*
+         * A evidência recalculou uma dimensão
+         * de exportação; propagamos a mudança
+         * para o Score SDR imediatamente.
+         */
+        $company->unsetRelation(
+            'exportIntelligence'
+        );
+
+        $this->sdr->recalculate(
+            $company
+        );
 
         return $evidence->refresh();
     }

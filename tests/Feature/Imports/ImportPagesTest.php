@@ -6,6 +6,7 @@ use App\Models\ImportBatch;
 use App\Models\ImportItem;
 use App\Models\User;
 use App\Support\Cnpj;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
@@ -203,4 +204,118 @@ it('shows commercial alerts for CRM conflicts', function () {
         ->assertSee(
             'HubSpot: Oportunidade'
         );
+});
+
+it('recovers a stale import automatically when the imports page polls', function () {
+    Queue::fake();
+
+    $user =
+        User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+    $batch =
+        ImportBatch::query()
+            ->create([
+                'user_id' => $user->id,
+
+                'source_type' => 'manual',
+
+                'status' => 'processing',
+
+                'total_rows' => 1,
+
+                'valid_rows' => 1,
+
+                'processed_rows' => 0,
+            ]);
+
+    $base =
+        '778899660001';
+
+    $cnpj =
+        $base
+        .Cnpj::calculateCheckDigits(
+            $base
+        );
+
+    $item =
+        ImportItem::query()
+            ->create([
+                'import_batch_id' => $batch->id,
+
+                'row_number' => 1,
+
+                'raw_cnpj' => $cnpj,
+
+                'normalized_cnpj' => $cnpj,
+
+                'status' => 'queued',
+            ]);
+
+    /*
+     * Simula o caso real:
+     *
+     * banco diz "queued",
+     * mas o item está parado
+     * há muito tempo.
+     */
+    DB::table(
+        'import_items'
+    )
+        ->where(
+            'id',
+            $item->id
+        )
+        ->update([
+            'updated_at' => now()
+                ->subMinutes(30),
+        ]);
+
+    Livewire::actingAs(
+        $user
+    )
+        ->test(
+            'pages::imports.index'
+        )
+        ->set(
+            'batchId',
+            $batch->id
+        )
+        ->call(
+            'refreshCurrentBatch'
+        )
+        ->assertHasNoErrors();
+
+    $item->refresh();
+
+    expect(
+        $item->status
+    )->toBe(
+        'queued'
+    );
+
+    expect(
+        data_get(
+            $item->metadata,
+            'queue.recovery_count'
+        )
+    )->toBe(1);
+
+    expect(
+        data_get(
+            $item->metadata,
+            'queue.previous_status'
+        )
+    )->toBe(
+        'queued'
+    );
+
+    Queue::assertPushed(
+        EnrichImportItem::class,
+        fn (
+            EnrichImportItem $job
+        ): bool => $job->importItemId
+                === $item->id
+    );
 });

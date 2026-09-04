@@ -9,6 +9,8 @@ use App\Models\Company;
 use App\Services\CnpjImportService;
 use App\Services\ImportQueueService;
 use App\Support\Cnpj;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 
 it('queues ready import items', function () {
@@ -578,4 +580,219 @@ it('checks CRM automatically after group enrichment', function () {
     expect(
         $crm->contacted_count
     )->toBe(12);
+});
+
+it('automatically requeues a stale queued import item', function () {
+    Queue::fake();
+
+    $base =
+        '887755440001';
+
+    $cnpj =
+        $base
+        .Cnpj::calculateCheckDigits(
+            $base
+        );
+
+    $batch = app(
+        CnpjImportService::class
+    )->import([
+        $cnpj,
+    ]);
+
+    $item =
+        $batch
+            ->items()
+            ->firstOrFail();
+
+    /*
+     * Simula exatamente um registro
+     * que consta como "queued" no banco,
+     * mas ficou sem progresso.
+     */
+    $item->update([
+        'status' => 'queued',
+    ]);
+
+    DB::table(
+        'import_items'
+    )
+        ->where(
+            'id',
+            $item->id
+        )
+        ->update([
+            'updated_at' => now()
+                ->subMinutes(30),
+        ]);
+
+    $recovered = app(
+        ImportQueueService::class
+    )->recoverStale(
+        $batch,
+        afterMinutes: 20,
+    );
+
+    expect(
+        $recovered
+    )->toBe(1);
+
+    $item->refresh();
+
+    expect(
+        $item->status
+    )->toBe('queued');
+
+    expect(
+        data_get(
+            $item->metadata,
+            'queue.recovery_count'
+        )
+    )->toBe(1);
+
+    expect(
+        data_get(
+            $item->metadata,
+            'queue.previous_status'
+        )
+    )->toBe('queued');
+
+    Queue::assertPushed(
+        EnrichImportItem::class,
+        fn (
+            EnrichImportItem $job
+        ): bool => $job->importItemId
+                === $item->id
+    );
+});
+
+it('does not requeue an import item that is still recent', function () {
+    Queue::fake();
+
+    $base =
+        '887755440002';
+
+    $cnpj =
+        $base
+        .Cnpj::calculateCheckDigits(
+            $base
+        );
+
+    $batch = app(
+        CnpjImportService::class
+    )->import([
+        $cnpj,
+    ]);
+
+    $item =
+        $batch
+            ->items()
+            ->firstOrFail();
+
+    $item->update([
+        'status' => 'queued',
+    ]);
+
+    $recovered = app(
+        ImportQueueService::class
+    )->recoverStale(
+        $batch,
+        afterMinutes: 20,
+    );
+
+    expect(
+        $recovered
+    )->toBe(0);
+
+    Queue::assertNothingPushed();
+});
+
+it('prevents simultaneous processing of the same import item', function () {
+    $job =
+        new EnrichImportItem(
+            987
+        );
+
+    $middleware =
+        $job->middleware();
+
+    expect(
+        $middleware
+    )->toHaveCount(1);
+
+    expect(
+        $middleware[0]
+    )->toBeInstanceOf(
+        WithoutOverlapping::class
+    );
+});
+
+it('recovers stale imports through the scheduled command', function () {
+    Queue::fake();
+
+    $base =
+        '776655440001';
+
+    $cnpj =
+        $base
+        .Cnpj::calculateCheckDigits(
+            $base
+        );
+
+    $batch = app(
+        CnpjImportService::class
+    )->import([
+        $cnpj,
+    ]);
+
+    $batch->update([
+        'status' => 'processing',
+    ]);
+
+    $item =
+        $batch
+            ->items()
+            ->firstOrFail();
+
+    $item->update([
+        'status' => 'queued',
+    ]);
+
+    DB::table(
+        'import_items'
+    )
+        ->where(
+            'id',
+            $item->id
+        )
+        ->update([
+            'updated_at' => now()
+                ->subMinutes(30),
+        ]);
+
+    $this
+        ->artisan(
+            'imports:recover-stale',
+            [
+                '--minutes' => 20,
+            ]
+        )
+        ->assertSuccessful();
+
+    $item->refresh();
+
+    expect(
+        data_get(
+            $item->metadata,
+            'queue.recovery_count'
+        )
+    )->toBe(1);
+
+    Queue::assertPushed(
+        EnrichImportItem::class,
+        fn (
+            EnrichImportItem $job
+        ): bool => $job->importItemId
+                === $item->id
+    );
 });

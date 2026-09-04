@@ -16,8 +16,11 @@ final class SdrScoringService
     private const BLOCKED_CRM_STATUSES = [
         'client',
         'opportunity',
-        'prospected',
     ];
+
+    public function __construct(
+        private readonly CrmReprospectingPolicyService $reprospecting,
+    ) {}
 
     public function recalculate(
         Company $company
@@ -28,12 +31,17 @@ final class SdrScoringService
             'exportIntelligence',
         ]);
 
+        $crm =
+            $company->crmCheck;
+
         $crmStatus =
             $this->stringValue(
-                $company
-                    ->crmCheck
+                $crm
                     ?->getAttribute('status')
             );
+
+        $reprospecting =
+            null;
 
         if (
             $crmStatus !== null
@@ -47,6 +55,40 @@ final class SdrScoringService
                 company: $company,
                 crmStatus: $crmStatus,
             );
+        }
+
+        /*
+         * Prospectado não é bloqueio eterno.
+         *
+         * Se o período de carência terminou,
+         * a empresa volta a poder receber Score.
+         */
+        if (
+            $crmStatus === 'prospected'
+            && $crm !== null
+        ) {
+            $reprospecting =
+                $this->reprospecting
+                    ->evaluate(
+                        $crm
+                    );
+
+            if (
+                ! $reprospecting[
+                    'eligible'
+                ]
+            ) {
+                return $this->storeBlocked(
+                    company: $company,
+                    crmStatus: 'prospected',
+                    reason: $reprospecting[
+                        'message'
+                    ],
+                    extraMetadata: [
+                        'reprospecting' => $reprospecting,
+                    ],
+                );
+            }
         }
 
         $factors = [];
@@ -96,6 +138,7 @@ final class SdrScoringService
             match ($crmStatus) {
                 'not_found' => 10,
                 'known' => 5,
+                'prospected' => 0,
                 default => 0,
             };
 
@@ -109,6 +152,8 @@ final class SdrScoringService
                     'not_found' => 'Empresa nova no CRM',
 
                     'known' => 'Empresa conhecida no CRM',
+
+                    'prospected' => 'Reprospecção liberada',
 
                     null => 'CRM não verificado',
 
@@ -225,6 +270,8 @@ final class SdrScoringService
                         'crm_status' => $crmStatus,
 
                         'icp_grade' => $grade,
+
+                        'reprospecting' => $reprospecting,
                     ],
 
                     'calculated_at' => now(),
@@ -232,11 +279,16 @@ final class SdrScoringService
             );
     }
 
+    /**
+     * @param  array<string, mixed>  $extraMetadata
+     */
     private function storeBlocked(
         Company $company,
         string $crmStatus,
+        ?string $reason = null,
+        array $extraMetadata = [],
     ): CompanySdrScore {
-        $reason =
+        $reason ??=
             match ($crmStatus) {
                 'client' => 'Empresa já é cliente',
 
@@ -277,9 +329,12 @@ final class SdrScoringService
 
                     'version' => self::VERSION,
 
-                    'metadata' => [
-                        'crm_status' => $crmStatus,
-                    ],
+                    'metadata' => array_merge(
+                        [
+                            'crm_status' => $crmStatus,
+                        ],
+                        $extraMetadata
+                    ),
 
                     'calculated_at' => now(),
                 ]

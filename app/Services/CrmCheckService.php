@@ -11,6 +11,7 @@ final class CrmCheckService
 {
     public function __construct(
         private readonly CustomerRegistryService $customers,
+        private readonly SdrScoringService $sdr,
     ) {}
 
     public function check(
@@ -152,7 +153,7 @@ final class CrmCheckService
                 $crmError;
         }
 
-        return CompanyCrmCheck::query()
+        $check = CompanyCrmCheck::query()
             ->updateOrCreate(
                 [
                     'company_id' => $company->id,
@@ -216,6 +217,23 @@ final class CrmCheckService
                     'checked_at' => now(),
                 ]
             );
+
+        /*
+         * O CRM acabou de mudar.
+         *
+         * Remove eventual relação antiga
+         * carregada na instância e recalcula
+         * imediatamente a prioridade SDR.
+         */
+        $company->unsetRelation(
+            'crmCheck'
+        );
+
+        $this->sdr->recalculate(
+            $company
+        );
+
+        return $check->refresh();
     }
 
     /**
