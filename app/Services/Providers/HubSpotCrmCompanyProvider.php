@@ -27,6 +27,18 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
     /**
      * @var list<string>
      */
+    /**
+     * @var list<string>
+     */
+    private const DEAL_PROPERTIES = [
+        'dealname',
+        'dealstage',
+        'pipeline',
+        'hs_is_closed',
+        'hs_is_closed_won',
+        'closedate',
+    ];
+
     private const PUBLIC_EMAIL_DOMAINS = [
         'gmail.com',
         'hotmail.com',
@@ -147,6 +159,8 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
             'contacted_count' => 0,
 
             'associated_deals_count' => 0,
+
+            'deals' => [],
 
             'last_contacted_at' => null,
 
@@ -504,6 +518,16 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
      *     owner_id: string|null,
      *     contacted_count: int,
      *     associated_deals_count: int,
+     *     deals: list<array{
+     *         id: string,
+     *         name: string|null,
+     *         stage_id: string|null,
+     *         stage_label: string|null,
+     *         pipeline_id: string|null,
+     *         is_closed: bool,
+     *         is_closed_won: bool,
+     *         closed_at: string|null
+     *     }>,
      *     last_contacted_at: string|null,
      *     matched_by: string|null,
      *     matched_value: string|null,
@@ -533,6 +557,13 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
                 ? (string)
                     $record['id']
                 : null;
+
+        $deals =
+            $id !== null
+                ? $this->companyDeals(
+                    $id
+                )
+                : [];
 
         return [
             'found' => true,
@@ -569,11 +600,11 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
                 ] ?? 0
             ),
 
-            'associated_deals_count' => (int) (
-                $properties[
-                    'num_associated_deals'
-                ] ?? 0
+            'associated_deals_count' => count(
+                $deals
             ),
+
+            'deals' => $deals,
 
             'last_contacted_at' => $this->nullable(
                 $properties[
@@ -593,6 +624,561 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
 
             'metadata' => $metadata,
         ];
+    }
+
+    /**
+     * @return list<array{
+     *     id: string,
+     *     name: string|null,
+     *     stage_id: string|null,
+     *     stage_label: string|null,
+     *     pipeline_id: string|null,
+     *     is_closed: bool,
+     *     is_closed_won: bool,
+     *     closed_at: string|null
+     * }>
+     */
+    private function companyDeals(
+        string $companyId
+    ): array {
+        $ids =
+            $this->companyDealIds(
+                $companyId
+            );
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $records =
+            $this->readDeals(
+                $ids
+            );
+
+        $stageLabels =
+            $this->pipelineStageLabels();
+
+        $deals = [];
+
+        foreach ($records as $record) {
+            $properties =
+                data_get(
+                    $record,
+                    'properties',
+                    []
+                );
+
+            if (! is_array($properties)) {
+                continue;
+            }
+
+            $id =
+                isset($record['id'])
+                    ? (string) $record['id']
+                    : null;
+
+            if (
+                $id === null
+                || $id === ''
+            ) {
+                continue;
+            }
+
+            $stageId =
+                $this->nullable(
+                    $properties[
+                        'dealstage'
+                    ] ?? null
+                );
+
+            $pipelineId =
+                $this->nullable(
+                    $properties[
+                        'pipeline'
+                    ] ?? null
+                );
+
+            $stageKey =
+                $pipelineId !== null
+                && $stageId !== null
+                    ? $pipelineId
+                        .'|'
+                        .$stageId
+                    : null;
+
+            $deals[] = [
+                'id' => $id,
+
+                'name' => $this->nullable(
+                    $properties[
+                        'dealname'
+                    ] ?? null
+                ),
+
+                'stage_id' => $stageId,
+
+                'stage_label' => $stageKey !== null
+                        ? (
+                            $stageLabels[
+                                $stageKey
+                            ]
+                            ?? $stageId
+                        )
+                        : null,
+
+                'pipeline_id' => $pipelineId,
+
+                'is_closed' => $this->hubSpotBoolean(
+                    $properties[
+                        'hs_is_closed'
+                    ] ?? false
+                ),
+
+                'is_closed_won' => $this->hubSpotBoolean(
+                    $properties[
+                        'hs_is_closed_won'
+                    ] ?? false
+                ),
+
+                'closed_at' => $this->nullable(
+                    $properties[
+                        'closedate'
+                    ] ?? null
+                ),
+            ];
+        }
+
+        return $deals;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function companyDealIds(
+        string $companyId
+    ): array {
+        $baseUrl =
+            $this->baseUrl();
+
+        $token =
+            $this->token();
+
+        $ids = [];
+
+        $after = null;
+
+        do {
+            $url =
+                $baseUrl
+                .'/crm/v3/objects/companies/'
+                .rawurlencode($companyId)
+                .'/associations/deals';
+
+            $query = [
+                'limit' => 100,
+            ];
+
+            if ($after !== null) {
+                $query['after'] =
+                    $after;
+            }
+
+            try {
+                $response =
+                    Http::withToken(
+                        $token
+                    )
+                        ->acceptJson()
+                        ->connectTimeout(5)
+                        ->timeout(30)
+                        ->get(
+                            $url,
+                            $query
+                        );
+            } catch (
+                ConnectionException $exception
+            ) {
+                throw new RuntimeException(
+                    'Não foi possível consultar '
+                    .'os negócios associados '
+                    .'no HubSpot.',
+                    previous: $exception,
+                );
+            }
+
+            $this->assertHubSpotResponse(
+                $response->status(),
+                $response->successful(),
+                'consultar negócios associados'
+            );
+
+            $data =
+                $response->json();
+
+            if (! is_array($data)) {
+                throw new RuntimeException(
+                    'O HubSpot retornou uma '
+                    .'resposta inválida para '
+                    .'associações de negócios.'
+                );
+            }
+
+            $results =
+                $data['results']
+                ?? [];
+
+            if (is_array($results)) {
+                foreach ($results as $result) {
+                    if (! is_array($result)) {
+                        continue;
+                    }
+
+                    $id =
+                        $result['id']
+                        ?? null;
+
+                    if (
+                        is_string($id)
+                        || is_int($id)
+                    ) {
+                        $ids[] =
+                            (string) $id;
+                    }
+                }
+            }
+
+            $nextAfter =
+                data_get(
+                    $data,
+                    'paging.next.after'
+                );
+
+            $after =
+                is_string($nextAfter)
+                || is_int($nextAfter)
+                    ? (string) $nextAfter
+                    : null;
+
+        } while ($after !== null);
+
+        return array_values(
+            array_unique(
+                $ids
+            )
+        );
+    }
+
+    /**
+     * @param  list<string>  $ids
+     * @return list<array<string, mixed>>
+     */
+    private function readDeals(
+        array $ids
+    ): array {
+        $baseUrl =
+            $this->baseUrl();
+
+        $token =
+            $this->token();
+
+        $records = [];
+
+        /*
+         * O endpoint batch possui limite,
+         * então dividimos para nunca depender
+         * de uma quantidade específica de
+         * negócios por empresa.
+         */
+        foreach (
+            array_chunk(
+                $ids,
+                100
+            ) as $chunk
+        ) {
+            try {
+                $response =
+                    Http::withToken(
+                        $token
+                    )
+                        ->acceptJson()
+                        ->asJson()
+                        ->connectTimeout(5)
+                        ->timeout(30)
+                        ->post(
+                            $baseUrl
+                            .'/crm/v3/objects/deals/batch/read',
+                            [
+                                'properties' => self::DEAL_PROPERTIES,
+
+                                'inputs' => array_map(
+                                    static fn (
+                                        string $id
+                                    ): array => [
+                                        'id' => $id,
+                                    ],
+                                    $chunk
+                                ),
+                            ]
+                        );
+            } catch (
+                ConnectionException $exception
+            ) {
+                throw new RuntimeException(
+                    'Não foi possível consultar '
+                    .'os negócios no HubSpot.',
+                    previous: $exception,
+                );
+            }
+
+            $this->assertHubSpotResponse(
+                $response->status(),
+                $response->successful(),
+                'consultar negócios'
+            );
+
+            $data =
+                $response->json();
+
+            if (! is_array($data)) {
+                throw new RuntimeException(
+                    'O HubSpot retornou uma '
+                    .'resposta inválida para '
+                    .'os negócios.'
+                );
+            }
+
+            $results =
+                $data['results']
+                ?? [];
+
+            if (! is_array($results)) {
+                continue;
+            }
+
+            foreach ($results as $result) {
+                if (is_array($result)) {
+                    $records[] =
+                        $result;
+                }
+            }
+        }
+
+        return $records;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function pipelineStageLabels(): array
+    {
+        $baseUrl =
+            $this->baseUrl();
+
+        $token =
+            $this->token();
+
+        try {
+            $response =
+                Http::withToken(
+                    $token
+                )
+                    ->acceptJson()
+                    ->connectTimeout(5)
+                    ->timeout(30)
+                    ->get(
+                        $baseUrl
+                        .'/crm/v3/pipelines/deals'
+                    );
+        } catch (
+            ConnectionException $exception
+        ) {
+            /*
+             * O label é informativo.
+             *
+             * Não deixamos a classificação
+             * comercial inteira falhar apenas
+             * porque o endpoint de pipelines
+             * ficou indisponível.
+             */
+            return [];
+        }
+
+        if (! $response->successful()) {
+            return [];
+        }
+
+        $data =
+            $response->json();
+
+        if (! is_array($data)) {
+            return [];
+        }
+
+        $pipelines =
+            $data['results']
+            ?? [];
+
+        if (! is_array($pipelines)) {
+            return [];
+        }
+
+        $labels = [];
+
+        foreach ($pipelines as $pipeline) {
+            if (! is_array($pipeline)) {
+                continue;
+            }
+
+            $pipelineId =
+                $pipeline['id']
+                ?? null;
+
+            if (
+                ! is_string($pipelineId)
+                && ! is_int($pipelineId)
+            ) {
+                continue;
+            }
+
+            $stages =
+                $pipeline['stages']
+                ?? [];
+
+            if (! is_array($stages)) {
+                continue;
+            }
+
+            foreach ($stages as $stage) {
+                if (! is_array($stage)) {
+                    continue;
+                }
+
+                $stageId =
+                    $stage['id']
+                    ?? null;
+
+                $label =
+                    $stage['label']
+                    ?? null;
+
+                if (
+                    (
+                        ! is_string($stageId)
+                        && ! is_int($stageId)
+                    )
+                    || ! is_string($label)
+                    || trim($label) === ''
+                ) {
+                    continue;
+                }
+
+                $labels[
+                    (string) $pipelineId
+                    .'|'
+                    .(string) $stageId
+                ] = trim($label);
+            }
+        }
+
+        return $labels;
+    }
+
+    private function hubSpotBoolean(
+        mixed $value
+    ): bool {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_int($value)) {
+            return $value === 1;
+        }
+
+        if (! is_string($value)) {
+            return false;
+        }
+
+        return in_array(
+            mb_strtolower(
+                trim($value)
+            ),
+            [
+                'true',
+                '1',
+                'yes',
+            ],
+            true
+        );
+    }
+
+    private function baseUrl(): string
+    {
+        return rtrim(
+            (string) config(
+                'services.hubspot.base_url'
+            ),
+            '/'
+        );
+    }
+
+    private function token(): string
+    {
+        return trim(
+            (string) config(
+                'services.hubspot.access_token'
+            )
+        );
+    }
+
+    private function assertHubSpotResponse(
+        int $status,
+        bool $successful,
+        string $operation,
+    ): void {
+        if ($status === 401) {
+            throw new RuntimeException(
+                'Token do HubSpot inválido '
+                .'ou expirado.'
+            );
+        }
+
+        if ($status === 403) {
+            throw new RuntimeException(
+                'O token do HubSpot não possui '
+                .'permissão para '
+                .$operation
+                .'.'
+            );
+        }
+
+        if ($status === 429) {
+            throw new RuntimeException(
+                'Limite de consultas do '
+                .'HubSpot atingido.'
+            );
+        }
+
+        if (
+            $status >= 500
+            && $status <= 599
+        ) {
+            throw new RuntimeException(
+                'HubSpot temporariamente '
+                .'indisponível. HTTP '
+                .$status
+                .'.'
+            );
+        }
+
+        if (! $successful) {
+            throw new RuntimeException(
+                'Erro ao '
+                .$operation
+                .' no HubSpot. HTTP '
+                .$status
+                .'.'
+            );
+        }
     }
 
     private function recordUrl(

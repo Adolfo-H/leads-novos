@@ -18,6 +18,16 @@ interface CrmCompanyProvider
      *     owner_id: string|null,
      *     contacted_count: int,
      *     associated_deals_count: int,
+     *     deals: list<array{
+     *         id: string,
+     *         name: string|null,
+     *         stage_id: string|null,
+     *         stage_label: string|null,
+     *         pipeline_id: string|null,
+     *         is_closed: bool,
+     *         is_closed_won: bool,
+     *         closed_at: string|null
+     *     }>,
      *     last_contacted_at: string|null,
      *     matched_by: string|null,
      *     matched_value: string|null,
