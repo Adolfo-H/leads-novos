@@ -94,6 +94,26 @@ class Company extends Model
     }
 
     /**
+     * @return HasOne<CompanyExportIntelligence, $this>
+     */
+    public function exportIntelligence(): HasOne
+    {
+        return $this->hasOne(
+            CompanyExportIntelligence::class
+        );
+    }
+
+    /**
+     * @return HasMany<CompanyExportEvidence, $this>
+     */
+    public function exportEvidence(): HasMany
+    {
+        return $this->hasMany(
+            CompanyExportEvidence::class
+        );
+    }
+
+    /**
      * @return HasOne<Establishment, $this>
      */
     public function matrix(): HasOne

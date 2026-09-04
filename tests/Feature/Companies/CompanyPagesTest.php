@@ -1,9 +1,11 @@
 <?php
 
+use App\Jobs\ResearchCompanyExports;
 use App\Models\Company;
 use App\Models\User;
 use App\Services\CompanyService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -394,4 +396,186 @@ it('does not allow guests to edit companies', function () {
         ->assertRedirect(
             route('login')
         );
+});
+
+it('renders export intelligence in the company dossier', function () {
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+    ]);
+
+    $company =
+        Company::query()->create([
+            'cnpj_root' => '55443322',
+
+            'corporate_name' => 'Empresa Inteligência Exportação',
+        ]);
+
+    $company
+        ->exportIntelligence()
+        ->create([
+            'direct_status' => 'yes',
+
+            'direct_confidence' => 90,
+
+            'direct_confirmed' => false,
+
+            'indirect_status' => 'uncertain',
+
+            'indirect_confidence' => 55,
+
+            'indirect_confirmed' => false,
+
+            'trading_status' => 'yes',
+
+            'trading_confidence' => 78,
+
+            'trading_confirmed' => false,
+
+            'research_status' => 'completed',
+
+            'research_provider' => 'fake-web',
+
+            'researched_at' => now(),
+
+            'research_completed_at' => now(),
+
+            'metadata' => [],
+        ]);
+
+    $company
+        ->exportEvidence()
+        ->create([
+            'fingerprint' => hash(
+                'sha256',
+                'company-pages-test'
+            ),
+
+            'dimension' => 'direct',
+
+            'signal' => 'positive',
+
+            'source_type' => 'government',
+
+            'source_name' => 'Fonte pública teste',
+
+            'source_url' => 'https://example.com/export',
+
+            'title' => 'Registro exportador',
+
+            'evidence_text' => 'A empresa aparece em uma '
+                .'fonte pública de exportação.',
+
+            'confidence' => 90,
+
+            'is_confirmed' => false,
+
+            'metadata' => [],
+        ]);
+
+    $this
+        ->actingAs($user)
+        ->get(
+            route(
+                'companies.show',
+                $company
+            )
+        )
+        ->assertSuccessful()
+        ->assertSee(
+            'Pesquisa concluída'
+        )
+        ->assertSee(
+            '90% de confiança'
+        )
+        ->assertSee(
+            '55% de confiança'
+        )
+        ->assertSee(
+            '78% de confiança'
+        )
+        ->assertSee(
+            'Evidências de exportação'
+        )
+        ->assertSee(
+            'Fonte pública teste'
+        );
+});
+
+it('queues export research from the company dossier', function () {
+    Queue::fake();
+
+    config([
+        'prospector.export_research.enabled' => true,
+
+        'services.openai.api_key' => 'fake-key',
+    ]);
+
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+    ]);
+
+    $company =
+        Company::query()->create([
+            'cnpj_root' => '66554433',
+
+            'corporate_name' => 'Empresa Pesquisa Pela Tela',
+        ]);
+
+    $company
+        ->icpScore()
+        ->create([
+            'score' => 90,
+
+            'grade' => 'A',
+
+            'label' => 'Excelente aderência',
+
+            'version' => 'test',
+
+            'factors' => [],
+
+            'calculated_at' => now(),
+        ]);
+
+    $company
+        ->crmCheck()
+        ->create([
+            'provider' => 'hubspot',
+
+            'status' => 'not_found',
+
+            'contacted_count' => 0,
+
+            'associated_deals_count' => 0,
+
+            'metadata' => [],
+
+            'checked_at' => now(),
+        ]);
+
+    Livewire::actingAs($user)
+        ->test(
+            'pages::companies.show',
+            [
+                'company' => $company,
+            ]
+        )
+        ->call(
+            'researchExports'
+        )
+        ->assertHasNoErrors();
+
+    expect(
+        $company
+            ->exportIntelligence()
+            ->firstOrFail()
+            ->research_status
+    )->toBe(
+        'queued'
+    );
+
+    Queue::assertPushed(
+        ResearchCompanyExports::class,
+        1
+    );
 });

@@ -62,6 +62,27 @@ return [
         ),
     ],
 
+    'openai' => [
+        'api_key' => env(
+            'OPENAI_API_KEY'
+        ),
+
+        'base_url' => env(
+            'OPENAI_BASE_URL',
+            'https://api.openai.com/v1'
+        ),
+
+        'export_research_model' => env(
+            'OPENAI_EXPORT_RESEARCH_MODEL',
+            'gpt-5.6-terra'
+        ),
+
+        'export_research_search_context' => env(
+            'OPENAI_EXPORT_RESEARCH_SEARCH_CONTEXT',
+            'medium'
+        ),
+    ],
+
     'hubspot' => [
         'access_token' => env(
             'HUBSPOT_ACCESS_TOKEN'
