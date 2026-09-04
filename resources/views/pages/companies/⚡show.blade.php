@@ -2,6 +2,9 @@
 
 use App\Models\Company;
 use App\Services\EstablishmentService;
+use App\Services\ExportResearchEligibilityService;
+use App\Services\ExportResearchQueueService;
+use App\Services\SdrScoringService;
 use App\Support\Cnpj;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
@@ -25,7 +28,20 @@ public bool $showCnaeForm = false;
             'establishments.cnaes',
             'icpScore',
             'crmCheck',
+            'exportIntelligence',
+            'exportEvidence',
+            'sdrScore',
         ]);
+
+        app(
+            SdrScoringService::class
+        )->recalculate(
+            $this->company
+        );
+
+        $this->company->load(
+            'sdrScore'
+        );
     }
 
     #[Computed]
@@ -242,6 +258,9 @@ private function reloadCompany(): void
             'establishments.cnaes',
             'icpScore',
             'crmCheck',
+            'exportIntelligence',
+            'exportEvidence',
+            'sdrScore',
         ]);
 
     unset(
@@ -250,6 +269,195 @@ private function reloadCompany(): void
         $this->secondaryCnaes,
     );
 }
+
+    /**
+     * @return array{
+     *     eligible: bool,
+     *     reason: string,
+     *     message: string
+     * }
+     */
+    #[Computed]
+    public function exportResearchEligibility(): array
+    {
+        return app(
+            ExportResearchEligibilityService::class
+        )->evaluate(
+            $this->company
+        );
+    }
+
+    public function exportResearchConfigured(): bool
+    {
+        if (
+            ! (bool) config(
+                'prospector.export_research.enabled',
+                false
+            )
+        ) {
+            return false;
+        }
+
+        /*
+         * O provider atual é OpenAI.
+         *
+         * Quando adicionarmos outros providers,
+         * essa verificação poderá ir para uma
+         * abstração própria.
+         */
+        $apiKey =
+            config(
+                'services.openai.api_key'
+            );
+
+        return is_string($apiKey)
+            && trim($apiKey) !== '';
+    }
+
+    public function exportResearchRunning(): bool
+    {
+        $status =
+            $this->company
+                ->exportIntelligence
+                ?->research_status;
+
+        return in_array(
+            $status,
+            [
+                'queued',
+                'processing',
+            ],
+            true
+        );
+    }
+
+    public function researchExports(
+        ExportResearchQueueService $queue
+    ): void {
+        if (
+            ! $this->exportResearchConfigured()
+        ) {
+            $this->addError(
+                'exportResearch',
+                'A pesquisa externa está '
+                .'desativada ou sem provider '
+                .'configurado.'
+            );
+
+            return;
+        }
+
+        $eligibility =
+            app(
+                ExportResearchEligibilityService::class
+            )->evaluate(
+                $this->company
+            );
+
+        if (
+            ! $eligibility[
+                'eligible'
+            ]
+        ) {
+            $this->addError(
+                'exportResearch',
+                $eligibility[
+                    'message'
+                ]
+            );
+
+            return;
+        }
+
+        $result =
+            $queue->dispatch(
+                $this->company
+            );
+
+        $this->reloadCompany();
+
+        unset(
+            $this->exportResearchEligibility
+        );
+
+        if (
+            $result->research_status
+            === 'queued'
+        ) {
+            session()->flash(
+                'success',
+                'Pesquisa de exportação '
+                .'enviada para processamento.'
+            );
+        }
+    }
+
+    public function refreshExportResearch(): void
+    {
+        $this->reloadCompany();
+
+        unset(
+            $this->exportResearchEligibility
+        );
+    }
+
+    public function exportStatusLabel(
+        ?string $status
+    ): string {
+        return match ($status) {
+            'yes' =>
+                'Sim',
+
+            'no' =>
+                'Não',
+
+            'uncertain' =>
+                'Incerto',
+
+            default =>
+                'Não pesquisada',
+        };
+    }
+
+    public function exportStatusClasses(
+        ?string $status
+    ): string {
+        return match ($status) {
+            'yes' =>
+                'bg-emerald-500/15 '
+                .'text-emerald-300',
+
+            'no' =>
+                'bg-rose-500/15 '
+                .'text-rose-300',
+
+            'uncertain' =>
+                'bg-amber-500/15 '
+                .'text-amber-300',
+
+            default =>
+                'bg-white/5 '
+                .'text-[#7f87a7]',
+        };
+    }
+
+    public function exportDimensionLabel(
+        string $dimension
+    ): string {
+        return match ($dimension) {
+            'direct' =>
+                'Exportação direta',
+
+            'indirect' =>
+                'Exportação indireta',
+
+            'trading' =>
+                'Trading',
+
+            default =>
+                ucfirst($dimension),
+        };
+    }
 
     public function formatMoney(
         mixed $value
@@ -269,6 +477,18 @@ private function reloadCompany(): void
 ?>
 
 <div class="ec-page-shell">
+
+    @php
+        /*
+         * Inteligência de exportação da empresa.
+         *
+         * Definida no início da view para ficar
+         * disponível em todos os cards, painel
+         * de pesquisa e bloco de evidências.
+         */
+        $export =
+            $company->exportIntelligence;
+    @endphp
 
     {{-- VOLTAR --}}
     <div>
@@ -454,6 +674,422 @@ private function reloadCompany(): void
         </div>
 
 
+        @php
+            $researchStatus =
+                $export?->research_status
+                ?? 'idle';
+
+            $researchRunning =
+                in_array(
+                    $researchStatus,
+                    [
+                        'queued',
+                        'processing',
+                    ],
+                    true
+                );
+
+            $researchConfigured =
+                $this
+                    ->exportResearchConfigured();
+
+            $researchEligibility =
+                $this
+                    ->exportResearchEligibility;
+
+            $evidenceCount =
+                $company
+                    ->exportEvidence
+                    ->count();
+        @endphp
+
+
+        {{-- PESQUISA DE EXPORTAÇÃO --}}
+        <div
+            @if ($researchRunning)
+                wire:poll.2s="refreshExportResearch"
+            @endif
+            class="
+                mb-5 overflow-hidden
+                rounded-2xl
+                border border-white/[0.07]
+                bg-white/[0.025]
+            "
+        >
+
+            <div
+                class="
+                    flex flex-col gap-4
+                    px-5 py-4
+                    lg:flex-row
+                    lg:items-center
+                    lg:justify-between
+                "
+            >
+
+                <div
+                    class="
+                        flex min-w-0
+                        items-center gap-4
+                    "
+                >
+
+                    <div
+                        class="
+                            flex size-11
+                            shrink-0
+                            items-center
+                            justify-center
+                            rounded-xl
+                            border
+                            border-cyan-300/10
+                            bg-cyan-300/[0.06]
+                            text-cyan-300
+                        "
+                    >
+
+                        @if ($researchRunning)
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                class="
+                                    size-5
+                                    animate-spin
+                                "
+                            >
+                                <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="9"
+                                    stroke="currentColor"
+                                    stroke-opacity=".20"
+                                    stroke-width="3"
+                                />
+
+                                <path
+                                    d="
+                                        M21 12
+                                        a9 9 0 0 0-9-9
+                                    "
+                                    stroke="currentColor"
+                                    stroke-width="3"
+                                    stroke-linecap="round"
+                                />
+                            </svg>
+
+                        @elseif (
+                            $researchStatus
+                            === 'completed'
+                        )
+
+                            <svg
+                                xmlns="
+                                    http://www.w3.org/2000/svg
+                                "
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                class="
+                                    size-5
+                                    text-emerald-300
+                                "
+                            >
+                                <path
+                                    d="
+                                        m5 12
+                                        4 4
+                                        L19 6
+                                    "
+                                />
+                            </svg>
+
+                        @else
+
+                            <svg
+                                xmlns="
+                                    http://www.w3.org/2000/svg
+                                "
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                class="size-5"
+                            >
+                                <circle
+                                    cx="11"
+                                    cy="11"
+                                    r="7"
+                                />
+
+                                <path
+                                    d="m20 20-4-4"
+                                />
+                            </svg>
+
+                        @endif
+
+                    </div>
+
+
+                    <div class="min-w-0">
+
+                        <div
+                            class="
+                                text-[11px]
+                                font-semibold
+                                uppercase
+                                tracking-[0.16em]
+                                text-[#737e9f]
+                            "
+                        >
+                            Pesquisa de exportação
+                        </div>
+
+
+                        @if ($researchRunning)
+
+                            <div
+                                class="
+                                    mt-1 font-semibold
+                                    text-[#eef1ff]
+                                "
+                            >
+                                Pesquisando fontes públicas...
+                            </div>
+
+                            <div
+                                class="
+                                    mt-0.5 text-xs
+                                    text-[#8993b3]
+                                "
+                            >
+                                O processamento está sendo
+                                executado em segundo plano.
+                            </div>
+
+                        @elseif (
+                            $researchStatus
+                            === 'completed'
+                        )
+
+                            <div
+                                class="
+                                    mt-1 font-semibold
+                                    text-emerald-300
+                                "
+                            >
+                                Pesquisa concluída
+                            </div>
+
+                            <div
+                                class="
+                                    mt-0.5 text-xs
+                                    text-[#8993b3]
+                                "
+                            >
+                                {{ $evidenceCount }}
+                                evidência(s) pública(s)
+                                registrada(s).
+                            </div>
+
+                        @elseif (
+                            $researchStatus
+                            === 'failed'
+                        )
+
+                            <div
+                                class="
+                                    mt-1 font-semibold
+                                    text-rose-300
+                                "
+                            >
+                                Falha na pesquisa
+                            </div>
+
+                            <div
+                                class="
+                                    mt-0.5 text-xs
+                                    text-[#8993b3]
+                                "
+                            >
+                                {{
+                                    $export
+                                        ?->research_error
+                                    ?: 'Não foi possível concluir.'
+                                }}
+                            </div>
+
+                        @elseif (! $researchConfigured)
+
+                            <div
+                                class="
+                                    mt-1 font-semibold
+                                    text-[#eef1ff]
+                                "
+                            >
+                                Pesquisa pública desativada
+                            </div>
+
+                            <div
+                                class="
+                                    mt-0.5 text-xs
+                                    text-[#8993b3]
+                                "
+                            >
+                                Nenhuma API externa será
+                                utilizada até você ativar
+                                um provider.
+                            </div>
+
+                        @elseif (
+                            ! $researchEligibility[
+                                'eligible'
+                            ]
+                        )
+
+                            <div
+                                class="
+                                    mt-1 font-semibold
+                                    text-[#eef1ff]
+                                "
+                            >
+                                Pesquisa automática bloqueada
+                            </div>
+
+                            <div
+                                class="
+                                    mt-0.5 text-xs
+                                    text-[#8993b3]
+                                "
+                            >
+                                {{
+                                    $researchEligibility[
+                                        'message'
+                                    ]
+                                }}
+                            </div>
+
+                        @else
+
+                            <div
+                                class="
+                                    mt-1 font-semibold
+                                    text-[#eef1ff]
+                                "
+                            >
+                                Empresa elegível para pesquisa
+                            </div>
+
+                            <div
+                                class="
+                                    mt-0.5 text-xs
+                                    text-[#8993b3]
+                                "
+                            >
+                                O Prospector pesquisará
+                                exportação direta, indireta
+                                e relação com tradings.
+                            </div>
+
+                        @endif
+
+                    </div>
+
+                </div>
+
+
+                @if (
+                    $researchConfigured
+                    && $researchEligibility[
+                        'eligible'
+                    ]
+                    && ! $researchRunning
+                    && $researchStatus
+                        !== 'completed'
+                )
+
+                    <button
+                        type="button"
+                        wire:click="researchExports"
+                        wire:loading.attr="disabled"
+                        wire:target="researchExports"
+                        class="ec-button-primary"
+                    >
+
+                        <span
+                            wire:loading.remove
+                            wire:target="researchExports"
+                        >
+                            Pesquisar exportações
+                        </span>
+
+                        <span
+                            wire:loading
+                            wire:target="researchExports"
+                            class="
+                                inline-flex
+                                items-center gap-2
+                            "
+                        >
+                            <span
+                                class="
+                                    size-3.5
+                                    animate-spin
+                                    rounded-full
+                                    border-2
+                                    border-current/20
+                                    border-t-current
+                                "
+                            ></span>
+
+                            Enviando...
+                        </span>
+
+                    </button>
+
+                @elseif (! $researchConfigured)
+
+                    <span
+                        class="
+                            rounded-full
+                            border border-white/[0.06]
+                            bg-white/[0.03]
+                            px-3 py-1.5
+                            text-xs
+                            font-medium
+                            text-[#7f87a7]
+                        "
+                    >
+                        Provider desativado
+                    </span>
+
+                @endif
+
+            </div>
+
+        </div>
+
+
+        @error('exportResearch')
+
+            <div
+                class="
+                    mb-5 rounded-xl
+                    border border-amber-400/15
+                    bg-amber-400/[0.06]
+                    px-4 py-3
+                    text-sm
+                    text-amber-200
+                "
+            >
+                {{ $message }}
+            </div>
+
+        @enderror
+
+
         <div class="ec-intelligence-grid">
 
             {{-- CRM --}}
@@ -634,7 +1270,7 @@ private function reloadCompany(): void
             </div>
 
 
-            {{-- DIRETA --}}
+                                    {{-- DIRETA --}}
             <div class="ec-intelligence-card">
 
                 <div class="ec-intelligence-top">
@@ -643,16 +1279,67 @@ private function reloadCompany(): void
                         Exp. direta
                     </span>
 
-                    <span class="ec-intelligence-dot"></span>
+                    <span
+                        class="
+                            rounded-full
+                            px-2 py-1
+                            text-[10px]
+                            font-bold
+                            uppercase
+                            {{
+                                $this
+                                    ->exportStatusClasses(
+                                        $export
+                                            ?->direct_status
+                                    )
+                            }}
+                        "
+                    >
+                        {{
+                            $this
+                                ->exportStatusLabel(
+                                    $export
+                                        ?->direct_status
+                                )
+                        }}
+                    </span>
 
                 </div>
 
                 <div class="ec-intelligence-value">
-                    Não pesquisada
+                    {{
+                        $this
+                            ->exportStatusLabel(
+                                $export
+                                    ?->direct_status
+                            )
+                    }}
                 </div>
 
                 <div class="ec-intelligence-caption">
-                    Exportação própria
+
+                    @if (
+                        $export
+                        && $export->direct_status
+                            !== 'not_researched'
+                    )
+
+                        {{
+                            $export
+                                ->direct_confidence
+                        }}% de confiança
+
+                        @if (
+                            $export
+                                ->direct_confirmed
+                        )
+                            · Confirmado
+                        @endif
+
+                    @else
+                        Exportação própria
+                    @endif
+
                 </div>
 
             </div>
@@ -667,16 +1354,67 @@ private function reloadCompany(): void
                         Exp. indireta
                     </span>
 
-                    <span class="ec-intelligence-dot"></span>
+                    <span
+                        class="
+                            rounded-full
+                            px-2 py-1
+                            text-[10px]
+                            font-bold
+                            uppercase
+                            {{
+                                $this
+                                    ->exportStatusClasses(
+                                        $export
+                                            ?->indirect_status
+                                    )
+                            }}
+                        "
+                    >
+                        {{
+                            $this
+                                ->exportStatusLabel(
+                                    $export
+                                        ?->indirect_status
+                                )
+                        }}
+                    </span>
 
                 </div>
 
                 <div class="ec-intelligence-value">
-                    Não pesquisada
+                    {{
+                        $this
+                            ->exportStatusLabel(
+                                $export
+                                    ?->indirect_status
+                            )
+                    }}
                 </div>
 
                 <div class="ec-intelligence-caption">
-                    Fim específico
+
+                    @if (
+                        $export
+                        && $export->indirect_status
+                            !== 'not_researched'
+                    )
+
+                        {{
+                            $export
+                                ->indirect_confidence
+                        }}% de confiança
+
+                        @if (
+                            $export
+                                ->indirect_confirmed
+                        )
+                            · Confirmado
+                        @endif
+
+                    @else
+                        Fim específico
+                    @endif
+
                 </div>
 
             </div>
@@ -691,22 +1429,78 @@ private function reloadCompany(): void
                         Trading
                     </span>
 
-                    <span class="ec-intelligence-dot"></span>
+                    <span
+                        class="
+                            rounded-full
+                            px-2 py-1
+                            text-[10px]
+                            font-bold
+                            uppercase
+                            {{
+                                $this
+                                    ->exportStatusClasses(
+                                        $export
+                                            ?->trading_status
+                                    )
+                            }}
+                        "
+                    >
+                        {{
+                            $this
+                                ->exportStatusLabel(
+                                    $export
+                                        ?->trading_status
+                                )
+                        }}
+                    </span>
 
                 </div>
 
                 <div class="ec-intelligence-value">
-                    Não pesquisada
+                    {{
+                        $this
+                            ->exportStatusLabel(
+                                $export
+                                    ?->trading_status
+                            )
+                    }}
                 </div>
 
                 <div class="ec-intelligence-caption">
-                    Relação comercial
+
+                    @if (
+                        $export
+                        && $export->trading_status
+                            !== 'not_researched'
+                    )
+
+                        {{
+                            $export
+                                ->trading_confidence
+                        }}% de confiança
+
+                        @if (
+                            $export
+                                ->trading_confirmed
+                        )
+                            · Confirmado
+                        @endif
+
+                    @else
+                        Relação comercial
+                    @endif
+
                 </div>
 
             </div>
 
 
             {{-- SCORE --}}
+            @php
+                $sdr =
+                    $company->sdrScore;
+            @endphp
+
             <div class="ec-intelligence-card ec-intelligence-score">
 
                 <div class="ec-intelligence-top">
@@ -715,21 +1509,351 @@ private function reloadCompany(): void
                         Score
                     </span>
 
-                    <span class="ec-intelligence-dot"></span>
+                    @if ($sdr)
+
+                        <span
+                            class="
+                                rounded-full
+                                px-2 py-1
+                                text-[10px]
+                                font-bold
+                                uppercase
+                                {{
+                                    match ($sdr->priority) {
+                                        'very_high' =>
+                                            'bg-emerald-500/15 text-emerald-300',
+
+                                        'high' =>
+                                            'bg-cyan-500/15 text-cyan-300',
+
+                                        'medium' =>
+                                            'bg-amber-500/15 text-amber-300',
+
+                                        'blocked' =>
+                                            'bg-rose-500/15 text-rose-300',
+
+                                        default =>
+                                            'bg-white/5 text-[#8e97b8]',
+                                    }
+                                }}
+                            "
+                        >
+                            @if (! $sdr->is_eligible)
+                                Bloqueado
+                            @elseif ($sdr->is_provisional)
+                                Provisório
+                            @else
+                                SDR
+                            @endif
+                        </span>
+
+                    @else
+
+                        <span class="ec-intelligence-dot"></span>
+
+                    @endif
 
                 </div>
 
-                <div class="ec-score-value">
-                    —
-                </div>
+                @if (
+                    $sdr
+                    && ! $sdr->is_eligible
+                )
 
-                <div class="ec-intelligence-caption">
-                    Prioridade SDR
-                </div>
+                    <div
+                        class="
+                            mt-3
+                            text-base
+                            font-bold
+                            text-rose-300
+                        "
+                    >
+                        Não priorizar
+                    </div>
+
+                    <div class="ec-intelligence-caption">
+                        {{
+                            $sdr->blocked_reason
+                            ?: 'Bloqueio comercial'
+                        }}
+                    </div>
+
+                @elseif ($sdr)
+
+                    <div class="ec-score-value">
+                        {{ $sdr->score }}/100
+                    </div>
+
+                    <div class="ec-intelligence-caption">
+                        {{ $sdr->label }}
+
+                        @if ($sdr->is_provisional)
+                            · Provisório
+                        @endif
+                    </div>
+
+                @else
+
+                    <div class="ec-score-value">
+                        —
+                    </div>
+
+                    <div class="ec-intelligence-caption">
+                        Prioridade SDR
+                    </div>
+
+                @endif
 
             </div>
 
         </div>
+
+        {{-- EVIDÊNCIAS DE EXPORTAÇÃO --}}
+        @if (
+            $company
+                ->exportEvidence
+                ->isNotEmpty()
+        )
+
+            <details
+                class="
+                    mt-4 overflow-hidden
+                    rounded-xl
+                    border border-white/5
+                    bg-white/[0.025]
+                "
+            >
+
+                <summary
+                    class="
+                        flex cursor-pointer
+                        list-none
+                        items-center
+                        justify-between
+                        px-5 py-4
+                        text-sm
+                        font-semibold
+                        text-[#d9ddef]
+                        transition
+                        hover:bg-white/[0.025]
+                    "
+                >
+
+                    <span>
+                        Evidências de exportação
+                    </span>
+
+                    <span
+                        class="
+                            text-xs
+                            font-medium
+                            text-[#7f87a7]
+                        "
+                    >
+                        {{
+                            $company
+                                ->exportEvidence
+                                ->count()
+                        }}
+                        fonte(s)
+                    </span>
+
+                </summary>
+
+
+                <div
+                    class="
+                        border-t border-white/5
+                        p-5
+                    "
+                >
+
+                    <div class="space-y-3">
+
+                        @foreach (
+                            $company
+                                ->exportEvidence
+                                ->sortByDesc(
+                                    'created_at'
+                                )
+                            as $evidence
+                        )
+
+                            <div
+                                class="
+                                    rounded-xl
+                                    border
+                                    border-white/[0.06]
+                                    bg-[#171d3c]/45
+                                    p-4
+                                "
+                            >
+
+                                <div
+                                    class="
+                                        flex flex-col
+                                        gap-3
+                                        sm:flex-row
+                                        sm:items-start
+                                        sm:justify-between
+                                    "
+                                >
+
+                                    <div class="min-w-0">
+
+                                        <div
+                                            class="
+                                                flex flex-wrap
+                                                items-center
+                                                gap-2
+                                            "
+                                        >
+
+                                            <span
+                                                class="
+                                                    rounded-full
+                                                    bg-cyan-300/10
+                                                    px-2.5 py-1
+                                                    text-[10px]
+                                                    font-bold
+                                                    uppercase
+                                                    text-cyan-300
+                                                "
+                                            >
+                                                {{
+                                                    $this
+                                                        ->exportDimensionLabel(
+                                                            $evidence
+                                                                ->dimension
+                                                        )
+                                                }}
+                                            </span>
+
+                                            <span
+                                                class="
+                                                    text-xs
+                                                    font-semibold
+                                                    text-[#aeb6d1]
+                                                "
+                                            >
+                                                {{
+                                                    strtoupper(
+                                                        $evidence
+                                                            ->signal
+                                                    )
+                                                }}
+
+                                                ·
+
+                                                {{
+                                                    $evidence
+                                                        ->confidence
+                                                }}%
+                                            </span>
+
+                                        </div>
+
+
+                                        <div
+                                            class="
+                                                mt-2
+                                                text-sm
+                                                font-semibold
+                                                text-[#eef1ff]
+                                            "
+                                        >
+                                            {{
+                                                $evidence
+                                                    ->title
+                                                ?: (
+                                                    $evidence
+                                                        ->source_name
+                                                    ?: 'Evidência pública'
+                                                )
+                                            }}
+                                        </div>
+
+
+                                        <div
+                                            class="
+                                                mt-1
+                                                text-xs
+                                                leading-5
+                                                text-[#929bbb]
+                                            "
+                                        >
+                                            {{
+                                                $evidence
+                                                    ->evidence_text
+                                            }}
+                                        </div>
+
+
+                                        <div
+                                            class="
+                                                mt-2
+                                                text-[11px]
+                                                text-[#697598]
+                                            "
+                                        >
+                                            Fonte:
+
+                                            {{
+                                                $evidence
+                                                    ->source_name
+                                                ?: $evidence
+                                                    ->source_type
+                                            }}
+                                        </div>
+
+                                    </div>
+
+
+                                    @if (
+                                        $evidence
+                                            ->source_url
+                                    )
+
+                                        <a
+                                            href="{{
+                                                $evidence
+                                                    ->source_url
+                                            }}"
+                                            target="_blank"
+                                            rel="
+                                                noopener
+                                                noreferrer
+                                            "
+                                            class="
+                                                inline-flex
+                                                shrink-0
+                                                items-center
+                                                gap-1
+                                                text-xs
+                                                font-semibold
+                                                text-cyan-300
+                                                hover:text-cyan-200
+                                            "
+                                        >
+                                            Abrir fonte ↗
+                                        </a>
+
+                                    @endif
+
+                                </div>
+
+                            </div>
+
+                        @endforeach
+
+                    </div>
+
+                </div>
+
+            </details>
+
+        @endif
+
 
         @if ($company->crmCheck)
 

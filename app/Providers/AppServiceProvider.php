@@ -5,8 +5,10 @@ namespace App\Providers;
 use App\Contracts\CnpjDataProvider;
 use App\Contracts\CnpjGroupDataProvider;
 use App\Contracts\CrmCompanyProvider;
+use App\Contracts\ExportResearchProvider;
 use App\Services\Providers\BrasilApiCnpjProvider;
 use App\Services\Providers\HubSpotCrmCompanyProvider;
+use App\Services\Providers\OpenAiWebExportResearchProvider;
 use App\Services\Providers\ReceitaLocalCnpjGroupProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -33,6 +35,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             CrmCompanyProvider::class,
             HubSpotCrmCompanyProvider::class
+        );
+
+        $this->app->bind(
+            ExportResearchProvider::class,
+            OpenAiWebExportResearchProvider::class
         );
 
     }
