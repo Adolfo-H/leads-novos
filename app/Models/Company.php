@@ -122,4 +122,14 @@ class Company extends Model
             Establishment::class
         )->where('type', 'matrix');
     }
+
+    /**
+     * @return HasOne<CompanySdrScore, $this>
+     */
+    public function sdrScore(): HasOne
+    {
+        return $this->hasOne(
+            CompanySdrScore::class
+        );
+    }
 }

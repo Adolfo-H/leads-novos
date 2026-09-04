@@ -579,3 +579,67 @@ it('queues export research from the company dossier', function () {
         1
     );
 });
+
+it('shows existing customers as blocked in the SDR score', function () {
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+    ]);
+
+    $company =
+        Company::query()->create([
+            'cnpj_root' => '07903169',
+
+            'corporate_name' => 'Cliente SDR Teste',
+        ]);
+
+    $company
+        ->icpScore()
+        ->create([
+            'score' => 100,
+
+            'grade' => 'A',
+
+            'label' => 'Alta aderência',
+
+            'version' => 'test',
+
+            'factors' => [],
+
+            'calculated_at' => now(),
+        ]);
+
+    $company
+        ->crmCheck()
+        ->create([
+            'provider' => 'hubspot',
+
+            'status' => 'client',
+
+            'contacted_count' => 0,
+
+            'associated_deals_count' => 0,
+
+            'metadata' => [],
+
+            'checked_at' => now(),
+        ]);
+
+    $this
+        ->actingAs($user)
+        ->get(
+            route(
+                'companies.show',
+                $company
+            )
+        )
+        ->assertSuccessful()
+        ->assertSee(
+            'Não priorizar'
+        )
+        ->assertSee(
+            'Empresa já é cliente'
+        )
+        ->assertSee(
+            'Bloqueado'
+        );
+});

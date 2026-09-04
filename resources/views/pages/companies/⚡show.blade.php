@@ -4,6 +4,7 @@ use App\Models\Company;
 use App\Services\EstablishmentService;
 use App\Services\ExportResearchEligibilityService;
 use App\Services\ExportResearchQueueService;
+use App\Services\SdrScoringService;
 use App\Support\Cnpj;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
@@ -29,7 +30,18 @@ public bool $showCnaeForm = false;
             'crmCheck',
             'exportIntelligence',
             'exportEvidence',
+            'sdrScore',
         ]);
+
+        app(
+            SdrScoringService::class
+        )->recalculate(
+            $this->company
+        );
+
+        $this->company->load(
+            'sdrScore'
+        );
     }
 
     #[Computed]
@@ -248,6 +260,7 @@ private function reloadCompany(): void
             'crmCheck',
             'exportIntelligence',
             'exportEvidence',
+            'sdrScore',
         ]);
 
     unset(
@@ -1483,6 +1496,11 @@ private function reloadCompany(): void
 
 
             {{-- SCORE --}}
+            @php
+                $sdr =
+                    $company->sdrScore;
+            @endphp
+
             <div class="ec-intelligence-card ec-intelligence-score">
 
                 <div class="ec-intelligence-top">
@@ -1491,17 +1509,100 @@ private function reloadCompany(): void
                         Score
                     </span>
 
-                    <span class="ec-intelligence-dot"></span>
+                    @if ($sdr)
+
+                        <span
+                            class="
+                                rounded-full
+                                px-2 py-1
+                                text-[10px]
+                                font-bold
+                                uppercase
+                                {{
+                                    match ($sdr->priority) {
+                                        'very_high' =>
+                                            'bg-emerald-500/15 text-emerald-300',
+
+                                        'high' =>
+                                            'bg-cyan-500/15 text-cyan-300',
+
+                                        'medium' =>
+                                            'bg-amber-500/15 text-amber-300',
+
+                                        'blocked' =>
+                                            'bg-rose-500/15 text-rose-300',
+
+                                        default =>
+                                            'bg-white/5 text-[#8e97b8]',
+                                    }
+                                }}
+                            "
+                        >
+                            @if (! $sdr->is_eligible)
+                                Bloqueado
+                            @elseif ($sdr->is_provisional)
+                                Provisório
+                            @else
+                                SDR
+                            @endif
+                        </span>
+
+                    @else
+
+                        <span class="ec-intelligence-dot"></span>
+
+                    @endif
 
                 </div>
 
-                <div class="ec-score-value">
-                    —
-                </div>
+                @if (
+                    $sdr
+                    && ! $sdr->is_eligible
+                )
 
-                <div class="ec-intelligence-caption">
-                    Prioridade SDR
-                </div>
+                    <div
+                        class="
+                            mt-3
+                            text-base
+                            font-bold
+                            text-rose-300
+                        "
+                    >
+                        Não priorizar
+                    </div>
+
+                    <div class="ec-intelligence-caption">
+                        {{
+                            $sdr->blocked_reason
+                            ?: 'Bloqueio comercial'
+                        }}
+                    </div>
+
+                @elseif ($sdr)
+
+                    <div class="ec-score-value">
+                        {{ $sdr->score }}/100
+                    </div>
+
+                    <div class="ec-intelligence-caption">
+                        {{ $sdr->label }}
+
+                        @if ($sdr->is_provisional)
+                            · Provisório
+                        @endif
+                    </div>
+
+                @else
+
+                    <div class="ec-score-value">
+                        —
+                    </div>
+
+                    <div class="ec-intelligence-caption">
+                        Prioridade SDR
+                    </div>
+
+                @endif
 
             </div>
 
