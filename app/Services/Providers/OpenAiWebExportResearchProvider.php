@@ -84,15 +84,15 @@ final class OpenAiWebExportResearchProvider implements ExportResearchProvider
                     ),
 
                     'text' => [
-                    'format' => [
-                        'type' => 'json_schema',
+                        'format' => [
+                            'type' => 'json_schema',
 
-                        'name' => 'export_research',
+                            'name' => 'export_research',
 
-                        'strict' => true,
+                            'strict' => true,
 
-                        'schema' => $this->schema(),
-                    ],
+                            'schema' => $this->schema(),
+                        ],
                     ],
                 ]
             );
@@ -289,18 +289,18 @@ final class OpenAiWebExportResearchProvider implements ExportResearchProvider
                 ),
 
                 'metadata' => [
-                'provider' => $this->name(),
+                    'provider' => $this->name(),
 
-                'model' => $model,
+                    'model' => $model,
 
-                'openai_response_id' => $body['id']
-                    ?? null,
+                    'openai_response_id' => $body['id']
+                        ?? null,
 
-                'source_validated' => true,
+                    'source_validated' => true,
 
-                'matched_query' => $finding[
-                        'matched_query'
-                    ] ?? null,
+                    'matched_query' => $finding[
+                            'matched_query'
+                        ] ?? null,
                 ],
             ];
         }
