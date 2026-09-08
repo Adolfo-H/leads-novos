@@ -508,7 +508,7 @@ it('queues export research from the company dossier', function () {
     config([
         'prospector.export_research.enabled' => true,
 
-        'services.openai.api_key' => 'fake-key',
+        'services.tavily.api_key' => 'fake-key',
     ]);
 
     $user = User::factory()->create([
