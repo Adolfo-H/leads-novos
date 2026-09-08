@@ -319,3 +319,107 @@ it('recovers a stale import automatically when the imports page polls', function
                 === $item->id
     );
 });
+
+it('shows whether imported companies are eligible for export research', function () {
+    $user =
+        User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+    $eligibleCompany =
+        Company::query()->create([
+            'cnpj_root' => '11110000',
+
+            'corporate_name' => 'Empresa Elegível Pesquisa Teste',
+        ]);
+
+    $blockedCompany =
+        Company::query()->create([
+            'cnpj_root' => '22220000',
+
+            'corporate_name' => 'Empresa Bloqueada Pesquisa Teste',
+        ]);
+
+    $batch =
+        ImportBatch::query()->create([
+            'user_id' => $user->id,
+
+            'source_type' => 'manual',
+
+            'status' => 'completed',
+
+            'total_rows' => 2,
+
+            'valid_rows' => 2,
+
+            'processed_rows' => 2,
+        ]);
+
+    ImportItem::query()->create([
+        'import_batch_id' => $batch->id,
+
+        'row_number' => 1,
+
+        'raw_cnpj' => '11110000000100',
+
+        'normalized_cnpj' => '11110000000100',
+
+        'status' => 'completed',
+
+        'company_id' => $eligibleCompany->id,
+
+        'metadata' => [
+            'export_research_eligibility' => [
+                'eligible' => true,
+
+                'reason' => 'eligible',
+
+                'message' => 'Empresa elegível para pesquisa automática.',
+            ],
+        ],
+    ]);
+
+    ImportItem::query()->create([
+        'import_batch_id' => $batch->id,
+
+        'row_number' => 2,
+
+        'raw_cnpj' => '22220000000100',
+
+        'normalized_cnpj' => '22220000000100',
+
+        'status' => 'completed',
+
+        'company_id' => $blockedCompany->id,
+
+        'metadata' => [
+            'export_research_eligibility' => [
+                'eligible' => false,
+
+                'reason' => 'low_icp',
+
+                'message' => 'Empresa não possui ICP suficiente para pesquisa automática.',
+            ],
+        ],
+    ]);
+
+    Livewire::actingAs(
+        $user
+    )
+        ->test(
+            'pages::imports.index'
+        )
+        ->set(
+            'batchId',
+            $batch->id
+        )
+        ->assertSee(
+            'Pesquisa de exportação elegível'
+        )
+        ->assertSee(
+            'Pesquisa de exportação bloqueada'
+        )
+        ->assertSee(
+            'Empresa não possui ICP suficiente para pesquisa automática.'
+        );
+});

@@ -559,6 +559,22 @@ it('checks CRM automatically after group enrichment', function () {
         )
     )->toBe('client');
 
+    expect(
+        data_get(
+            $item->metadata,
+            'export_research_eligibility.eligible'
+        )
+    )->toBeFalse();
+
+    expect(
+        data_get(
+            $item->metadata,
+            'export_research_eligibility.reason'
+        )
+    )->toBe(
+        'crm_client'
+    );
+
     $company =
         $item
             ->company()

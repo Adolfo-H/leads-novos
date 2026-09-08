@@ -1,6 +1,5 @@
 <?php
 
-use App\Contracts\ExportResearchProvider;
 use App\Models\Company;
 use App\Services\Providers\OpenAiWebExportResearchProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -208,14 +207,4 @@ it('rejects a source that was not cited by web search', function () {
 
     expect($result)
         ->toBe([]);
-});
-
-it('binds the research contract to the OpenAI provider', function () {
-    expect(
-        app(
-            ExportResearchProvider::class
-        )
-    )->toBeInstanceOf(
-        OpenAiWebExportResearchProvider::class
-    );
 });

@@ -13,6 +13,82 @@ final class ExportResearchQueueService
         private readonly ExportIntelligenceService $intelligence,
     ) {}
 
+    /**
+     * Avalia a empresa e somente coloca a
+     * pesquisa na fila quando:
+     *
+     * - a pesquisa automática está ligada;
+     * - a empresa passou pela peneira.
+     *
+     * @return array{
+     *     enabled: bool,
+     *     eligible: bool,
+     *     queued: bool,
+     *     reason: string,
+     *     message: string
+     * }
+     */
+    public function dispatchIfEnabled(
+        Company $company
+    ): array {
+        $evaluation =
+            $this->eligibility
+                ->evaluate(
+                    $company
+                );
+
+        $enabled =
+            (bool) config(
+                'prospector.export_research.enabled',
+                false
+            );
+
+        if (
+            ! $enabled
+            || ! $evaluation[
+                'eligible'
+            ]
+        ) {
+            return [
+                'enabled' => $enabled,
+
+                'eligible' => $evaluation[
+                        'eligible'
+                    ],
+
+                'queued' => false,
+
+                'reason' => $evaluation[
+                        'reason'
+                    ],
+
+                'message' => $evaluation[
+                        'message'
+                    ],
+            ];
+        }
+
+        $this->dispatch(
+            $company
+        );
+
+        return [
+            'enabled' => true,
+
+            'eligible' => true,
+
+            'queued' => true,
+
+            'reason' => $evaluation[
+                    'reason'
+                ],
+
+            'message' => $evaluation[
+                    'message'
+                ],
+        ];
+    }
+
     public function dispatch(
         Company $company,
         bool $force = false,

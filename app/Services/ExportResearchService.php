@@ -11,6 +11,7 @@ final class ExportResearchService
     public function __construct(
         private readonly ExportResearchQueryPlanner $planner,
         private readonly ExportIntelligenceService $intelligence,
+        private readonly ExportResearchSummaryService $summary,
     ) {}
 
     public function research(
@@ -94,6 +95,47 @@ final class ExportResearchService
 
         $result->update([
             'researched_at' => now(),
+        ]);
+
+        $result->refresh();
+
+        /*
+         * Depois que todas as evidências foram
+         * registradas e as três dimensões já
+         * foram recalculadas, geramos uma
+         * leitura comercial consolidada.
+         */
+        $summary =
+            $this->summary
+                ->build(
+                    company: $company,
+
+                    intelligence: $result,
+                );
+
+        $rawMetadata =
+            $result->getAttribute(
+                'metadata'
+            );
+
+        /** @var array<string, mixed> $metadata */
+        $metadata =
+            is_array(
+                $rawMetadata
+            )
+                ? $rawMetadata
+                : [];
+
+        $metadata[
+            'research_summary'
+        ] = $summary;
+
+        $result->update([
+            'overall_summary' => $summary[
+                    'headline'
+                ],
+
+            'metadata' => $metadata,
         ]);
 
         return $result->refresh();

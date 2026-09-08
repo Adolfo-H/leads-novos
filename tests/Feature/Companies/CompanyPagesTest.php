@@ -508,7 +508,7 @@ it('queues export research from the company dossier', function () {
     config([
         'prospector.export_research.enabled' => true,
 
-        'services.openai.api_key' => 'fake-key',
+        'services.tavily.api_key' => 'fake-key',
     ]);
 
     $user = User::factory()->create([
@@ -1285,4 +1285,92 @@ it('shows registration dates and special situation for branches', function () {
         ->assertSee(
             '04/09/2026'
         );
+});
+
+it('allows manual export research even when automatic research is blocked', function () {
+    Queue::fake();
+
+    config([
+        'prospector.export_research.enabled' => true,
+
+        'services.tavily.api_key' => 'fake-tavily-key',
+    ]);
+
+    $user =
+        User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+    $company =
+        Company::query()->create([
+            'cnpj_root' => '99887766',
+
+            'corporate_name' => 'EMPRESA PESQUISA MANUAL TESTE',
+        ]);
+
+    $company
+        ->icpScore()
+        ->create([
+            'score' => 90,
+
+            'grade' => 'A',
+
+            'label' => 'ICP A',
+
+            'version' => 'test',
+
+            'factors' => [],
+
+            'calculated_at' => now(),
+        ]);
+
+    /*
+     * Cliente seria bloqueado pela
+     * pesquisa automática.
+     */
+    $company
+        ->crmCheck()
+        ->create([
+            'provider' => 'hubspot',
+
+            'status' => 'client',
+
+            'contacted_count' => 0,
+
+            'associated_deals_count' => 1,
+
+            'metadata' => [],
+
+            'checked_at' => now(),
+        ]);
+
+    Livewire::actingAs(
+        $user
+    )
+        ->test(
+            'pages::companies.show',
+            [
+                'company' => $company,
+            ]
+        )
+        ->assertSee(
+            'Tavily'
+        )
+        ->assertSee(
+            'Pesquisar mesmo assim'
+        )
+        ->call(
+            'researchExportsForce'
+        )
+        ->assertHasNoErrors();
+
+    Queue::assertPushed(
+        ResearchCompanyExports::class,
+        fn (
+            ResearchCompanyExports $job
+        ): bool => $job->companyId
+                === $company->id
+            && $job->force
+                === true
+    );
 });

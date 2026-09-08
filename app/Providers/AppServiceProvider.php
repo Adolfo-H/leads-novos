@@ -8,8 +8,8 @@ use App\Contracts\CrmCompanyProvider;
 use App\Contracts\ExportResearchProvider;
 use App\Services\Providers\BrasilApiCnpjProvider;
 use App\Services\Providers\HubSpotCrmCompanyProvider;
-use App\Services\Providers\OpenAiWebExportResearchProvider;
 use App\Services\Providers\ReceitaLocalCnpjGroupProvider;
+use App\Services\Providers\TavilyExportResearchProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(
             ExportResearchProvider::class,
-            OpenAiWebExportResearchProvider::class
+            TavilyExportResearchProvider::class
         );
 
     }

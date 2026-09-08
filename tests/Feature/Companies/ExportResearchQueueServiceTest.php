@@ -244,3 +244,81 @@ it('allows a forced research even for a client', function () {
                 === true
     );
 });
+
+it('does not automatically queue research while export research is disabled', function () {
+    Queue::fake();
+
+    config([
+        'prospector.export_research.enabled' => false,
+    ]);
+
+    $company =
+        queuedResearchCompany(
+            crmStatus: 'not_found',
+            grade: 'A',
+        );
+
+    $result =
+        app(
+            ExportResearchQueueService::class
+        )->dispatchIfEnabled(
+            $company
+        );
+
+    expect(
+        $result['enabled']
+    )->toBeFalse();
+
+    expect(
+        $result['eligible']
+    )->toBeTrue();
+
+    expect(
+        $result['queued']
+    )->toBeFalse();
+
+    Queue::assertNothingPushed();
+});
+
+it('automatically queues research when an eligible company passes the filter', function () {
+    Queue::fake();
+
+    config([
+        'prospector.export_research.enabled' => true,
+    ]);
+
+    $company =
+        queuedResearchCompany(
+            crmStatus: 'not_found',
+            grade: 'A',
+        );
+
+    $result =
+        app(
+            ExportResearchQueueService::class
+        )->dispatchIfEnabled(
+            $company
+        );
+
+    expect(
+        $result['enabled']
+    )->toBeTrue();
+
+    expect(
+        $result['eligible']
+    )->toBeTrue();
+
+    expect(
+        $result['queued']
+    )->toBeTrue();
+
+    Queue::assertPushed(
+        ResearchCompanyExports::class,
+        fn (
+            ResearchCompanyExports $job
+        ): bool => $job->companyId
+                === $company->id
+            && $job->force
+                === false
+    );
+});

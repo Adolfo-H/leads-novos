@@ -1364,6 +1364,7 @@ private function reloadCompany(): void
         $this->contactEstablishments,
         $this->groupContactSummary,
         $this->crmReprospecting,
+        $this->exportResearchSummary,
     );
 }
 
@@ -1395,20 +1396,85 @@ private function reloadCompany(): void
             return false;
         }
 
-        /*
-         * O provider atual é OpenAI.
-         *
-         * Quando adicionarmos outros providers,
-         * essa verificação poderá ir para uma
-         * abstração própria.
-         */
+        $provider =
+            app(
+                \App\Contracts\ExportResearchProvider::class
+            )->name();
+
         $apiKey =
-            config(
-                'services.openai.api_key'
-            );
+            match ($provider) {
+                'tavily' =>
+                    config(
+                        'services.tavily.api_key'
+                    ),
+
+                'openai-web-search' =>
+                    config(
+                        'services.openai.api_key'
+                    ),
+
+                default =>
+                    null,
+            };
 
         return is_string($apiKey)
             && trim($apiKey) !== '';
+    }
+
+    public function exportResearchProviderLabel(): string
+    {
+        $provider =
+            $this->company
+                ->exportIntelligence
+                ?->research_provider;
+
+        if (
+            ! is_string($provider)
+            || trim($provider) === ''
+        ) {
+            $provider =
+                app(
+                    \App\Contracts\ExportResearchProvider::class
+                )->name();
+        }
+
+        return match ($provider) {
+            'tavily' =>
+                'Tavily',
+
+            'openai-web-search' =>
+                'OpenAI Web',
+
+            default =>
+                ucfirst(
+                    str_replace(
+                        '-',
+                        ' ',
+                        $provider
+                    )
+                ),
+        };
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    #[Computed]
+    public function exportResearchSummary(): ?array
+    {
+        $summary =
+            data_get(
+                $this->company
+                    ->exportIntelligence
+                    ?->metadata,
+                'research_summary'
+            );
+
+        return is_array(
+            $summary
+        )
+            ? $summary
+            : null;
     }
 
     public function exportResearchRunning(): bool
@@ -1484,6 +1550,56 @@ private function reloadCompany(): void
             session()->flash(
                 'success',
                 'Pesquisa de exportação '
+                .'enviada para processamento.'
+            );
+        }
+    }
+
+    public function researchExportsForce(
+        ExportResearchQueueService $queue
+    ): void {
+        if (
+            ! $this->exportResearchConfigured()
+        ) {
+            $this->addError(
+                'exportResearch',
+                'A pesquisa externa está '
+                .'desativada ou sem provider '
+                .'configurado.'
+            );
+
+            return;
+        }
+
+        /*
+         * Pesquisa manual:
+         *
+         * ignora ICP, CRM, cooldown e demais
+         * bloqueios da automação porque houve
+         * uma decisão explícita do usuário.
+         */
+        $result =
+            $queue->dispatch(
+                company:
+                    $this->company,
+
+                force:
+                    true,
+            );
+
+        $this->reloadCompany();
+
+        unset(
+            $this->exportResearchEligibility
+        );
+
+        if (
+            $result->research_status
+            === 'queued'
+        ) {
+            session()->flash(
+                'success',
+                'Pesquisa manual de exportação '
                 .'enviada para processamento.'
             );
         }
@@ -2100,72 +2216,185 @@ private function reloadCompany(): void
                 </div>
 
 
-                @if (
-                    $researchConfigured
-                    && $researchEligibility[
-                        'eligible'
-                    ]
-                    && ! $researchRunning
-                    && $researchStatus
-                        !== 'completed'
-                )
+                <div
+                    class="
+                        flex shrink-0
+                        items-center gap-3
+                    "
+                >
 
-                    <button
-                        type="button"
-                        wire:click="researchExports"
-                        wire:loading.attr="disabled"
-                        wire:target="researchExports"
-                        class="ec-button-primary"
-                    >
+                    @if ($researchConfigured)
 
                         <span
-                            wire:loading.remove
-                            wire:target="researchExports"
-                        >
-                            Pesquisar exportações
-                        </span>
-
-                        <span
-                            wire:loading
-                            wire:target="researchExports"
                             class="
-                                inline-flex
-                                items-center gap-2
+                                rounded-full
+                                border border-emerald-400/15
+                                bg-emerald-400/[0.06]
+                                px-3 py-1.5
+                                text-xs
+                                font-medium
+                                text-emerald-300
                             "
                         >
-                            <span
-                                class="
-                                    size-3.5
-                                    animate-spin
-                                    rounded-full
-                                    border-2
-                                    border-current/20
-                                    border-t-current
-                                "
-                            ></span>
-
-                            Enviando...
+                            {{
+                                $this
+                                    ->exportResearchProviderLabel()
+                            }}
+                            ativo
                         </span>
 
-                    </button>
+                    @else
 
-                @elseif (! $researchConfigured)
+                        <span
+                            class="
+                                rounded-full
+                                border border-white/[0.06]
+                                bg-white/[0.03]
+                                px-3 py-1.5
+                                text-xs
+                                font-medium
+                                text-[#7f87a7]
+                            "
+                        >
+                            Provider desativado
+                        </span>
 
-                    <span
-                        class="
-                            rounded-full
-                            border border-white/[0.06]
-                            bg-white/[0.03]
-                            px-3 py-1.5
-                            text-xs
-                            font-medium
-                            text-[#7f87a7]
-                        "
-                    >
-                        Provider desativado
-                    </span>
+                    @endif
 
-                @endif
+
+                    @if (
+                        $researchConfigured
+                        && ! $researchRunning
+                    )
+
+                        @if (
+                            $researchStatus
+                            === 'completed'
+                        )
+
+                            <button
+                                type="button"
+                                wire:click="
+                                    researchExportsForce
+                                "
+                                wire:loading.attr="
+                                    disabled
+                                "
+                                wire:target="
+                                    researchExportsForce
+                                "
+                                class="
+                                    ec-button-secondary
+                                "
+                                title="
+                                    Executa novamente
+                                    3 buscas no Tavily
+                                "
+                            >
+                                <span
+                                    wire:loading.remove
+                                    wire:target="
+                                        researchExportsForce
+                                    "
+                                >
+                                    Pesquisar novamente
+                                </span>
+
+                                <span
+                                    wire:loading
+                                    wire:target="
+                                        researchExportsForce
+                                    "
+                                >
+                                    Enviando...
+                                </span>
+                            </button>
+
+                        @elseif (
+                            ! $researchEligibility[
+                                'eligible'
+                            ]
+                        )
+
+                            <button
+                                type="button"
+                                wire:click="
+                                    researchExportsForce
+                                "
+                                wire:loading.attr="
+                                    disabled
+                                "
+                                wire:target="
+                                    researchExportsForce
+                                "
+                                class="
+                                    ec-button-secondary
+                                "
+                                title="
+                                    Ignora a peneira automática
+                                    e executa 3 buscas no Tavily
+                                "
+                            >
+                                <span
+                                    wire:loading.remove
+                                    wire:target="
+                                        researchExportsForce
+                                    "
+                                >
+                                    Pesquisar mesmo assim
+                                </span>
+
+                                <span
+                                    wire:loading
+                                    wire:target="
+                                        researchExportsForce
+                                    "
+                                >
+                                    Enviando...
+                                </span>
+                            </button>
+
+                        @else
+
+                            <button
+                                type="button"
+                                wire:click="
+                                    researchExports
+                                "
+                                wire:loading.attr="
+                                    disabled
+                                "
+                                wire:target="
+                                    researchExports
+                                "
+                                class="
+                                    ec-button-primary
+                                "
+                            >
+                                <span
+                                    wire:loading.remove
+                                    wire:target="
+                                        researchExports
+                                    "
+                                >
+                                    Pesquisar exportações
+                                </span>
+
+                                <span
+                                    wire:loading
+                                    wire:target="
+                                        researchExports
+                                    "
+                                >
+                                    Enviando...
+                                </span>
+                            </button>
+
+                        @endif
+
+                    @endif
+
+                </div>
 
             </div>
 
@@ -2771,6 +3000,351 @@ private function reloadCompany(): void
             </div>
 
         </div>
+
+        {{-- RESUMO DA PESQUISA DE EXPORTAÇÃO --}}
+        @php
+            $researchSummary =
+                $this->exportResearchSummary;
+        @endphp
+
+        @if ($researchSummary)
+
+            <div
+                class="
+                    mb-5 overflow-hidden
+                    rounded-2xl
+                    border border-cyan-300/10
+                    bg-cyan-300/[0.025]
+                "
+            >
+
+                <div
+                    class="
+                        border-b border-white/[0.06]
+                        px-5 py-4
+                    "
+                >
+                    <div
+                        class="
+                            text-[11px]
+                            font-semibold uppercase
+                            tracking-[0.16em]
+                            text-cyan-300
+                        "
+                    >
+                        Leitura comercial
+                    </div>
+
+                    <div
+                        class="
+                            mt-1 text-base
+                            font-semibold
+                            text-[#eef1ff]
+                        "
+                    >
+                        Resumo da pesquisa de exportação
+                    </div>
+
+                    <p
+                        class="
+                            mt-2 max-w-4xl
+                            text-sm leading-6
+                            text-[#a9b1cc]
+                        "
+                    >
+                        {{
+                            $researchSummary[
+                                'headline'
+                            ]
+                        }}
+                    </p>
+                </div>
+
+
+                <div
+                    class="
+                        grid gap-3
+                        px-5 py-4
+                        md:grid-cols-3
+                    "
+                >
+
+                    @foreach (
+                        $researchSummary[
+                            'dimensions'
+                        ] as $dimension
+                    )
+
+                        <div
+                            class="
+                                rounded-xl
+                                border border-white/[0.06]
+                                bg-white/[0.025]
+                                p-4
+                            "
+                        >
+                            <div
+                                class="
+                                    flex items-center
+                                    justify-between gap-3
+                                "
+                            >
+                                <span
+                                    class="
+                                        text-xs font-semibold
+                                        text-[#dce1f5]
+                                    "
+                                >
+                                    {{
+                                        $dimension[
+                                            'label'
+                                        ]
+                                    }}
+                                </span>
+
+                                <span
+                                    class="
+                                        rounded-full
+                                        px-2 py-1
+                                        text-[9px]
+                                        font-bold uppercase
+                                        {{
+                                            $this
+                                                ->exportStatusClasses(
+                                                    $dimension[
+                                                        'status'
+                                                    ]
+                                                )
+                                        }}
+                                    "
+                                >
+                                    {{
+                                        $this
+                                            ->exportStatusLabel(
+                                                $dimension[
+                                                    'status'
+                                                ]
+                                            )
+                                    }}
+                                </span>
+                            </div>
+
+                            <div
+                                class="
+                                    mt-3 text-xs
+                                    text-[#858eae]
+                                "
+                            >
+                                {{
+                                    $dimension[
+                                        'confidence'
+                                    ]
+                                }}% de confiança
+                                ·
+                                {{
+                                    $dimension[
+                                        'evidence_count'
+                                    ]
+                                }} fonte(s)
+                            </div>
+
+                            @if (
+                                $dimension[
+                                    'best_evidence'
+                                ]
+                            )
+
+                                <div
+                                    class="
+                                        mt-3 border-t
+                                        border-white/[0.05]
+                                        pt-3
+                                        text-xs leading-5
+                                        text-[#9ca5c4]
+                                    "
+                                >
+                                    {{
+                                        $dimension[
+                                            'best_evidence'
+                                        ][
+                                            'text'
+                                        ]
+                                    }}
+                                </div>
+
+                            @endif
+
+                        </div>
+
+                    @endforeach
+
+                </div>
+
+
+                @if (
+                    $researchSummary[
+                        'products'
+                    ] !== []
+                    || $researchSummary[
+                        'markets'
+                    ] !== []
+                )
+
+                    <div
+                        class="
+                            grid gap-4
+                            border-t border-white/[0.06]
+                            px-5 py-4
+                            md:grid-cols-2
+                        "
+                    >
+
+                        @if (
+                            $researchSummary[
+                                'products'
+                            ] !== []
+                        )
+
+                            <div>
+                                <div
+                                    class="
+                                        text-[10px]
+                                        font-semibold uppercase
+                                        tracking-[0.12em]
+                                        text-[#737e9f]
+                                    "
+                                >
+                                    Produtos citados
+                                </div>
+
+                                <div
+                                    class="
+                                        mt-2 flex flex-wrap
+                                        gap-2
+                                    "
+                                >
+                                    @foreach (
+                                        $researchSummary[
+                                            'products'
+                                        ] as $product
+                                    )
+                                        <span
+                                            class="
+                                                rounded-full
+                                                border border-white/[0.07]
+                                                bg-white/[0.035]
+                                                px-2.5 py-1
+                                                text-xs
+                                                text-[#c3c9df]
+                                            "
+                                        >
+                                            {{ $product }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                        @endif
+
+
+                        @if (
+                            $researchSummary[
+                                'markets'
+                            ] !== []
+                        )
+
+                            <div>
+                                <div
+                                    class="
+                                        text-[10px]
+                                        font-semibold uppercase
+                                        tracking-[0.12em]
+                                        text-[#737e9f]
+                                    "
+                                >
+                                    Mercados citados
+                                </div>
+
+                                <div
+                                    class="
+                                        mt-2 flex flex-wrap
+                                        gap-2
+                                    "
+                                >
+                                    @foreach (
+                                        $researchSummary[
+                                            'markets'
+                                        ] as $market
+                                    )
+                                        <span
+                                            class="
+                                                rounded-full
+                                                border border-white/[0.07]
+                                                bg-white/[0.035]
+                                                px-2.5 py-1
+                                                text-xs
+                                                text-[#c3c9df]
+                                            "
+                                        >
+                                            {{ $market }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                        @endif
+
+                    </div>
+
+                @endif
+
+
+                <div
+                    class="
+                        flex flex-wrap gap-x-5 gap-y-2
+                        border-t border-white/[0.06]
+                        px-5 py-3
+                        text-[11px]
+                        text-[#737e9f]
+                    "
+                >
+                    <span>
+                        {{
+                            $researchSummary[
+                                'evidence_count'
+                            ]
+                        }} evidência(s)
+                    </span>
+
+                    <span>
+                        {{
+                            $researchSummary[
+                                'positive_count'
+                            ]
+                        }} positiva(s)
+                    </span>
+
+                    <span>
+                        {{
+                            $researchSummary[
+                                'neutral_count'
+                            ]
+                        }} neutra(s)
+                    </span>
+
+                    <span>
+                        {{
+                            $researchSummary[
+                                'negative_count'
+                            ]
+                        }} negativa(s)
+                    </span>
+                </div>
+
+            </div>
+
+        @endif
+
 
         {{-- EVIDÊNCIAS DE EXPORTAÇÃO --}}
         @if (

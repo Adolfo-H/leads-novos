@@ -12,6 +12,7 @@ use App\Models\ImportItem;
 use App\Services\CnpjEnrichmentService;
 use App\Services\CompanyGroupEnrichmentService;
 use App\Services\CrmCheckService;
+use App\Services\ExportResearchQueueService;
 use App\Services\IcpScoringService;
 use App\Services\ImportQueueService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -72,6 +73,7 @@ class EnrichImportItem implements ShouldQueue
         CrmCheckService $crmCheck,
         ImportQueueService $queue,
         IcpScoringService $icp,
+        ExportResearchQueueService $exportResearchQueue,
     ): void {
         $item = ImportItem::query()
             ->findOrFail(
@@ -190,6 +192,69 @@ class EnrichImportItem implements ShouldQueue
                     $crmProvider,
                     $crmCheck,
                 );
+
+            /*
+             * Depois de Receita + ICP + CRM,
+             * decidimos se vale gastar uma
+             * pesquisa externa com a empresa.
+             *
+             * Nenhuma pesquisa é executada
+             * nesta etapa.
+             */
+            $company->unsetRelation(
+                'crmCheck'
+            );
+
+            $company->unsetRelation(
+                'icpScore'
+            );
+
+            $company->unsetRelation(
+                'exportIntelligence'
+            );
+
+            $researchDecision =
+                $exportResearchQueue
+                    ->dispatchIfEnabled(
+                        $company
+                    );
+
+            /*
+             * Mantemos a peneira separada
+             * porque ela é exibida na tela
+             * de importações.
+             */
+            $metadata[
+                'export_research_eligibility'
+            ] = [
+                'eligible' => $researchDecision[
+                        'eligible'
+                    ],
+
+                'reason' => $researchDecision[
+                        'reason'
+                    ],
+
+                'message' => $researchDecision[
+                        'message'
+                    ],
+            ];
+
+            /*
+             * Estado operacional da próxima
+             * etapa.
+             */
+            $metadata[
+                'export_research'
+            ] = [
+                'enabled' => $researchDecision[
+                        'enabled'
+                    ],
+
+                'queued' => $researchDecision[
+                        'queued'
+                    ],
+            ];
 
             $item->update([
                 'status' => 'completed',
