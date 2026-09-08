@@ -627,6 +627,83 @@ new class extends Component
             ];
         }
 
+        /*
+         * Peneira para a próxima etapa:
+         * pesquisa pública de exportação.
+         *
+         * Isso NÃO dispara pesquisa.
+         * Apenas mostra se a empresa
+         * passou pelos filtros de ICP + CRM.
+         */
+        $researchEligibility =
+            data_get(
+                $item->metadata,
+                'export_research_eligibility'
+            );
+
+        if (
+            is_array(
+                $researchEligibility
+            )
+        ) {
+            $eligible =
+                (bool) (
+                    $researchEligibility[
+                        'eligible'
+                    ]
+                    ?? false
+                );
+
+            $reason =
+                $researchEligibility[
+                    'reason'
+                ]
+                ?? null;
+
+            $message =
+                $researchEligibility[
+                    'message'
+                ]
+                ?? null;
+
+            if ($eligible) {
+                $alerts[] = [
+                    'type' =>
+                        'success',
+
+                    'label' =>
+                        'Pesquisa de exportação elegível',
+
+                    'detail' =>
+                        'Empresa aprovada nos filtros '
+                        .'de ICP e CRM.',
+                ];
+            } else {
+                $alerts[] = [
+                    'type' =>
+                        'neutral',
+
+                    'label' =>
+                        'Pesquisa de exportação bloqueada',
+
+                    'detail' =>
+                        is_string(
+                            $message
+                        )
+                        && $message !== ''
+                            ? $message
+                            : (
+                                is_string(
+                                    $reason
+                                )
+                                && $reason !== ''
+                                    ? $reason
+                                    : 'Empresa não elegível.'
+                            ),
+                ];
+            }
+        }
+
         return $alerts;
     }
 
@@ -634,6 +711,16 @@ new class extends Component
         string $type
     ): string {
         return match ($type) {
+            'success' =>
+                'border-emerald-400/15 '
+                .'bg-emerald-400/[0.06] '
+                .'text-emerald-300',
+
+            'neutral' =>
+                'border-white/[0.06] '
+                .'bg-white/[0.03] '
+                .'text-[#9ca5c5]',
+
             'danger' =>
                 'border-rose-400/15 '
                 .'bg-rose-400/[0.06] '

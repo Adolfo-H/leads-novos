@@ -10,6 +10,7 @@ use App\Services\ExportResearchEligibilityService;
 use App\Services\ExportResearchService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Throwable;
 
 class ResearchCompanyExports implements ShouldQueue
@@ -24,6 +25,29 @@ class ResearchCompanyExports implements ShouldQueue
         public int $companyId,
         public bool $force = false,
     ) {}
+
+    /**
+     * Impede duas pesquisas da mesma empresa
+     * de executarem simultaneamente.
+     *
+     * @return list<WithoutOverlapping>
+     */
+    public function middleware(): array
+    {
+        return [
+            (
+                new WithoutOverlapping(
+                    'export-research-company-'
+                    .$this->companyId
+                )
+            )
+                ->dontRelease()
+                ->expireAfter(
+                    $this->timeout
+                    + 60
+                ),
+        ];
+    }
 
     /**
      * @return list<int>
