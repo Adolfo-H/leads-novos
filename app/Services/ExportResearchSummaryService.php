@@ -329,13 +329,19 @@ final class ExportResearchSummaryService
                 dictionary: self::MARKETS,
             );
 
-        return [
-            'headline' => $this->headline(
+        $assessment =
+            $this->assessment(
                 dimensions: $dimensions,
+                evidenceCount: $evidences->count(),
+                positiveCount: $positiveCount,
+                neutralCount: $neutralCount,
+                negativeCount: $negativeCount,
+            );
 
-                evidenceCount: $evidences
-                    ->count(),
-            ),
+        return [
+            'headline' => $assessment['summary'],
+
+            'assessment' => $assessment,
 
             'evidence_count' => $evidences
                 ->count(),
@@ -354,6 +360,224 @@ final class ExportResearchSummaryService
 
             'generated_at' => now()
                 ->toIso8601String(),
+        ];
+    }
+
+    /**
+     * @param array<string, array{
+     *     label: string,
+     *     status: string,
+     *     confidence: int,
+     *     evidence_count: int,
+     *     best_evidence: array<string, mixed>|null
+     * }> $dimensions
+     * @return array{
+     *     status: string,
+     *     label: string,
+     *     evidence_level: string,
+     *     summary: string,
+     *     modalities: list<string>,
+     *     positive_count: int,
+     *     neutral_count: int,
+     *     negative_count: int
+     * }
+     */
+    private function assessment(
+        array $dimensions,
+        int $evidenceCount,
+        int $positiveCount,
+        int $neutralCount,
+        int $negativeCount,
+    ): array {
+        $modalities = [];
+
+        foreach ($dimensions as $dimension) {
+            if (
+                $dimension['status']
+                === 'yes'
+            ) {
+                $modalities[] =
+                    $dimension['label'];
+            }
+        }
+
+        /*
+         * Nenhuma página relevante encontrada.
+         */
+        if ($evidenceCount === 0) {
+            return [
+                'status' => 'no_evidence',
+
+                'label' => 'Sem evidências encontradas',
+
+                'evidence_level' => 'insufficient',
+
+                'summary' => 'A pesquisa não encontrou '
+                    .'fontes públicas relevantes '
+                    .'para avaliar a atuação '
+                    .'exportadora da empresa.',
+
+                'modalities' => [],
+
+                'positive_count' => 0,
+
+                'neutral_count' => 0,
+
+                'negative_count' => 0,
+            ];
+        }
+
+        /*
+         * Encontramos páginas sobre a empresa,
+         * mas nenhuma delas trouxe sinal
+         * efetivamente favorável ou contrário
+         * à existência de exportação.
+         */
+        if (
+            $positiveCount === 0
+            && $negativeCount === 0
+        ) {
+            return [
+                'status' => 'not_confirmed',
+
+                'label' => 'Exportação não comprovada',
+
+                'evidence_level' => 'insufficient',
+
+                'summary' => 'Foram analisadas '
+                    .$evidenceCount
+                    .' fontes públicas. '
+                    .'As fontes encontradas '
+                    .'descrevem a empresa ou sua '
+                    .'atividade, mas não '
+                    .'apresentaram evidência '
+                    .'suficiente para confirmar '
+                    .'atuação exportadora.',
+
+                'modalities' => [],
+
+                'positive_count' => 0,
+
+                'neutral_count' => $neutralCount,
+
+                'negative_count' => 0,
+            ];
+        }
+
+        /*
+         * Pelo menos uma modalidade conseguiu
+         * atingir o nível necessário para SIM.
+         */
+        if ($modalities !== []) {
+            return [
+                'status' => 'identified',
+
+                'label' => 'Atuação exportadora identificada',
+
+                'evidence_level' => 'strong',
+
+                'summary' => 'A pesquisa encontrou '
+                    .'evidências públicas '
+                    .'compatíveis com '
+                    .mb_strtolower(
+                        $this->naturalList(
+                            $modalities
+                        )
+                    )
+                    .'.',
+
+                'modalities' => $modalities,
+
+                'positive_count' => $positiveCount,
+
+                'neutral_count' => $neutralCount,
+
+                'negative_count' => $negativeCount,
+            ];
+        }
+
+        /*
+         * Existem sinais favoráveis, mas eles
+         * ainda não são suficientes para
+         * identificar com segurança a operação.
+         */
+        if (
+            $positiveCount > 0
+            && $negativeCount === 0
+        ) {
+            return [
+                'status' => 'indications',
+
+                'label' => 'Indícios de exportação',
+
+                'evidence_level' => 'moderate',
+
+                'summary' => 'Foram encontrados indícios '
+                    .'públicos relacionados à '
+                    .'atividade exportadora, '
+                    .'mas as evidências ainda '
+                    .'não são suficientes para '
+                    .'confirmar a operação ou '
+                    .'sua modalidade.',
+
+                'modalities' => [],
+
+                'positive_count' => $positiveCount,
+
+                'neutral_count' => $neutralCount,
+
+                'negative_count' => 0,
+            ];
+        }
+
+        /*
+         * Há sinais em sentidos diferentes.
+         */
+        if (
+            $positiveCount > 0
+            && $negativeCount > 0
+        ) {
+            return [
+                'status' => 'inconclusive',
+
+                'label' => 'Pesquisa inconclusiva',
+
+                'evidence_level' => 'conflicting',
+
+                'summary' => 'As fontes apresentam sinais '
+                    .'divergentes sobre a atuação '
+                    .'exportadora. É necessária '
+                    .'revisão das evidências '
+                    .'antes de concluir.',
+
+                'modalities' => [],
+
+                'positive_count' => $positiveCount,
+
+                'neutral_count' => $neutralCount,
+
+                'negative_count' => $negativeCount,
+            ];
+        }
+
+        return [
+            'status' => 'not_supported',
+
+            'label' => 'Exportação não sustentada pelas fontes',
+
+            'evidence_level' => 'negative',
+
+            'summary' => 'As fontes analisadas não '
+                .'sustentam, neste momento, '
+                .'uma atuação exportadora.',
+
+            'modalities' => [],
+
+            'positive_count' => 0,
+
+            'neutral_count' => $neutralCount,
+
+            'negative_count' => $negativeCount,
         ];
     }
 
@@ -376,84 +600,6 @@ final class ExportResearchSummaryService
             * 1000
         )
         + $evidence->confidence;
-    }
-
-    /**
-     * @param  array<string, array{
-     *     label: string,
-     *     status: string,
-     *     confidence: int,
-     *     evidence_count: int,
-     *     best_evidence: array<string, mixed>|null
-     * }>  $dimensions
-     */
-    private function headline(
-        array $dimensions,
-        int $evidenceCount,
-    ): string {
-        if ($evidenceCount === 0) {
-            return
-                'A pesquisa foi concluída, '
-                .'mas nenhuma evidência pública '
-                .'relevante foi encontrada.';
-        }
-
-        $confirmed = [];
-
-        foreach (
-            $dimensions as $dimension
-        ) {
-            if (
-                $dimension[
-                    'status'
-                ] === 'yes'
-            ) {
-                $confirmed[] =
-                    mb_strtolower(
-                        $dimension[
-                            'label'
-                        ]
-                    );
-            }
-        }
-
-        if ($confirmed !== []) {
-            return
-                'A pesquisa encontrou evidências '
-                .'compatíveis com '
-                .$this->naturalList(
-                    $confirmed
-                )
-                .'.';
-        }
-
-        $allNegative =
-            collect(
-                $dimensions
-            )
-                ->every(
-                    fn (
-                        array $dimension
-                    ): bool => $dimension[
-                            'status'
-                        ] === 'no'
-                );
-
-        if ($allNegative) {
-            return
-                'As fontes pesquisadas não '
-                .'sustentam, neste momento, '
-                .'uma atuação exportadora nas '
-                .'modalidades analisadas.';
-        }
-
-        return
-            'Há indícios públicos relacionados '
-            .'à atividade exportadora, mas as '
-            .'fontes ainda não permitem confirmar '
-            .'com segurança se a operação é '
-            .'direta, indireta ou realizada '
-            .'por meio de trading.';
     }
 
     /**

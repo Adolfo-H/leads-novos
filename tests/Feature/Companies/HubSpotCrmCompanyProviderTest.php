@@ -396,3 +396,137 @@ it('loads associated deals with their real commercial state', function () {
 
     Http::assertSentCount(4);
 });
+
+it('matches a HubSpot domain even when it contains www prefix', function () {
+    $company = app(
+        CompanyService::class
+    )->createOrUpdateFromEstablishment(
+        [
+            'corporate_name' => 'JF CITRUS AGROPECUARIA S/A',
+        ],
+        [
+            'cnpj' => '08.104.691/0001-85',
+
+            'type' => 'matrix',
+
+            'registration_status_code' => '02',
+
+            'email' => 'fiscal@jfcitrus.com.br',
+        ]
+    );
+
+    Http::fakeSequence()
+        ->push([
+            'total' => 1,
+
+            'results' => [
+                [
+                    'id' => '58030771605',
+
+                    'properties' => [
+                        'name' => 'JF Citrus Agropecuária',
+
+                        'domain' => 'www.jfcitrus.com.br',
+
+                        'lifecyclestage' => null,
+
+                        'hubspot_owner_id' => '123',
+
+                        'num_contacted_notes' => '0',
+
+                        'num_associated_deals' => '1',
+
+                        'notes_last_contacted' => null,
+                    ],
+                ],
+            ],
+        ])
+        ->push([
+            'results' => [],
+        ]);
+
+    $result = app(
+        HubSpotCrmCompanyProvider::class
+    )->findCompany(
+        $company
+    );
+
+    expect(
+        $result['found']
+    )->toBeTrue();
+
+    expect(
+        $result['matched_by']
+    )->toBe(
+        'domain'
+    );
+});
+
+it('matches company names when only the legal suffix differs', function () {
+    $company = app(
+        CompanyService::class
+    )->createOrUpdateFromEstablishment(
+        [
+            'corporate_name' => 'JF CITRUS AGROPECUARIA S/A',
+        ],
+        [
+            'cnpj' => '08.104.691/0001-85',
+
+            'type' => 'matrix',
+
+            'registration_status_code' => '02',
+
+            /*
+             * Domínio público força o fallback
+             * por nome.
+             */
+            'email' => 'financeiro@gmail.com',
+        ]
+    );
+
+    Http::fakeSequence()
+        ->push([
+            'total' => 1,
+
+            'results' => [
+                [
+                    'id' => '58030771605',
+
+                    'properties' => [
+                        'name' => 'JF Citrus Agropecuária',
+
+                        'domain' => 'www.jfcitrus.com.br',
+
+                        'lifecyclestage' => null,
+
+                        'hubspot_owner_id' => '123',
+
+                        'num_contacted_notes' => '0',
+
+                        'num_associated_deals' => '0',
+
+                        'notes_last_contacted' => null,
+                    ],
+                ],
+            ],
+        ])
+        ->push([
+            'results' => [],
+        ]);
+
+    $result = app(
+        HubSpotCrmCompanyProvider::class
+    )->findCompany(
+        $company
+    );
+
+    expect(
+        $result['found']
+    )->toBeTrue();
+
+    expect(
+        $result['matched_by']
+    )->toBe(
+        'name'
+    );
+});

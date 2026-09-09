@@ -187,11 +187,37 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
     ): array {
         $filterGroups = [];
 
+        $variants = [];
+
+        foreach ($domains as $domain) {
+            $normalized =
+                $this->normalizeDomain(
+                    $domain
+                );
+
+            if ($normalized === null) {
+                continue;
+            }
+
+            $variants[] =
+                $normalized;
+
+            $variants[] =
+                'www.'.$normalized;
+        }
+
+        $variants =
+            array_values(
+                array_unique(
+                    $variants
+                )
+            );
+
         foreach (
             array_slice(
-                $domains,
+                $variants,
                 0,
-                3
+                5
             ) as $domain
         ) {
             $filterGroups[] = [
@@ -350,20 +376,31 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
         array $domains,
     ): ?array {
         foreach ($results as $result) {
-            $domain = mb_strtolower(
-                trim(
-                    (string) data_get(
+            $domain =
+                $this->normalizeDomain(
+                    data_get(
                         $result,
                         'properties.domain'
                     )
-                )
-            );
+                );
+
+            $normalizedDomains =
+                array_values(
+                    array_filter(
+                        array_map(
+                            fn (string $candidate): ?string => $this->normalizeDomain(
+                                $candidate
+                            ),
+                            $domains
+                        )
+                    )
+                );
 
             if (
-                $domain !== ''
+                $domain !== null
                 && in_array(
                     $domain,
-                    $domains,
+                    $normalizedDomains,
                     true
                 )
             ) {
@@ -383,7 +420,7 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
         array $results,
     ): ?array {
         $expected =
-            TextNormalizer::companyName(
+            $this->companyNameMatchKey(
                 $company
                     ->corporate_name
             );
@@ -400,7 +437,7 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
             }
 
             if (
-                TextNormalizer::companyName(
+                $this->companyNameMatchKey(
                     $name
                 )
                 === $expected
@@ -410,6 +447,83 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
         }
 
         return null;
+    }
+
+    private function normalizeDomain(
+        mixed $value
+    ): ?string {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value =
+            mb_strtolower(
+                trim(
+                    $value
+                )
+            );
+
+        if ($value === '') {
+            return null;
+        }
+
+        /*
+         * O campo domain do HubSpot às vezes
+         * contém www., enquanto um domínio
+         * extraído de e-mail naturalmente não.
+         */
+        if (
+            str_starts_with(
+                $value,
+                'www.'
+            )
+        ) {
+            $value =
+                mb_substr(
+                    $value,
+                    4
+                );
+        }
+
+        return rtrim(
+            $value,
+            '.'
+        );
+    }
+
+    private function companyNameMatchKey(
+        ?string $value
+    ): ?string {
+        $normalized =
+            TextNormalizer::companyName(
+                $value
+            );
+
+        if ($normalized === null) {
+            return null;
+        }
+
+        /*
+         * O nome cadastral da Receita costuma
+         * carregar a forma societária, enquanto
+         * o HubSpot muitas vezes guarda apenas
+         * o nome comercial.
+         *
+         * Removemos somente sufixos no FINAL
+         * para evitar matches excessivamente
+         * permissivos.
+         */
+        $withoutLegalSuffix =
+            preg_replace(
+                '/\\s+(?:S\\s+A|SA|LTDA|EIRELI|ME|EPP)$/',
+                '',
+                $normalized
+            );
+
+        return trim(
+            $withoutLegalSuffix
+            ?? $normalized
+        );
     }
 
     /**
@@ -470,15 +584,14 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
             );
 
             $domain =
-                mb_strtolower(
-                    trim(
-                        (string)
-                            end($parts)
+                $this->normalizeDomain(
+                    (string) end(
+                        $parts
                     )
                 );
 
             if (
-                $domain === ''
+                $domain === null
                 || ! str_contains(
                     $domain,
                     '.'

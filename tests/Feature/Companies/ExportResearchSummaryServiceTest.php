@@ -151,3 +151,126 @@ it('creates a commercial summary from export evidence', function () {
         ]
     )->toBe(1);
 });
+
+it('does not describe neutral search results as export indications', function () {
+    $company =
+        Company::query()->create([
+            'cnpj_root' => '08104691',
+
+            'corporate_name' => 'EMPRESA PESQUISA NEUTRA',
+        ]);
+
+    $intelligence =
+        app(
+            ExportIntelligenceService::class
+        )->ensure(
+            $company
+        );
+
+    $intelligence->update([
+        'direct_status' => 'uncertain',
+
+        'direct_confidence' => 55,
+
+        'indirect_status' => 'uncertain',
+
+        'indirect_confidence' => 55,
+
+        'trading_status' => 'uncertain',
+
+        'trading_confidence' => 55,
+    ]);
+
+    foreach (
+        range(
+            1,
+            15
+        ) as $index
+    ) {
+        CompanyExportEvidence::query()
+            ->create([
+                'company_id' => $company->id,
+
+                'fingerprint' => hash(
+                    'sha256',
+                    'neutral-summary-'.$index
+                ),
+
+                'dimension' => match (
+                    $index % 3
+                ) {
+                    0 => 'direct',
+                    1 => 'indirect',
+                    default => 'trading',
+                },
+
+                'signal' => 'neutral',
+
+                'source_type' => 'other',
+
+                'source_name' => 'Fonte '.$index,
+
+                'source_url' => 'https://example.test/'
+                    .$index,
+
+                'title' => 'Página sobre a empresa',
+
+                'evidence_text' => 'Conteúdo institucional '
+                    .'sem comprovação de exportação.',
+
+                'confidence' => 55,
+
+                'is_confirmed' => false,
+
+                'metadata' => [],
+            ]);
+    }
+
+    $summary =
+        app(
+            ExportResearchSummaryService::class
+        )->build(
+            company: $company,
+
+            intelligence: $intelligence->refresh(),
+        );
+
+    expect(
+        data_get(
+            $summary,
+            'assessment.status'
+        )
+    )->toBe(
+        'not_confirmed'
+    );
+
+    expect(
+        data_get(
+            $summary,
+            'assessment.label'
+        )
+    )->toBe(
+        'Exportação não comprovada'
+    );
+
+    expect(
+        data_get(
+            $summary,
+            'assessment.modalities'
+        )
+    )->toBe([]);
+
+    expect(
+        $summary['headline']
+    )->toContain(
+        'não apresentaram evidência suficiente'
+    );
+
+    expect(
+        $summary['positive_count']
+    )->toBe(0);
+
+    expect(
+        $summary['neutral_count']
+    )->toBe(15);
+});

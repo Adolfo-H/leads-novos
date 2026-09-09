@@ -485,13 +485,13 @@ it('renders export intelligence in the company dossier', function () {
         ->assertSee(
             'Pesquisa concluída'
         )
-        ->assertSee(
+        ->assertDontSee(
             '90% de confiança'
         )
-        ->assertSee(
+        ->assertDontSee(
             '55% de confiança'
         )
-        ->assertSee(
+        ->assertDontSee(
             '78% de confiança'
         )
         ->assertSee(

@@ -269,3 +269,99 @@ it('does not overwrite a manual confirmed classification', function () {
         $intelligence->direct_confirmed
     )->toBeTrue();
 });
+
+it('does not inflate confidence from repeated neutral evidence', function () {
+    $company =
+        scoringCompanyForTest();
+
+    $service = app(
+        ExportIntelligenceService::class
+    );
+
+    foreach (range(1, 5) as $index) {
+        $service->recordEvidence(
+            company: $company,
+            dimension: 'direct',
+            signal: 'neutral',
+            sourceType: 'other',
+            evidenceText: 'Resultado neutro '.$index.'.',
+            confidence: 55,
+        );
+    }
+
+    $intelligence =
+        $company
+            ->exportIntelligence()
+            ->firstOrFail();
+
+    expect(
+        $intelligence->direct_status
+    )->toBe('uncertain');
+
+    /*
+     * Cinco evidências neutras de 55%
+     * continuam representando no máximo
+     * 55% de cobertura inconclusiva.
+     *
+     * Elas não podem acumular até 95%.
+     */
+    expect(
+        $intelligence->direct_confidence
+    )->toBe(55);
+
+    expect(
+        data_get(
+            $intelligence->metadata,
+            'scoring.direct.version'
+        )
+    )->toBe('v2');
+});
+
+it('does not let neutral evidence strengthen an uncertain directional conclusion', function () {
+    $company =
+        scoringCompanyForTest();
+
+    $service = app(
+        ExportIntelligenceService::class
+    );
+
+    $service->recordEvidence(
+        company: $company,
+        dimension: 'indirect',
+        signal: 'positive',
+        sourceType: 'news',
+        evidenceText: 'Indício positivo ainda fraco.',
+        confidence: 50,
+    );
+
+    foreach (range(1, 4) as $index) {
+        $service->recordEvidence(
+            company: $company,
+            dimension: 'indirect',
+            signal: 'neutral',
+            sourceType: 'other',
+            evidenceText: 'Página neutra '.$index.'.',
+            confidence: 55,
+        );
+    }
+
+    $intelligence =
+        $company
+            ->exportIntelligence()
+            ->firstOrFail();
+
+    expect(
+        $intelligence->indirect_status
+    )->toBe('uncertain');
+
+    /*
+     * A conclusão direcional continua
+     * baseada no sinal positivo de 50%.
+     *
+     * As evidências neutras não aumentam
+     * essa confiança para 55% ou 95%.
+     */
+    expect(
+        $intelligence->indirect_confidence
+    )->toBe(50);
+});
