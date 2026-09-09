@@ -2663,13 +2663,123 @@ private function reloadCompany(): void
             </div>
 
 
-                                    {{-- DIRETA --}}
+            {{-- EXPORTAÇÃO --}}
+            @php
+                $exportResearchSummary =
+                    $this->exportResearchSummary;
+
+                $exportAssessment =
+                    is_array(
+                        $exportResearchSummary
+                    )
+                        ? data_get(
+                            $exportResearchSummary,
+                            'assessment'
+                        )
+                        : null;
+
+                $exportAssessmentStatus =
+                    is_array(
+                        $exportAssessment
+                    )
+                        ? (
+                            $exportAssessment[
+                                'status'
+                            ]
+                            ?? null
+                        )
+                        : null;
+
+                $exportCardLabel =
+                    is_array(
+                        $exportAssessment
+                    )
+                        ? (
+                            $exportAssessment[
+                                'label'
+                            ]
+                            ?? 'Pesquisa concluída'
+                        )
+                        : match (
+                            $export
+                                ?->research_status
+                        ) {
+                            'completed' =>
+                                'Pesquisa concluída',
+
+                            'queued' =>
+                                'Pesquisa na fila',
+
+                            'processing' =>
+                                'Pesquisa em andamento',
+
+                            'failed' =>
+                                'Pesquisa com erro',
+
+                            default =>
+                                'Não pesquisada',
+                        };
+
+                $exportCardClasses =
+                    match (
+                        $exportAssessmentStatus
+                    ) {
+                        'identified' =>
+                            'bg-emerald-500/15 text-emerald-300',
+
+                        'indications' =>
+                            'bg-cyan-500/15 text-cyan-300',
+
+                        'inconclusive' =>
+                            'bg-amber-500/15 text-amber-300',
+
+                        'not_supported' =>
+                            'bg-rose-500/15 text-rose-300',
+
+                        default =>
+                            'bg-white/5 text-[#9ba3c2]',
+                    };
+
+                $exportModalities =
+                    is_array(
+                        $exportAssessment
+                    )
+                    && is_array(
+                        $exportAssessment[
+                            'modalities'
+                        ]
+                        ?? null
+                    )
+                        ? $exportAssessment[
+                            'modalities'
+                        ]
+                        : [];
+
+                $exportEvidenceCount =
+                    $company
+                        ->exportEvidence
+                        ->count();
+
+                $exportCardCaption =
+                    $exportModalities !== []
+                        ? implode(
+                            ' · ',
+                            $exportModalities
+                        )
+                        : (
+                            $exportEvidenceCount > 0
+                                ? $exportEvidenceCount
+                                    .' fonte(s) analisada(s)'
+                                : 'Pesquisa pública de exportação'
+                        );
+            @endphp
+
             <div class="ec-intelligence-card">
 
                 <div class="ec-intelligence-top">
 
                     <span class="ec-intelligence-label">
-                        Exp. direta
+                        Exportação
                     </span>
 
                     <span
@@ -2677,212 +2787,39 @@ private function reloadCompany(): void
                             rounded-full
                             px-2 py-1
                             text-[10px]
-                            font-bold
-                            uppercase
-                            {{
-                                $this
-                                    ->exportStatusClasses(
-                                        $export
-                                            ?->direct_status
-                                    )
-                            }}
+                            font-bold uppercase
+                            {{ $exportCardClasses }}
                         "
                     >
                         {{
-                            $this
-                                ->exportStatusLabel(
-                                    $export
-                                        ?->direct_status
-                                )
+                            $export
+                                ?->research_status
+                                === 'completed'
+                                    ? 'Analisada'
+                                    : (
+                                        $export
+                                            ?->research_status
+                                            === 'processing'
+                                            ? 'Analisando'
+                                            : (
+                                                $export
+                                                    ?->research_status
+                                                    === 'queued'
+                                                    ? 'Na fila'
+                                                    : 'Pendente'
+                                            )
+                                    )
                         }}
                     </span>
 
                 </div>
 
                 <div class="ec-intelligence-value">
-                    {{
-                        $this
-                            ->exportStatusLabel(
-                                $export
-                                    ?->direct_status
-                            )
-                    }}
+                    {{ $exportCardLabel }}
                 </div>
 
                 <div class="ec-intelligence-caption">
-
-                    @if (
-                        $export
-                        && $export->direct_status
-                            !== 'not_researched'
-                    )
-
-                        {{
-                            $export
-                                ->direct_confidence
-                        }}% de confiança
-
-                        @if (
-                            $export
-                                ->direct_confirmed
-                        )
-                            · Confirmado
-                        @endif
-
-                    @else
-                        Exportação própria
-                    @endif
-
-                </div>
-
-            </div>
-
-
-            {{-- INDIRETA --}}
-            <div class="ec-intelligence-card">
-
-                <div class="ec-intelligence-top">
-
-                    <span class="ec-intelligence-label">
-                        Exp. indireta
-                    </span>
-
-                    <span
-                        class="
-                            rounded-full
-                            px-2 py-1
-                            text-[10px]
-                            font-bold
-                            uppercase
-                            {{
-                                $this
-                                    ->exportStatusClasses(
-                                        $export
-                                            ?->indirect_status
-                                    )
-                            }}
-                        "
-                    >
-                        {{
-                            $this
-                                ->exportStatusLabel(
-                                    $export
-                                        ?->indirect_status
-                                )
-                        }}
-                    </span>
-
-                </div>
-
-                <div class="ec-intelligence-value">
-                    {{
-                        $this
-                            ->exportStatusLabel(
-                                $export
-                                    ?->indirect_status
-                            )
-                    }}
-                </div>
-
-                <div class="ec-intelligence-caption">
-
-                    @if (
-                        $export
-                        && $export->indirect_status
-                            !== 'not_researched'
-                    )
-
-                        {{
-                            $export
-                                ->indirect_confidence
-                        }}% de confiança
-
-                        @if (
-                            $export
-                                ->indirect_confirmed
-                        )
-                            · Confirmado
-                        @endif
-
-                    @else
-                        Fim específico
-                    @endif
-
-                </div>
-
-            </div>
-
-
-            {{-- TRADING --}}
-            <div class="ec-intelligence-card">
-
-                <div class="ec-intelligence-top">
-
-                    <span class="ec-intelligence-label">
-                        Trading
-                    </span>
-
-                    <span
-                        class="
-                            rounded-full
-                            px-2 py-1
-                            text-[10px]
-                            font-bold
-                            uppercase
-                            {{
-                                $this
-                                    ->exportStatusClasses(
-                                        $export
-                                            ?->trading_status
-                                    )
-                            }}
-                        "
-                    >
-                        {{
-                            $this
-                                ->exportStatusLabel(
-                                    $export
-                                        ?->trading_status
-                                )
-                        }}
-                    </span>
-
-                </div>
-
-                <div class="ec-intelligence-value">
-                    {{
-                        $this
-                            ->exportStatusLabel(
-                                $export
-                                    ?->trading_status
-                            )
-                    }}
-                </div>
-
-                <div class="ec-intelligence-caption">
-
-                    @if (
-                        $export
-                        && $export->trading_status
-                            !== 'not_researched'
-                    )
-
-                        {{
-                            $export
-                                ->trading_confidence
-                        }}% de confiança
-
-                        @if (
-                            $export
-                                ->trading_confirmed
-                        )
-                            · Confirmado
-                        @endif
-
-                    @else
-                        Relação comercial
-                    @endif
-
+                    {{ $exportCardCaption }}
                 </div>
 
             </div>
@@ -3061,6 +2998,42 @@ private function reloadCompany(): void
                 </div>
 
 
+                @php
+                    $assessment =
+                        data_get(
+                            $researchSummary,
+                            'assessment',
+                            []
+                        );
+
+                    $assessmentLabel =
+                        is_array(
+                            $assessment
+                        )
+                            ? (
+                                $assessment[
+                                    'label'
+                                ]
+                                ?? 'Pesquisa concluída'
+                            )
+                            : 'Pesquisa concluída';
+
+                    $modalities =
+                        is_array(
+                            $assessment
+                        )
+                        && is_array(
+                            $assessment[
+                                'modalities'
+                            ]
+                            ?? null
+                        )
+                            ? $assessment[
+                                'modalities'
+                            ]
+                            : [];
+                @endphp
+
                 <div
                     class="
                         grid gap-3
@@ -3069,114 +3042,108 @@ private function reloadCompany(): void
                     "
                 >
 
-                    @foreach (
-                        $researchSummary[
-                            'dimensions'
-                        ] as $dimension
-                    )
+                    <div
+                        class="
+                            rounded-xl
+                            border border-white/[0.06]
+                            bg-white/[0.025]
+                            p-4
+                        "
+                    >
+                        <div
+                            class="
+                                text-[10px]
+                                font-semibold uppercase
+                                tracking-[0.12em]
+                                text-[#737e9f]
+                            "
+                        >
+                            Resultado
+                        </div>
 
                         <div
                             class="
-                                rounded-xl
-                                border border-white/[0.06]
-                                bg-white/[0.025]
-                                p-4
+                                mt-2 text-sm
+                                font-semibold
+                                text-[#eef1ff]
                             "
                         >
-                            <div
-                                class="
-                                    flex items-center
-                                    justify-between gap-3
-                                "
-                            >
-                                <span
-                                    class="
-                                        text-xs font-semibold
-                                        text-[#dce1f5]
-                                    "
-                                >
-                                    {{
-                                        $dimension[
-                                            'label'
-                                        ]
-                                    }}
-                                </span>
+                            {{ $assessmentLabel }}
+                        </div>
+                    </div>
 
-                                <span
-                                    class="
-                                        rounded-full
-                                        px-2 py-1
-                                        text-[9px]
-                                        font-bold uppercase
-                                        {{
-                                            $this
-                                                ->exportStatusClasses(
-                                                    $dimension[
-                                                        'status'
-                                                    ]
-                                                )
-                                        }}
-                                    "
-                                >
-                                    {{
-                                        $this
-                                            ->exportStatusLabel(
-                                                $dimension[
-                                                    'status'
-                                                ]
-                                            )
-                                    }}
-                                </span>
-                            </div>
 
-                            <div
-                                class="
-                                    mt-3 text-xs
-                                    text-[#858eae]
-                                "
-                            >
-                                {{
-                                    $dimension[
-                                        'confidence'
-                                    ]
-                                }}% de confiança
-                                ·
-                                {{
-                                    $dimension[
-                                        'evidence_count'
-                                    ]
-                                }} fonte(s)
-                            </div>
-
-                            @if (
-                                $dimension[
-                                    'best_evidence'
-                                ]
-                            )
-
-                                <div
-                                    class="
-                                        mt-3 border-t
-                                        border-white/[0.05]
-                                        pt-3
-                                        text-xs leading-5
-                                        text-[#9ca5c4]
-                                    "
-                                >
-                                    {{
-                                        $dimension[
-                                            'best_evidence'
-                                        ][
-                                            'text'
-                                        ]
-                                    }}
-                                </div>
-
-                            @endif
-
+                    <div
+                        class="
+                            rounded-xl
+                            border border-white/[0.06]
+                            bg-white/[0.025]
+                            p-4
+                        "
+                    >
+                        <div
+                            class="
+                                text-[10px]
+                                font-semibold uppercase
+                                tracking-[0.12em]
+                                text-[#737e9f]
+                            "
+                        >
+                            Modalidade identificada
                         </div>
 
-                    @endforeach
+                        <div
+                            class="
+                                mt-2 text-sm
+                                font-semibold
+                                text-[#eef1ff]
+                            "
+                        >
+                            {{
+                                $modalities !== []
+                                    ? implode(
+                                        ' · ',
+                                        $modalities
+                                    )
+                                    : 'Não identificada'
+                            }}
+                        </div>
+                    </div>
+
+
+                    <div
+                        class="
+                            rounded-xl
+                            border border-white/[0.06]
+                            bg-white/[0.025]
+                            p-4
+                        "
+                    >
+                        <div
+                            class="
+                                text-[10px]
+                                font-semibold uppercase
+                                tracking-[0.12em]
+                                text-[#737e9f]
+                            "
+                        >
+                            Fontes analisadas
+                        </div>
+
+                        <div
+                            class="
+                                mt-2 text-sm
+                                font-semibold
+                                text-[#eef1ff]
+                            "
+                        >
+                            {{
+                                $researchSummary[
+                                    'evidence_count'
+                                ]
+                            }}
+                        </div>
+                    </div>
 
                 </div>
 
@@ -3321,7 +3288,7 @@ private function reloadCompany(): void
                             $researchSummary[
                                 'positive_count'
                             ]
-                        }} positiva(s)
+                        }} sinal(is) de exportação
                     </span>
 
                     <span>
@@ -3329,7 +3296,7 @@ private function reloadCompany(): void
                             $researchSummary[
                                 'neutral_count'
                             ]
-                        }} neutra(s)
+                        }} fonte(s) contextual(is)
                     </span>
 
                     <span>
@@ -3337,7 +3304,7 @@ private function reloadCompany(): void
                             $researchSummary[
                                 'negative_count'
                             ]
-                        }} negativa(s)
+                        }} sinal(is) contrário(s)
                     </span>
                 </div>
 
@@ -3475,18 +3442,20 @@ private function reloadCompany(): void
                                                 "
                                             >
                                                 {{
-                                                    strtoupper(
+                                                    match (
                                                         $evidence
                                                             ->signal
-                                                    )
+                                                    ) {
+                                                        'positive' =>
+                                                            'Sinal relevante',
+
+                                                        'negative' =>
+                                                            'Sinal contrário',
+
+                                                        default =>
+                                                            'Fonte contextual',
+                                                    }
                                                 }}
-
-                                                ·
-
-                                                {{
-                                                    $evidence
-                                                        ->confidence
-                                                }}%
                                             </span>
 
                                         </div>

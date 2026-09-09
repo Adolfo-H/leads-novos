@@ -193,3 +193,80 @@ it('updates the same SDR score instead of duplicating it', function () {
             ->count()
     )->toBe(1);
 });
+
+it('does not award export points for uncertain research', function () {
+    $company =
+        sdrCompany(
+            crmStatus: 'not_found',
+            grade: 'A',
+        );
+
+    $company
+        ->exportIntelligence()
+        ->create([
+            'direct_status' => 'uncertain',
+
+            'direct_confidence' => 95,
+
+            'direct_confirmed' => false,
+
+            'indirect_status' => 'uncertain',
+
+            'indirect_confidence' => 93,
+
+            'indirect_confirmed' => false,
+
+            'trading_status' => 'uncertain',
+
+            'trading_confidence' => 95,
+
+            'trading_confirmed' => false,
+
+            'metadata' => [],
+        ]);
+
+    $score = app(
+        SdrScoringService::class
+    )->recalculate(
+        $company
+    );
+
+    /*
+     * ICP A = 30
+     * CRM novo = 10
+     *
+     * Pesquisa inconclusiva não dá bônus.
+     */
+    expect(
+        $score->score
+    )->toBe(40);
+
+    $factors =
+        collect(
+            $score->factors
+        );
+
+    expect(
+        $factors
+            ->firstWhere(
+                'key',
+                'direct'
+            )['points']
+    )->toBe(0);
+
+    expect(
+        $factors
+            ->firstWhere(
+                'key',
+                'indirect'
+            )['points']
+    )->toBe(0);
+
+    expect(
+        $factors
+            ->firstWhere(
+                'key',
+                'trading'
+            )['points']
+    )->toBe(0);
+});

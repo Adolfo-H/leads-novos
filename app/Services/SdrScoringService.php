@@ -8,7 +8,7 @@ use App\Models\CompanySdrScore;
 
 final class SdrScoringService
 {
-    private const VERSION = 'v1';
+    private const VERSION = 'v2';
 
     /**
      * @var list<string>
@@ -170,7 +170,6 @@ final class SdrScoringService
                 dimension: 'direct',
                 label: 'Exportação direta',
                 maxYes: 25,
-                maxUncertain: 12,
             );
 
         $indirect =
@@ -179,7 +178,6 @@ final class SdrScoringService
                 dimension: 'indirect',
                 label: 'Exportação indireta',
                 maxYes: 25,
-                maxUncertain: 12,
             );
 
         $trading =
@@ -188,7 +186,6 @@ final class SdrScoringService
                 dimension: 'trading',
                 label: 'Relação com trading',
                 maxYes: 10,
-                maxUncertain: 5,
             );
 
         $factors[] =
@@ -359,7 +356,6 @@ final class SdrScoringService
         string $dimension,
         string $label,
         int $maxYes,
-        int $maxUncertain,
     ): array {
         if (! $intelligence) {
             return [
@@ -413,13 +409,7 @@ final class SdrScoringService
                     )
                 ),
 
-                'uncertain' => (int) round(
-                    $maxUncertain
-                    * (
-                        $confidence
-                        / 100
-                    )
-                ),
+                'uncertain' => 0,
 
                 default => 0,
             };
@@ -434,9 +424,7 @@ final class SdrScoringService
                     .$confidence
                     .'% de confiança',
 
-                'uncertain' => 'Incerto · '
-                    .$confidence
-                    .'% de confiança',
+                'uncertain' => 'Sem comprovação suficiente',
 
                 default => 'Não pesquisada',
             };

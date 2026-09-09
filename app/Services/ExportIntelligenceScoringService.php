@@ -23,6 +23,21 @@ final class ExportIntelligenceScoringService
         Company $company
     ): CompanyExportIntelligence {
         $intelligence =
+            $this->recalculateStoredEvidence(
+                $company
+            );
+
+        $intelligence->update([
+            'researched_at' => now(),
+        ]);
+
+        return $intelligence->refresh();
+    }
+
+    public function recalculateStoredEvidence(
+        Company $company
+    ): CompanyExportIntelligence {
+        $intelligence =
             $this->ensureIntelligence(
                 $company
             );
@@ -38,10 +53,6 @@ final class ExportIntelligenceScoringService
 
             $intelligence->refresh();
         }
-
-        $intelligence->update([
-            'researched_at' => now(),
-        ]);
 
         return $intelligence->refresh();
     }
@@ -213,10 +224,21 @@ final class ExportIntelligenceScoringService
                 $negativeConfidences
             );
 
+        /*
+         * Evidências neutras representam
+         * cobertura da pesquisa, não força
+         * de uma conclusão.
+         *
+         * Por isso elas não são acumuladas.
+         * Vários resultados neutros não podem
+         * transformar ausência de conclusão
+         * em confiança alta.
+         */
         $neutral =
-            $this->aggregateConfidence(
-                $neutralConfidences
-            );
+            max([
+                0,
+                ...$neutralConfidences,
+            ]);
 
         /*
          * Nenhuma evidência ainda.
@@ -319,7 +341,6 @@ final class ExportIntelligenceScoringService
             confidence: max(
                 $positive,
                 $negative,
-                $neutral,
             ),
             confirmed: false,
             company: $company,
@@ -467,7 +488,7 @@ final class ExportIntelligenceScoringService
         $metadata['scoring'][
             $dimension
         ] = [
-            'version' => 'v1',
+            'version' => 'v2',
 
             'status' => $status,
 
