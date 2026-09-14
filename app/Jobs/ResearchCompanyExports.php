@@ -24,6 +24,7 @@ class ResearchCompanyExports implements ShouldQueue
     public function __construct(
         public int $companyId,
         public bool $force = false,
+        public ?string $queueToken = null,
     ) {}
 
     /**
@@ -76,6 +77,22 @@ class ResearchCompanyExports implements ShouldQueue
             $intelligenceService->ensure(
                 $company
             );
+
+        /*
+         * Um recovery pode gerar um job novo
+         * enquanto uma cópia antiga ainda
+         * existe na fila.
+         *
+         * Somente a geração mais recente pode
+         * executar a pesquisa.
+         */
+        if (
+            ! $this->isCurrentQueueGeneration(
+                $intelligence
+            )
+        ) {
+            return;
+        }
 
         /*
          * Pesquisa automática respeita as
@@ -139,6 +156,14 @@ class ResearchCompanyExports implements ShouldQueue
                     provider: $provider,
                 );
 
+            if (
+                ! $this->isCurrentQueueGeneration(
+                    $result
+                )
+            ) {
+                return;
+            }
+
             $result->update([
                 'research_status' => 'completed',
 
@@ -158,6 +183,14 @@ class ResearchCompanyExports implements ShouldQueue
              */
             $intelligence->refresh();
 
+            if (
+                ! $this->isCurrentQueueGeneration(
+                    $intelligence
+                )
+            ) {
+                return;
+            }
+
             $intelligence->update([
                 'research_status' => 'queued',
 
@@ -176,23 +209,72 @@ class ResearchCompanyExports implements ShouldQueue
     public function failed(
         Throwable $exception
     ): void {
-        CompanyExportIntelligence::query()
-            ->where(
-                'company_id',
-                $this->companyId
+        $intelligence =
+            CompanyExportIntelligence::query()
+                ->where(
+                    'company_id',
+                    $this->companyId
+                )
+                ->first();
+
+        if (! $intelligence) {
+            return;
+        }
+
+        /*
+         * Um job antigo não pode sobrescrever
+         * o estado de uma geração recuperada
+         * mais recente.
+         */
+        if (
+            ! $this->isCurrentQueueGeneration(
+                $intelligence
             )
-            ->update([
-                'research_status' => 'failed',
+        ) {
+            return;
+        }
 
-                'research_error' => mb_substr(
-                    $exception
-                        ->getMessage(),
-                    0,
-                    2000
+        $intelligence->update([
+            'research_status' => 'failed',
+
+            'research_error' => mb_substr(
+                $exception
+                    ->getMessage(),
+                0,
+                2000
+            ),
+
+            'research_completed_at' => now(),
+        ]);
+    }
+
+    private function isCurrentQueueGeneration(
+        CompanyExportIntelligence $intelligence,
+    ): bool {
+        /*
+         * Jobs antigos, criados antes da
+         * introdução do queue token, continuam
+         * compatíveis.
+         */
+        if ($this->queueToken === null) {
+            return true;
+        }
+
+        $currentToken =
+            data_get(
+                $this->metadata(
+                    $intelligence
                 ),
+                'research_queue.queue_token'
+            );
 
-                'research_completed_at' => now(),
-            ]);
+        return is_string(
+            $currentToken
+        )
+            && hash_equals(
+                $currentToken,
+                $this->queueToken
+            );
     }
 
     /**

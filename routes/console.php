@@ -20,3 +20,9 @@ Schedule::command(
 )
     ->everyMinute()
     ->withoutOverlapping();
+
+Schedule::command(
+    'exports:recover-stale'
+)
+    ->everyMinute()
+    ->withoutOverlapping();

@@ -10,6 +10,12 @@ from group_query import (
     query_group,
 )
 
+from prospect_query import (
+    DEFAULT_PRIORITY_CNAES,
+    DEFAULT_PRIORITY_STATES,
+    query_prospects,
+)
+
 
 DATA_DIR = Path(
     os.environ.get(
@@ -172,3 +178,63 @@ def get_group(
             status_code=503,
             detail=str(exception),
         ) from exception
+
+
+def csv_values(
+    value: str,
+) -> list[str]:
+    return [
+        item.strip()
+        for item in value.split(",")
+        if item.strip()
+    ]
+
+
+@app.get("/prospects")
+def get_prospects(
+    limit: int = 100,
+    offset: int = 0,
+    states: str = ",".join(
+        DEFAULT_PRIORITY_STATES
+    ),
+    cnaes: str = ",".join(
+        DEFAULT_PRIORITY_CNAES
+    ),
+    min_capital: float | None = None,
+    size_codes: str = "",
+) -> dict:
+    try:
+        return query_prospects(
+            data_dir=DATA_DIR,
+
+            states=csv_values(
+                states
+            ),
+
+            cnaes=csv_values(
+                cnaes
+            ),
+
+            limit=limit,
+
+            offset=offset,
+
+            min_capital=min_capital,
+
+            size_codes=csv_values(
+                size_codes
+            ),
+        )
+
+    except ValueError as exception:
+        raise HTTPException(
+            status_code=422,
+            detail=str(exception),
+        ) from exception
+
+    except ReceitaDataFilesMissing as exception:
+        raise HTTPException(
+            status_code=503,
+            detail=str(exception),
+        ) from exception
+
