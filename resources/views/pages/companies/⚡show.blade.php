@@ -267,6 +267,70 @@ public bool $showCnaeForm = false;
             : '—';
     }
 
+    public function hubSpotCompanyUrl(): ?string
+    {
+        $crm =
+            $this->company
+                ->crmCheck;
+
+        if ($crm === null) {
+            return null;
+        }
+
+        $portalId =
+            trim(
+                (string) config(
+                    'services.hubspot.portal_id'
+                )
+            );
+
+        $companyId =
+            trim(
+                (string) $crm
+                    ->external_id
+            );
+
+        /*
+         * Sempre reconstruímos o endereço
+         * usando Portal ID + Company ID.
+         *
+         * Assim URLs antigas salvas no banco
+         * não afetam o botão do dossiê.
+         */
+        if (
+            $portalId !== ''
+            && $companyId !== ''
+        ) {
+            return sprintf(
+                'https://app.hubspot.com/contacts/%s/record/0-2/%s',
+                rawurlencode(
+                    $portalId
+                ),
+                rawurlencode(
+                    $companyId
+                ),
+            );
+        }
+
+        $externalUrl =
+            trim(
+                (string) $crm
+                    ->external_url
+            );
+
+        if (
+            $externalUrl !== ''
+            && filter_var(
+                $externalUrl,
+                FILTER_VALIDATE_URL
+            ) !== false
+        ) {
+            return $externalUrl;
+        }
+
+        return null;
+    }
+
     public function formatPhone(
         ?string $value
     ): string {
@@ -4142,12 +4206,12 @@ private function reloadCompany(): void
                     @endif
 
 
-                    @if ($crm->external_url)
+                    @if ($this->hubSpotCompanyUrl())
 
                         <div class="mt-5">
 
                             <a
-                                href="{{ $crm->external_url }}"
+                                href="{{ $this->hubSpotCompanyUrl() }}"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 class="ec-button-secondary"

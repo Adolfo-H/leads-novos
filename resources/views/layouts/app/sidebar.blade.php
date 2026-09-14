@@ -51,6 +51,16 @@
                 </flux:sidebar.item>
 
                 <flux:sidebar.item
+                    icon="magnifying-glass"
+                    :href="route('prospecting.index')"
+                    :current="request()->routeIs('prospecting.*')"
+                    wire:navigate
+                    class="ec-nav-item"
+                >
+                    Motor de Prospecção
+                </flux:sidebar.item>
+
+                <flux:sidebar.item
                     icon="building-office"
                     :href="route('companies.index')"
                     :current="request()->routeIs('companies.*')"

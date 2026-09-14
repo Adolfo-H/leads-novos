@@ -132,4 +132,14 @@ class Company extends Model
             CompanySdrScore::class
         );
     }
+
+    /**
+     * @return HasOne<CompanyLeadWorkState, $this>
+     */
+    public function leadWorkState(): HasOne
+    {
+        return $this->hasOne(
+            CompanyLeadWorkState::class
+        );
+    }
 }

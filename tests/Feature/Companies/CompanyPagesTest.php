@@ -1374,3 +1374,63 @@ it('allows manual export research even when automatic research is blocked', func
                 === true
     );
 });
+
+it('opens the exact HubSpot company from the dossier', function () {
+    config([
+        'services.hubspot.portal_id' => '21358298',
+    ]);
+
+    $user =
+        User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+    $company =
+        Company::query()->create([
+            'cnpj_root' => '12345678',
+
+            'corporate_name' => 'Empresa Link HubSpot',
+        ]);
+
+    $company
+        ->crmCheck()
+        ->create([
+            'provider' => 'hubspot',
+
+            'status' => 'prospected',
+
+            'external_id' => '7821513385',
+
+            /*
+             * Simula uma URL antiga errada
+             * já armazenada no banco.
+             */
+            'external_url' => 'https://app.hubspot.com/contacts/https%3A%2F%2Fapi.hubapi.com/record/0-2/7821513385',
+
+            'contacted_count' => 1,
+
+            'associated_deals_count' => 0,
+
+            'metadata' => [],
+
+            'checked_at' => now(),
+        ]);
+
+    $this
+        ->actingAs($user)
+        ->get(
+            route(
+                'companies.show',
+                $company
+            )
+        )
+        ->assertSuccessful()
+        ->assertSee(
+            'https://app.hubspot.com/contacts/21358298/record/0-2/7821513385',
+            false
+        )
+        ->assertDontSee(
+            'contacts/https%3A%2F%2Fapi.hubapi.com',
+            false
+        );
+});
