@@ -372,14 +372,29 @@
                     </h2>
 
                     <p>
-                        Etapas que transformarão os CNPJs em oportunidades comerciais.
+                        Descoberta e qualificação automática de novas oportunidades comerciais.
                     </p>
 
                 </div>
 
-                <span class="ec-dashboard-coming">
-                    Em construção
-                </span>
+                <a
+                    href="{{ route('prospecting.index') }}"
+                    wire:navigate
+                    class="
+                        inline-flex items-center gap-2
+                        rounded-lg border
+                        border-cyan-300/20
+                        bg-cyan-300/5
+                        px-3 py-1.5
+                        text-xs font-semibold
+                        text-cyan-300
+                        transition
+                        hover:bg-cyan-300/10
+                    "
+                >
+                    Abrir motor
+                    <span>→</span>
+                </a>
 
             </div>
 
@@ -393,11 +408,11 @@
                     </span>
 
                     <strong>
-                        Base empresarial
+                        Descoberta
                     </strong>
 
                     <small>
-                        Empresas, matriz, filiais e CNAEs
+                        Receita Federal e filtros ICP
                     </small>
 
                 </div>
@@ -413,11 +428,11 @@
                     </span>
 
                     <strong>
-                        Importação
+                        ICP
                     </strong>
 
                     <small>
-                        CNPJ, Excel e CSV
+                        Perfil e aderência comercial
                     </small>
 
                 </div>
@@ -433,11 +448,11 @@
                     </span>
 
                     <strong>
-                        Enriquecimento
+                        CRM
                     </strong>
 
                     <small>
-                        Dados cadastrais e CRM
+                        HubSpot e histórico comercial
                     </small>
 
                 </div>
@@ -457,7 +472,7 @@
                     </strong>
 
                     <small>
-                        Direta, indireta e trading
+                        Evidências públicas de exportação
                     </small>
 
                 </div>
@@ -477,7 +492,7 @@
                     </strong>
 
                     <small>
-                        Fila comercial SDR
+                        Priorização e fila de Leads
                     </small>
 
                 </div>

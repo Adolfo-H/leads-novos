@@ -24,6 +24,16 @@ require __DIR__.'/settings.php';
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire(
+        '/prospeccao',
+        'pages::prospecting.index'
+    )->name('prospecting.index');
+
+    Route::livewire(
+        '/prospeccao/rodadas/{batch:uuid}',
+        'pages::prospecting.show'
+    )->name('prospecting.show');
+
+    Route::livewire(
         '/leads',
         'pages::leads.index'
     )->name('leads.index');
