@@ -122,6 +122,35 @@ return [
             'HUBSPOT_LEAD_MIN_SCORE',
             60
         ),
+
+        'lead_pipeline' => env(
+            'HUBSPOT_LEAD_PIPELINE',
+            'default'
+        ),
+
+        'lead_initial_stage' => env(
+            'HUBSPOT_LEAD_INITIAL_STAGE',
+            'appointmentscheduled'
+        ),
+
+        'lead_discarded_stages' => array_values(
+            array_filter(
+                array_map(
+                    'trim',
+                    explode(
+                        ',',
+                        (string) env(
+                            'HUBSPOT_LEAD_DISCARDED_STAGES',
+                            '13185627,13185628'
+                        )
+                    )
+                ),
+                static fn (
+                    string $stage
+                ): bool => $stage !== ''
+            )
+        ),
+
     ],
 
 ];

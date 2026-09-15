@@ -199,6 +199,44 @@ final class HubSpotLeadSyncService
                 $sync->hubspot_contact_id
                 !== null;
 
+            /*
+             * Preserva o contexto que qualificou
+             * o lead antes de ele virar uma
+             * oportunidade no HubSpot.
+             *
+             * Depois da criação do negócio o CRM
+             * passa a reportar "opportunity" e o
+             * SDR pode ficar bloqueado/zerado.
+             *
+             * Isso é correto para impedir nova
+             * prospecção, mas não deve apagar a
+             * qualificação comercial original.
+             */
+            $scoreSnapshot =
+                $company->sdrScore;
+
+            $crmSnapshot =
+                $company->crmCheck;
+
+            if (
+                $scoreSnapshot !== null
+                && $crmSnapshot !== null
+            ) {
+                $metadata[
+                    'qualification_snapshot'
+                ] = [
+                    'score' => (int) $scoreSnapshot->score,
+
+                    'priority' => $scoreSnapshot->priority,
+
+                    'label' => $scoreSnapshot->label,
+
+                    'crm_status' => $crmSnapshot->status,
+
+                    'captured_at' => now()->toIso8601String(),
+                ];
+            }
+
             $sync->forceFill([
                 'pipeline_id' => $this->pipelineId(),
 
