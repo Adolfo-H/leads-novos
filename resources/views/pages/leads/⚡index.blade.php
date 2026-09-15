@@ -404,6 +404,12 @@ new class extends Component
         ?string $status
     ): string {
         return match ($status) {
+            'client' =>
+                'Cliente',
+
+            'opportunity' =>
+                'Oportunidade',
+
             'prospected' =>
                 'Reprospecção',
 
@@ -628,7 +634,10 @@ new class extends Component
 };
 ?>
 
-<div class="ec-page-shell">
+<div
+    class="ec-page-shell"
+    wire:poll.15s="$refresh"
+>
 
     <div class="ec-page-header">
 
@@ -989,6 +998,14 @@ new class extends Component
                 <option value="prospected">
                     Reprospecção
                 </option>
+
+                <option value="opportunity">
+                    Oportunidade
+                </option>
+
+                <option value="client">
+                    Cliente
+                </option>
             </select>
 
             
@@ -1121,6 +1138,37 @@ new class extends Component
                 $currentWorkStatus =
                     $hubSpotLead?->work_status
                     ?? 'new';
+
+                $snapshot =
+                    data_get(
+                        $hubSpotLead?->metadata
+                            ?? [],
+                        'qualification_snapshot',
+                        []
+                    );
+
+                if (! is_array($snapshot)) {
+                    $snapshot = [];
+                }
+
+                $displayScore =
+                    is_numeric(
+                        $snapshot['score']
+                            ?? null
+                    )
+                        ? (int) $snapshot['score']
+                        : (int) (
+                            $score?->score
+                            ?? 0
+                        );
+
+                $displayPriority =
+                    is_string(
+                        $snapshot['priority']
+                            ?? null
+                    )
+                        ? $snapshot['priority']
+                        : $score?->priority;
 
             @endphp
 
@@ -1302,8 +1350,7 @@ new class extends Component
                         "
                     >
                         {{
-                            $score?->score
-                            ?? 0
+                            $displayScore
                         }}/100
                     </div>
 
@@ -1428,7 +1475,7 @@ new class extends Component
                             font-bold
                             {{
                                 match (
-                                    $score?->priority
+                                    $displayPriority
                                 ) {
                                     'very_high' =>
                                         'text-emerald-300',
@@ -1448,7 +1495,7 @@ new class extends Component
                         {{
                             $this
                                 ->priorityLabel(
-                                    $score?->priority
+                                    $displayPriority
                                 )
                         }}
                     </div>

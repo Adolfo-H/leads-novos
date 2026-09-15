@@ -324,3 +324,94 @@ it('shows the commercial status received from HubSpot', function () {
             'Aguardando retorno'
         );
 });
+
+it('keeps the original qualification visible after HubSpot creates an opportunity', function () {
+    $user =
+        User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+    $company =
+        Company::query()->create([
+            'cnpj_root' => '49213747',
+            'corporate_name' => 'Lead HubSpot Qualificado Teste',
+        ]);
+
+    $company
+        ->icpScore()
+        ->create([
+            'score' => 90,
+            'grade' => 'A',
+            'label' => 'Alta aderência',
+            'version' => 'test',
+            'factors' => [],
+            'calculated_at' => now(),
+        ]);
+
+    $company
+        ->crmCheck()
+        ->create([
+            'provider' => 'hubspot',
+            'status' => 'opportunity',
+            'external_id' => '58449836434',
+            'contacted_count' => 1,
+            'associated_deals_count' => 1,
+            'metadata' => [],
+            'checked_at' => now(),
+        ]);
+
+    $company
+        ->sdrScore()
+        ->create([
+            'score' => 0,
+            'priority' => 'blocked',
+            'label' => 'Não priorizar',
+            'is_eligible' => false,
+            'is_provisional' => false,
+            'blocked_reason' => 'Empresa possui oportunidade ativa',
+            'factors' => [],
+            'version' => 'test',
+            'metadata' => [],
+            'calculated_at' => now(),
+        ]);
+
+    CompanyHubSpotLead::query()->create([
+        'company_id' => $company->id,
+        'hubspot_company_id' => '58449836434',
+        'hubspot_deal_id' => '65038646698',
+        'pipeline_id' => 'default',
+        'deal_stage_id' => 'appointmentscheduled',
+        'work_status' => 'contacting',
+        'synced_at' => now(),
+
+        'metadata' => [
+            'qualification_snapshot' => [
+                'score' => 60,
+                'priority' => 'medium',
+                'label' => 'Prioridade média',
+            ],
+        ],
+    ]);
+
+    $this
+        ->actingAs($user)
+        ->get(
+            route('leads.index')
+        )
+        ->assertSuccessful()
+        ->assertSee(
+            'Lead HubSpot Qualificado Teste'
+        )
+        ->assertSee(
+            '60/100'
+        )
+        ->assertSee(
+            'Oportunidade'
+        )
+        ->assertSee(
+            'Média'
+        )
+        ->assertSee(
+            'Em contato'
+        );
+});

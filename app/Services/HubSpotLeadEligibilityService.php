@@ -22,9 +22,30 @@ final class HubSpotLeadEligibilityService
             'hubSpotLead',
         ]);
 
+        $hubSpotLead =
+            $company->hubSpotLead;
+
+        /*
+         * Uma tentativa que falhou pode já ter
+         * criado a linha local de sincronização.
+         *
+         * Isso NÃO significa que o lead foi
+         * sincronizado.
+         *
+         * Só bloqueamos novas tentativas depois
+         * que o fluxo completo terminou e
+         * synced_at foi preenchido.
+         *
+         * Assim conseguimos retomar:
+         *
+         * - falha antes de criar empresa
+         * - empresa criada, contato pendente
+         * - negócio criado, associação pendente
+         * - qualquer outro erro parcial
+         */
         if (
-            $company->hubSpotLead
-            !== null
+            $hubSpotLead !== null
+            && $hubSpotLead->synced_at !== null
         ) {
             return [
                 'eligible' => false,
