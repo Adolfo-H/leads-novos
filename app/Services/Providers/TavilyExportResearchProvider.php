@@ -4,12 +4,17 @@ namespace App\Services\Providers;
 
 use App\Contracts\ExportResearchProvider;
 use App\Models\Company;
+use App\Services\ExportResearchEntityMatcher;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
 
 final class TavilyExportResearchProvider implements ExportResearchProvider
 {
+    public function __construct(
+        private readonly ExportResearchEntityMatcher $entityMatcher,
+    ) {}
+
     public function name(): string
     {
         return 'tavily';
@@ -33,6 +38,10 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
         Company $company,
         array $queries,
     ): array {
+        $company->loadMissing([
+            'matrix',
+        ]);
+
         $apiKey =
             config(
                 'services.tavily.api_key'
@@ -183,6 +192,44 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
                     continue;
                 }
 
+                $titleRaw =
+                    $result[
+                        'title'
+                    ]
+                    ?? null;
+
+                $title =
+                    is_string(
+                        $titleRaw
+                    )
+                    && trim(
+                        $titleRaw
+                    ) !== ''
+                        ? trim(
+                            $titleRaw
+                        )
+                        : null;
+
+                /*
+                 * Não classificamos uma página
+                 * apenas porque contém palavras
+                 * como exportação ou trading.
+                 *
+                 * Primeiro ela precisa estar
+                 * relacionada à empresa.
+                 */
+                if (
+                    ! $this->entityMatcher
+                        ->matches(
+                            company: $company,
+                            title: $title,
+                            content: $content,
+                            url: $url,
+                        )
+                ) {
+                    continue;
+                }
+
                 $normalizedUrl =
                     $this->normalizeUrl(
                         $url
@@ -258,22 +305,7 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
 
                     'source_url' => $url,
 
-                    'title' => isset(
-                        $result[
-                            'title'
-                        ]
-                    )
-                        && is_string(
-                            $result[
-                                'title'
-                            ]
-                        )
-                            ? trim(
-                                $result[
-                                    'title'
-                                ]
-                            )
-                            : null,
+                    'title' => $title,
 
                     'evidence_text' => Str::limit(
                         trim(
@@ -365,6 +397,34 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
                 )
             );
 
+        /*
+         * Normaliza pontuação antes de testar
+         * frases fortes.
+         *
+         * Ex.:
+         * "We produce, market, and export"
+         *
+         * vira:
+         * "we produce market and export"
+         */
+        $normalized =
+            preg_replace(
+                '/[^a-z0-9]+/',
+                ' ',
+                $normalized
+            )
+            ?? $normalized;
+
+        $normalized =
+            trim(
+                preg_replace(
+                    '/\s+/',
+                    ' ',
+                    $normalized
+                )
+                ?? $normalized
+            );
+
         $strongRules =
             match ($dimension) {
                 'direct' => [
@@ -374,6 +434,16 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
                     'vendas ao exterior',
                     'embarques para o exterior',
                     'exportacao direta',
+
+                    'produz e exporta',
+                    'comercializa e exporta',
+                    'produz comercializa e exporta',
+
+                    'we export',
+                    'we produce market and export',
+                    'export shipments',
+                    'is an exporter',
+                    'exporter and importer',
                 ],
 
                 'indirect' => [
@@ -388,6 +458,11 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
                     'venda para trading',
                     'operacao com trading',
                     'comercial exportadora',
+
+                    'strong trading',
+                    'trading capabilities',
+                    'commodity trading',
+                    'we trade with',
                 ],
 
                 default => [],

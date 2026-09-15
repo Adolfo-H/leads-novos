@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Company;
-use App\Models\CompanyLeadWorkState;
+use App\Models\CompanyHubSpotLead;
 use App\Models\CompanyCrmCheck;
 use App\Models\CompanyExportIntelligence;
 use App\Models\CompanySdrScore;
@@ -25,8 +25,6 @@ new class extends Component
     public string $state = '';
 
     public string $workStatus = '';
-
-    public string $followUp = '';
 
     public function updatedSearch(): void
     {
@@ -58,10 +56,6 @@ new class extends Component
         $this->resetPage();
     }
 
-    public function updatedFollowUp(): void
-    {
-        $this->resetPage();
-    }
 
     public function clearFilters(): void
     {
@@ -72,7 +66,6 @@ new class extends Component
             'crm',
             'state',
             'workStatus',
-            'followUp',
         ]);
 
         $this->resetPage();
@@ -97,7 +90,7 @@ new class extends Component
                 'companies.id'
             )
             ->leftJoin(
-                'company_lead_work_states as work',
+                'company_hubspot_leads as work',
                 'work.company_id',
                 '=',
                 'companies.id'
@@ -110,8 +103,16 @@ new class extends Component
              * bloqueios de cooldown ficam fora.
              */
             ->where(
-                'sdr.is_eligible',
-                true
+                function ($query): void {
+                    $query
+                        ->where(
+                            'sdr.is_eligible',
+                            true
+                        )
+                        ->orWhereNotNull(
+                            'work.hubspot_deal_id'
+                        );
+                }
             )
             ->with([
                 'matrix',
@@ -119,7 +120,7 @@ new class extends Component
                 'crmCheck',
                 'sdrScore',
                 'exportIntelligence',
-                'leadWorkState.assignedUser',
+                'hubSpotLead',
             ])
             ->when(
                 $search !== '',
@@ -208,132 +209,34 @@ new class extends Component
             )
             ->when(
                 $this->workStatus !== '',
-                function ($query): void {
-                    if (
+                fn ($query) =>
+                    $query->where(
+                        'work.work_status',
                         $this->workStatus
-                        === 'new'
-                    ) {
-                        $query->where(
-                            function ($statusQuery): void {
-                                $statusQuery
-                                    ->whereDoesntHave(
-                                        'leadWorkState'
-                                    )
-                                    ->orWhereHas(
-                                        'leadWorkState',
-                                        fn ($workQuery) =>
-                                            $workQuery->where(
-                                                'status',
-                                                'new'
-                                            )
-                                    );
-                            }
-                        );
-
-                        return;
-                    }
-
-                    $query->whereHas(
-                        'leadWorkState',
-                        fn ($workQuery) =>
-                            $workQuery->where(
-                                'status',
-                                $this->workStatus
-                            )
-                    );
-                }
-            )
-            ->when(
-                $this->followUp === 'overdue',
-                fn ($query) =>
-                    $query->whereHas(
-                        'leadWorkState',
-                        fn ($workQuery) =>
-                            $workQuery
-                                ->whereNotNull(
-                                    'next_action_at'
-                                )
-                                ->where(
-                                    'next_action_at',
-                                    '<',
-                                    now()
-                                )
-                    )
-            )
-            ->when(
-                $this->followUp === 'today',
-                fn ($query) =>
-                    $query->whereHas(
-                        'leadWorkState',
-                        fn ($workQuery) =>
-                            $workQuery
-                                ->whereBetween(
-                                    'next_action_at',
-                                    [
-                                        now(),
-
-                                        now()
-                                            ->endOfDay(),
-                                    ]
-                                )
                     )
             )
             /*
-             * Fila operacional:
+             * Fila operacional vinda do HubSpot:
              *
-             * 0 - retorno vencido
-             * 1 - retorno ainda hoje
-             * 2 - lead novo
-             * 3 - em contato
-             * 4 - aguardando retorno
-             * 5 - demais
-             * 6 - encerrados
+             * 0 - aguardando retorno
+             * 1 - em contato
+             * 2 - novo
+             * 3 - descartado
              */
             ->orderByRaw(
                 "
                 CASE
-                    WHEN work.next_action_at IS NOT NULL
-                         AND work.next_action_at < ?
+                    WHEN work.work_status = 'waiting'
                         THEN 0
-
-                    WHEN work.next_action_at IS NOT NULL
-                         AND work.next_action_at >= ?
-                         AND work.next_action_at <= ?
+                    WHEN work.work_status = 'contacting'
                         THEN 1
-
-                    WHEN COALESCE(work.status, 'new') = 'new'
+                    WHEN work.work_status = 'new'
                         THEN 2
-
-                    WHEN work.status = 'contacting'
+                    WHEN work.work_status = 'discarded'
                         THEN 3
-
-                    WHEN work.status = 'waiting'
-                        THEN 4
-
-                    WHEN work.status IN ('converted', 'discarded')
-                        THEN 6
-
-                    ELSE 5
-                END
-                ",
-                [
-                    now(),
-                    now(),
-                    now()
-                        ->endOfDay(),
-                ]
-            )
-            ->orderByRaw(
-                "
-                CASE
-                    WHEN work.next_action_at IS NULL
-                        THEN 1
-                    ELSE 0
+                    ELSE 4
                 END
                 "
-            )
-            ->orderBy(
-                'work.next_action_at'
             )
             ->orderByDesc(
                 'sdr.score'
@@ -397,158 +300,6 @@ new class extends Component
             ->count();
     }
 
-    public function updateWorkStatus(
-        int $companyId,
-        string $status
-    ): void {
-        $allowed = [
-            'new',
-            'contacting',
-            'waiting',
-            'discarded',
-            'converted',
-        ];
-
-        if (
-            ! in_array(
-                $status,
-                $allowed,
-                true
-            )
-        ) {
-            return;
-        }
-
-        CompanyLeadWorkState::query()
-            ->updateOrCreate(
-                [
-                    'company_id' =>
-                        $companyId,
-                ],
-                [
-                    'status' =>
-                        $status,
-
-                    'assigned_user_id' =>
-                        auth()->id(),
-
-                    'last_action_at' =>
-                        now(),
-                ]
-            );
-
-        unset(
-            $this->leads
-        );
-    }
-
-    public function saveWorkNote(
-        int $companyId,
-        string $note
-    ): void {
-        $note =
-            trim(
-                $note
-            );
-
-        CompanyLeadWorkState::query()
-            ->updateOrCreate(
-                [
-                    'company_id' =>
-                        $companyId,
-                ],
-                [
-                    'note' =>
-                        $note !== ''
-                            ? $note
-                            : null,
-
-                    'assigned_user_id' =>
-                        auth()->id(),
-
-                    'last_action_at' =>
-                        now(),
-                ]
-            );
-
-        unset(
-            $this->leads
-        );
-    }
-
-    public function saveNextAction(
-        int $companyId,
-        ?string $value
-    ): void {
-        $value =
-            trim(
-                (string) $value
-            );
-
-        $nextAction =
-            null;
-
-        if ($value !== '') {
-            try {
-                $nextAction =
-                    \Carbon\CarbonImmutable::parse(
-                        $value
-                    );
-            } catch (\Throwable) {
-                return;
-            }
-        }
-
-        CompanyLeadWorkState::query()
-            ->updateOrCreate(
-                [
-                    'company_id' =>
-                        $companyId,
-                ],
-                [
-                    'next_action_at' =>
-                        $nextAction,
-
-                    'assigned_user_id' =>
-                        auth()->id(),
-
-                    'last_action_at' =>
-                        now(),
-                ]
-            );
-
-        unset(
-            $this->leads
-        );
-    }
-
-    public function nextActionClass(
-        ?CompanyLeadWorkState $state
-    ): string {
-        if (
-            $state?->next_action_at
-            === null
-        ) {
-            return 'text-[#697394]';
-        }
-
-        if (
-            $state->next_action_at
-                ->isPast()
-        ) {
-            return 'text-red-300';
-        }
-
-        if (
-            $state->next_action_at
-                ->isToday()
-        ) {
-            return 'text-amber-300';
-        }
-
-        return 'text-cyan-300';
-    }
-
     public function workStatusLabel(
         ?string $status
     ): string {
@@ -561,9 +312,6 @@ new class extends Component
 
             'discarded' =>
                 'Descartado',
-
-            'converted' =>
-                'Convertido',
 
             default =>
                 'Novo',
@@ -583,97 +331,18 @@ new class extends Component
             'discarded' =>
                 'text-red-300',
 
-            'converted' =>
-                'text-emerald-300',
-
             default =>
-                'text-[#9ca5c5]',
+                'text-emerald-300',
         };
-    }
-
-    #[Computed]
-    public function overdueCount(): int
-    {
-        return Company::query()
-            ->whereHas(
-                'sdrScore',
-                fn ($query) =>
-                    $query->where(
-                        'is_eligible',
-                        true
-                    )
-            )
-            ->whereHas(
-                'leadWorkState',
-                fn ($query) =>
-                    $query
-                        ->whereNotNull(
-                            'next_action_at'
-                        )
-                        ->where(
-                            'next_action_at',
-                            '<',
-                            now()
-                        )
-            )
-            ->count();
-    }
-
-    #[Computed]
-    public function todayCount(): int
-    {
-        return Company::query()
-            ->whereHas(
-                'sdrScore',
-                fn ($query) =>
-                    $query->where(
-                        'is_eligible',
-                        true
-                    )
-            )
-            ->whereHas(
-                'leadWorkState',
-                fn ($query) =>
-                    $query->whereBetween(
-                        'next_action_at',
-                        [
-                            now(),
-
-                            now()
-                                ->endOfDay(),
-                        ]
-                    )
-            )
-            ->count();
     }
 
     #[Computed]
     public function newCount(): int
     {
-        return Company::query()
-            ->whereHas(
-                'sdrScore',
-                fn ($query) =>
-                    $query->where(
-                        'is_eligible',
-                        true
-                    )
-            )
+        return CompanyHubSpotLead::query()
             ->where(
-                function ($query): void {
-                    $query
-                        ->whereDoesntHave(
-                            'leadWorkState'
-                        )
-                        ->orWhereHas(
-                            'leadWorkState',
-                            fn ($workQuery) =>
-                                $workQuery->where(
-                                    'status',
-                                    'new'
-                                )
-                        );
-                }
+                'work_status',
+                'new'
             )
             ->count();
     }
@@ -681,22 +350,10 @@ new class extends Component
     #[Computed]
     public function contactingCount(): int
     {
-        return Company::query()
-            ->whereHas(
-                'sdrScore',
-                fn ($query) =>
-                    $query->where(
-                        'is_eligible',
-                        true
-                    )
-            )
-            ->whereHas(
-                'leadWorkState',
-                fn ($query) =>
-                    $query->where(
-                        'status',
-                        'contacting'
-                    )
+        return CompanyHubSpotLead::query()
+            ->where(
+                'work_status',
+                'contacting'
             )
             ->count();
     }
@@ -704,45 +361,21 @@ new class extends Component
     #[Computed]
     public function waitingCount(): int
     {
-        return Company::query()
-            ->whereHas(
-                'sdrScore',
-                fn ($query) =>
-                    $query->where(
-                        'is_eligible',
-                        true
-                    )
-            )
-            ->whereHas(
-                'leadWorkState',
-                fn ($query) =>
-                    $query->where(
-                        'status',
-                        'waiting'
-                    )
+        return CompanyHubSpotLead::query()
+            ->where(
+                'work_status',
+                'waiting'
             )
             ->count();
     }
 
     #[Computed]
-    public function convertedCount(): int
+    public function discardedCount(): int
     {
-        return Company::query()
-            ->whereHas(
-                'sdrScore',
-                fn ($query) =>
-                    $query->where(
-                        'is_eligible',
-                        true
-                    )
-            )
-            ->whereHas(
-                'leadWorkState',
-                fn ($query) =>
-                    $query->where(
-                        'status',
-                        'converted'
-                    )
+        return CompanyHubSpotLead::query()
+            ->where(
+                'work_status',
+                'discarded'
             )
             ->count();
     }
@@ -750,31 +383,19 @@ new class extends Component
     public function applyQuickView(
         string $view
     ): void {
-        $this->followUp = '';
-        $this->workStatus = '';
-
-        match ($view) {
-            'overdue' =>
-                $this->followUp = 'overdue',
-
-            'today' =>
-                $this->followUp = 'today',
-
-            'new' =>
-                $this->workStatus = 'new',
-
-            'contacting' =>
-                $this->workStatus = 'contacting',
-
-            'waiting' =>
-                $this->workStatus = 'waiting',
-
-            'converted' =>
-                $this->workStatus = 'converted',
-
-            default =>
-                null,
-        };
+        $this->workStatus =
+            in_array(
+                $view,
+                [
+                    'new',
+                    'contacting',
+                    'waiting',
+                    'discarded',
+                ],
+                true
+            )
+                ? $view
+                : '';
 
         $this->resetPage();
     }
@@ -1130,91 +751,10 @@ new class extends Component
                     O que precisa da sua atenção
                 </div>
             </div>
-
-            @if (
-                $followUp !== ''
-                || $workStatus !== ''
-            )
-                <button
-                    type="button"
-                    wire:click="clearFilters"
-                    class="
-                        text-xs font-semibold
-                        text-cyan-300
-                        hover:text-cyan-200
-                    "
-                >
-                    Ver fila completa
-                </button>
-            @endif
-        </div>
+                
 
 
-        <div
-            class="
-                grid gap-3
-                sm:grid-cols-2
-                lg:grid-cols-3
-                2xl:grid-cols-6
-            "
-        >
-
-            <button
-                type="button"
-                wire:click="applyQuickView('overdue')"
-                class="
-                    ec-intelligence-card
-                    text-left transition
-                    hover:border-red-300/20
-                    hover:bg-red-300/[0.03]
-                "
-            >
-                <div class="ec-intelligence-label">
-                    Retornos vencidos
-                </div>
-
-                <div
-                    class="
-                        mt-2 text-2xl
-                        font-bold text-red-300
-                    "
-                >
-                    {{ $this->overdueCount }}
-                </div>
-
-                <div class="ec-intelligence-caption">
-                    Atender primeiro
-                </div>
-            </button>
-
-
-            <button
-                type="button"
-                wire:click="applyQuickView('today')"
-                class="
-                    ec-intelligence-card
-                    text-left transition
-                    hover:border-amber-300/20
-                    hover:bg-amber-300/[0.03]
-                "
-            >
-                <div class="ec-intelligence-label">
-                    Ainda hoje
-                </div>
-
-                <div
-                    class="
-                        mt-2 text-2xl
-                        font-bold text-amber-300
-                    "
-                >
-                    {{ $this->todayCount }}
-                </div>
-
-                <div class="ec-intelligence-caption">
-                    Retornos programados
-                </div>
-            </button>
+            
 
 
             <button
@@ -1304,7 +844,7 @@ new class extends Component
 
             <button
                 type="button"
-                wire:click="applyQuickView('converted')"
+                wire:click="applyQuickView('discarded')"
                 class="
                     ec-intelligence-card
                     text-left transition
@@ -1313,7 +853,7 @@ new class extends Component
                 "
             >
                 <div class="ec-intelligence-label">
-                    Convertidos
+                    Descartados
                 </div>
 
                 <div
@@ -1322,7 +862,7 @@ new class extends Component
                         font-bold text-emerald-300
                     "
                 >
-                    {{ $this->convertedCount }}
+                    {{ $this->discardedCount }}
                 </div>
 
                 <div class="ec-intelligence-caption">
@@ -1451,28 +991,7 @@ new class extends Component
                 </option>
             </select>
 
-            <select
-                wire:model.live="followUp"
-                class="
-                    rounded-xl border
-                    border-white/[0.08]
-                    bg-[#151a36]
-                    px-3 py-2.5
-                    text-sm text-[#d9ddef]
-                "
-            >
-                <option value="">
-                    Todos retornos
-                </option>
-
-                <option value="today">
-                    Retorno hoje
-                </option>
-
-                <option value="overdue">
-                    Retorno atrasado
-                </option>
-            </select>
+            
 
 
             <select
@@ -1505,9 +1024,7 @@ new class extends Component
                     Descartado
                 </option>
 
-                <option value="converted">
-                    Convertido
-                </option>
+                
             </select>
 
 
@@ -1547,7 +1064,6 @@ new class extends Component
             || $crm !== ''
             || $state !== ''
             || $workStatus !== ''
-            || $followUp !== ''
         )
 
             <button
@@ -1599,12 +1115,13 @@ new class extends Component
                 $matrix =
                     $lead->matrix;
 
-                $workState =
-                    $lead->leadWorkState;
+                $hubSpotLead =
+                    $lead->hubSpotLead;
 
                 $currentWorkStatus =
-                    $workState?->status
+                    $hubSpotLead?->work_status
                     ?? 'new';
+
             @endphp
 
             <div
@@ -1969,18 +1486,14 @@ new class extends Component
                         Acompanhamento
                     </div>
 
-                    <select
-                        wire:change="updateWorkStatus(
-                            {{ $lead->id }},
-                            $event.target.value
-                        )"
+                    <div
                         class="
-                            mt-1 w-full
-                            rounded-lg border
-                            border-white/[0.08]
-                            bg-[#151a36]
+                            mt-1 inline-flex
+                            rounded-lg
+                            border border-white/[0.08]
+                            bg-white/[0.03]
                             px-2.5 py-2
-                            text-xs
+                            text-xs font-semibold
                             {{
                                 $this->workStatusClass(
                                     $currentWorkStatus
@@ -1988,186 +1501,37 @@ new class extends Component
                             }}
                         "
                     >
-                        <option
-                            value="new"
-                            @selected(
-                                $currentWorkStatus === 'new'
+                        {{
+                            $this->workStatusLabel(
+                                $currentWorkStatus
                             )
-                        >
-                            Novo
-                        </option>
-
-                        <option
-                            value="contacting"
-                            @selected(
-                                $currentWorkStatus === 'contacting'
-                            )
-                        >
-                            Em contato
-                        </option>
-
-                        <option
-                            value="waiting"
-                            @selected(
-                                $currentWorkStatus === 'waiting'
-                            )
-                        >
-                            Aguardando retorno
-                        </option>
-
-                        <option
-                            value="discarded"
-                            @selected(
-                                $currentWorkStatus === 'discarded'
-                            )
-                        >
-                            Descartado
-                        </option>
-
-                        <option
-                            value="converted"
-                            @selected(
-                                $currentWorkStatus === 'converted'
-                            )
-                        >
-                            Convertido
-                        </option>
-                    </select>
-
-                    <div class="mt-3">
-
-                        <label
-                            class="
-                                text-[10px]
-                                font-semibold
-                                uppercase
-                                tracking-wide
-                                text-[#697394]
-                            "
-                        >
-                            Próxima ação
-                        </label>
-
-                        <input
-                            type="datetime-local"
-                            value="{{
-                                $workState
-                                    ?->next_action_at
-                                    ?->format(
-                                        'Y-m-d\\TH:i'
-                                    )
-                            }}"
-                            wire:change="saveNextAction(
-                                {{ $lead->id }},
-                                $event.target.value
-                            )"
-                            class="
-                                mt-1 w-full
-                                rounded-lg border
-                                border-white/[0.08]
-                                bg-[#151a36]
-                                px-2.5 py-2
-                                text-xs text-[#d9ddef]
-                            "
-                        >
-
-                        @if (
-                            $workState
-                                ?->next_action_at
-                        )
-
-                            <div
-                                class="
-                                    mt-1 text-[10px]
-                                    font-semibold
-                                    {{
-                                        $this->nextActionClass(
-                                            $workState
-                                        )
-                                    }}
-                                "
-                            >
-                                {{
-                                    $workState
-                                        ->next_action_at
-                                        ->format(
-                                            'd/m/Y H:i'
-                                        )
-                                }}
-                            </div>
-
-                        @endif
-
+                        }}
                     </div>
 
-
-                    <div class="mt-3">
-
-                        <label
-                            class="
-                                text-[10px]
-                                font-semibold
-                                uppercase
-                                tracking-wide
-                                text-[#697394]
-                            "
-                        >
-                            Observação
-                        </label>
-
-                        <textarea
-                            rows="2"
-                            wire:change="saveWorkNote(
-                                {{ $lead->id }},
-                                $event.target.value
-                            )"
-                            class="
-                                mt-1 w-full resize-none
-                                rounded-lg border
-                                border-white/[0.08]
-                                bg-[#151a36]
-                                px-2.5 py-2
-                                text-xs leading-5
-                                text-[#d9ddef]
-                                placeholder:text-[#596482]
-                            "
-                            placeholder="Ex.: retornar após validação do fiscal..."
-                        >{{ $workState?->note }}</textarea>
-
-                    </div>
-
-
-                    @if ($workState?->last_action_at)
+                                        @if (
+                        $hubSpotLead
+                            ?->last_activity_at
+                    )
 
                         <div
                             class="
-                                mt-2 text-[10px]
+                                mt-3 text-[10px]
                                 text-[#697394]
                             "
                         >
+                            Último contato no HubSpot ·
                             {{
-                                $workState
-                                    ->last_action_at
+                                $hubSpotLead
+                                    ->last_activity_at
                                     ->format(
                                         'd/m/Y H:i'
                                     )
                             }}
-
-                            @if (
-                                $workState
-                                    ?->assignedUser
-                                    ?->name
-                            )
-                                ·
-                                {{
-                                    $workState
-                                        ->assignedUser
-                                        ->name
-                                }}
-                            @endif
                         </div>
 
                     @endif
+
+
 
                 </div>
 

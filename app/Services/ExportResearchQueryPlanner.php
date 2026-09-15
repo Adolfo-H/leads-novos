@@ -24,40 +24,53 @@ final class ExportResearchQueryPlanner
         $quoted =
             '"'.$name.'"';
 
+        /*
+         * Não colocamos o CNPJ obrigatoriamente
+         * na consulta.
+         *
+         * Muitas páginas oficiais falam apenas
+         * da marca/grupo e não exibem o CNPJ.
+         *
+         * A validação da identidade acontece
+         * depois, no ExportResearchEntityMatcher.
+         */
+        $identity =
+            $quoted;
+
         $queries = [
             /*
              * Exportação direta.
              */
-            $quoted
+            $identity
                 .' exportação exportações exporta',
 
-            $quoted
+            $identity
                 .' exportador exportadora '
                 .'comércio exterior',
 
-            $quoted
+            $identity
                 .' Siscomex exportação',
 
             /*
              * Exportação indireta.
              */
-            $quoted
+            $identity
                 .' "fim específico de exportação"',
 
-            $quoted
+            $identity
                 .' venda trading exportação',
 
-            $quoted
+            $identity
                 .' "comercial exportadora" '
                 .'venda exportação',
 
             /*
              * Relação com trading.
              */
-            $quoted
+            $identity
                 .' trading comercial exportadora',
 
-            $quoted
+            $identity
                 .' ADM Bunge Cargill '
                 .'Louis Dreyfus COFCO',
         ];

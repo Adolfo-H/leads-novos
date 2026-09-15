@@ -1,9 +1,8 @@
 <?php
 
 use App\Models\Company;
+use App\Models\CompanyHubSpotLead;
 use App\Models\User;
-use Carbon\CarbonImmutable;
-use Livewire\Livewire;
 
 it('does not allow guests to access leads', function () {
     $this
@@ -254,7 +253,7 @@ it('shows commercial context and direct actions in the lead queue', function () 
         );
 });
 
-it('tracks the commercial work status of a lead', function () {
+it('shows the commercial status received from HubSpot', function () {
     $user =
         User::factory()->create([
             'email_verified_at' => now(),
@@ -262,15 +261,15 @@ it('tracks the commercial work status of a lead', function () {
 
     $company =
         Company::query()->create([
-            'cnpj_root' => '90909090',
+            'cnpj_root' => '91919191',
 
-            'corporate_name' => 'Lead Acompanhamento Teste',
+            'corporate_name' => 'Lead HubSpot Status Teste',
         ]);
 
     $company
         ->sdrScore()
         ->create([
-            'score' => 80,
+            'score' => 82,
 
             'priority' => 'high',
 
@@ -289,207 +288,27 @@ it('tracks the commercial work status of a lead', function () {
             'calculated_at' => now(),
         ]);
 
-    Livewire::actingAs(
-        $user
-    )
-        ->test(
-            'pages::leads.index'
-        )
-        ->assertSee(
-            'Lead Acompanhamento Teste'
-        )
-        ->call(
-            'updateWorkStatus',
-            $company->id,
-            'contacting'
-        )
-        ->assertHasNoErrors();
-
-    $state =
-        $company
-            ->leadWorkState()
-            ->firstOrFail();
-
-    expect(
-        $state->status
-    )->toBe(
-        'contacting'
-    );
-
-    expect(
-        $state->assigned_user_id
-    )->toBe(
-        $user->id
-    );
-
-    expect(
-        $state->last_action_at
-    )->not->toBeNull();
-});
-
-it('stores a commercial note and next follow up date', function () {
-    $user =
-        User::factory()->create([
-            'email_verified_at' => now(),
-        ]);
-
-    $company =
-        Company::query()->create([
-            'cnpj_root' => '78787878',
-
-            'corporate_name' => 'Lead Follow Up Teste',
-        ]);
-
-    $company
-        ->sdrScore()
+    CompanyHubSpotLead::query()
         ->create([
-            'score' => 75,
+            'company_id' => $company->id,
 
-            'priority' => 'high',
+            'hubspot_company_id' => '100001',
 
-            'label' => 'Prioridade alta',
+            'hubspot_deal_id' => '200001',
 
-            'is_eligible' => true,
+            'pipeline_id' => 'default',
 
-            'is_provisional' => false,
+            'deal_stage_id' => 'appointmentscheduled',
 
-            'factors' => [],
+            'work_status' => 'waiting',
 
-            'version' => 'test',
+            'open_task_count' => 1,
+
+            'synced_at' => now(),
+
+            'status_synced_at' => now(),
 
             'metadata' => [],
-
-            'calculated_at' => now(),
-        ]);
-
-    Livewire::actingAs(
-        $user
-    )
-        ->test(
-            'pages::leads.index'
-        )
-        ->call(
-            'saveWorkNote',
-            $company->id,
-            'Retornar após validação do fiscal.'
-        )
-        ->call(
-            'saveNextAction',
-            $company->id,
-            '2026-09-18 09:30'
-        )
-        ->assertHasNoErrors();
-
-    $state =
-        $company
-            ->leadWorkState()
-            ->firstOrFail();
-
-    expect(
-        $state->note
-    )->toBe(
-        'Retornar após validação do fiscal.'
-    );
-
-    expect(
-        $state
-            ->next_action_at
-            ?->format(
-                'Y-m-d H:i'
-            )
-    )->toBe(
-        '2026-09-18 09:30'
-    );
-
-    expect(
-        $state->assigned_user_id
-    )->toBe(
-        $user->id
-    );
-});
-
-it('prioritizes overdue follow ups in the SDR queue', function () {
-    $this->travelTo(
-        CarbonImmutable::parse(
-            '2026-09-14 15:00:00'
-        )
-    );
-
-    $user =
-        User::factory()->create([
-            'email_verified_at' => now(),
-        ]);
-
-    $newLead =
-        Company::query()->create([
-            'cnpj_root' => '12121212',
-
-            'corporate_name' => 'Lead Novo Score Alto',
-        ]);
-
-    $newLead
-        ->sdrScore()
-        ->create([
-            'score' => 95,
-
-            'priority' => 'very_high',
-
-            'label' => 'Prioridade muito alta',
-
-            'is_eligible' => true,
-
-            'is_provisional' => false,
-
-            'factors' => [],
-
-            'version' => 'test',
-
-            'metadata' => [],
-
-            'calculated_at' => now(),
-        ]);
-
-    $overdue =
-        Company::query()->create([
-            'cnpj_root' => '34343434',
-
-            'corporate_name' => 'Lead Retorno Vencido',
-        ]);
-
-    $overdue
-        ->sdrScore()
-        ->create([
-            'score' => 60,
-
-            'priority' => 'medium',
-
-            'label' => 'Prioridade média',
-
-            'is_eligible' => true,
-
-            'is_provisional' => false,
-
-            'factors' => [],
-
-            'version' => 'test',
-
-            'metadata' => [],
-
-            'calculated_at' => now(),
-        ]);
-
-    $overdue
-        ->leadWorkState()
-        ->create([
-            'status' => 'waiting',
-
-            'assigned_user_id' => $user->id,
-
-            'last_action_at' => now()
-                ->subDay(),
-
-            'next_action_at' => now()
-                ->subHour(),
         ]);
 
     $this
@@ -498,16 +317,10 @@ it('prioritizes overdue follow ups in the SDR queue', function () {
             route('leads.index')
         )
         ->assertSuccessful()
-        ->assertSeeInOrder([
-            'Lead Retorno Vencido',
-            'Lead Novo Score Alto',
-        ])
         ->assertSee(
-            'Retornos vencidos'
+            'Lead HubSpot Status Teste'
         )
         ->assertSee(
-            'Ainda hoje'
+            'Aguardando retorno'
         );
-
-    $this->travelBack();
 });

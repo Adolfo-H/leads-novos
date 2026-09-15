@@ -33,7 +33,7 @@ it('converts Tavily results into structured export evidence', function () {
 
                         'url' => 'https://empresa.test/exportacoes',
 
-                        'content' => 'A companhia exporta para diversos países.',
+                        'content' => 'A AGRO EXPORTADORA TESTE S.A. exporta para diversos países.',
 
                         'score' => 0.92,
                     ],
@@ -46,7 +46,7 @@ it('converts Tavily results into structured export evidence', function () {
 
                         'url' => 'https://www.gov.br/exemplo',
 
-                        'content' => 'A operação utiliza venda com fim específico de exportação.',
+                        'content' => 'A AGRO EXPORTADORA TESTE S.A. utiliza venda com fim específico de exportação.',
 
                         'score' => 0.88,
                     ],
@@ -59,7 +59,7 @@ it('converts Tavily results into structured export evidence', function () {
 
                         'url' => 'https://portal.test/trading',
 
-                        'content' => 'A empresa mantém operação com trading company.',
+                        'content' => 'A AGRO EXPORTADORA TESTE S.A. mantém operação com trading company.',
 
                         'score' => 0.81,
                     ],
@@ -160,7 +160,7 @@ it('researches an eligible company with Tavily and stores export intelligence', 
 
                         'url' => 'https://empresa.test/exportacoes',
 
-                        'content' => 'A empresa exporta para mercados da Europa e Ásia.',
+                        'content' => 'A EMPRESA EXPORTADORA INTEGRACAO S.A. exporta para mercados da Europa e Ásia.',
 
                         'score' => 0.95,
                     ],
@@ -173,7 +173,7 @@ it('researches an eligible company with Tavily and stores export intelligence', 
 
                         'url' => 'https://www.gov.br/operacao-indireta',
 
-                        'content' => 'A companhia realiza venda com fim específico de exportação.',
+                        'content' => 'A EMPRESA EXPORTADORA INTEGRACAO S.A. realiza venda com fim específico de exportação.',
 
                         'score' => 0.91,
                     ],
@@ -186,7 +186,7 @@ it('researches an eligible company with Tavily and stores export intelligence', 
 
                         'url' => 'https://portal.test/trading',
 
-                        'content' => 'A companhia mantém operação com trading company.',
+                        'content' => 'A EMPRESA EXPORTADORA INTEGRACAO S.A. mantém operação com trading company.',
 
                         'score' => 0.89,
                     ],

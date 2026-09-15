@@ -142,4 +142,30 @@ class Company extends Model
             CompanyLeadWorkState::class
         );
     }
+
+    /**
+     * @return HasOne<CompanyHubSpotLead, $this>
+     */
+    public function hubSpotLead(): HasOne
+    {
+        return $this->hasOne(
+            CompanyHubSpotLead::class
+        );
+    }
+
+    /**
+     * @return HasMany<CompanyLeadActivity, $this>
+     */
+    public function leadActivities(): HasMany
+    {
+        return $this->hasMany(
+            CompanyLeadActivity::class
+        )
+            ->orderByDesc(
+                'occurred_at'
+            )
+            ->orderByDesc(
+                'id'
+            );
+    }
 }
