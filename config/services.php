@@ -112,6 +112,16 @@ return [
         'portal_id' => env(
             'HUBSPOT_PORTAL_ID'
         ),
+
+        'lead_sync_enabled' => (bool) env(
+            'HUBSPOT_LEAD_SYNC_ENABLED',
+            false
+        ),
+
+        'lead_min_score' => (int) env(
+            'HUBSPOT_LEAD_MIN_SCORE',
+            60
+        ),
     ],
 
 ];

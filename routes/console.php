@@ -26,3 +26,9 @@ Schedule::command(
 )
     ->everyMinute()
     ->withoutOverlapping();
+
+Schedule::command(
+    'hubspot:lead-statuses'
+)
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
