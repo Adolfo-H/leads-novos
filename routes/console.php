@@ -32,3 +32,9 @@ Schedule::command(
 )
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+Schedule::command(
+    'hubspot:leads-recover --minutes=10 --limit=50'
+)
+    ->everyTenMinutes()
+    ->withoutOverlapping();

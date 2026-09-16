@@ -53,14 +53,69 @@ services:
             retries: 5
             start_period: 5s
 
+    queue-worker:
+        profiles:
+            - background
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.5
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP:-1000}'
+        image: sail-8.5/app
+        environment:
+            WWWUSER: '${WWWUSER:-1000}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - pgsql
+            - redis
+        command:
+            - php
+            - artisan
+            - queue:work
+            - redis
+            - --sleep=1
+            - --tries=4
+            - --timeout=300
+            - --max-time=3600
+        restart: unless-stopped
+
+    scheduler:
+        profiles:
+            - background
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.5
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP:-1000}'
+        image: sail-8.5/app
+        environment:
+            WWWUSER: '${WWWUSER:-1000}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - pgsql
+            - redis
+        command:
+            - php
+            - artisan
+            - schedule:work
+        restart: unless-stopped
+
     pgsql:
         image: 'postgres:18-alpine'
         ports:
             - '${FORWARD_DB_PORT:-5432}:5432'
         environment:
             PGPASSWORD: '${DB_PASSWORD:-secret}'
-            POSTGRES_DB: '${DB_DATABASE}'
-            POSTGRES_USER: '${DB_USERNAME}'
+            POSTGRES_DB: '${DB_DATABASE:-laravel}'
+            POSTGRES_USER: '${DB_USERNAME:-root}'
             POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
         volumes:
             - 'sail-pgsql:/var/lib/postgresql'
@@ -73,9 +128,9 @@ services:
                 - pg_isready
                 - '-q'
                 - '-d'
-                - '${DB_DATABASE}'
+                - '${DB_DATABASE:-laravel}'
                 - '-U'
-                - '${DB_USERNAME}'
+                - '${DB_USERNAME:-root}'
             retries: 3
             timeout: 5s
     redis:

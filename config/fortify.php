@@ -161,7 +161,14 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        ...(
+            filter_var(
+                env('APP_ALLOW_REGISTRATION', false),
+                FILTER_VALIDATE_BOOL
+            )
+                ? [Features::registration()]
+                : []
+        ),
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
