@@ -87,8 +87,7 @@ final class HubSpotLeadEligibilityService
 
         $minimumScore =
             (int) config(
-                'services.hubspot.lead_min_score',
-                70
+                'services.hubspot.lead_min_score'
             );
 
         if (
