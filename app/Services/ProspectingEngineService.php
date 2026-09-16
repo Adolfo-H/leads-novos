@@ -73,49 +73,6 @@ final class ProspectingEngineService
          * em processamento, não oferecemos
          * novamente em outra execução.
          */
-        $prospectedRoots =
-            ImportItem::query()
-                ->whereHas(
-                    'batch',
-                    fn ($query) => $query->where(
-                        'source_type',
-                        'prospecting'
-                    )
-                )
-                ->whereNotNull(
-                    'normalized_cnpj'
-                )
-                ->whereIn(
-                    'status',
-                    [
-                        'ready',
-                        'queued',
-                        'processing',
-                        'completed',
-                        'existing',
-                    ]
-                )
-                ->get([
-                    'normalized_cnpj',
-                ])
-                ->map(
-                    static function (
-                        ImportItem $item
-                    ): string {
-                        return mb_substr(
-                            (string)
-                                $item
-                                    ->normalized_cnpj,
-                            0,
-                            8
-                        );
-                    }
-                )
-                ->filter()
-                ->unique()
-                ->values()
-                ->all();
-
         for (
             $page = 0;
             $page < $maxPages;
@@ -190,30 +147,14 @@ final class ProspectingEngineService
                         $seenRoots
                     );
 
-                $companyRootsSoFar =
-                    Company::query()
-                        ->whereIn(
-                            'cnpj_root',
-                            $rootsSoFar
-                        )
-                        ->pluck(
-                            'cnpj_root'
-                        )
-                        ->map(
-                            static fn (
-                                mixed $value
-                            ): string => (string) $value
-                        )
-                        ->all();
+                $knownRootsSoFar =
+                    $this->knownRoots(
+                        $rootsSoFar
+                    );
 
                 $knownLookupSoFar =
                     array_fill_keys(
-                        array_unique(
-                            array_merge(
-                                $companyRootsSoFar,
-                                $prospectedRoots,
-                            )
-                        ),
+                        $knownRootsSoFar,
                         true
                     );
 
@@ -277,30 +218,9 @@ final class ProspectingEngineService
                 )
             );
 
-        $companyRoots =
-            Company::query()
-                ->whereIn(
-                    'cnpj_root',
-                    $roots
-                )
-                ->pluck(
-                    'cnpj_root'
-                )
-                ->map(
-                    static fn (
-                        mixed $value
-                    ): string => (string) $value
-                )
-                ->all();
-
         $knownRoots =
-            array_values(
-                array_unique(
-                    array_merge(
-                        $companyRoots,
-                        $prospectedRoots,
-                    )
-                )
+            $this->knownRoots(
+                $roots
             );
 
         $knownLookup =
@@ -361,6 +281,83 @@ final class ProspectingEngineService
 
             'filters' => $lastFilters,
         ];
+    }
+
+    /**
+     * @param  list<string>  $roots
+     * @return list<string>
+     */
+    private function knownRoots(
+        array $roots
+    ): array {
+        if ($roots === []) {
+            return [];
+        }
+
+        $companyRoots =
+            Company::query()
+                ->whereIn(
+                    'cnpj_root',
+                    $roots
+                )
+                ->pluck(
+                    'cnpj_root'
+                )
+                ->map(
+                    static fn (
+                        mixed $value
+                    ): string => (string) $value
+                )
+                ->all();
+
+        $prospectedRoots =
+            ImportItem::query()
+                ->whereIn(
+                    'cnpj_root',
+                    $roots
+                )
+                ->whereHas(
+                    'batch',
+                    fn ($query) => $query->where(
+                        'source_type',
+                        'prospecting'
+                    )
+                )
+                ->whereIn(
+                    'status',
+                    [
+                        'ready',
+                        'queued',
+                        'processing',
+                        'completed',
+                        'existing',
+                    ]
+                )
+                ->distinct()
+                ->pluck(
+                    'cnpj_root'
+                )
+                ->map(
+                    static fn (
+                        mixed $value
+                    ): string => (string) $value
+                )
+                ->filter(
+                    static fn (
+                        string $value
+                    ): bool => $value !== ''
+                )
+                ->values()
+                ->all();
+
+        return array_values(
+            array_unique(
+                array_merge(
+                    $companyRoots,
+                    $prospectedRoots,
+                )
+            )
+        );
     }
 
     /**
