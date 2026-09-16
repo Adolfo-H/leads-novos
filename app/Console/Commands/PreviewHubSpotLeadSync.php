@@ -49,8 +49,7 @@ class PreviewHubSpotLeadSync extends Command
                             'score',
                             '>=',
                             (int) config(
-                                'services.hubspot.lead_min_score',
-                                70
+                                'services.hubspot.lead_min_score'
                             )
                         )
                 )
