@@ -1,11 +1,12 @@
 <?php
 
 use App\Models\Company;
-use App\Models\CompanyHubSpotLead;
 use App\Models\CompanyCrmCheck;
 use App\Models\CompanyExportIntelligence;
+use App\Models\CompanyHubSpotLead;
 use App\Models\CompanySdrScore;
 use App\Models\Establishment;
+use App\Services\HubSpotLeadStatusSyncService;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -25,6 +26,10 @@ new class extends Component
     public string $state = '';
 
     public string $workStatus = '';
+
+    public string $followUp = '';
+
+    public string $dailyView = '';
 
     public function updatedSearch(): void
     {
@@ -56,6 +61,10 @@ new class extends Component
         $this->resetPage();
     }
 
+    public function updatedFollowUp(): void
+    {
+        $this->resetPage();
+    }
 
     public function clearFilters(): void
     {
@@ -66,6 +75,8 @@ new class extends Component
             'crm',
             'state',
             'workStatus',
+            'followUp',
+            'dailyView',
         ]);
 
         $this->resetPage();
@@ -164,57 +175,184 @@ new class extends Component
             )
             ->when(
                 $this->priority !== '',
-                fn ($query) =>
-                    $query->where(
-                        'sdr.priority',
-                        $this->priority
-                    )
+                fn ($query) => $query->where(
+                    'sdr.priority',
+                    $this->priority
+                )
             )
             ->when(
                 $this->icp !== '',
-                fn ($query) =>
-                    $query->whereHas(
-                        'icpScore',
-                        fn ($icpQuery) =>
-                            $icpQuery->where(
-                                'grade',
-                                $this->icp
-                            )
+                fn ($query) => $query->whereHas(
+                    'icpScore',
+                    fn ($icpQuery) => $icpQuery->where(
+                        'grade',
+                        $this->icp
                     )
+                )
             )
             ->when(
                 $this->crm !== '',
-                fn ($query) =>
-                    $query->whereHas(
-                        'crmCheck',
-                        fn ($crmQuery) =>
-                            $crmQuery->where(
-                                'status',
-                                $this->crm
-                            )
+                fn ($query) => $query->whereHas(
+                    'crmCheck',
+                    fn ($crmQuery) => $crmQuery->where(
+                        'status',
+                        $this->crm
                     )
+                )
             )
             ->when(
                 $this->state !== '',
-                fn ($query) =>
-                    $query->whereHas(
-                        'establishments',
-                        fn ($establishmentQuery) =>
-                            $establishmentQuery
-                                ->where(
-                                    'state',
-                                    $this->state
-                                )
-                    )
+                fn ($query) => $query->whereHas(
+                    'establishments',
+                    fn ($establishmentQuery) => $establishmentQuery
+                        ->where(
+                            'state',
+                            $this->state
+                        )
+                )
             )
             ->when(
                 $this->workStatus !== '',
-                fn ($query) =>
+                function ($query): void {
+                    if (
+                        $this->workStatus
+                        === 'new'
+                    ) {
+                        $query->where(
+                            function ($statusQuery): void {
+                                $statusQuery
+                                    ->where(
+                                        'work.work_status',
+                                        'new'
+                                    )
+                                    ->orWhereNull(
+                                        'work.id'
+                                    );
+                            }
+                        );
+
+                        return;
+                    }
+
                     $query->where(
                         'work.work_status',
                         $this->workStatus
-                    )
+                    );
+                }
             )
+            ->when(
+                $this->dailyView === 'today',
+                function ($query): void {
+                    $query->where(
+                        function ($dailyQuery): void {
+                            $dailyQuery
+                                ->where(
+                                    function ($waitingQuery): void {
+                                        $waitingQuery
+                                            ->where(
+                                                'work.work_status',
+                                                'waiting'
+                                            )
+                                            ->whereNotNull(
+                                                'work.last_task_due_at'
+                                            )
+                                            ->where(
+                                                'work.last_task_due_at',
+                                                '<',
+                                                now()
+                                                    ->addDay()
+                                                    ->startOfDay()
+                                            );
+                                    }
+                                )
+                                ->orWhere(
+                                    'work.work_status',
+                                    'contacting'
+                                );
+                        }
+                    );
+                }
+            )
+
+            ->when(
+                $this->followUp !== '',
+                function ($query): void {
+                    $query->where(
+                        'work.work_status',
+                        'waiting'
+                    );
+
+                    if (
+                        $this->followUp
+                        === 'overdue'
+                    ) {
+                        $query
+                            ->whereNotNull(
+                                'work.last_task_due_at'
+                            )
+                            ->where(
+                                'work.last_task_due_at',
+                                '<',
+                                now()
+                            );
+
+                        return;
+                    }
+
+                    if (
+                        $this->followUp
+                        === 'today'
+                    ) {
+                        $query
+                            ->whereNotNull(
+                                'work.last_task_due_at'
+                            )
+                            ->where(
+                                'work.last_task_due_at',
+                                '>=',
+                                now()->startOfDay()
+                            )
+                            ->where(
+                                'work.last_task_due_at',
+                                '<',
+                                now()
+                                    ->addDay()
+                                    ->startOfDay()
+                            );
+
+                        return;
+                    }
+
+                    if (
+                        $this->followUp
+                        === 'upcoming'
+                    ) {
+                        $query
+                            ->whereNotNull(
+                                'work.last_task_due_at'
+                            )
+                            ->where(
+                                'work.last_task_due_at',
+                                '>=',
+                                now()
+                                    ->addDay()
+                                    ->startOfDay()
+                            );
+
+                        return;
+                    }
+
+                    if (
+                        $this->followUp
+                        === 'unscheduled'
+                    ) {
+                        $query->whereNull(
+                            'work.last_task_due_at'
+                        );
+                    }
+                }
+            )
+
             /*
              * Fila operacional vinda do HubSpot:
              *
@@ -223,20 +361,61 @@ new class extends Component
              * 2 - novo
              * 3 - descartado
              */
+            /*
+             * Ordem operacional:
+             *
+             * 0 - follow-up atrasado
+             * 1 - follow-up para hoje
+             * 2 - follow-up futuro
+             * 3 - aguardando sem prazo
+             * 4 - em contato
+             * 5 - novos
+             * 9 - descartados
+             */
             ->orderByRaw(
                 "
                 CASE
                     WHEN work.work_status = 'waiting'
+                        AND work.last_task_due_at IS NOT NULL
+                        AND work.last_task_due_at < ?
                         THEN 0
-                    WHEN work.work_status = 'contacting'
+
+                    WHEN work.work_status = 'waiting'
+                        AND work.last_task_due_at IS NOT NULL
+                        AND work.last_task_due_at >= ?
+                        AND work.last_task_due_at < ?
                         THEN 1
-                    WHEN work.work_status = 'new'
+
+                    WHEN work.work_status = 'waiting'
+                        AND work.last_task_due_at IS NOT NULL
+                        AND work.last_task_due_at >= ?
                         THEN 2
-                    WHEN work.work_status = 'discarded'
+
+                    WHEN work.work_status = 'waiting'
                         THEN 3
-                    ELSE 4
+
+                    WHEN work.work_status = 'contacting'
+                        THEN 4
+
+                    WHEN work.work_status = 'new'
+                        OR work.id IS NULL
+                        THEN 5
+
+                    WHEN work.work_status = 'discarded'
+                        THEN 9
+
+                    ELSE 8
                 END
-                "
+                ",
+                [
+                    now(),
+                    today(),
+                    today()->addDay(),
+                    today()->addDay(),
+                ]
+            )
+            ->orderBy(
+                'work.last_task_due_at'
             )
             ->orderByDesc(
                 'sdr.score'
@@ -304,17 +483,13 @@ new class extends Component
         ?string $status
     ): string {
         return match ($status) {
-            'contacting' =>
-                'Em contato',
+            'contacting' => 'Em contato',
 
-            'waiting' =>
-                'Aguardando retorno',
+            'waiting' => 'Aguardando retorno',
 
-            'discarded' =>
-                'Descartado',
+            'discarded' => 'Descartado',
 
-            default =>
-                'Novo',
+            default => 'Novo',
         };
     }
 
@@ -322,27 +497,72 @@ new class extends Component
         ?string $status
     ): string {
         return match ($status) {
-            'contacting' =>
-                'text-cyan-300',
+            'contacting' => 'text-cyan-300',
 
-            'waiting' =>
-                'text-amber-300',
+            'waiting' => 'text-amber-300',
 
-            'discarded' =>
-                'text-red-300',
+            'discarded' => 'text-red-300',
 
-            default =>
-                'text-emerald-300',
+            default => 'text-emerald-300',
         };
+    }
+
+    private function operationalLeadQuery()
+    {
+        return Company::query()
+            ->select(
+                'companies.*'
+            )
+            ->join(
+                'company_sdr_scores as sdr',
+                'sdr.company_id',
+                '=',
+                'companies.id'
+            )
+            ->leftJoin(
+                'company_hubspot_leads as work',
+                'work.company_id',
+                '=',
+                'companies.id'
+            )
+            ->where(
+                function ($query): void {
+                    $query
+                        ->where(
+                            'sdr.is_eligible',
+                            true
+                        )
+                        ->orWhereNotNull(
+                            'work.hubspot_deal_id'
+                        );
+                }
+            );
+    }
+
+    #[Computed]
+    public function operationalCount(): int
+    {
+        return $this
+            ->operationalLeadQuery()
+            ->count();
     }
 
     #[Computed]
     public function newCount(): int
     {
-        return CompanyHubSpotLead::query()
+        return $this
+            ->operationalLeadQuery()
             ->where(
-                'work_status',
-                'new'
+                function ($query): void {
+                    $query
+                        ->where(
+                            'work.work_status',
+                            'new'
+                        )
+                        ->orWhereNull(
+                            'work.id'
+                        );
+                }
             )
             ->count();
     }
@@ -350,9 +570,10 @@ new class extends Component
     #[Computed]
     public function contactingCount(): int
     {
-        return CompanyHubSpotLead::query()
+        return $this
+            ->operationalLeadQuery()
             ->where(
-                'work_status',
+                'work.work_status',
                 'contacting'
             )
             ->count();
@@ -361,9 +582,10 @@ new class extends Component
     #[Computed]
     public function waitingCount(): int
     {
-        return CompanyHubSpotLead::query()
+        return $this
+            ->operationalLeadQuery()
             ->where(
-                'work_status',
+                'work.work_status',
                 'waiting'
             )
             ->count();
@@ -372,17 +594,189 @@ new class extends Component
     #[Computed]
     public function discardedCount(): int
     {
-        return CompanyHubSpotLead::query()
+        return $this
+            ->operationalLeadQuery()
             ->where(
-                'work_status',
+                'work.work_status',
                 'discarded'
             )
             ->count();
     }
 
+    #[Computed]
+    public function dailyQueueCount(): int
+    {
+        return $this
+            ->operationalLeadQuery()
+            ->where(
+                function ($query): void {
+                    $query
+                        ->where(
+                            function ($waitingQuery): void {
+                                $waitingQuery
+                                    ->where(
+                                        'work.work_status',
+                                        'waiting'
+                                    )
+                                    ->whereNotNull(
+                                        'work.last_task_due_at'
+                                    )
+                                    ->where(
+                                        'work.last_task_due_at',
+                                        '<',
+                                        now()
+                                            ->addDay()
+                                            ->startOfDay()
+                                    );
+                            }
+                        )
+                        ->orWhere(
+                            'work.work_status',
+                            'contacting'
+                        );
+                }
+            )
+            ->count();
+    }
+
+    public function applyDailyView(): void
+    {
+        if (
+            $this->dailyView
+            === 'today'
+        ) {
+            $this->dailyView = '';
+
+            $this->resetPage();
+
+            return;
+        }
+
+        $this->dailyView =
+            'today';
+
+        $this->workStatus = '';
+        $this->followUp = '';
+
+        $this->resetPage();
+    }
+
+    #[Computed]
+    public function overdueCount(): int
+    {
+        return $this
+            ->operationalLeadQuery()
+            ->where(
+                'work.work_status',
+                'waiting'
+            )
+            ->whereNotNull(
+                'work.last_task_due_at'
+            )
+            ->where(
+                'work.last_task_due_at',
+                '<',
+                now()
+            )
+            ->count();
+    }
+
+    #[Computed]
+    public function dueTodayCount(): int
+    {
+        return $this
+            ->operationalLeadQuery()
+            ->where(
+                'work.work_status',
+                'waiting'
+            )
+            ->whereNotNull(
+                'work.last_task_due_at'
+            )
+            ->where(
+                'work.last_task_due_at',
+                '>=',
+                now()->startOfDay()
+            )
+            ->where(
+                'work.last_task_due_at',
+                '<',
+                now()
+                    ->addDay()
+                    ->startOfDay()
+            )
+            ->count();
+    }
+
+    #[Computed]
+    public function upcomingCount(): int
+    {
+        return $this
+            ->operationalLeadQuery()
+            ->where(
+                'work.work_status',
+                'waiting'
+            )
+            ->whereNotNull(
+                'work.last_task_due_at'
+            )
+            ->where(
+                'work.last_task_due_at',
+                '>=',
+                now()
+                    ->addDay()
+                    ->startOfDay()
+            )
+            ->count();
+    }
+
+    #[Computed]
+    public function unscheduledCount(): int
+    {
+        return $this
+            ->operationalLeadQuery()
+            ->where(
+                'work.work_status',
+                'waiting'
+            )
+            ->whereNull(
+                'work.last_task_due_at'
+            )
+            ->count();
+    }
+
+    public function applyFollowUpView(
+        string $view
+    ): void {
+        $this->dailyView = '';
+
+        $this->followUp =
+            in_array(
+                $view,
+                [
+                    'overdue',
+                    'today',
+                    'upcoming',
+                    'unscheduled',
+                ],
+                true
+            )
+                ? $view
+                : '';
+
+        if ($this->followUp !== '') {
+            $this->workStatus =
+                'waiting';
+        }
+
+        $this->resetPage();
+    }
+
     public function applyQuickView(
         string $view
     ): void {
+        $this->dailyView = '';
+
         $this->workStatus =
             in_array(
                 $view,
@@ -397,30 +791,46 @@ new class extends Component
                 ? $view
                 : '';
 
+        if (
+            $this->workStatus
+            !== 'waiting'
+        ) {
+            $this->followUp = '';
+        }
+
         $this->resetPage();
+    }
+
+    public function refreshHubSpotStatus(
+        int $leadId,
+        HubSpotLeadStatusSyncService $service,
+    ): void {
+        $lead =
+            CompanyHubSpotLead::query()
+                ->findOrFail(
+                    $leadId
+                );
+
+        $service->sync(
+            $lead
+        );
     }
 
     public function crmLabel(
         ?string $status
     ): string {
         return match ($status) {
-            'client' =>
-                'Cliente',
+            'client' => 'Cliente',
 
-            'opportunity' =>
-                'Oportunidade',
+            'opportunity' => 'Oportunidade',
 
-            'prospected' =>
-                'Reprospecção',
+            'prospected' => 'Reprospecção',
 
-            'known' =>
-                'Conhecido',
+            'known' => 'Conhecido',
 
-            'not_found' =>
-                'Novo',
+            'not_found' => 'Novo',
 
-            default =>
-                'Não verificado',
+            default => 'Não verificado',
         };
     }
 
@@ -428,17 +838,13 @@ new class extends Component
         ?string $priority
     ): string {
         return match ($priority) {
-            'very_high' =>
-                'Muito alta',
+            'very_high' => 'Muito alta',
 
-            'high' =>
-                'Alta',
+            'high' => 'Alta',
 
-            'medium' =>
-                'Média',
+            'medium' => 'Média',
 
-            default =>
-                'Baixa',
+            default => 'Baixa',
         };
     }
 
@@ -496,6 +902,249 @@ new class extends Component
         return null;
     }
 
+    public function hubSpotDealUrl(
+        ?CompanyHubSpotLead $lead
+    ): ?string {
+        if ($lead === null) {
+            return null;
+        }
+
+        $portalId =
+            trim(
+                (string) config(
+                    'services.hubspot.portal_id'
+                )
+            );
+
+        $dealId =
+            trim(
+                (string) $lead
+                    ->hubspot_deal_id
+            );
+
+        if (
+            $portalId === ''
+            || $dealId === ''
+        ) {
+            return null;
+        }
+
+        return sprintf(
+            'https://app.hubspot.com/contacts/%s/record/0-3/%s',
+            rawurlencode(
+                $portalId
+            ),
+            rawurlencode(
+                $dealId
+            ),
+        );
+    }
+
+    public function nextTaskSubject(
+        ?CompanyHubSpotLead $lead
+    ): ?string {
+        if ($lead === null) {
+            return null;
+        }
+
+        $tasks =
+            data_get(
+                $lead->metadata ?? [],
+                'hubspot_status.open_tasks',
+                []
+            );
+
+        if (! is_array($tasks)) {
+            return null;
+        }
+
+        $validTasks = [];
+
+        foreach ($tasks as $task) {
+            if (! is_array($task)) {
+                continue;
+            }
+
+            $subject =
+                trim(
+                    (string) (
+                        $task['subject']
+                        ?? ''
+                    )
+                );
+
+            if ($subject === '') {
+                continue;
+            }
+
+            $validTasks[] = [
+                'subject' => $subject,
+
+                'due_at' => is_string(
+                    $task['due_at']
+                    ?? null
+                )
+                        ? $task['due_at']
+                        : null,
+            ];
+        }
+
+        if ($validTasks === []) {
+            return null;
+        }
+
+        usort(
+            $validTasks,
+            static function (
+                array $a,
+                array $b
+            ): int {
+                $aDue =
+                    $a['due_at']
+                    ?? '9999';
+
+                $bDue =
+                    $b['due_at']
+                    ?? '9999';
+
+                return strcmp(
+                    $aDue,
+                    $bDue
+                );
+            }
+        );
+
+        return $validTasks[0][
+            'subject'
+        ];
+    }
+
+    public function workContext(
+        ?CompanyHubSpotLead $lead
+    ): string {
+        if ($lead === null) {
+            return 'Ainda não enviado ao HubSpot';
+        }
+
+        if (
+            $lead->work_status
+            === 'waiting'
+        ) {
+            return $this->nextTaskSubject(
+                $lead
+            )
+                ?? 'Follow-up pendente';
+        }
+
+        if (
+            $lead->work_status
+            === 'contacting'
+        ) {
+            if (
+                $lead->last_activity_at
+                !== null
+            ) {
+                return 'Último contato em '
+                    .$lead
+                        ->last_activity_at
+                        ->format(
+                            'd/m/Y H:i'
+                        );
+            }
+
+            return 'Abordagem em andamento';
+        }
+
+        if (
+            $lead->work_status
+            === 'discarded'
+        ) {
+            return 'Negócio descartado no HubSpot';
+        }
+
+        return 'Ainda não houve contato';
+    }
+
+    public function workContextClass(
+        ?CompanyHubSpotLead $lead
+    ): string {
+        if ($lead === null) {
+            return 'text-[#7f89aa]';
+        }
+
+        if (
+            $lead->work_status
+                === 'waiting'
+            && $lead->last_task_due_at
+                ?->isPast()
+        ) {
+            return 'text-red-300';
+        }
+
+        return match (
+            $lead->work_status
+        ) {
+            'waiting' => 'text-amber-300',
+
+            'contacting' => 'text-[#9ba5c8]',
+
+            'discarded' => 'text-[#7f89aa]',
+
+            default => 'text-[#7f89aa]',
+        };
+    }
+
+    public function nextActionLabel(
+        ?CompanyHubSpotLead $lead
+    ): string {
+        if ($lead === null) {
+            return 'Iniciar abordagem';
+        }
+
+        return match (
+            $lead->work_status
+        ) {
+            'waiting' => $lead->last_task_due_at
+                ?->isPast()
+                    ? 'Retomar atrasado'
+                    : 'Abrir follow-up',
+
+            'contacting' => 'Continuar abordagem',
+
+            'discarded' => 'Ver histórico',
+
+            default => 'Iniciar abordagem',
+        };
+    }
+
+    public function nextActionClass(
+        ?CompanyHubSpotLead $lead
+    ): string {
+        if ($lead === null) {
+            return 'text-emerald-300 hover:text-emerald-200';
+        }
+
+        if (
+            $lead->work_status === 'waiting'
+            && $lead->last_task_due_at
+                ?->isPast()
+        ) {
+            return 'text-red-300 hover:text-red-200';
+        }
+
+        return match (
+            $lead->work_status
+        ) {
+            'waiting' => 'text-amber-300 hover:text-amber-200',
+
+            'contacting' => 'text-cyan-300 hover:text-cyan-200',
+
+            'discarded' => 'text-[#8992b1] hover:text-white',
+
+            default => 'text-emerald-300 hover:text-emerald-200',
+        };
+    }
+
     public function exportLabel(
         ?CompanyExportIntelligence $export
     ): string {
@@ -510,17 +1159,13 @@ new class extends Component
             return match (
                 $export->research_status
             ) {
-                'queued' =>
-                    'Na fila',
+                'queued' => 'Na fila',
 
-                'processing' =>
-                    'Pesquisando',
+                'processing' => 'Pesquisando',
 
-                'failed' =>
-                    'Pesquisa falhou',
+                'failed' => 'Pesquisa falhou',
 
-                default =>
-                    'Não pesquisada',
+                default => 'Não pesquisada',
             };
         }
 
@@ -591,21 +1236,18 @@ new class extends Component
             }
 
             $reasons[] = [
-                'label' =>
-                    $label,
+                'label' => $label,
 
-                'detail' =>
-                    trim(
-                        (string) (
-                            $factor[
-                                'detail'
-                            ]
-                            ?? ''
-                        )
-                    ),
+                'detail' => trim(
+                    (string) (
+                        $factor[
+                            'detail'
+                        ]
+                        ?? ''
+                    )
+                ),
 
-                'points' =>
-                    $points,
+                'points' => $points,
             ];
         }
 
@@ -614,8 +1256,7 @@ new class extends Component
             static fn (
                 array $a,
                 array $b
-            ): int =>
-                $b[
+            ): int => $b[
                     'points'
                 ]
                 <=>
@@ -630,7 +1271,6 @@ new class extends Component
             3
         );
     }
-
 };
 ?>
 
@@ -659,7 +1299,7 @@ new class extends Component
                 </h1>
 
                 <span class="ec-count-badge">
-                    {{ $this->eligibleCount }}
+                    {{ $this->operationalCount }}
                 </span>
 
             </div>
@@ -685,15 +1325,15 @@ new class extends Component
         <div class="ec-intelligence-card">
 
             <div class="ec-intelligence-label">
-                Leads elegíveis
+                Leads na operação
             </div>
 
             <div class="ec-score-value">
-                {{ $this->eligibleCount }}
+                {{ $this->operationalCount }}
             </div>
 
             <div class="ec-intelligence-caption">
-                Disponíveis para qualificação
+                Fila comercial ativa
             </div>
 
         </div>
@@ -733,6 +1373,111 @@ new class extends Component
         </div>
 
     </div>
+
+
+    {{-- MINHA FILA HOJE --}}
+    <button
+        type="button"
+        wire:click="applyDailyView"
+        class="
+            group flex w-full
+            items-center justify-between
+            gap-5 rounded-2xl
+            border px-5 py-4
+            text-left transition
+            {{
+                $dailyView === 'today'
+                    ? 'border-cyan-300/30 bg-cyan-300/[0.08]'
+                    : 'border-white/[0.06] bg-white/[0.025] hover:border-cyan-300/20 hover:bg-cyan-300/[0.03]'
+            }}
+        "
+    >
+        <div
+            class="
+                flex min-w-0
+                items-center gap-4
+            "
+        >
+            <div
+                class="
+                    flex h-10 w-10
+                    shrink-0 items-center
+                    justify-center
+                    rounded-xl
+                    border border-cyan-300/20
+                    bg-cyan-300/[0.07]
+                    text-lg text-cyan-300
+                "
+            >
+                ◎
+            </div>
+
+            <div class="min-w-0">
+                <div
+                    class="
+                        text-xs font-bold
+                        uppercase tracking-wider
+                        text-cyan-300
+                    "
+                >
+                    Minha fila hoje
+                </div>
+
+                <div
+                    class="
+                        mt-1 text-sm
+                        font-semibold
+                        text-[#eef1ff]
+                    "
+                >
+                    Atrasados, tarefas de hoje
+                    e contatos em andamento
+                </div>
+
+                <div
+                    class="
+                        mt-1 text-[11px]
+                        text-[#7882a4]
+                    "
+                >
+                    Foque apenas no que exige
+                    atenção comercial agora.
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="
+                flex shrink-0
+                items-center gap-3
+            "
+        >
+            <span
+                class="
+                    text-2xl font-bold
+                    text-cyan-300
+                "
+            >
+                {{ $this->dailyQueueCount }}
+            </span>
+
+            <span
+                class="
+                    text-xs font-semibold
+                    text-[#8791b2]
+                    transition
+                    group-hover:text-white
+                "
+            >
+                {{
+                    $dailyView === 'today'
+                        ? 'Mostrar todos'
+                        : 'Abrir fila'
+                }}
+                →
+            </span>
+        </div>
+    </button>
 
 
     {{-- PAINEL DIÁRIO --}}
@@ -882,6 +1627,104 @@ new class extends Component
         </div>
 
     </section>
+
+
+    {{-- FOLLOW-UP --}}
+    <div
+        class="
+            mt-1 flex flex-wrap
+            items-center gap-2
+        "
+    >
+        <span
+            class="
+                mr-1 text-[10px]
+                font-semibold uppercase
+                tracking-wider
+                text-[#697394]
+            "
+        >
+            Follow-up
+        </span>
+
+        <button
+            type="button"
+            wire:click="applyFollowUpView('overdue')"
+            class="
+                rounded-lg border px-3 py-2
+                text-xs font-semibold transition
+                {{
+                    $followUp === 'overdue'
+                        ? 'border-red-400/30 bg-red-400/10 text-red-300'
+                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
+                }}
+            "
+        >
+            Atrasados · {{ $this->overdueCount }}
+        </button>
+
+        <button
+            type="button"
+            wire:click="applyFollowUpView('today')"
+            class="
+                rounded-lg border px-3 py-2
+                text-xs font-semibold transition
+                {{
+                    $followUp === 'today'
+                        ? 'border-amber-300/30 bg-amber-300/10 text-amber-300'
+                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
+                }}
+            "
+        >
+            Hoje · {{ $this->dueTodayCount }}
+        </button>
+
+        <button
+            type="button"
+            wire:click="applyFollowUpView('upcoming')"
+            class="
+                rounded-lg border px-3 py-2
+                text-xs font-semibold transition
+                {{
+                    $followUp === 'upcoming'
+                        ? 'border-cyan-300/30 bg-cyan-300/10 text-cyan-300'
+                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
+                }}
+            "
+        >
+            Próximos · {{ $this->upcomingCount }}
+        </button>
+
+        <button
+            type="button"
+            wire:click="applyFollowUpView('unscheduled')"
+            class="
+                rounded-lg border px-3 py-2
+                text-xs font-semibold transition
+                {{
+                    $followUp === 'unscheduled'
+                        ? 'border-white/20 bg-white/[0.07] text-white'
+                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
+                }}
+            "
+        >
+            Sem prazo · {{ $this->unscheduledCount }}
+        </button>
+
+        @if ($followUp !== '')
+            <button
+                type="button"
+                wire:click="applyFollowUpView('')"
+                class="
+                    px-2 py-2 text-xs
+                    font-semibold text-cyan-300
+                    hover:text-cyan-200
+                "
+            >
+                Limpar prazo
+            </button>
+        @endif
+    </div>
 
 
     {{-- FILTROS --}}
@@ -1081,6 +1924,8 @@ new class extends Component
             || $crm !== ''
             || $state !== ''
             || $workStatus !== ''
+            || $followUp !== ''
+            || $dailyView !== ''
         )
 
             <button
@@ -1099,6 +1944,55 @@ new class extends Component
         @endif
 
     </div>
+
+
+    @if ($dailyView === 'today')
+
+        <div
+            class="
+                mt-5 flex flex-wrap
+                items-center justify-between
+                gap-3 rounded-xl
+                border border-cyan-300/15
+                bg-cyan-300/[0.04]
+                px-4 py-3
+            "
+        >
+            <div>
+                <div
+                    class="
+                        text-xs font-semibold
+                        text-cyan-300
+                    "
+                >
+                    Minha fila hoje
+                </div>
+
+                <div
+                    class="
+                        mt-0.5 text-[11px]
+                        text-[#7f89aa]
+                    "
+                >
+                    Leads novos e follow-ups
+                    futuros estão ocultos.
+                </div>
+            </div>
+
+            <button
+                type="button"
+                wire:click="applyDailyView"
+                class="
+                    text-xs font-semibold
+                    text-[#a6aec9]
+                    hover:text-white
+                "
+            >
+                Voltar para todos
+            </button>
+        </div>
+
+    @endif
 
 
     {{-- LISTA --}}
@@ -1239,6 +2133,11 @@ new class extends Component
                         $hubSpotUrl =
                             $this->hubSpotCompanyUrl(
                                 $crmCheck
+                            );
+
+                        $hubSpotDealUrl =
+                            $this->hubSpotDealUrl(
+                                $hubSpotLead
                             );
                     @endphp
 
@@ -1555,7 +2454,155 @@ new class extends Component
                         }}
                     </div>
 
+                    <div
+                        class="
+                            mt-2 max-w-[190px]
+                            text-[10px]
+                            leading-relaxed
+                            {{
+                                $this->workContextClass(
+                                    $hubSpotLead
+                                )
+                            }}
+                        "
+                    >
+                        {{
+                            $this->workContext(
+                                $hubSpotLead
+                            )
+                        }}
+                    </div>
+
+
+                    @if ($hubSpotDealUrl)
+
+                        <a
+                            href="{{ $hubSpotDealUrl }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="
+                                mt-2 inline-flex
+                                items-center gap-1
+                                text-[11px]
+                                font-semibold
+                                {{
+                                    $this->nextActionClass(
+                                        $hubSpotLead
+                                    )
+                                }}
+                            "
+                        >
+                            {{
+                                $this->nextActionLabel(
+                                    $hubSpotLead
+                                )
+                            }}
+                            ↗
+                        </a>
+
+                    @endif
+
                                         @if (
+                        $hubSpotLead
+                        && $hubSpotLead
+                            ->hubspot_company_id
+                        && $hubSpotLead
+                            ->hubspot_deal_id
+                    )
+
+                        <button
+                            type="button"
+                            wire:click="
+                                refreshHubSpotStatus(
+                                    {{ $hubSpotLead->id }}
+                                )
+                            "
+                            wire:loading.attr="disabled"
+                            wire:target="
+                                refreshHubSpotStatus(
+                                    {{ $hubSpotLead->id }}
+                                )
+                            "
+                            class="
+                                mt-2 block
+                                text-[10px]
+                                font-semibold
+                                text-[#6f789a]
+                                transition
+                                hover:text-cyan-300
+                                disabled:opacity-50
+                            "
+                        >
+                            <span
+                                wire:loading.remove
+                                wire:target="
+                                    refreshHubSpotStatus(
+                                        {{ $hubSpotLead->id }}
+                                    )
+                                "
+                            >
+                                Atualizar HubSpot ↻
+                            </span>
+
+                            <span
+                                wire:loading
+                                wire:target="
+                                    refreshHubSpotStatus(
+                                        {{ $hubSpotLead->id }}
+                                    )
+                                "
+                            >
+                                Atualizando...
+                            </span>
+                        </button>
+
+                    @endif
+
+
+                    @if (
+                        $hubSpotLead?->work_status
+                            === 'waiting'
+                        && $hubSpotLead
+                            ?->last_task_due_at
+                    )
+
+                        @php
+                            $taskIsOverdue =
+                                $hubSpotLead
+                                    ->last_task_due_at
+                                    ->isPast();
+                        @endphp
+
+                        <div
+                            class="
+                                mt-2 text-[10px]
+                                font-semibold
+                                {{
+                                    $taskIsOverdue
+                                        ? 'text-red-300'
+                                        : 'text-amber-300'
+                                }}
+                            "
+                        >
+                            {{
+                                $taskIsOverdue
+                                    ? 'Atrasado'
+                                    : 'Próxima ação'
+                            }}
+                            ·
+                            {{
+                                $hubSpotLead
+                                    ->last_task_due_at
+                                    ->format(
+                                        'd/m/Y H:i'
+                                    )
+                            }}
+                        </div>
+
+                    @endif
+
+
+                    @if (
                         $hubSpotLead
                             ?->last_activity_at
                     )

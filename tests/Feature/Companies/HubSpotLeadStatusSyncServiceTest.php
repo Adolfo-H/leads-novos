@@ -269,3 +269,71 @@ it('gives discarded deal stage priority over tasks and activity', function () {
         'deal_stage'
     );
 });
+
+it('does not double count the same HubSpot contact activity', function () {
+    $lead =
+        statusFlowLead(
+            '90112235'
+        );
+
+    Http::fake(function (Request $request) {
+        $url =
+            $request->url();
+
+        if (
+            str_contains(
+                $url,
+                '/crm/v3/objects/companies/'
+            )
+            || str_contains(
+                $url,
+                '/crm/v3/objects/deals/'
+            )
+        ) {
+            return Http::response([
+                'properties' => [
+                    'dealstage' => 'appointmentscheduled',
+                    'num_contacted_notes' => '1',
+                    'notes_last_contacted' => now()->toIso8601String(),
+                    'notes_last_updated' => now()->toIso8601String(),
+                ],
+            ]);
+        }
+
+        if (
+            str_contains(
+                $url,
+                '/associations/tasks'
+            )
+        ) {
+            return Http::response([
+                'results' => [],
+            ]);
+        }
+
+        return Http::response(
+            [],
+            404
+        );
+    });
+
+    $result =
+        app(
+            HubSpotLeadStatusSyncService::class
+        )->sync(
+            $lead
+        );
+
+    expect(
+        data_get(
+            $result->metadata,
+            'hubspot_status.contacted_count'
+        )
+    )->toBe(1);
+
+    expect(
+        $result->work_status
+    )->toBe(
+        'contacting'
+    );
+});

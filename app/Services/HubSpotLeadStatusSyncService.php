@@ -70,19 +70,27 @@ final class HubSpotLeadStatusSyncService
                 ?? null
             );
 
+        /*
+         * A mesma atividade pode aparecer
+         * tanto na Company quanto no Deal.
+         *
+         * Somar os dois contadores duplicaria
+         * o mesmo contato comercial.
+         */
         $contactedCount =
-            $this->integerValue(
-                $company[
-                    'num_contacted_notes'
-                ]
-                ?? null
-            )
-            +
-            $this->integerValue(
-                $deal[
-                    'num_contacted_notes'
-                ]
-                ?? null
+            max(
+                $this->integerValue(
+                    $company[
+                        'num_contacted_notes'
+                    ]
+                    ?? null
+                ),
+                $this->integerValue(
+                    $deal[
+                        'num_contacted_notes'
+                    ]
+                    ?? null
+                ),
             );
 
         $activityDates = [
