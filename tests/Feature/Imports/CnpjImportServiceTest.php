@@ -72,3 +72,52 @@ it('parses pasted cnpj lists', function () {
     expect($values)
         ->toHaveCount(3);
 });
+
+it('stores the cnpj root for valid imported items', function () {
+    $service = app(
+        CnpjImportService::class
+    );
+
+    $base =
+        '112223330004';
+
+    $cnpj =
+        $base
+        .Cnpj::calculateCheckDigits(
+            $base
+        );
+
+    $batch =
+        $service->import([
+            $cnpj,
+            '00.000.000/0000-00',
+        ]);
+
+    $validItem =
+        $batch
+            ->items()
+            ->where(
+                'status',
+                'ready'
+            )
+            ->firstOrFail();
+
+    $invalidItem =
+        $batch
+            ->items()
+            ->where(
+                'status',
+                'invalid'
+            )
+            ->firstOrFail();
+
+    expect(
+        $validItem->cnpj_root
+    )->toBe(
+        '11222333'
+    );
+
+    expect(
+        $invalidItem->cnpj_root
+    )->toBeNull();
+});

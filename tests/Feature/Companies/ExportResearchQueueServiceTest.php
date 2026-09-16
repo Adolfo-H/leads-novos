@@ -2,6 +2,7 @@
 
 use App\Contracts\ExportResearchProvider;
 use App\Jobs\ResearchCompanyExports;
+use App\Jobs\SyncCompanyToHubSpot;
 use App\Models\Company;
 use App\Services\ExportResearchQueueService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -563,5 +564,53 @@ it('ignores an obsolete export research job after recovery', function () {
         )
     )->toBe(
         'new-generation'
+    );
+});
+
+it('dispatches HubSpot synchronization after successful export research', function () {
+    Queue::fake([
+        SyncCompanyToHubSpot::class,
+    ]);
+
+    config([
+        'services.hubspot.lead_sync_enabled' => true,
+    ]);
+
+    $company =
+        queuedResearchCompany();
+
+    $provider =
+        new class implements ExportResearchProvider
+        {
+            public function name(): string
+            {
+                return 'fake-hubspot-dispatch';
+            }
+
+            public function research(
+                Company $company,
+                array $queries,
+            ): array {
+                return [];
+            }
+        };
+
+    app()->instance(
+        ExportResearchProvider::class,
+        $provider
+    );
+
+    Bus::dispatchSync(
+        new ResearchCompanyExports(
+            companyId: $company->id,
+        )
+    );
+
+    Queue::assertPushed(
+        SyncCompanyToHubSpot::class,
+        fn (
+            SyncCompanyToHubSpot $job
+        ): bool => $job->companyId
+                === $company->id
     );
 });

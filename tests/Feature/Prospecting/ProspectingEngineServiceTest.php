@@ -32,6 +32,8 @@ it('removes companies already known by the prospecting engine', function () {
 
         'normalized_cnpj' => '84046101005233',
 
+        'cnpj_root' => '84046101',
+
         'status' => 'queued',
     ]);
 
@@ -382,4 +384,81 @@ it('continues searching when the first page contains only known companies', func
     )->toBe('99999999');
 
     Http::assertSentCount(2);
+});
+
+it('uses the stored cnpj root to remember previous prospecting', function () {
+    config([
+        'services.receita_local.base_url' => 'http://receita-data:8000',
+    ]);
+
+    $batch =
+        ImportBatch::query()->create([
+            'source_type' => 'prospecting',
+            'status' => 'processing',
+        ]);
+
+    /*
+     * De propósito não usamos normalized_cnpj.
+     *
+     * O motor novo deve consultar diretamente
+     * a coluna indexada cnpj_root.
+     */
+    $batch->items()->create([
+        'row_number' => 1,
+        'raw_cnpj' => '99.999.999/0001-00',
+        'normalized_cnpj' => null,
+        'cnpj_root' => '99999999',
+        'status' => 'queued',
+    ]);
+
+    Http::fake([
+        'receita-data:8000/prospects*' => Http::response([
+            'items' => [
+                [
+                    'cnpj_root' => '99999999',
+                    'cnpj' => '99999999000100',
+                    'corporate_name' => 'EMPRESA JA PROSPECTADA',
+                    'state' => 'MT',
+                    'matched_cnae' => '4622200',
+                    'cnae_match_type' => 'primary',
+                    'primary_cnae' => '4622200',
+                    'share_capital' => 5000000,
+                    'size_code' => '05',
+                    'legal_nature_code' => '2062',
+                    'active_establishments' => 1,
+                    'active_states' => 1,
+                    'discovery_score' => 90,
+                ],
+            ],
+            'count' => 1,
+            'limit' => 50,
+            'offset' => 0,
+            'filters' => [],
+        ]),
+    ]);
+
+    $preview =
+        app(
+            ProspectingEngineService::class
+        )->preview(
+            limit: 10,
+            states: [
+                'MT',
+            ],
+            cnaes: [
+                '4622200',
+            ],
+        );
+
+    expect(
+        $preview['known_count']
+    )->toBe(1);
+
+    expect(
+        $preview['new_count']
+    )->toBe(0);
+
+    expect(
+        $preview['items']
+    )->toBe([]);
 });

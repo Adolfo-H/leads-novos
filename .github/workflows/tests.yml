@@ -31,6 +31,11 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Run Receita Python tests
+        run: |
+          docker build -t receita-data-test ./tools/receita
+          docker run --rm receita-data-test python -m unittest discover -s /app -p 'test_*.py'
+
       - name: Setup Application
         run: composer setup
 

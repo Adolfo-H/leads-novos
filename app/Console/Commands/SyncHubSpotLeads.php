@@ -58,8 +58,7 @@ class SyncHubSpotLeads extends Command
                     'sdr.score',
                     '>=',
                     (int) config(
-                        'services.hubspot.lead_min_score',
-                        70
+                        'services.hubspot.lead_min_score'
                     )
                 )
                 ->whereHas(
@@ -67,6 +66,12 @@ class SyncHubSpotLeads extends Command
                     fn ($query) => $query->where(
                         'status',
                         'not_found'
+                    )
+                )
+                ->whereDoesntHave(
+                    'hubSpotLead',
+                    fn ($query) => $query->whereNotNull(
+                        'synced_at'
                     )
                 )
                 ->with([
@@ -79,16 +84,15 @@ class SyncHubSpotLeads extends Command
                 ->orderByDesc(
                     'sdr.score'
                 )
-                ->limit(100)
+                ->limit(
+                    $limit
+                )
                 ->get()
                 ->filter(
                     fn (Company $company): bool => $eligibility
                         ->evaluate(
                             $company
                         )['eligible']
-                )
-                ->take(
-                    $limit
                 )
                 ->values();
 
@@ -155,6 +159,8 @@ class SyncHubSpotLeads extends Command
             return self::FAILURE;
         }
 
+        $failures = 0;
+
         foreach (
             $companies as $company
         ) {
@@ -181,6 +187,8 @@ class SyncHubSpotLeads extends Command
                     .$sync->hubspot_deal_id
                 );
             } catch (Throwable $exception) {
+                $failures++;
+
                 $this->error(
                     $company->corporate_name
                     .' | '
@@ -189,6 +197,8 @@ class SyncHubSpotLeads extends Command
             }
         }
 
-        return self::SUCCESS;
+        return $failures > 0
+            ? self::FAILURE
+            : self::SUCCESS;
     }
 }

@@ -12,6 +12,7 @@ class ImportItem extends Model
         'row_number',
         'raw_cnpj',
         'normalized_cnpj',
+        'cnpj_root',
         'status',
         'company_id',
         'error_message',

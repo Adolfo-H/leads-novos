@@ -27,3 +27,12 @@ yarn-error.log
 # Receita Federal - ambiente/dados locais
 /tools/receita/data/
 /tools/receita/fixtures/*.parquet
+
+# Python
+__pycache__/
+*.py[cod]
+# Arquivos temporários
+*.bak
+.DS_Store
+
+/testing

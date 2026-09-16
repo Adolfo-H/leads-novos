@@ -54,11 +54,23 @@ final class CnpjImportService
                     $raw
                 );
 
+                $isValid =
+                    Cnpj::isValid(
+                        $normalized
+                    );
+
+                $cnpjRoot =
+                    $isValid
+                        ? Cnpj::root(
+                            $normalized
+                        )
+                        : null;
+
                 $status = 'pending';
                 $error = null;
                 $companyId = null;
 
-                if (! Cnpj::isValid($normalized)) {
+                if (! $isValid) {
                     $status = 'invalid';
                     $error = 'CNPJ inválido.';
                     $invalid++;
@@ -97,6 +109,8 @@ final class CnpjImportService
                     'normalized_cnpj' => $normalized !== ''
                             ? $normalized
                             : null,
+
+                    'cnpj_root' => $cnpjRoot,
 
                     'status' => $status,
 

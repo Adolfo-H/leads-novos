@@ -8,12 +8,9 @@ use App\Models\CompanyExportIntelligence;
 use App\Services\ExportIntelligenceService;
 use App\Services\ExportResearchEligibilityService;
 use App\Services\ExportResearchService;
-use App\Services\HubSpotLeadEligibilityService;
-use App\Services\HubSpotLeadSyncService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
-use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class ResearchCompanyExports implements ShouldQueue
@@ -69,8 +66,6 @@ class ResearchCompanyExports implements ShouldQueue
         ExportResearchService $research,
         ExportResearchEligibilityService $eligibility,
         ExportIntelligenceService $intelligenceService,
-        HubSpotLeadEligibilityService $hubSpotEligibility,
-        HubSpotLeadSyncService $hubSpotSync,
     ): void {
         $company =
             Company::query()
@@ -180,16 +175,12 @@ class ResearchCompanyExports implements ShouldQueue
             ]);
 
             /*
-             * A pesquisa terminou.
+             * O HubSpot possui um job separado.
              *
-             * Agora verificamos o SDR final.
-             * Se for uma empresa realmente
-             * nova e qualificada, ela entra
-             * automaticamente no HubSpot.
-             *
-             * Erro do HubSpot NÃO transforma
-             * uma pesquisa bem-sucedida em
-             * pesquisa com falha.
+             * Dessa forma uma indisponibilidade
+             * do CRM não altera o resultado da
+             * pesquisa de exportação e possui
+             * sua própria política de retry.
              */
             if (
                 (bool) config(
@@ -197,37 +188,9 @@ class ResearchCompanyExports implements ShouldQueue
                     false
                 )
             ) {
-                try {
-                    $company->refresh();
-
-                    $evaluation =
-                        $hubSpotEligibility
-                            ->evaluate(
-                                $company
-                            );
-
-                    if (
-                        $evaluation[
-                            'eligible'
-                        ]
-                    ) {
-                        $hubSpotSync->sync(
-                            $company
-                        );
-                    }
-                } catch (
-                    Throwable $syncException
-                ) {
-                    Log::warning(
-                        'Falha ao enviar lead qualificado ao HubSpot.',
-                        [
-                            'company_id' => $company->id,
-
-                            'error' => $syncException
-                                ->getMessage(),
-                        ]
-                    );
-                }
+                SyncCompanyToHubSpot::dispatch(
+                    $company->id
+                );
             }
         } catch (Throwable $exception) {
             /*

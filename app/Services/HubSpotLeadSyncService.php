@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\CompanyHubSpotLead;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Throwable;
@@ -36,6 +37,31 @@ final class HubSpotLeadSyncService
     public function sync(
         Company $company
     ): CompanyHubSpotLead {
+        $lock =
+            Cache::lock(
+                'hubspot-lead-sync-company-'
+                .$company->id,
+                240
+            );
+
+        if (! $lock->get()) {
+            throw new RuntimeException(
+                'Sincronização HubSpot desta empresa já está em andamento.'
+            );
+        }
+
+        try {
+            return $this->syncWithoutLock(
+                $company
+            );
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function syncWithoutLock(
+        Company $company
+    ): CompanyHubSpotLead {
         $company->loadMissing([
             'establishments',
             'matrix',
@@ -59,16 +85,17 @@ final class HubSpotLeadSyncService
             $company->hubSpotLead;
 
         /*
-         * Última proteção contra duplicidade.
+         * Na PRIMEIRA tentativa continuamos
+         * conservadores.
          *
-         * Só consultamos novamente o HubSpot
-         * quando ainda não criamos uma empresa
-         * durante uma tentativa anterior.
+         * Se a empresa apareceu no HubSpot
+         * antes de criarmos qualquer estado
+         * local de sincronização, cancelamos.
+         *
+         * Isso evita assumir como nosso um
+         * registro criado manualmente.
          */
-        if (
-            $existingSync?->hubspot_company_id
-            === null
-        ) {
+        if ($existingSync === null) {
             $freshCrm =
                 $this->crmProvider
                     ->findCompany(
@@ -99,6 +126,32 @@ final class HubSpotLeadSyncService
                 );
 
         try {
+            /*
+             * Se já existe uma linha local mas a
+             * sincronização não terminou, esta é
+             * uma retomada.
+             *
+             * Consultamos novamente o HubSpot
+             * para recuperar IDs que possam ter
+             * sido criados remotamente antes de
+             * uma queda de conexão/processo.
+             */
+            if ($existingSync !== null) {
+                $freshCrm =
+                    $this->crmProvider
+                        ->findCompany(
+                            $company
+                        );
+
+                if ($freshCrm['found']) {
+                    $this->reconcilePartialSync(
+                        sync: $sync,
+                        company: $company,
+                        freshCrm: $freshCrm,
+                    );
+                }
+            }
+
             if (
                 $sync->hubspot_company_id
                 === null
@@ -263,6 +316,172 @@ final class HubSpotLeadSyncService
         }
     }
 
+    /**
+     * @param  array<string, mixed>  $freshCrm
+     */
+    private function reconcilePartialSync(
+        CompanyHubSpotLead $sync,
+        Company $company,
+        array $freshCrm,
+    ): void {
+        $externalId =
+            $freshCrm[
+                'external_id'
+            ]
+            ?? null;
+
+        if (
+            ! is_scalar(
+                $externalId
+            )
+            || trim(
+                (string) $externalId
+            ) === ''
+        ) {
+            throw new RuntimeException(
+                'HubSpot encontrou a empresa, mas não retornou um ID válido.'
+            );
+        }
+
+        $externalId =
+            trim(
+                (string) $externalId
+            );
+
+        /*
+         * Se já salvamos um company ID local,
+         * nunca aceitamos silenciosamente um
+         * registro remoto diferente.
+         */
+        if (
+            $sync->hubspot_company_id !== null
+            && $sync->hubspot_company_id
+                !== $externalId
+        ) {
+            throw new RuntimeException(
+                'A empresa encontrada no HubSpot não corresponde '
+                .'ao registro da sincronização em andamento.'
+            );
+        }
+
+        if (
+            $sync->hubspot_company_id
+            === null
+        ) {
+            $sync->hubspot_company_id =
+                $externalId;
+        }
+
+        /*
+         * O contato já possui recuperação por
+         * e-mail dentro de resolveContact().
+         *
+         * Aqui recuperamos especialmente o Deal
+         * criado antes de uma resposta perdida.
+         */
+        if (
+            $sync->hubspot_deal_id
+            === null
+        ) {
+            $deals =
+                $freshCrm[
+                    'deals'
+                ]
+                ?? [];
+
+            $matches = [];
+
+            if (is_array($deals)) {
+                foreach ($deals as $deal) {
+                    if (! is_array($deal)) {
+                        continue;
+                    }
+
+                    $id =
+                        $deal[
+                            'id'
+                        ]
+                        ?? null;
+
+                    $name =
+                        $deal[
+                            'name'
+                        ]
+                        ?? null;
+
+                    $pipeline =
+                        $deal[
+                            'pipeline_id'
+                        ]
+                        ?? null;
+
+                    if (
+                        ! is_scalar($id)
+                        || ! is_scalar($name)
+                        || ! is_scalar($pipeline)
+                    ) {
+                        continue;
+                    }
+
+                    if (
+                        (string) $name
+                            !== $this->dealName(
+                                $company
+                            )
+                        || (string) $pipeline
+                            !== $this->pipelineId()
+                    ) {
+                        continue;
+                    }
+
+                    $matches[] = $deal;
+                }
+            }
+
+            if (count($matches) > 1) {
+                throw new RuntimeException(
+                    'Mais de um negócio compatível foi encontrado no HubSpot. '
+                    .'Sincronização automática interrompida para evitar duplicidade.'
+                );
+            }
+
+            if (count($matches) === 1) {
+                $match =
+                    $matches[0];
+
+                $sync->hubspot_deal_id =
+                    (string) $match[
+                        'id'
+                    ];
+
+                $stageId =
+                    $match[
+                        'stage_id'
+                    ]
+                    ?? null;
+
+                if (
+                    is_scalar($stageId)
+                    && trim(
+                        (string) $stageId
+                    ) !== ''
+                ) {
+                    $sync->deal_stage_id =
+                        (string) $stageId;
+                }
+            }
+        }
+
+        $sync->save();
+    }
+
+    private function dealName(
+        Company $company
+    ): string {
+        return 'Prospecção - '
+            .$company->corporate_name;
+    }
+
     private function createCompany(
         Company $company
     ): string {
@@ -344,8 +563,9 @@ final class HubSpotLeadSyncService
         Company $company
     ): string {
         $properties = [
-            'dealname' => 'Prospecção - '
-                .$company->corporate_name,
+            'dealname' => $this->dealName(
+                $company
+            ),
 
             'pipeline' => $this->pipelineId(),
 
