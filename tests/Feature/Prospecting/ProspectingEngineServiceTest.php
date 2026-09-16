@@ -287,3 +287,99 @@ it('creates and dispatches a prospecting batch', function () {
         1
     );
 });
+
+it('continues searching when the first page contains only known companies', function () {
+    config([
+        'services.receita_local.base_url' => 'http://receita-data:8000',
+    ]);
+
+    $knownItems = [];
+
+    foreach (range(1, 50) as $index) {
+        $root = str_pad(
+            (string) (10000000 + $index),
+            8,
+            '0',
+            STR_PAD_LEFT
+        );
+
+        Company::query()->create([
+            'cnpj_root' => $root,
+            'corporate_name' => 'EMPRESA CONHECIDA '.$index,
+        ]);
+
+        $knownItems[] = [
+            'cnpj_root' => $root,
+            'cnpj' => $root.'000100',
+            'corporate_name' => 'EMPRESA CONHECIDA '.$index,
+            'state' => 'MT',
+            'matched_cnae' => '4622200',
+            'primary_cnae' => '4622200',
+            'share_capital' => 1000000,
+            'size_code' => '05',
+            'legal_nature_code' => '2062',
+            'cnae_match_type' => 'primary',
+            'active_establishments' => 1,
+            'active_states' => 1,
+            'discovery_score' => 80,
+        ];
+    }
+
+    $newItem = [
+        'cnpj_root' => '99999999',
+        'cnpj' => '99999999000100',
+        'corporate_name' => 'EMPRESA NOVA SEGUNDA PAGINA',
+        'state' => 'MT',
+        'matched_cnae' => '4622200',
+        'primary_cnae' => '4622200',
+        'share_capital' => 5000000,
+        'size_code' => '05',
+        'legal_nature_code' => '2062',
+        'cnae_match_type' => 'primary',
+        'active_establishments' => 1,
+        'active_states' => 1,
+        'discovery_score' => 90,
+    ];
+
+    Http::fake([
+        'receita-data:8000/prospects*' => Http::sequence()
+            ->push([
+                'items' => $knownItems,
+                'count' => 50,
+                'limit' => 50,
+                'offset' => 0,
+                'filters' => [],
+            ])
+            ->push([
+                'items' => [
+                    $newItem,
+                ],
+                'count' => 1,
+                'limit' => 50,
+                'offset' => 50,
+                'filters' => [],
+            ]),
+    ]);
+
+    $preview = app(
+        ProspectingEngineService::class
+    )->preview(
+        limit: 10,
+        states: [
+            'MT',
+        ],
+        cnaes: [
+            '4622200',
+        ],
+    );
+
+    expect(
+        $preview['new_count']
+    )->toBe(1);
+
+    expect(
+        $preview['items'][0]['cnpj_root']
+    )->toBe('99999999');
+
+    Http::assertSentCount(2);
+});

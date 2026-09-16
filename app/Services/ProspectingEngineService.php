@@ -66,6 +66,56 @@ final class ProspectingEngineService
 
         $lastFilters = [];
 
+        /*
+         * Memória do próprio motor:
+         *
+         * mesmo que uma empresa ainda esteja
+         * em processamento, não oferecemos
+         * novamente em outra execução.
+         */
+        $prospectedRoots =
+            ImportItem::query()
+                ->whereHas(
+                    'batch',
+                    fn ($query) => $query->where(
+                        'source_type',
+                        'prospecting'
+                    )
+                )
+                ->whereNotNull(
+                    'normalized_cnpj'
+                )
+                ->whereIn(
+                    'status',
+                    [
+                        'ready',
+                        'queued',
+                        'processing',
+                        'completed',
+                        'existing',
+                    ]
+                )
+                ->get([
+                    'normalized_cnpj',
+                ])
+                ->map(
+                    static function (
+                        ImportItem $item
+                    ): string {
+                        return mb_substr(
+                            (string)
+                                $item
+                                    ->normalized_cnpj,
+                            0,
+                            8
+                        );
+                    }
+                )
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+
         for (
             $page = 0;
             $page < $maxPages;
@@ -135,7 +185,60 @@ final class ProspectingEngineService
                 count($items)
                 >= $limit * 4
             ) {
-                break;
+                $rootsSoFar =
+                    array_keys(
+                        $seenRoots
+                    );
+
+                $companyRootsSoFar =
+                    Company::query()
+                        ->whereIn(
+                            'cnpj_root',
+                            $rootsSoFar
+                        )
+                        ->pluck(
+                            'cnpj_root'
+                        )
+                        ->map(
+                            static fn (
+                                mixed $value
+                            ): string => (string) $value
+                        )
+                        ->all();
+
+                $knownLookupSoFar =
+                    array_fill_keys(
+                        array_unique(
+                            array_merge(
+                                $companyRootsSoFar,
+                                $prospectedRoots,
+                            )
+                        ),
+                        true
+                    );
+
+                $newCountSoFar =
+                    count(
+                        array_filter(
+                            $items,
+                            static fn (
+                                array $item
+                            ): bool => ! isset(
+                                $knownLookupSoFar[
+                                    $item[
+                                        'cnpj_root'
+                                    ]
+                                ]
+                            )
+                        )
+                    );
+
+                if (
+                    $newCountSoFar
+                    >= $limit
+                ) {
+                    break;
+                }
             }
 
             if (
@@ -188,56 +291,6 @@ final class ProspectingEngineService
                         mixed $value
                     ): string => (string) $value
                 )
-                ->all();
-
-        /*
-         * Memória do próprio motor:
-         *
-         * mesmo que uma empresa ainda esteja
-         * em processamento, não oferecemos
-         * novamente em outra execução.
-         */
-        $prospectedRoots =
-            ImportItem::query()
-                ->whereHas(
-                    'batch',
-                    fn ($query) => $query->where(
-                        'source_type',
-                        'prospecting'
-                    )
-                )
-                ->whereNotNull(
-                    'normalized_cnpj'
-                )
-                ->whereIn(
-                    'status',
-                    [
-                        'ready',
-                        'queued',
-                        'processing',
-                        'completed',
-                        'existing',
-                    ]
-                )
-                ->get([
-                    'normalized_cnpj',
-                ])
-                ->map(
-                    static function (
-                        ImportItem $item
-                    ): string {
-                        return mb_substr(
-                            (string)
-                                $item
-                                    ->normalized_cnpj,
-                            0,
-                            8
-                        );
-                    }
-                )
-                ->filter()
-                ->unique()
-                ->values()
                 ->all();
 
         $knownRoots =
