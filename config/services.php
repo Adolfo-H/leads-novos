@@ -151,6 +151,42 @@ return [
             )
         ),
 
+        'lead_future_stages' => array_values(
+            array_filter(
+                array_map(
+                    'trim',
+                    explode(
+                        ',',
+                        (string) env(
+                            'HUBSPOT_LEAD_FUTURE_STAGES',
+                            '13185626'
+                        )
+                    )
+                ),
+                static fn (
+                    string $stage
+                ): bool => $stage !== ''
+            )
+        ),
+
+        'lead_refused_stages' => array_values(
+            array_filter(
+                array_map(
+                    'trim',
+                    explode(
+                        ',',
+                        (string) env(
+                            'HUBSPOT_LEAD_REFUSED_STAGES',
+                            'closedlost'
+                        )
+                    )
+                ),
+                static fn (
+                    string $stage
+                ): bool => $stage !== ''
+            )
+        ),
+
     ],
 
 ];

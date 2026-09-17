@@ -321,6 +321,10 @@ final class CommercialActivityRecorder
 
             'waiting' => 'Aguardando retorno',
 
+            'future' => 'Oportunidade futura',
+
+            'refused' => 'Recusou',
+
             'discarded' => 'Descartado',
 
             null, '' => 'Sem status',

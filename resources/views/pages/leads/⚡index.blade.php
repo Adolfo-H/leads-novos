@@ -31,6 +31,8 @@ new class extends Component
 
     public string $dailyView = '';
 
+    public bool $staleOnly = false;
+
     public function updatedSearch(): void
     {
         $this->resetPage();
@@ -59,6 +61,7 @@ new class extends Component
     public function updatedWorkStatus(): void
     {
         $this->dailyView = '';
+        $this->staleOnly = false;
 
         if (
             $this->workStatus
@@ -73,6 +76,7 @@ new class extends Component
     public function updatedFollowUp(): void
     {
         $this->dailyView = '';
+        $this->staleOnly = false;
 
         if (
             $this->followUp
@@ -96,6 +100,7 @@ new class extends Component
             'workStatus',
             'followUp',
             'dailyView',
+            'staleOnly',
         ]);
 
         $this->resetPage();
@@ -372,6 +377,27 @@ new class extends Component
                 }
             )
 
+            ->when(
+                $this->staleOnly,
+                function ($query): void {
+                    $query
+                        ->where(
+                            'work.work_status',
+                            'contacting'
+                        )
+                        ->whereNotNull(
+                            'work.last_activity_at'
+                        )
+                        ->where(
+                            'work.last_activity_at',
+                            '<=',
+                            now()->subDays(
+                                $this->staleAfterDays()
+                            )
+                        );
+                }
+            )
+
             /*
              * Fila operacional vinda do HubSpot:
              *
@@ -419,6 +445,12 @@ new class extends Component
                     WHEN work.work_status = 'new'
                         OR work.id IS NULL
                         THEN 5
+
+                    WHEN work.work_status = 'future'
+                        THEN 6
+
+                    WHEN work.work_status = 'refused'
+                        THEN 7
 
                     WHEN work.work_status = 'discarded'
                         THEN 9
@@ -506,6 +538,10 @@ new class extends Component
 
             'waiting' => 'Aguardando retorno',
 
+            'future' => 'Oportunidade futura',
+
+            'refused' => 'Recusou',
+
             'discarded' => 'Descartado',
 
             default => 'Novo',
@@ -519,6 +555,10 @@ new class extends Component
             'contacting' => 'text-cyan-300',
 
             'waiting' => 'text-amber-300',
+
+            'future' => 'text-violet-300',
+
+            'refused' => 'text-rose-300',
 
             'discarded' => 'text-red-300',
 
@@ -623,6 +663,30 @@ new class extends Component
     }
 
     #[Computed]
+    public function futureCount(): int
+    {
+        return $this
+            ->operationalLeadQuery()
+            ->where(
+                'work.work_status',
+                'future'
+            )
+            ->count();
+    }
+
+    #[Computed]
+    public function refusedCount(): int
+    {
+        return $this
+            ->operationalLeadQuery()
+            ->where(
+                'work.work_status',
+                'refused'
+            )
+            ->count();
+    }
+
+    #[Computed]
     public function dailyQueueCount(): int
     {
         return $this
@@ -660,6 +724,8 @@ new class extends Component
 
     public function applyDailyView(): void
     {
+        $this->staleOnly = false;
+
         if (
             $this->dailyView
             === 'today'
@@ -764,10 +830,59 @@ new class extends Component
             ->count();
     }
 
+    public function staleAfterDays(): int
+    {
+        return max(
+            1,
+            (int) config(
+                'prospector.sdr.stale_after_days',
+                7
+            )
+        );
+    }
+
+    #[Computed]
+    public function staleCount(): int
+    {
+        return $this
+            ->operationalLeadQuery()
+            ->where(
+                'work.work_status',
+                'contacting'
+            )
+            ->whereNotNull(
+                'work.last_activity_at'
+            )
+            ->where(
+                'work.last_activity_at',
+                '<=',
+                now()->subDays(
+                    $this->staleAfterDays()
+                )
+            )
+            ->count();
+    }
+
+    public function applyStaleView(): void
+    {
+        $enable =
+            ! $this->staleOnly;
+
+        $this->dailyView = '';
+        $this->followUp = '';
+        $this->workStatus = '';
+
+        $this->staleOnly =
+            $enable;
+
+        $this->resetPage();
+    }
+
     public function applyFollowUpView(
         string $view
     ): void {
         $this->dailyView = '';
+        $this->staleOnly = false;
 
         $this->followUp =
             in_array(
@@ -798,6 +913,7 @@ new class extends Component
         string $view
     ): void {
         $this->dailyView = '';
+        $this->staleOnly = false;
 
         $this->workStatus =
             in_array(
@@ -806,6 +922,8 @@ new class extends Component
                     'new',
                     'contacting',
                     'waiting',
+                    'future',
+                    'refused',
                     'discarded',
                 ],
                 true
@@ -813,14 +931,6 @@ new class extends Component
                 ? $view
                 : '';
 
-        /*
-         * Uma quick view de status sempre
-         * remove o subtipo de prazo.
-         *
-         * Exemplo:
-         * Atrasados -> Aguardando retorno
-         * deve mostrar TODOS os waiting.
-         */
         $this->followUp = '';
 
         $this->resetPage();
@@ -1080,14 +1190,17 @@ new class extends Component
             return 'Abordagem em andamento';
         }
 
-        if (
+        return match (
             $lead->work_status
-            === 'discarded'
         ) {
-            return 'Negócio descartado no HubSpot';
-        }
+            'future' => 'Oportunidade reservada para momento futuro',
 
-        return 'Ainda não houve contato';
+            'refused' => 'Negócio marcado como recusado no HubSpot',
+
+            'discarded' => 'Negócio descartado no HubSpot',
+
+            default => 'Ainda não houve contato',
+        };
     }
 
     public function workContextClass(
@@ -1113,6 +1226,10 @@ new class extends Component
 
             'contacting' => 'text-[#9ba5c8]',
 
+            'future' => 'text-violet-300',
+
+            'refused' => 'text-rose-300',
+
             'discarded' => 'text-[#7f89aa]',
 
             default => 'text-[#7f89aa]',
@@ -1136,6 +1253,10 @@ new class extends Component
 
             'contacting' => 'Continuar abordagem',
 
+            'future' => 'Ver oportunidade futura',
+
+            'refused' => 'Ver recusa',
+
             'discarded' => 'Ver histórico',
 
             default => 'Iniciar abordagem',
@@ -1150,7 +1271,8 @@ new class extends Component
         }
 
         if (
-            $lead->work_status === 'waiting'
+            $lead->work_status
+            === 'waiting'
             && $lead->last_task_due_at
                 ?->isPast()
         ) {
@@ -1163,6 +1285,10 @@ new class extends Component
             'waiting' => 'text-amber-300 hover:text-amber-200',
 
             'contacting' => 'text-cyan-300 hover:text-cyan-200',
+
+            'future' => 'text-violet-300 hover:text-violet-200',
+
+            'refused' => 'text-rose-300 hover:text-rose-200',
 
             'discarded' => 'text-[#8992b1] hover:text-white',
 
@@ -1752,6 +1878,86 @@ new class extends Component
     </div>
 
 
+    {{-- DESTINO COMERCIAL / ATENÇÃO --}}
+    <div
+        class="
+            mt-3 flex flex-wrap
+            items-center gap-2
+        "
+    >
+        <span
+            class="
+                mr-1 text-[10px]
+                font-semibold uppercase
+                tracking-wider
+                text-[#697394]
+            "
+        >
+            Destino
+        </span>
+
+        <button
+            type="button"
+            wire:click="applyQuickView('future')"
+            class="
+                rounded-lg border px-3 py-2
+                text-xs font-semibold transition
+                {{
+                    $workStatus === 'future'
+                        ? 'border-violet-300/30 bg-violet-300/10 text-violet-300'
+                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
+                }}
+            "
+        >
+            Oportunidade futura · {{ $this->futureCount }}
+        </button>
+
+        <button
+            type="button"
+            wire:click="applyQuickView('refused')"
+            class="
+                rounded-lg border px-3 py-2
+                text-xs font-semibold transition
+                {{
+                    $workStatus === 'refused'
+                        ? 'border-rose-300/30 bg-rose-300/10 text-rose-300'
+                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
+                }}
+            "
+        >
+            Recusou · {{ $this->refusedCount }}
+        </button>
+
+        <span
+            class="
+                ml-3 mr-1 text-[10px]
+                font-semibold uppercase
+                tracking-wider
+                text-[#697394]
+            "
+        >
+            Atenção
+        </span>
+
+        <button
+            type="button"
+            wire:click="applyStaleView"
+            class="
+                rounded-lg border px-3 py-2
+                text-xs font-semibold transition
+                {{
+                    $staleOnly
+                        ? 'border-orange-300/30 bg-orange-300/10 text-orange-300'
+                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
+                }}
+            "
+        >
+            Parados {{ $this->staleAfterDays() }}+ dias
+            · {{ $this->staleCount }}
+        </button>
+    </div>
+
+
     {{-- FILTROS --}}
     <div
         class="
@@ -1905,6 +2111,14 @@ new class extends Component
                     Aguardando retorno
                 </option>
 
+                <option value="future">
+                    Oportunidade futura
+                </option>
+
+                <option value="refused">
+                    Recusou
+                </option>
+
                 <option value="discarded">
                     Descartado
                 </option>
@@ -1951,6 +2165,7 @@ new class extends Component
             || $workStatus !== ''
             || $followUp !== ''
             || $dailyView !== ''
+            || $staleOnly
         )
 
             <button

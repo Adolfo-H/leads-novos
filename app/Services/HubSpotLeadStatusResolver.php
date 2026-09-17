@@ -12,25 +12,43 @@ final class HubSpotLeadStatusResolver
         int $contactedCount,
         ?CarbonInterface $lastActivityAt,
     ): string {
-        $discardedStages =
-            config(
-                'services.hubspot.lead_discarded_stages',
-                []
-            );
-
-        if (! is_array($discardedStages)) {
-            $discardedStages = [];
+        if (
+            $dealStage !== null
+            && in_array(
+                $dealStage,
+                $this->stages(
+                    'services.hubspot.lead_discarded_stages'
+                ),
+                true
+            )
+        ) {
+            return 'discarded';
         }
 
         if (
             $dealStage !== null
             && in_array(
                 $dealStage,
-                $discardedStages,
+                $this->stages(
+                    'services.hubspot.lead_refused_stages'
+                ),
                 true
             )
         ) {
-            return 'discarded';
+            return 'refused';
+        }
+
+        if (
+            $dealStage !== null
+            && in_array(
+                $dealStage,
+                $this->stages(
+                    'services.hubspot.lead_future_stages'
+                ),
+                true
+            )
+        ) {
+            return 'future';
         }
 
         /*
@@ -49,5 +67,41 @@ final class HubSpotLeadStatusResolver
         }
 
         return 'new';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function stages(
+        string $configKey
+    ): array {
+        $raw =
+            config(
+                $configKey,
+                []
+            );
+
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $stages = [];
+
+        foreach ($raw as $stage) {
+            if (! is_scalar($stage)) {
+                continue;
+            }
+
+            $stage =
+                trim(
+                    (string) $stage
+                );
+
+            if ($stage !== '') {
+                $stages[] = $stage;
+            }
+        }
+
+        return $stages;
     }
 }

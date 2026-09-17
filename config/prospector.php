@@ -13,6 +13,17 @@ return [
         ),
     ],
 
+    'sdr' => [
+        /*
+         * Contatos em andamento sem atividade
+         * por este período aparecem como parados.
+         */
+        'stale_after_days' => (int) env(
+            'SDR_STALE_AFTER_DAYS',
+            7
+        ),
+    ],
+
     'export_research' => [
         /*
          * A pesquisa externa fica desligada

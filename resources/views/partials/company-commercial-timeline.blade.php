@@ -19,6 +19,12 @@
             'waiting' =>
                 'Aguardando retorno',
 
+            'future' =>
+                'Oportunidade futura',
+
+            'refused' =>
+                'Recusou',
+
             'discarded' =>
                 'Descartado',
 
@@ -33,6 +39,12 @@
 
             'waiting' =>
                 'border-amber-300/20 bg-amber-300/10 text-amber-300',
+
+            'future' =>
+                'border-violet-300/20 bg-violet-300/10 text-violet-300',
+
+            'refused' =>
+                'border-rose-300/20 bg-rose-300/10 text-rose-300',
 
             'discarded' =>
                 'border-red-300/20 bg-red-300/10 text-red-300',

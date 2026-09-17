@@ -169,7 +169,9 @@ final class HubSpotLeadStatusSyncService
 
         $activityType =
             match ($status) {
-                'discarded' => 'deal_stage',
+                'discarded',
+                'future',
+                'refused' => 'deal_stage',
 
                 'waiting' => 'task',
 
