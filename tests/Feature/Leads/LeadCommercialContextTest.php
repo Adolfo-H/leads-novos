@@ -7,6 +7,18 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
+beforeEach(function () {
+    /*
+     * O link direto do Deal depende do Portal ID.
+     *
+     * O teste não pode depender do .env local,
+     * porque o GitHub Actions não possui esse valor.
+     */
+    config([
+        'services.hubspot.portal_id' => '12345678',
+    ]);
+});
+
 function commercialContextCompany(
     string $root,
     string $name,
