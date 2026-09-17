@@ -6,6 +6,7 @@ use App\Models\CompanyExportIntelligence;
 use App\Models\CompanyHubSpotLead;
 use App\Models\CompanySdrScore;
 use App\Models\Establishment;
+use App\Services\HubSpotLeadReprospectingService;
 use App\Services\HubSpotLeadStatusSyncService;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -32,6 +33,8 @@ new class extends Component
     public string $dailyView = '';
 
     public bool $staleOnly = false;
+
+    public bool $reprospectingReadyOnly = false;
 
     public function updatedSearch(): void
     {
@@ -62,6 +65,7 @@ new class extends Component
     {
         $this->dailyView = '';
         $this->staleOnly = false;
+        $this->reprospectingReadyOnly = false;
 
         if (
             $this->workStatus
@@ -77,6 +81,7 @@ new class extends Component
     {
         $this->dailyView = '';
         $this->staleOnly = false;
+        $this->reprospectingReadyOnly = false;
 
         if (
             $this->followUp
@@ -101,6 +106,7 @@ new class extends Component
             'followUp',
             'dailyView',
             'staleOnly',
+            'reprospectingReadyOnly',
         ]);
 
         $this->resetPage();
@@ -292,6 +298,25 @@ new class extends Component
                                 ->orWhere(
                                     'work.work_status',
                                     'contacting'
+                                )
+                                ->orWhere(
+                                    function ($futureQuery): void {
+                                        $futureQuery
+                                            ->where(
+                                                'work.work_status',
+                                                'future'
+                                            )
+                                            ->whereNotNull(
+                                                'work.last_task_due_at'
+                                            )
+                                            ->where(
+                                                'work.last_task_due_at',
+                                                '<',
+                                                now()
+                                                    ->addDay()
+                                                    ->startOfDay()
+                                            );
+                                    }
                                 );
                         }
                     );
@@ -395,6 +420,66 @@ new class extends Component
                                 $this->staleAfterDays()
                             )
                         );
+                }
+            )
+
+            ->when(
+                $this->reprospectingReadyOnly,
+                function ($query): void {
+                    $cooldownDays =
+                        max(
+                            1,
+                            (int) config(
+                                'prospector.crm.reprospecting_after_days',
+                                180
+                            )
+                        );
+
+                    $query->where(
+                        function ($readyQuery) use (
+                            $cooldownDays
+                        ): void {
+                            $readyQuery
+                                ->where(
+                                    function ($futureQuery): void {
+                                        $futureQuery
+                                            ->where(
+                                                'work.work_status',
+                                                'future'
+                                            )
+                                            ->whereNotNull(
+                                                'work.last_task_due_at'
+                                            )
+                                            ->where(
+                                                'work.last_task_due_at',
+                                                '<=',
+                                                now()
+                                            );
+                                    }
+                                )
+                                ->orWhere(
+                                    function ($refusedQuery) use (
+                                        $cooldownDays
+                                    ): void {
+                                        $refusedQuery
+                                            ->where(
+                                                'work.work_status',
+                                                'refused'
+                                            )
+                                            ->whereNotNull(
+                                                'work.work_status_changed_at'
+                                            )
+                                            ->where(
+                                                'work.work_status_changed_at',
+                                                '<=',
+                                                now()->subDays(
+                                                    $cooldownDays
+                                                )
+                                            );
+                                    }
+                                );
+                        }
+                    );
                 }
             )
 
@@ -716,6 +801,25 @@ new class extends Component
                         ->orWhere(
                             'work.work_status',
                             'contacting'
+                        )
+                        ->orWhere(
+                            function ($futureQuery): void {
+                                $futureQuery
+                                    ->where(
+                                        'work.work_status',
+                                        'future'
+                                    )
+                                    ->whereNotNull(
+                                        'work.last_task_due_at'
+                                    )
+                                    ->where(
+                                        'work.last_task_due_at',
+                                        '<',
+                                        now()
+                                            ->addDay()
+                                            ->startOfDay()
+                                    );
+                            }
                         );
                 }
             )
@@ -725,6 +829,7 @@ new class extends Component
     public function applyDailyView(): void
     {
         $this->staleOnly = false;
+        $this->reprospectingReadyOnly = false;
 
         if (
             $this->dailyView
@@ -830,6 +935,113 @@ new class extends Component
             ->count();
     }
 
+    #[Computed]
+    public function reprospectingReadyCount(): int
+    {
+        $cooldownDays =
+            max(
+                1,
+                (int) config(
+                    'prospector.crm.reprospecting_after_days',
+                    180
+                )
+            );
+
+        return $this
+            ->operationalLeadQuery()
+            ->where(
+                function ($query) use (
+                    $cooldownDays
+                ): void {
+                    $query
+                        ->where(
+                            function ($futureQuery): void {
+                                $futureQuery
+                                    ->where(
+                                        'work.work_status',
+                                        'future'
+                                    )
+                                    ->whereNotNull(
+                                        'work.last_task_due_at'
+                                    )
+                                    ->where(
+                                        'work.last_task_due_at',
+                                        '<=',
+                                        now()
+                                    );
+                            }
+                        )
+                        ->orWhere(
+                            function ($refusedQuery) use (
+                                $cooldownDays
+                            ): void {
+                                $refusedQuery
+                                    ->where(
+                                        'work.work_status',
+                                        'refused'
+                                    )
+                                    ->whereNotNull(
+                                        'work.work_status_changed_at'
+                                    )
+                                    ->where(
+                                        'work.work_status_changed_at',
+                                        '<=',
+                                        now()->subDays(
+                                            $cooldownDays
+                                        )
+                                    );
+                            }
+                        );
+                }
+            )
+            ->count();
+    }
+
+    public function applyReprospectingReadyView(): void
+    {
+        $enable =
+            ! $this->reprospectingReadyOnly;
+
+        $this->dailyView = '';
+        $this->followUp = '';
+        $this->workStatus = '';
+        $this->staleOnly = false;
+
+        $this->reprospectingReadyOnly =
+            $enable;
+
+        $this->resetPage();
+    }
+
+    /**
+     * @return array{
+     *     applicable: bool,
+     *     eligible: bool,
+     *     reason: string,
+     *     message: string,
+     *     next_allowed_at: string|null,
+     *     days_remaining: int|null
+     * }|null
+     */
+    public function reprospectingInfo(
+        ?CompanyHubSpotLead $lead
+    ): ?array {
+        if ($lead === null) {
+            return null;
+        }
+
+        $result =
+            app(
+                HubSpotLeadReprospectingService::class
+            )->evaluate(
+                $lead
+            );
+
+        return $result['applicable']
+            ? $result
+            : null;
+    }
+
     public function staleAfterDays(): int
     {
         return max(
@@ -871,6 +1083,7 @@ new class extends Component
         $this->dailyView = '';
         $this->followUp = '';
         $this->workStatus = '';
+        $this->reprospectingReadyOnly = false;
 
         $this->staleOnly =
             $enable;
@@ -883,6 +1096,7 @@ new class extends Component
     ): void {
         $this->dailyView = '';
         $this->staleOnly = false;
+        $this->reprospectingReadyOnly = false;
 
         $this->followUp =
             in_array(
@@ -914,6 +1128,7 @@ new class extends Component
     ): void {
         $this->dailyView = '';
         $this->staleOnly = false;
+        $this->reprospectingReadyOnly = false;
 
         $this->workStatus =
             in_array(
@@ -1958,6 +2173,67 @@ new class extends Component
     </div>
 
 
+    {{-- REPROSPECÇÃO --}}
+    <button
+        type="button"
+        wire:click="applyReprospectingReadyView"
+        class="
+            mt-3 flex w-full
+            items-center justify-between
+            gap-4 rounded-xl
+            border px-4 py-3
+            text-left transition
+            {{
+                $reprospectingReadyOnly
+                    ? 'border-emerald-300/30 bg-emerald-300/[0.08]'
+                    : 'border-white/[0.06] bg-white/[0.025] hover:border-emerald-300/20'
+            }}
+        "
+    >
+        <div>
+            <div
+                class="
+                    text-[10px]
+                    font-semibold uppercase
+                    tracking-wider
+                    text-emerald-300
+                "
+            >
+                Reprospecção
+            </div>
+
+            <div
+                class="
+                    mt-1 text-sm
+                    font-semibold
+                    text-[#eef1ff]
+                "
+            >
+                Prontos para retomar
+            </div>
+
+            <div
+                class="
+                    mt-0.5 text-[11px]
+                    text-[#7782a3]
+                "
+            >
+                Oportunidades futuras vencidas
+                e recusas com carência encerrada.
+            </div>
+        </div>
+
+        <div
+            class="
+                text-2xl font-bold
+                text-emerald-300
+            "
+        >
+            {{ $this->reprospectingReadyCount }}
+        </div>
+    </button>
+
+
     {{-- FILTROS --}}
     <div
         class="
@@ -2166,6 +2442,7 @@ new class extends Component
             || $followUp !== ''
             || $dailyView !== ''
             || $staleOnly
+            || $reprospectingReadyOnly
         )
 
             <button
@@ -2268,6 +2545,11 @@ new class extends Component
 
                 $hubSpotLead =
                     $lead->hubSpotLead;
+
+                $reprospectingInfo =
+                    $this->reprospectingInfo(
+                        $hubSpotLead
+                    );
 
                 $currentWorkStatus =
                     $hubSpotLead?->work_status
@@ -2712,6 +2994,30 @@ new class extends Component
                             )
                         }}
                     </div>
+
+
+                    @if ($reprospectingInfo)
+
+                        <div
+                            class="
+                                mt-2 text-[10px]
+                                {{
+                                    $reprospectingInfo[
+                                        'eligible'
+                                    ]
+                                        ? 'font-semibold text-emerald-300'
+                                        : 'text-[#7f89aa]'
+                                }}
+                            "
+                        >
+                            {{
+                                $reprospectingInfo[
+                                    'message'
+                                ]
+                            }}
+                        </div>
+
+                    @endif
 
 
                     @if ($hubSpotDealUrl)

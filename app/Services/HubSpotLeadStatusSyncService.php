@@ -167,6 +167,17 @@ final class HubSpotLeadStatusSyncService
                 lastActivityAt: $lastActivityAt,
             );
 
+        $workStatusChangedAt =
+            $lead->work_status_changed_at;
+
+        if (
+            $workStatusChangedAt === null
+            || $previousStatus !== $status
+        ) {
+            $workStatusChangedAt =
+                now();
+        }
+
         $activityType =
             match ($status) {
                 'discarded',
@@ -202,6 +213,8 @@ final class HubSpotLeadStatusSyncService
 
         $lead->forceFill([
             'work_status' => $status,
+
+            'work_status_changed_at' => $workStatusChangedAt,
 
             'deal_stage_id' => $dealStage,
 
