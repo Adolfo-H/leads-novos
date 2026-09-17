@@ -566,6 +566,9 @@
                             match (
                                 $activity->type
                             ) {
+                                'owner_changed' =>
+                                    'Responsável',
+
                                 'reprospecting_started' =>
                                     'Reprospecção',
 
@@ -601,6 +604,9 @@
                             match (
                                 $activity->type
                             ) {
+                                'owner_changed' =>
+                                    'bg-cyan-300',
+
                                 'reprospecting_started',
                                 'hubspot_synced' =>
                                     'bg-emerald-300',

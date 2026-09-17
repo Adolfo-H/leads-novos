@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\CompanyLeadActivity;
+use App\Models\User;
 use Carbon\CarbonInterface;
 
 final class LeadActivityService
@@ -97,6 +98,40 @@ final class LeadActivityService
                 'from_status' => $fromStatus,
                 'from_stage' => $fromStage,
                 'to_stage' => $toStage,
+            ],
+        );
+    }
+
+    public function ownerChanged(
+        int $companyId,
+        ?User $fromOwner,
+        ?User $toOwner,
+    ): CompanyLeadActivity {
+        $fromLabel =
+            $fromOwner instanceof User
+                ? $fromOwner->name
+                : 'Sem responsável';
+
+        $toLabel =
+            $toOwner instanceof User
+                ? $toOwner->name
+                : 'Sem responsável';
+
+        return $this->record(
+            companyId: $companyId,
+            type: 'owner_changed',
+            title: 'Responsável alterado',
+            description: $fromLabel
+                .' → '
+                .$toLabel,
+            metadata: [
+                'from_user_id' => $fromOwner?->id,
+
+                'from_user_name' => $fromOwner?->name,
+
+                'to_user_id' => $toOwner?->id,
+
+                'to_user_name' => $toOwner?->name,
             ],
         );
     }

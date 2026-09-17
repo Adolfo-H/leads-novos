@@ -6,9 +6,12 @@ use App\Models\CompanyExportIntelligence;
 use App\Models\CompanyHubSpotLead;
 use App\Models\CompanySdrScore;
 use App\Models\Establishment;
+use App\Models\User;
 use App\Services\HubSpotLeadReprospectingActionService;
 use App\Services\HubSpotLeadReprospectingService;
 use App\Services\HubSpotLeadStatusSyncService;
+use App\Services\LeadOwnershipService;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -26,6 +29,8 @@ new class extends Component
     public string $crm = '';
 
     public string $state = '';
+
+    public string $owner = '';
 
     public string $workStatus = '';
 
@@ -62,6 +67,11 @@ new class extends Component
     }
 
     public function updatedState(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedOwner(): void
     {
         $this->resetPage();
     }
@@ -107,6 +117,7 @@ new class extends Component
             'icp',
             'crm',
             'state',
+            'owner',
             'workStatus',
             'followUp',
             'dailyView',
@@ -167,6 +178,7 @@ new class extends Component
                 'sdrScore',
                 'exportIntelligence',
                 'hubSpotLead',
+                'leadWorkState.assignedUser',
             ])
             ->when(
                 $search !== '',
@@ -246,6 +258,77 @@ new class extends Component
                         )
                 )
             )
+            ->when(
+                $this->owner !== '',
+                function ($query): void {
+                    if (
+                        $this->owner
+                        === 'mine'
+                    ) {
+                        $userId =
+                            $this
+                                ->authenticatedUserId();
+
+                        if (
+                            $userId === null
+                        ) {
+                            $query->whereRaw(
+                                '1 = 0'
+                            );
+
+                            return;
+                        }
+
+                        $query->whereHas(
+                            'leadWorkState',
+                            fn ($ownerQuery) => $ownerQuery->where(
+                                'assigned_user_id',
+                                $userId
+                            )
+                        );
+
+                        return;
+                    }
+
+                    if (
+                        $this->owner
+                        === 'unassigned'
+                    ) {
+                        $query->where(
+                            function ($ownerQuery): void {
+                                $ownerQuery
+                                    ->whereDoesntHave(
+                                        'leadWorkState'
+                                    )
+                                    ->orWhereHas(
+                                        'leadWorkState',
+                                        fn ($stateQuery) => $stateQuery
+                                            ->whereNull(
+                                                'assigned_user_id'
+                                            )
+                                    );
+                            }
+                        );
+
+                        return;
+                    }
+
+                    if (
+                        ctype_digit(
+                            $this->owner
+                        )
+                    ) {
+                        $query->whereHas(
+                            'leadWorkState',
+                            fn ($ownerQuery) => $ownerQuery->where(
+                                'assigned_user_id',
+                                (int) $this->owner
+                            )
+                        );
+                    }
+                }
+            )
+
             ->when(
                 $this->workStatus !== '',
                 function ($query): void {
@@ -661,6 +744,208 @@ new class extends Component
 
             default => 'text-emerald-300',
         };
+    }
+
+    private function authenticatedUserId(): ?int
+    {
+        $userId =
+            auth()->id();
+
+        return is_numeric(
+            $userId
+        )
+            ? (int) $userId
+            : null;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function salesUsers()
+    {
+        return User::query()
+            ->whereNotNull(
+                'email_verified_at'
+            )
+            ->orderBy(
+                'name'
+            )
+            ->get([
+                'id',
+                'name',
+            ]);
+    }
+
+    #[Computed]
+    public function myLeadsCount(): int
+    {
+        $userId =
+            $this
+                ->authenticatedUserId();
+
+        if ($userId === null) {
+            return 0;
+        }
+
+        return $this
+            ->operationalLeadQuery()
+            ->whereHas(
+                'leadWorkState',
+                fn ($query) => $query->where(
+                    'assigned_user_id',
+                    $userId
+                )
+            )
+            ->count();
+    }
+
+    #[Computed]
+    public function unassignedCount(): int
+    {
+        return $this
+            ->operationalLeadQuery()
+            ->where(
+                function ($query): void {
+                    $query
+                        ->whereDoesntHave(
+                            'leadWorkState'
+                        )
+                        ->orWhereHas(
+                            'leadWorkState',
+                            fn ($stateQuery) => $stateQuery
+                                ->whereNull(
+                                    'assigned_user_id'
+                                )
+                        );
+                }
+            )
+            ->count();
+    }
+
+    public function applyOwnerView(
+        string $view
+    ): void {
+        if (
+            ! in_array(
+                $view,
+                [
+                    'mine',
+                    'unassigned',
+                ],
+                true
+            )
+        ) {
+            $view = '';
+        }
+
+        $this->owner =
+            $this->owner === $view
+                ? ''
+                : $view;
+
+        $this->resetPage();
+    }
+
+    public function assignOwner(
+        int $companyId,
+        string $userId,
+        LeadOwnershipService $service,
+    ): void {
+        $this->commercialActionMessage = '';
+        $this->commercialActionError = '';
+
+        $company =
+            Company::query()
+                ->findOrFail(
+                    $companyId
+                );
+
+        $userId =
+            trim(
+                $userId
+            );
+
+        $owner = null;
+
+        if ($userId !== '') {
+            if (
+                ! ctype_digit(
+                    $userId
+                )
+            ) {
+                $this->commercialActionError =
+                    'Responsável inválido.';
+
+                return;
+            }
+
+            $owner =
+                User::query()
+                    ->whereNotNull(
+                        'email_verified_at'
+                    )
+                    ->find(
+                        (int) $userId
+                    );
+
+            if ($owner === null) {
+                $this->commercialActionError =
+                    'Usuário não encontrado.';
+
+                return;
+            }
+        }
+
+        try {
+            $state =
+                $service->assign(
+                    company: $company,
+
+                    owner: $owner,
+                );
+
+            $label =
+                $state
+                    ->assignedUser
+                    ?->name
+                ?? 'Sem responsável';
+
+            $this->commercialActionMessage =
+                'Responsável atualizado: '
+                .$label
+                .'.';
+        } catch (Throwable $exception) {
+            report(
+                $exception
+            );
+
+            $this->commercialActionError =
+                'Não foi possível atualizar o responsável.';
+        }
+    }
+
+    public function claimLead(
+        int $companyId,
+        LeadOwnershipService $service,
+    ): void {
+        $user =
+            auth()->user();
+
+        if (! $user instanceof User) {
+            $this->commercialActionError =
+                'Usuário autenticado não encontrado.';
+
+            return;
+        }
+
+        $this->assignOwner(
+            companyId: $companyId,
+
+            userId: (string) $user->id,
+
+            service: $service,
+        );
     }
 
     private function operationalLeadQuery()
@@ -2294,6 +2579,58 @@ new class extends Component
     </div>
 
 
+    {{-- CARTEIRA --}}
+    <div
+        class="
+            mt-3 flex flex-wrap
+            items-center gap-2
+        "
+    >
+        <span
+            class="
+                mr-1 text-[10px]
+                font-semibold uppercase
+                tracking-wider
+                text-[#697394]
+            "
+        >
+            Carteira
+        </span>
+
+        <button
+            type="button"
+            wire:click="applyOwnerView('mine')"
+            class="
+                rounded-lg border px-3 py-2
+                text-xs font-semibold transition
+                {{
+                    $owner === 'mine'
+                        ? 'border-cyan-300/30 bg-cyan-300/10 text-cyan-300'
+                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
+                }}
+            "
+        >
+            Meus leads · {{ $this->myLeadsCount }}
+        </button>
+
+        <button
+            type="button"
+            wire:click="applyOwnerView('unassigned')"
+            class="
+                rounded-lg border px-3 py-2
+                text-xs font-semibold transition
+                {{
+                    $owner === 'unassigned'
+                        ? 'border-amber-300/30 bg-amber-300/10 text-amber-300'
+                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
+                }}
+            "
+        >
+            Sem responsável · {{ $this->unassignedCount }}
+        </button>
+    </div>
+
+
     {{-- REPROSPECÇÃO --}}
     <button
         type="button"
@@ -2529,6 +2866,41 @@ new class extends Component
 
 
             <select
+                wire:model.live="owner"
+                class="
+                    rounded-xl border
+                    border-white/[0.08]
+                    bg-[#151a36]
+                    px-3 py-2.5
+                    text-sm text-[#d9ddef]
+                "
+            >
+                <option value="">
+                    Todos responsáveis
+                </option>
+
+                <option value="mine">
+                    Meus leads
+                </option>
+
+                <option value="unassigned">
+                    Sem responsável
+                </option>
+
+                @foreach (
+                    $this->salesUsers
+                    as $salesUser
+                )
+                    <option
+                        value="{{ $salesUser->id }}"
+                    >
+                        {{ $salesUser->name }}
+                    </option>
+                @endforeach
+            </select>
+
+
+            <select
                 wire:model.live="state"
                 class="
                     rounded-xl border
@@ -2563,6 +2935,7 @@ new class extends Component
             || $icp !== ''
             || $crm !== ''
             || $state !== ''
+            || $owner !== ''
             || $workStatus !== ''
             || $followUp !== ''
             || $dailyView !== ''
@@ -2671,6 +3044,13 @@ new class extends Component
                 $hubSpotLead =
                     $lead->hubSpotLead;
 
+                $leadWorkState =
+                    $lead->leadWorkState;
+
+                $assignedUser =
+                    $leadWorkState
+                        ?->assignedUser;
+
                 $reprospectingInfo =
                     $this->reprospectingInfo(
                         $hubSpotLead
@@ -2721,7 +3101,7 @@ new class extends Component
                     transition
                     last:border-b-0
                     hover:bg-white/[0.025]
-                    lg:grid-cols-[minmax(0,2.5fr)_100px_80px_120px_160px_140px_180px]
+                    lg:grid-cols-[minmax(0,2.5fr)_100px_80px_120px_160px_140px_170px_180px]
                     lg:items-center
                 "
             >
@@ -3058,6 +3438,133 @@ new class extends Component
                             "
                         >
                             score provisório
+                        </div>
+
+                    @endif
+
+                </div>
+
+
+                <div>
+
+                    <div
+                        class="
+                            text-[10px]
+                            font-semibold
+                            uppercase
+                            tracking-wide
+                            text-[#697394]
+                        "
+                    >
+                        Responsável
+                    </div>
+
+                    <select
+                        wire:key="owner-{{ $lead->id }}-{{ $assignedUser?->id ?? 'none' }}"
+                        wire:change="
+                            assignOwner(
+                                {{ $lead->id }},
+                                $event.target.value
+                            )
+                        "
+                        class="
+                            mt-1 w-full
+                            rounded-lg border
+                            border-white/[0.08]
+                            bg-[#151a36]
+                            px-2 py-2
+                            text-[11px]
+                            text-[#d9ddef]
+                        "
+                    >
+                        <option
+                            value=""
+                            @selected(
+                                $assignedUser
+                                === null
+                            )
+                        >
+                            Sem responsável
+                        </option>
+
+                        @foreach (
+                            $this->salesUsers
+                            as $salesUser
+                        )
+                            <option
+                                value="{{ $salesUser->id }}"
+                                @selected(
+                                    $assignedUser?->id
+                                    === $salesUser->id
+                                )
+                            >
+                                {{ $salesUser->name }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    @if (
+                        $assignedUser
+                        === null
+                    )
+
+                        <button
+                            type="button"
+                            wire:click="
+                                claimLead(
+                                    {{ $lead->id }}
+                                )
+                            "
+                            wire:loading.attr="disabled"
+                            wire:target="
+                                claimLead(
+                                    {{ $lead->id }}
+                                )
+                            "
+                            class="
+                                mt-2 text-[10px]
+                                font-semibold
+                                text-cyan-300
+                                transition
+                                hover:text-cyan-200
+                                disabled:opacity-50
+                            "
+                        >
+                            <span
+                                wire:loading.remove
+                                wire:target="
+                                    claimLead(
+                                        {{ $lead->id }}
+                                    )
+                                "
+                            >
+                                Assumir lead
+                            </span>
+
+                            <span
+                                wire:loading
+                                wire:target="
+                                    claimLead(
+                                        {{ $lead->id }}
+                                    )
+                                "
+                            >
+                                Assumindo...
+                            </span>
+                        </button>
+
+                    @else
+
+                        <div
+                            class="
+                                mt-2 truncate
+                                text-[10px]
+                                text-[#7f89aa]
+                            "
+                            title="{{ $assignedUser->name }}"
+                        >
+                            Carteira de
+                            {{ $assignedUser->name }}
                         </div>
 
                     @endif

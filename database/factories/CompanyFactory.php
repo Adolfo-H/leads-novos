@@ -11,14 +11,27 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class CompanyFactory extends Factory
 {
     /**
-     * Define the model's default state.
-     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
-            //
+            /*
+             * O domínio usa a raiz do CNPJ,
+             * portanto precisamos exatamente
+             * de 8 posições e valor único.
+             */
+            'cnpj_root' => fake()
+                ->unique()
+                ->numerify(
+                    '########'
+                ),
+
+            'corporate_name' => fake()->company(),
+
+            'source' => 'test',
+
+            'metadata' => [],
         ];
     }
 }
