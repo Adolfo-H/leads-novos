@@ -43,12 +43,17 @@ class SyncHubSpotLeadStatuses extends Command
                 )
                 ->get();
 
+        $processed = 0;
+        $failed = 0;
+
         foreach ($leads as $lead) {
             try {
                 $updated =
                     $service->sync(
                         $lead
                     );
+
+                $processed++;
 
                 $this->line(
                     '#'
@@ -57,6 +62,8 @@ class SyncHubSpotLeadStatuses extends Command
                     .$updated->work_status
                 );
             } catch (Throwable $exception) {
+                $failed++;
+
                 $lead->update([
                     'sync_error' => mb_substr(
                         $exception->getMessage(),
@@ -74,6 +81,17 @@ class SyncHubSpotLeadStatuses extends Command
             }
         }
 
-        return self::SUCCESS;
+        $this->newLine();
+
+        $this->info(
+            'Processados: '
+            .$processed
+            .' | Falhas: '
+            .$failed
+        );
+
+        return $failed > 0
+            ? self::FAILURE
+            : self::SUCCESS;
     }
 }

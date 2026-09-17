@@ -5,14 +5,28 @@ use Tests\TestCase;
 
 uses(TestCase::class);
 
-it('maps HubSpot activity to the four commercial statuses', function () {
+beforeEach(function () {
     config([
+        'services.hubspot.lead_converted_stages' => [
+            'closedwon',
+        ],
+
         'services.hubspot.lead_discarded_stages' => [
             '13185627',
             '13185628',
         ],
-    ]);
 
+        'services.hubspot.lead_future_stages' => [
+            '13185626',
+        ],
+
+        'services.hubspot.lead_refused_stages' => [
+            'closedlost',
+        ],
+    ]);
+});
+
+it('maps a new HubSpot lead', function () {
     $resolver =
         app(
             HubSpotLeadStatusResolver::class
@@ -26,6 +40,13 @@ it('maps HubSpot activity to the four commercial statuses', function () {
             lastActivityAt: null,
         )
     )->toBe('new');
+});
+
+it('maps a contacted HubSpot lead', function () {
+    $resolver =
+        app(
+            HubSpotLeadStatusResolver::class
+        );
 
     expect(
         $resolver->resolve(
@@ -35,6 +56,13 @@ it('maps HubSpot activity to the four commercial statuses', function () {
             lastActivityAt: null,
         )
     )->toBe('contacting');
+});
+
+it('maps a lead with follow up as waiting', function () {
+    $resolver =
+        app(
+            HubSpotLeadStatusResolver::class
+        );
 
     expect(
         $resolver->resolve(
@@ -44,13 +72,68 @@ it('maps HubSpot activity to the four commercial statuses', function () {
             lastActivityAt: now(),
         )
     )->toBe('waiting');
+});
+
+it('maps a won deal as converted even if tasks are still open', function () {
+    $resolver =
+        app(
+            HubSpotLeadStatusResolver::class
+        );
+
+    expect(
+        $resolver->resolve(
+            dealStage: 'closedwon',
+            openTasks: 3,
+            contactedCount: 9,
+            lastActivityAt: now(),
+        )
+    )->toBe('converted');
+});
+
+it('maps discarded HubSpot stages', function () {
+    $resolver =
+        app(
+            HubSpotLeadStatusResolver::class
+        );
 
     expect(
         $resolver->resolve(
             dealStage: '13185627',
-            openTasks: 1,
+            openTasks: 2,
             contactedCount: 5,
             lastActivityAt: now(),
         )
     )->toBe('discarded');
+});
+
+it('maps future opportunity separately', function () {
+    $resolver =
+        app(
+            HubSpotLeadStatusResolver::class
+        );
+
+    expect(
+        $resolver->resolve(
+            dealStage: '13185626',
+            openTasks: 2,
+            contactedCount: 5,
+            lastActivityAt: now(),
+        )
+    )->toBe('future');
+});
+
+it('maps refused deal separately', function () {
+    $resolver =
+        app(
+            HubSpotLeadStatusResolver::class
+        );
+
+    expect(
+        $resolver->resolve(
+            dealStage: 'closedlost',
+            openTasks: 2,
+            contactedCount: 5,
+            lastActivityAt: now(),
+        )
+    )->toBe('refused');
 });

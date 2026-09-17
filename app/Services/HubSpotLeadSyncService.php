@@ -32,6 +32,7 @@ final class HubSpotLeadSyncService
     public function __construct(
         private readonly HubSpotLeadEligibilityService $eligibility,
         private readonly CrmCompanyProvider $crmProvider,
+        private readonly CommercialActivityRecorder $activityRecorder,
     ) {}
 
     public function sync(
@@ -83,6 +84,10 @@ final class HubSpotLeadSyncService
 
         $existingSync =
             $company->hubSpotLead;
+
+        $wasSynced =
+            $existingSync?->synced_at
+            !== null;
 
         /*
          * Na PRIMEIRA tentativa continuamos
@@ -302,7 +307,18 @@ final class HubSpotLeadSyncService
                 'metadata' => $metadata,
             ])->save();
 
-            return $sync->refresh();
+            $sync =
+                $sync->refresh();
+
+            if (! $wasSynced) {
+                $this
+                    ->activityRecorder
+                    ->recordLeadSynced(
+                        $sync
+                    );
+            }
+
+            return $sync;
         } catch (Throwable $exception) {
             $sync->forceFill([
                 'sync_error' => mb_substr(

@@ -33,6 +33,8 @@ public bool $showCnaeForm = false;
             'exportIntelligence',
             'exportEvidence',
             'sdrScore',
+            'hubSpotLead',
+            'leadActivities.user',
         ]);
 
         app(
@@ -3001,6 +3003,14 @@ private function reloadCompany(): void
             </div>
 
         </div>
+
+        @include(
+            'partials.company-commercial-timeline',
+            [
+                'company' => $company,
+            ]
+        )
+
 
         {{-- RESUMO DA PESQUISA DE EXPORTAÇÃO --}}
         @php

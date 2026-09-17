@@ -18,6 +18,7 @@ class CompanyHubSpotLead extends Model
         'pipeline_id',
         'deal_stage_id',
         'work_status',
+        'work_status_changed_at',
         'last_activity_type',
         'last_activity_at',
         'open_task_count',
@@ -31,11 +32,15 @@ class CompanyHubSpotLead extends Model
     protected function casts(): array
     {
         return [
+            'work_status_changed_at' => 'datetime',
+
             'last_activity_at' => 'datetime',
 
             'last_task_due_at' => 'datetime',
 
             'synced_at' => 'datetime',
+
+            'status_synced_at' => 'datetime',
 
             'metadata' => 'array',
         ];

@@ -79,6 +79,28 @@ final class LeadActivityService
         );
     }
 
+    public function reprospectingStarted(
+        int $companyId,
+        string $fromStatus,
+        ?string $fromStage,
+        string $toStage,
+    ): CompanyLeadActivity {
+        return $this->record(
+            companyId: $companyId,
+            type: 'reprospecting_started',
+            title: 'Lead retomado',
+            description: $this->statusLabel(
+                $fromStatus
+            )
+                .' → nova abordagem',
+            metadata: [
+                'from_status' => $fromStatus,
+                'from_stage' => $fromStage,
+                'to_stage' => $toStage,
+            ],
+        );
+    }
+
     /**
      * @param  array<string, mixed>  $metadata
      */
@@ -127,6 +149,10 @@ final class LeadActivityService
             'contacting' => 'Em contato',
 
             'waiting' => 'Aguardando retorno',
+
+            'future' => 'Oportunidade futura',
+
+            'refused' => 'Recusou',
 
             'discarded' => 'Descartado',
 

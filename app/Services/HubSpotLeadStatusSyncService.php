@@ -15,11 +15,31 @@ final class HubSpotLeadStatusSyncService
 {
     public function __construct(
         private readonly HubSpotLeadStatusResolver $resolver,
+        private readonly CommercialActivityRecorder $activityRecorder,
     ) {}
 
     public function sync(
         CompanyHubSpotLead $lead
     ): CompanyHubSpotLead {
+        $previousStatus =
+            $this->stringValue(
+                $lead->work_status
+            );
+
+        $previousStage =
+            $this->stringValue(
+                $lead->deal_stage_id
+            );
+
+        $previousOpenTasks =
+            (int) $lead->open_task_count;
+
+        $previousDueAt =
+            $this->dateValue(
+                $lead->last_task_due_at
+            )
+                ?->toIso8601String();
+
         $companyId =
             trim(
                 (string)
@@ -70,19 +90,27 @@ final class HubSpotLeadStatusSyncService
                 ?? null
             );
 
+        /*
+         * A mesma atividade pode aparecer
+         * tanto na Company quanto no Deal.
+         *
+         * Somar os dois contadores duplicaria
+         * o mesmo contato comercial.
+         */
         $contactedCount =
-            $this->integerValue(
-                $company[
-                    'num_contacted_notes'
-                ]
-                ?? null
-            )
-            +
-            $this->integerValue(
-                $deal[
-                    'num_contacted_notes'
-                ]
-                ?? null
+            max(
+                $this->integerValue(
+                    $company[
+                        'num_contacted_notes'
+                    ]
+                    ?? null
+                ),
+                $this->integerValue(
+                    $deal[
+                        'num_contacted_notes'
+                    ]
+                    ?? null
+                ),
             );
 
         $activityDates = [
@@ -139,9 +167,23 @@ final class HubSpotLeadStatusSyncService
                 lastActivityAt: $lastActivityAt,
             );
 
+        $workStatusChangedAt =
+            $lead->work_status_changed_at;
+
+        if (
+            $workStatusChangedAt === null
+            || $previousStatus !== $status
+        ) {
+            $workStatusChangedAt =
+                now();
+        }
+
         $activityType =
             match ($status) {
-                'discarded' => 'deal_stage',
+                'converted',
+                'discarded',
+                'future',
+                'refused' => 'deal_stage',
 
                 'waiting' => 'task',
 
@@ -173,6 +215,8 @@ final class HubSpotLeadStatusSyncService
         $lead->forceFill([
             'work_status' => $status,
 
+            'work_status_changed_at' => $workStatusChangedAt,
+
             'deal_stage_id' => $dealStage,
 
             'last_activity_type' => $activityType,
@@ -192,7 +236,20 @@ final class HubSpotLeadStatusSyncService
             'metadata' => $metadata,
         ])->save();
 
-        return $lead->refresh();
+        $lead =
+            $lead->refresh();
+
+        $this
+            ->activityRecorder
+            ->recordHubSpotChanges(
+                lead: $lead,
+                previousStatus: $previousStatus,
+                previousStage: $previousStage,
+                previousOpenTasks: $previousOpenTasks,
+                previousDueAt: $previousDueAt,
+            );
+
+        return $lead;
     }
 
     /**

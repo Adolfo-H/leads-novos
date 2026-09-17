@@ -3,6 +3,7 @@
 use App\Models\Company;
 use App\Models\CompanyHubSpotLead;
 use App\Models\User;
+use Livewire\Livewire;
 
 it('does not allow guests to access leads', function () {
     $this
@@ -413,5 +414,191 @@ it('keeps the original qualification visible after HubSpot creates an opportunit
         )
         ->assertSee(
             'Em contato'
+        );
+});
+
+it('counts unsynced eligible companies as new operational leads', function () {
+    $user =
+        User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+    $company =
+        Company::query()->create([
+            'cnpj_root' => '78123456',
+            'corporate_name' => 'Lead Novo Sem HubSpot',
+        ]);
+
+    $company
+        ->sdrScore()
+        ->create([
+            'score' => 75,
+            'priority' => 'high',
+            'label' => 'Prioridade alta',
+            'is_eligible' => true,
+            'is_provisional' => false,
+            'factors' => [],
+            'version' => 'test',
+            'metadata' => [],
+            'calculated_at' => now(),
+        ]);
+
+    $this
+        ->actingAs($user)
+        ->get(
+            route('leads.index')
+        )
+        ->assertSuccessful()
+        ->assertSee(
+            'Lead Novo Sem HubSpot'
+        )
+        ->assertSee(
+            'Novo'
+        );
+});
+
+it('filters unsynced eligible companies as new leads', function () {
+    $user =
+        User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+    $newCompany =
+        Company::query()->create([
+            'cnpj_root' => '78123457',
+            'corporate_name' => 'Lead Novo Filtrado',
+        ]);
+
+    $newCompany
+        ->sdrScore()
+        ->create([
+            'score' => 70,
+            'priority' => 'high',
+            'label' => 'Prioridade alta',
+            'is_eligible' => true,
+            'is_provisional' => false,
+            'factors' => [],
+            'version' => 'test',
+            'metadata' => [],
+            'calculated_at' => now(),
+        ]);
+
+    $contacting =
+        Company::query()->create([
+            'cnpj_root' => '78123458',
+            'corporate_name' => 'Lead Em Contato Filtrado',
+        ]);
+
+    $contacting
+        ->sdrScore()
+        ->create([
+            'score' => 80,
+            'priority' => 'high',
+            'label' => 'Prioridade alta',
+            'is_eligible' => true,
+            'is_provisional' => false,
+            'factors' => [],
+            'version' => 'test',
+            'metadata' => [],
+            'calculated_at' => now(),
+        ]);
+
+    CompanyHubSpotLead::query()
+        ->create([
+            'company_id' => $contacting->id,
+
+            'hubspot_company_id' => 'filter-company',
+
+            'hubspot_deal_id' => 'filter-deal',
+
+            'work_status' => 'contacting',
+
+            'synced_at' => now(),
+
+            'metadata' => [],
+        ]);
+
+    $component =
+        Livewire::actingAs(
+            $user
+        )
+            ->test(
+                'pages::leads.index'
+            )
+            ->set(
+                'workStatus',
+                'new'
+            );
+
+    $component
+        ->assertSee(
+            'Lead Novo Filtrado'
+        )
+        ->assertDontSee(
+            'Lead Em Contato Filtrado'
+        );
+});
+
+it('shows the next action for a lead waiting on follow up', function () {
+    $user =
+        User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+    $company =
+        Company::query()->create([
+            'cnpj_root' => '78123459',
+            'corporate_name' => 'Lead Follow Up Visual',
+        ]);
+
+    $company
+        ->sdrScore()
+        ->create([
+            'score' => 82,
+            'priority' => 'high',
+            'label' => 'Prioridade alta',
+            'is_eligible' => true,
+            'is_provisional' => false,
+            'factors' => [],
+            'version' => 'test',
+            'metadata' => [],
+            'calculated_at' => now(),
+        ]);
+
+    CompanyHubSpotLead::query()
+        ->create([
+            'company_id' => $company->id,
+
+            'hubspot_company_id' => 'follow-company',
+
+            'hubspot_deal_id' => 'follow-deal',
+
+            'work_status' => 'waiting',
+
+            'open_task_count' => 1,
+
+            'last_task_due_at' => now()
+                ->addDay()
+                ->setTime(
+                    10,
+                    30
+                ),
+
+            'synced_at' => now(),
+
+            'metadata' => [],
+        ]);
+
+    $this
+        ->actingAs($user)
+        ->get(
+            route('leads.index')
+        )
+        ->assertSuccessful()
+        ->assertSee(
+            'Lead Follow Up Visual'
+        )
+        ->assertSee(
+            'Próxima ação'
         );
 });
