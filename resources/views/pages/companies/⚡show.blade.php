@@ -33,6 +33,8 @@ public bool $showCnaeForm = false;
             'exportIntelligence',
             'exportEvidence',
             'sdrScore',
+            'hubSpotLead',
+            'leadActivities.user',
         ]);
 
         app(
@@ -2676,7 +2678,15 @@ private function reloadCompany(): void
                         ICP
                     </span>
 
-                    @if ($company->icpScore)
+                    @include(
+            'partials.company-commercial-timeline',
+            [
+                'company' => $company,
+            ]
+        )
+
+
+        @if ($company->icpScore)
 
                         <span
                             class="

@@ -37,6 +37,8 @@ class CompanyHubSpotLead extends Model
 
             'synced_at' => 'datetime',
 
+            'status_synced_at' => 'datetime',
+
             'metadata' => 'array',
         ];
     }
