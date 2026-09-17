@@ -325,6 +325,8 @@ final class CommercialActivityRecorder
 
             'refused' => 'Recusou',
 
+            'converted' => 'Convertido',
+
             'discarded' => 'Descartado',
 
             null, '' => 'Sem status',

@@ -25,6 +25,9 @@
             'refused' =>
                 'Recusou',
 
+            'converted' =>
+                'Convertido',
+
             'discarded' =>
                 'Descartado',
 
@@ -45,6 +48,9 @@
 
             'refused' =>
                 'border-rose-300/20 bg-rose-300/10 text-rose-300',
+
+            'converted' =>
+                'border-emerald-300/20 bg-emerald-300/10 text-emerald-300',
 
             'discarded' =>
                 'border-red-300/20 bg-red-300/10 text-red-300',

@@ -12,6 +12,27 @@ final class HubSpotLeadStatusResolver
         int $contactedCount,
         ?CarbonInterface $lastActivityAt,
     ): string {
+        /*
+         * Estados definidos diretamente pela
+         * etapa do Deal possuem prioridade sobre
+         * tarefas e atividades.
+         *
+         * Um negócio ganho, por exemplo, não pode
+         * continuar aparecendo como "Em contato".
+         */
+        if (
+            $dealStage !== null
+            && in_array(
+                $dealStage,
+                $this->stages(
+                    'services.hubspot.lead_converted_stages'
+                ),
+                true
+            )
+        ) {
+            return 'converted';
+        }
+
         if (
             $dealStage !== null
             && in_array(
@@ -51,10 +72,6 @@ final class HubSpotLeadStatusResolver
             return 'future';
         }
 
-        /*
-         * Tarefa aberta possui prioridade
-         * sobre atividade já realizada.
-         */
         if ($openTasks > 0) {
             return 'waiting';
         }
@@ -98,7 +115,8 @@ final class HubSpotLeadStatusResolver
                 );
 
             if ($stage !== '') {
-                $stages[] = $stage;
+                $stages[] =
+                    $stage;
             }
         }
 

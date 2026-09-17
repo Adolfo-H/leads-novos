@@ -187,6 +187,24 @@ return [
             )
         ),
 
+        'lead_converted_stages' => array_values(
+            array_filter(
+                array_map(
+                    'trim',
+                    explode(
+                        ',',
+                        (string) env(
+                            'HUBSPOT_LEAD_CONVERTED_STAGES',
+                            'closedwon'
+                        )
+                    )
+                ),
+                static fn (
+                    string $stage
+                ): bool => $stage !== ''
+            )
+        ),
+
     ],
 
 ];

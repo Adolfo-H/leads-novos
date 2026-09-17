@@ -98,6 +98,21 @@ it(
         'Aguardando retorno',
     ],
 
+    'oportunidade futura' => [
+        'future',
+        'Oportunidade futura',
+    ],
+
+    'recusou' => [
+        'refused',
+        'Recusou',
+    ],
+
+    'convertido' => [
+        'converted',
+        'Convertido',
+    ],
+
     'descartado' => [
         'discarded',
         'Descartado',

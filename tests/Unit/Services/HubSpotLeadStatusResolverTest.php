@@ -7,6 +7,10 @@ uses(TestCase::class);
 
 beforeEach(function () {
     config([
+        'services.hubspot.lead_converted_stages' => [
+            'closedwon',
+        ],
+
         'services.hubspot.lead_discarded_stages' => [
             '13185627',
             '13185628',
@@ -68,6 +72,22 @@ it('maps a lead with follow up as waiting', function () {
             lastActivityAt: now(),
         )
     )->toBe('waiting');
+});
+
+it('maps a won deal as converted even if tasks are still open', function () {
+    $resolver =
+        app(
+            HubSpotLeadStatusResolver::class
+        );
+
+    expect(
+        $resolver->resolve(
+            dealStage: 'closedwon',
+            openTasks: 3,
+            contactedCount: 9,
+            lastActivityAt: now(),
+        )
+    )->toBe('converted');
 });
 
 it('maps discarded HubSpot stages', function () {

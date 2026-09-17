@@ -337,3 +337,47 @@ it('does not double count the same HubSpot contact activity', function () {
         'contacting'
     );
 });
+
+it('marks a closed won HubSpot deal as converted', function () {
+    $lead =
+        statusFlowLead(
+            '90112236'
+        );
+
+    fakeHubSpotLeadStatus(
+        dealStage: 'closedwon',
+        contactedCount: 5,
+        openTask: true,
+    );
+
+    config([
+        'services.hubspot.lead_converted_stages' => [
+            'closedwon',
+        ],
+    ]);
+
+    $result =
+        app(
+            HubSpotLeadStatusSyncService::class
+        )->sync(
+            $lead
+        );
+
+    expect(
+        $result->work_status
+    )->toBe(
+        'converted'
+    );
+
+    expect(
+        $result->deal_stage_id
+    )->toBe(
+        'closedwon'
+    );
+
+    expect(
+        $result->last_activity_type
+    )->toBe(
+        'deal_stage'
+    );
+});

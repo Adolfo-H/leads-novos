@@ -542,6 +542,9 @@ new class extends Component
                     WHEN work.work_status = 'refused'
                         THEN 7
 
+                    WHEN work.work_status = 'converted'
+                        THEN 8
+
                     WHEN work.work_status = 'discarded'
                         THEN 9
 
@@ -632,6 +635,8 @@ new class extends Component
 
             'refused' => 'Recusou',
 
+            'converted' => 'Convertido',
+
             'discarded' => 'Descartado',
 
             default => 'Novo',
@@ -649,6 +654,8 @@ new class extends Component
             'future' => 'text-violet-300',
 
             'refused' => 'text-rose-300',
+
+            'converted' => 'text-emerald-300',
 
             'discarded' => 'text-red-300',
 
@@ -772,6 +779,18 @@ new class extends Component
             ->where(
                 'work.work_status',
                 'refused'
+            )
+            ->count();
+    }
+
+    #[Computed]
+    public function convertedCount(): int
+    {
+        return $this
+            ->operationalLeadQuery()
+            ->where(
+                'work.work_status',
+                'converted'
             )
             ->count();
     }
@@ -1144,6 +1163,7 @@ new class extends Component
                     'waiting',
                     'future',
                     'refused',
+                    'converted',
                     'discarded',
                 ],
                 true
@@ -1455,6 +1475,8 @@ new class extends Component
 
             'refused' => 'Negócio marcado como recusado no HubSpot',
 
+            'converted' => 'Negócio fechado no HubSpot',
+
             'discarded' => 'Negócio descartado no HubSpot',
 
             default => 'Ainda não houve contato',
@@ -1488,6 +1510,8 @@ new class extends Component
 
             'refused' => 'text-rose-300',
 
+            'converted' => 'text-emerald-300',
+
             'discarded' => 'text-[#7f89aa]',
 
             default => 'text-[#7f89aa]',
@@ -1514,6 +1538,8 @@ new class extends Component
             'future' => 'Ver oportunidade futura',
 
             'refused' => 'Ver recusa',
+
+            'converted' => 'Ver negócio ganho',
 
             'discarded' => 'Ver histórico',
 
@@ -1547,6 +1573,8 @@ new class extends Component
             'future' => 'text-violet-300 hover:text-violet-200',
 
             'refused' => 'text-rose-300 hover:text-rose-200',
+
+            'converted' => 'text-emerald-300 hover:text-emerald-200',
 
             'discarded' => 'text-[#8992b1] hover:text-white',
 
@@ -2220,6 +2248,22 @@ new class extends Component
             Recusou · {{ $this->refusedCount }}
         </button>
 
+        <button
+            type="button"
+            wire:click="applyQuickView('converted')"
+            class="
+                rounded-lg border px-3 py-2
+                text-xs font-semibold transition
+                {{
+                    $workStatus === 'converted'
+                        ? 'border-emerald-300/30 bg-emerald-300/10 text-emerald-300'
+                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
+                }}
+            "
+        >
+            Convertidos · {{ $this->convertedCount }}
+        </button>
+
         <span
             class="
                 ml-3 mr-1 text-[10px]
@@ -2470,6 +2514,10 @@ new class extends Component
 
                 <option value="refused">
                     Recusou
+                </option>
+
+                <option value="converted">
+                    Convertido
                 </option>
 
                 <option value="discarded">
