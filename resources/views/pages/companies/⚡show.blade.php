@@ -2678,15 +2678,7 @@ private function reloadCompany(): void
                         ICP
                     </span>
 
-                    @include(
-            'partials.company-commercial-timeline',
-            [
-                'company' => $company,
-            ]
-        )
-
-
-        @if ($company->icpScore)
+                    @if ($company->icpScore)
 
                         <span
                             class="
@@ -3011,6 +3003,14 @@ private function reloadCompany(): void
             </div>
 
         </div>
+
+        @include(
+            'partials.company-commercial-timeline',
+            [
+                'company' => $company,
+            ]
+        )
+
 
         {{-- RESUMO DA PESQUISA DE EXPORTAÇÃO --}}
         @php
