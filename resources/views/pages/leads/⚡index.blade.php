@@ -58,11 +58,30 @@ new class extends Component
 
     public function updatedWorkStatus(): void
     {
+        $this->dailyView = '';
+
+        if (
+            $this->workStatus
+            !== 'waiting'
+        ) {
+            $this->followUp = '';
+        }
+
         $this->resetPage();
     }
 
     public function updatedFollowUp(): void
     {
+        $this->dailyView = '';
+
+        if (
+            $this->followUp
+            !== ''
+        ) {
+            $this->workStatus =
+                'waiting';
+        }
+
         $this->resetPage();
     }
 
@@ -310,7 +329,7 @@ new class extends Component
                             ->where(
                                 'work.last_task_due_at',
                                 '>=',
-                                now()->startOfDay()
+                                now()
                             )
                             ->where(
                                 'work.last_task_due_at',
@@ -409,7 +428,7 @@ new class extends Component
                 ",
                 [
                     now(),
-                    today(),
+                    now(),
                     today()->addDay(),
                     today()->addDay(),
                 ]
@@ -696,7 +715,7 @@ new class extends Component
             ->where(
                 'work.last_task_due_at',
                 '>=',
-                now()->startOfDay()
+                now()
             )
             ->where(
                 'work.last_task_due_at',
@@ -764,7 +783,10 @@ new class extends Component
                 ? $view
                 : '';
 
-        if ($this->followUp !== '') {
+        if (
+            $this->followUp
+            !== ''
+        ) {
             $this->workStatus =
                 'waiting';
         }
@@ -791,12 +813,15 @@ new class extends Component
                 ? $view
                 : '';
 
-        if (
-            $this->workStatus
-            !== 'waiting'
-        ) {
-            $this->followUp = '';
-        }
+        /*
+         * Uma quick view de status sempre
+         * remove o subtipo de prazo.
+         *
+         * Exemplo:
+         * Atrasados -> Aguardando retorno
+         * deve mostrar TODOS os waiting.
+         */
+        $this->followUp = '';
 
         $this->resetPage();
     }
