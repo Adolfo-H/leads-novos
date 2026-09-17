@@ -73,6 +73,8 @@ new class extends Component
 
     public function updatedOwner(): void
     {
+        $this->dailyView = '';
+
         $this->resetPage();
     }
 
@@ -361,6 +363,26 @@ new class extends Component
             ->when(
                 $this->dailyView === 'today',
                 function ($query): void {
+                    $userId =
+                        $this
+                            ->authenticatedUserId();
+
+                    if ($userId === null) {
+                        $query->whereRaw(
+                            '1 = 0'
+                        );
+
+                        return;
+                    }
+
+                    $query->whereHas(
+                        'leadWorkState',
+                        fn ($ownerQuery) => $ownerQuery->where(
+                            'assigned_user_id',
+                            $userId
+                        )
+                    );
+
                     $query->where(
                         function ($dailyQuery): void {
                             $dailyQuery
@@ -826,6 +848,8 @@ new class extends Component
     public function applyOwnerView(
         string $view
     ): void {
+        $this->dailyView = '';
+
         if (
             ! in_array(
                 $view,
@@ -1083,8 +1107,23 @@ new class extends Component
     #[Computed]
     public function dailyQueueCount(): int
     {
+        $userId =
+            $this
+                ->authenticatedUserId();
+
+        if ($userId === null) {
+            return 0;
+        }
+
         return $this
             ->operationalLeadQuery()
+            ->whereHas(
+                'leadWorkState',
+                fn ($query) => $query->where(
+                    'assigned_user_id',
+                    $userId
+                )
+            )
             ->where(
                 function ($query): void {
                     $query
@@ -1154,6 +1193,7 @@ new class extends Component
         $this->dailyView =
             'today';
 
+        $this->owner = '';
         $this->workStatus = '';
         $this->followUp = '';
 
@@ -2186,7 +2226,7 @@ new class extends Component
                         text-[#eef1ff]
                     "
                 >
-                    Atrasados, tarefas de hoje
+                    Seus atrasados, tarefas de hoje
                     e contatos em andamento
                 </div>
 
@@ -2196,8 +2236,8 @@ new class extends Component
                         text-[#7882a4]
                     "
                 >
-                    Foque apenas no que exige
-                    atenção comercial agora.
+                    Somente leads da sua carteira
+                    que exigem atenção agora.
                 </div>
             </div>
         </div>

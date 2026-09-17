@@ -68,6 +68,19 @@ function dailyQueueStatus(
         ]);
 }
 
+function dailyQueueAssign(
+    Company $company,
+    User $user,
+): void {
+    $company
+        ->leadWorkState()
+        ->create([
+            'assigned_user_id' => $user->id,
+
+            'status' => 'new',
+        ]);
+}
+
 beforeEach(function () {
     Carbon::setTestNow(
         '2026-09-16 12:00:00'
@@ -78,7 +91,7 @@ afterEach(function () {
     Carbon::setTestNow();
 });
 
-it('shows only actionable leads in my daily queue', function () {
+it('shows only actionable leads assigned to me in my daily queue', function () {
     $user =
         User::factory()->create([
             'email_verified_at' => now(),
@@ -96,6 +109,11 @@ it('shows only actionable leads in my daily queue', function () {
         now()->subHour()
     );
 
+    dailyQueueAssign(
+        $overdue,
+        $user
+    );
+
     $today =
         dailyQueueCompany(
             '88222222',
@@ -108,6 +126,11 @@ it('shows only actionable leads in my daily queue', function () {
         now()->addHours(2)
     );
 
+    dailyQueueAssign(
+        $today,
+        $user
+    );
+
     $contacting =
         dailyQueueCompany(
             '88333333',
@@ -117,6 +140,11 @@ it('shows only actionable leads in my daily queue', function () {
     dailyQueueStatus(
         $contacting,
         'contacting'
+    );
+
+    dailyQueueAssign(
+        $contacting,
+        $user
     );
 
     $future =
@@ -131,9 +159,20 @@ it('shows only actionable leads in my daily queue', function () {
         now()->addDays(2)
     );
 
-    dailyQueueCompany(
-        '88555555',
-        'Fila Hoje Lead Novo'
+    dailyQueueAssign(
+        $future,
+        $user
+    );
+
+    $new =
+        dailyQueueCompany(
+            '88555555',
+            'Fila Hoje Lead Novo'
+        );
+
+    dailyQueueAssign(
+        $new,
+        $user
     );
 
     $discarded =
@@ -145,6 +184,11 @@ it('shows only actionable leads in my daily queue', function () {
     dailyQueueStatus(
         $discarded,
         'discarded'
+    );
+
+    dailyQueueAssign(
+        $discarded,
+        $user
     );
 
     Livewire::actingAs($user)
@@ -174,7 +218,93 @@ it('shows only actionable leads in my daily queue', function () {
         );
 });
 
-it('counts the actionable leads in my daily queue', function () {
+it('does not show actionable leads owned by another salesperson', function () {
+    $me =
+        User::factory()->create([
+            'name' => 'Vendedor Logado',
+
+            'email_verified_at' => now(),
+        ]);
+
+    $other =
+        User::factory()->create([
+            'name' => 'Outro Vendedor',
+
+            'email_verified_at' => now(),
+        ]);
+
+    $mine =
+        dailyQueueCompany(
+            '88777111',
+            'Minha Tarefa'
+        );
+
+    dailyQueueStatus(
+        $mine,
+        'waiting',
+        now()->subHour()
+    );
+
+    dailyQueueAssign(
+        $mine,
+        $me
+    );
+
+    $otherLead =
+        dailyQueueCompany(
+            '88777222',
+            'Tarefa Outro Vendedor'
+        );
+
+    dailyQueueStatus(
+        $otherLead,
+        'waiting',
+        now()->subHour()
+    );
+
+    dailyQueueAssign(
+        $otherLead,
+        $other
+    );
+
+    $unassigned =
+        dailyQueueCompany(
+            '88777333',
+            'Tarefa Sem Responsavel'
+        );
+
+    dailyQueueStatus(
+        $unassigned,
+        'waiting',
+        now()->subHour()
+    );
+
+    $component =
+        Livewire::actingAs($me)
+            ->test(
+                'pages::leads.index'
+            )
+            ->call(
+                'applyDailyView'
+            )
+            ->assertSee(
+                'Minha Tarefa'
+            )
+            ->assertDontSee(
+                'Tarefa Outro Vendedor'
+            )
+            ->assertDontSee(
+                'Tarefa Sem Responsavel'
+            );
+
+    expect(
+        $component
+            ->instance()
+            ->dailyQueueCount
+    )->toBe(1);
+});
+
+it('counts only actionable leads from my portfolio', function () {
     $user =
         User::factory()->create([
             'email_verified_at' => now(),
@@ -192,6 +322,11 @@ it('counts the actionable leads in my daily queue', function () {
         now()->subDay()
     );
 
+    dailyQueueAssign(
+        $overdue,
+        $user
+    );
+
     $today =
         dailyQueueCompany(
             '88777772',
@@ -204,6 +339,11 @@ it('counts the actionable leads in my daily queue', function () {
         now()->addHour()
     );
 
+    dailyQueueAssign(
+        $today,
+        $user
+    );
+
     $contacting =
         dailyQueueCompany(
             '88777773',
@@ -213,6 +353,11 @@ it('counts the actionable leads in my daily queue', function () {
     dailyQueueStatus(
         $contacting,
         'contacting'
+    );
+
+    dailyQueueAssign(
+        $contacting,
+        $user
     );
 
     $future =
@@ -227,17 +372,10 @@ it('counts the actionable leads in my daily queue', function () {
         now()->addDays(3)
     );
 
-    Livewire::actingAs($user)
-        ->test(
-            'pages::leads.index'
-        )
-        ->assertSee(
-            'Minha fila hoje'
-        )
-        ->assertSet(
-            'dailyView',
-            ''
-        );
+    dailyQueueAssign(
+        $future,
+        $user
+    );
 
     $component =
         Livewire::actingAs($user)
@@ -252,15 +390,75 @@ it('counts the actionable leads in my daily queue', function () {
     )->toBe(3);
 });
 
+it('clears another owner filter when opening my daily queue', function () {
+    $user =
+        User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+    Livewire::actingAs($user)
+        ->test(
+            'pages::leads.index'
+        )
+        ->set(
+            'owner',
+            'unassigned'
+        )
+        ->call(
+            'applyDailyView'
+        )
+        ->assertSet(
+            'owner',
+            ''
+        )
+        ->assertSet(
+            'dailyView',
+            'today'
+        );
+});
+
+it('changing the portfolio closes my daily queue', function () {
+    $user =
+        User::factory()->create([
+            'email_verified_at' => now(),
+        ]);
+
+    Livewire::actingAs($user)
+        ->test(
+            'pages::leads.index'
+        )
+        ->call(
+            'applyDailyView'
+        )
+        ->assertSet(
+            'dailyView',
+            'today'
+        )
+        ->set(
+            'owner',
+            'mine'
+        )
+        ->assertSet(
+            'dailyView',
+            ''
+        );
+});
+
 it('can toggle my daily queue off again', function () {
     $user =
         User::factory()->create([
             'email_verified_at' => now(),
         ]);
 
-    dailyQueueCompany(
-        '88777775',
-        'Lead Novo Toggle'
+    $company =
+        dailyQueueCompany(
+            '88777775',
+            'Lead Novo Toggle'
+        );
+
+    dailyQueueAssign(
+        $company,
+        $user
     );
 
     Livewire::actingAs($user)

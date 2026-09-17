@@ -224,6 +224,14 @@ it('includes a due future opportunity in my daily queue', function () {
         now()->subHour()
     );
 
+    $due
+        ->leadWorkState()
+        ->create([
+            'assigned_user_id' => $user->id,
+
+            'status' => 'new',
+        ]);
+
     $later =
         reprospectingCompany(
             '97666667',
@@ -236,6 +244,14 @@ it('includes a due future opportunity in my daily queue', function () {
         now()->subDays(15),
         now()->addDays(5)
     );
+
+    $later
+        ->leadWorkState()
+        ->create([
+            'assigned_user_id' => $user->id,
+
+            'status' => 'new',
+        ]);
 
     Livewire::actingAs($user)
         ->test(
