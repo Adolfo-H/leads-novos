@@ -6,6 +6,7 @@ use App\Models\CompanyExportIntelligence;
 use App\Models\CompanyHubSpotLead;
 use App\Models\CompanySdrScore;
 use App\Models\Establishment;
+use App\Services\HubSpotLeadReprospectingActionService;
 use App\Services\HubSpotLeadReprospectingService;
 use App\Services\HubSpotLeadStatusSyncService;
 use Livewire\Attributes\Computed;
@@ -35,6 +36,10 @@ new class extends Component
     public bool $staleOnly = false;
 
     public bool $reprospectingReadyOnly = false;
+
+    public string $commercialActionMessage = '';
+
+    public string $commercialActionError = '';
 
     public function updatedSearch(): void
     {
@@ -1151,6 +1156,44 @@ new class extends Component
         $this->resetPage();
     }
 
+    public function resumeLead(
+        int $leadId,
+        HubSpotLeadReprospectingActionService $service,
+    ): void {
+        $this->commercialActionMessage = '';
+        $this->commercialActionError = '';
+
+        $lead =
+            CompanyHubSpotLead::query()
+                ->findOrFail(
+                    $leadId
+                );
+
+        try {
+            $updated =
+                $service->resume(
+                    $lead
+                );
+
+            $this->commercialActionMessage =
+                'Lead retomado no HubSpot. Status atual: '
+                .$this->workStatusLabel(
+                    $updated->work_status
+                )
+                .'.';
+        } catch (DomainException $exception) {
+            $this->commercialActionError =
+                $exception->getMessage();
+        } catch (Throwable $exception) {
+            report(
+                $exception
+            );
+
+            $this->commercialActionError =
+                'Não foi possível retomar o lead no HubSpot.';
+        }
+    }
+
     public function refreshHubSpotStatus(
         int $leadId,
         HubSpotLeadStatusSyncService $service,
@@ -1678,6 +1721,40 @@ new class extends Component
         </div>
 
     </div>
+
+
+    @if ($commercialActionMessage !== '')
+
+        <div
+            class="
+                mb-4 rounded-xl
+                border border-emerald-300/20
+                bg-emerald-300/[0.06]
+                px-4 py-3
+                text-sm text-emerald-300
+            "
+        >
+            {{ $commercialActionMessage }}
+        </div>
+
+    @endif
+
+
+    @if ($commercialActionError !== '')
+
+        <div
+            class="
+                mb-4 rounded-xl
+                border border-red-300/20
+                bg-red-300/[0.06]
+                px-4 py-3
+                text-sm text-red-300
+            "
+        >
+            {{ $commercialActionError }}
+        </div>
+
+    @endif
 
 
     {{-- RESUMO --}}
@@ -3016,6 +3093,70 @@ new class extends Component
                                 ]
                             }}
                         </div>
+
+                    @endif
+
+
+                    @if (
+                        $reprospectingInfo
+                        && $reprospectingInfo['eligible']
+                        && $hubSpotLead
+                    )
+
+                        <button
+                            type="button"
+                            wire:click="
+                                resumeLead(
+                                    {{ $hubSpotLead->id }}
+                                )
+                            "
+                            wire:confirm="
+                                Retomar este lead e mover
+                                o negócio novamente para
+                                Prospects no HubSpot?
+                            "
+                            wire:loading.attr="disabled"
+                            wire:target="
+                                resumeLead(
+                                    {{ $hubSpotLead->id }}
+                                )
+                            "
+                            class="
+                                mt-2 block
+                                rounded-lg
+                                border border-emerald-300/20
+                                bg-emerald-300/[0.07]
+                                px-3 py-2
+                                text-[11px]
+                                font-semibold
+                                text-emerald-300
+                                transition
+                                hover:bg-emerald-300/[0.12]
+                                disabled:opacity-50
+                            "
+                        >
+                            <span
+                                wire:loading.remove
+                                wire:target="
+                                    resumeLead(
+                                        {{ $hubSpotLead->id }}
+                                    )
+                                "
+                            >
+                                Retomar lead ↻
+                            </span>
+
+                            <span
+                                wire:loading
+                                wire:target="
+                                    resumeLead(
+                                        {{ $hubSpotLead->id }}
+                                    )
+                                "
+                            >
+                                Retomando...
+                            </span>
+                        </button>
 
                     @endif
 

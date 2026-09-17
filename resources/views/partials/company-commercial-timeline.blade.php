@@ -560,6 +560,9 @@
                             match (
                                 $activity->type
                             ) {
+                                'reprospecting_started' =>
+                                    'Reprospecção',
+
                                 'hubspot_synced' =>
                                     'HubSpot',
 
@@ -592,6 +595,7 @@
                             match (
                                 $activity->type
                             ) {
+                                'reprospecting_started',
                                 'hubspot_synced' =>
                                     'bg-emerald-300',
 
