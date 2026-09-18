@@ -50,6 +50,13 @@
                     Dashboard
                 </flux:sidebar.item>
 
+                {{-- ACESSO GESTOR: PROSPECCAO --}}
+                @if (
+                    auth()
+                        ->user()
+                        ?->isCommercialManager()
+                )
+
                 <flux:sidebar.item
                     icon="magnifying-glass"
                     :href="route('prospecting.index')"
@@ -70,6 +77,8 @@
                     Empresas
                 </flux:sidebar.item>
 
+                @endif
+
             </flux:sidebar.group>
 
             {{-- FUTUROS MÓDULOS --}}
@@ -77,6 +86,13 @@
                 heading="Automação"
                 class="ec-sidebar-group grid"
             >
+
+                {{-- ACESSO GESTOR: AUTOMACAO --}}
+                @if (
+                    auth()
+                        ->user()
+                        ?->isCommercialManager()
+                )
 
                 <flux:sidebar.item
                     icon="arrow-up-tray"
@@ -110,6 +126,8 @@
                     </span>
                 </div>
 
+                @endif
+
                 <flux:sidebar.item
                     icon="user-group"
                     :href="route('leads.index')"
@@ -120,6 +138,13 @@
                     Leads
                 </flux:sidebar.item>
 
+                {{-- ACESSO GESTOR: GESTAO COMERCIAL --}}
+                @if (
+                    auth()
+                        ->user()
+                        ?->isCommercialManager()
+                )
+
                 <flux:sidebar.item
                     icon="chart-bar"
                     :href="route('leads.management')"
@@ -129,6 +154,7 @@
                 >
                     Gestão Comercial
                 </flux:sidebar.item>
+                @endif
 
             </flux:sidebar.group>
 

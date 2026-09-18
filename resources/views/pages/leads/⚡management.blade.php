@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Services\CommercialManagementMetricsService;
+use App\Services\CommercialRoleService;
 use App\Services\LeadAutoDistributionService;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
@@ -19,6 +20,31 @@ new class extends Component
     public string $distributionMessage = '';
 
     public string $distributionError = '';
+
+    public string $roleMessage = '';
+
+    public string $roleError = '';
+
+    /**
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function commercialUsers(): Collection
+    {
+        return User::query()
+            ->whereNotNull(
+                'email_verified_at'
+            )
+            ->orderBy(
+                'name'
+            )
+            ->get([
+                'id',
+                'name',
+                'email',
+                'commercial_role',
+            ]);
+    }
 
     /**
      * @return Collection<int, User>
@@ -102,6 +128,60 @@ new class extends Component
         }
     }
 
+    public function updateCommercialRole(
+        int $userId,
+        string $role,
+        CommercialRoleService $service,
+    ): void {
+        $this->roleMessage = '';
+        $this->roleError = '';
+
+        $actor =
+            auth()->user();
+
+        abort_unless(
+            $actor instanceof User,
+            403
+        );
+
+        $target =
+            User::query()
+                ->whereNotNull(
+                    'email_verified_at'
+                )
+                ->findOrFail(
+                    $userId
+                );
+
+        try {
+            $updated =
+                $service->changeRole(
+                    actor: $actor,
+
+                    target: $target,
+
+                    role: $role,
+                );
+
+            $this->roleMessage =
+                $updated->name
+                .' agora é '
+                .$updated
+                    ->commercialRoleLabel()
+                .'.';
+        } catch (DomainException $exception) {
+            $this->roleError =
+                $exception->getMessage();
+        } catch (Throwable $exception) {
+            report(
+                $exception
+            );
+
+            $this->roleError =
+                'Não foi possível alterar o perfil comercial.';
+        }
+    }
+
     /**
      * @return array{
      *     summary: array<string, int>,
@@ -166,6 +246,162 @@ new class extends Component
             Abrir fila de leads →
         </a>
     </div>
+
+
+    {{-- PERFIS COMERCIAIS --}}
+    <section
+        class="
+            mb-6 rounded-2xl
+            border border-white/[0.06]
+            bg-white/[0.025]
+            p-5
+        "
+    >
+        <div>
+            <div class="ec-page-kicker">
+                Acessos comerciais
+            </div>
+
+            <div
+                class="
+                    mt-1 text-base
+                    font-semibold
+                    text-[#eef1ff]
+                "
+            >
+                Gestores e vendedores
+            </div>
+
+            <p
+                class="
+                    mt-1 text-xs
+                    leading-5 text-[#7f89aa]
+                "
+            >
+                Gestores visualizam e distribuem
+                toda a operação. Vendedores ficam
+                restritos à própria carteira.
+            </p>
+        </div>
+
+
+        @if ($roleMessage !== '')
+            <div
+                class="
+                    mt-4 rounded-xl
+                    border border-emerald-300/20
+                    bg-emerald-300/[0.06]
+                    px-4 py-3
+                    text-sm text-emerald-300
+                "
+            >
+                {{ $roleMessage }}
+            </div>
+        @endif
+
+
+        @if ($roleError !== '')
+            <div
+                class="
+                    mt-4 rounded-xl
+                    border border-red-300/20
+                    bg-red-300/[0.06]
+                    px-4 py-3
+                    text-sm text-red-300
+                "
+            >
+                {{ $roleError }}
+            </div>
+        @endif
+
+
+        <div
+            class="
+                mt-4 grid gap-2
+                lg:grid-cols-2
+            "
+        >
+            @foreach (
+                $this->commercialUsers
+                as $commercialUser
+            )
+
+                <div
+                    class="
+                        flex flex-col gap-3
+                        rounded-xl
+                        border border-white/[0.06]
+                        bg-white/[0.02]
+                        px-4 py-3
+                        sm:flex-row
+                        sm:items-center
+                        sm:justify-between
+                    "
+                >
+                    <div class="min-w-0">
+                        <div
+                            class="
+                                truncate text-sm
+                                font-semibold
+                                text-[#eef1ff]
+                            "
+                        >
+                            {{ $commercialUser->name }}
+                        </div>
+
+                        <div
+                            class="
+                                mt-0.5 truncate
+                                text-[10px]
+                                text-[#707a9d]
+                            "
+                        >
+                            {{ $commercialUser->email }}
+                        </div>
+                    </div>
+
+                    <select
+                        wire:change="
+                            updateCommercialRole(
+                                {{ $commercialUser->id }},
+                                $event.target.value
+                            )
+                        "
+                        class="
+                            rounded-lg border
+                            border-white/[0.08]
+                            bg-[#151a36]
+                            px-3 py-2
+                            text-xs text-[#d9ddef]
+                        "
+                    >
+                        <option
+                            value="manager"
+                            @selected(
+                                $commercialUser
+                                    ->commercial_role
+                                === 'manager'
+                            )
+                        >
+                            Gestor
+                        </option>
+
+                        <option
+                            value="seller"
+                            @selected(
+                                $commercialUser
+                                    ->commercial_role
+                                === 'seller'
+                            )
+                        >
+                            Vendedor
+                        </option>
+                    </select>
+                </div>
+
+            @endforeach
+        </div>
+    </section>
 
 
     <div
