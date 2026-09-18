@@ -5,6 +5,7 @@ use App\Models\CompanyHubSpotLead;
 use App\Models\User;
 use App\Services\CommercialManagementMetricsService;
 use Illuminate\Support\Carbon;
+use Livewire\Livewire;
 
 function managementCompany(
     string $root,
@@ -403,4 +404,78 @@ it('opens the leads page already filtered by salesperson through the url', funct
         ->assertDontSee(
             'Empresa Fora da Carteira URL'
         );
+});
+
+it('distributes new leads from the management dashboard', function () {
+    $manager =
+        User::factory()
+            ->create([
+                'email_verified_at' => now(),
+            ]);
+
+    $sellerA =
+        User::factory()
+            ->create([
+                'name' => 'Vendedor Distribuicao A',
+
+                'email_verified_at' => now(),
+            ]);
+
+    $sellerB =
+        User::factory()
+            ->create([
+                'name' => 'Vendedor Distribuicao B',
+
+                'email_verified_at' => now(),
+            ]);
+
+    managementCompany(
+        '98999991',
+        'Novo Distribuir 1'
+    );
+
+    managementCompany(
+        '98999992',
+        'Novo Distribuir 2'
+    );
+
+    Livewire::actingAs(
+        $manager
+    )
+        ->test(
+            'pages::leads.management'
+        )
+        ->assertSee(
+            'Distribuição automática'
+        )
+        ->set(
+            'distributionSellerIds',
+            [
+                (string) $sellerA->id,
+                (string) $sellerB->id,
+            ]
+        )
+        ->set(
+            'distributionLimit',
+            2
+        )
+        ->call(
+            'autoDistribute'
+        )
+        ->assertSet(
+            'distributionMessage',
+            '2 lead(s) distribuído(s). 0 novo(s) lead(s) continuam sem responsável.'
+        );
+
+    expect(
+        $sellerA
+            ->leadWorkStates()
+            ->count()
+    )->toBe(1);
+
+    expect(
+        $sellerB
+            ->leadWorkStates()
+            ->count()
+    )->toBe(1);
 });

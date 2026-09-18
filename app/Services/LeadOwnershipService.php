@@ -22,6 +22,20 @@ final class LeadOwnershipService
                 $company,
                 $owner,
             ): CompanyLeadWorkState {
+                /*
+                 * Serializa mudanças de responsável
+                 * da mesma empresa.
+                 *
+                 * Isso também evita duas criações
+                 * simultâneas do work state.
+                 */
+                Company::query()
+                    ->whereKey(
+                        $company->id
+                    )
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
                 $state =
                     CompanyLeadWorkState::query()
                         ->where(
