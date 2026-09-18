@@ -2166,43 +2166,354 @@ new class extends Component
 ?>
 
 <div
-    class="ec-page-shell"
+    class="ec-page-shell ec-leads-page"
     wire:poll.15s="$refresh"
 >
 
-    <div class="ec-page-header">
+    <section class="ec-leads-hero">
 
-        <div>
+        <div class="ec-leads-hero-copy">
 
             <div class="ec-page-kicker">
                 Prioridade Comercial
             </div>
 
-            <div
-                class="
-                    mt-1 flex flex-wrap
-                    items-center gap-3
-                "
-            >
+            <div class="ec-leads-title-row">
 
-                <h1 class="ec-page-title">
+                <h1 class="ec-leads-title">
                     Leads
                 </h1>
 
-                <span class="ec-count-badge">
+                <span class="ec-leads-count">
                     {{ $this->operationalCount }}
                 </span>
 
             </div>
 
-            <p class="ec-page-description">
+            <p class="ec-leads-subtitle">
                 Empresas elegíveis ordenadas pela
                 prioridade calculada para o SDR.
             </p>
 
         </div>
 
-    </div>
+
+        <div
+            class="ec-leads-hero-visual"
+            aria-hidden="true"
+        >
+
+            <svg
+                viewBox="0 0 760 300"
+                role="presentation"
+            >
+
+                <defs>
+
+                    <radialGradient
+                        id="leadsGlobeHalo"
+                        cx="50%"
+                        cy="50%"
+                        r="50%"
+                    >
+                        <stop
+                            offset="0%"
+                            stop-color="#148fff"
+                            stop-opacity=".28"
+                        />
+
+                        <stop
+                            offset="60%"
+                            stop-color="#148fff"
+                            stop-opacity=".10"
+                        />
+
+                        <stop
+                            offset="100%"
+                            stop-color="#148fff"
+                            stop-opacity="0"
+                        />
+                    </radialGradient>
+
+
+                    <linearGradient
+                        id="leadsOrbit"
+                        x1="0"
+                        y1="0"
+                        x2="1"
+                        y2="1"
+                    >
+                        <stop
+                            offset="0%"
+                            stop-color="#2be0d1"
+                            stop-opacity="0"
+                        />
+
+                        <stop
+                            offset="42%"
+                            stop-color="#2a9fff"
+                            stop-opacity=".72"
+                        />
+
+                        <stop
+                            offset="74%"
+                            stop-color="#39dfd1"
+                            stop-opacity=".60"
+                        />
+
+                        <stop
+                            offset="100%"
+                            stop-color="#39dfd1"
+                            stop-opacity="0"
+                        />
+                    </linearGradient>
+
+
+                    <pattern
+                        id="leadsBgDots"
+                        width="15"
+                        height="15"
+                        patternUnits="userSpaceOnUse"
+                    >
+                        <circle
+                            cx="2"
+                            cy="2"
+                            r="1.1"
+                            fill="#1482db"
+                            opacity=".28"
+                        />
+                    </pattern>
+
+
+                    <pattern
+                        id="leadsWorldDots"
+                        width="7"
+                        height="7"
+                        patternUnits="userSpaceOnUse"
+                    >
+                        <circle
+                            cx="2"
+                            cy="2"
+                            r="1.25"
+                            fill="#39afff"
+                        />
+                    </pattern>
+
+
+                    <clipPath id="leadsGlobeClip">
+                        <circle
+                            cx="525"
+                            cy="145"
+                            r="112"
+                        />
+                    </clipPath>
+
+                </defs>
+
+
+                <rect
+                    x="250"
+                    y="5"
+                    width="450"
+                    height="270"
+                    fill="url(#leadsBgDots)"
+                    opacity=".68"
+                />
+
+
+                <circle
+                    cx="525"
+                    cy="145"
+                    r="180"
+                    fill="url(#leadsGlobeHalo)"
+                />
+
+
+                <circle
+                    cx="525"
+                    cy="145"
+                    r="112"
+                    fill="none"
+                    stroke="#269cff"
+                    stroke-opacity=".34"
+                />
+
+
+                <g
+                    fill="none"
+                    stroke="#2d8de5"
+                    stroke-opacity=".21"
+                    clip-path="url(#leadsGlobeClip)"
+                >
+
+                    <ellipse
+                        cx="525"
+                        cy="145"
+                        rx="112"
+                        ry="38"
+                    />
+
+                    <ellipse
+                        cx="525"
+                        cy="145"
+                        rx="112"
+                        ry="70"
+                    />
+
+                    <ellipse
+                        cx="525"
+                        cy="145"
+                        rx="42"
+                        ry="112"
+                    />
+
+                    <ellipse
+                        cx="525"
+                        cy="145"
+                        rx="79"
+                        ry="112"
+                    />
+
+                </g>
+
+
+                <g
+                    fill="url(#leadsWorldDots)"
+                    clip-path="url(#leadsGlobeClip)"
+                >
+
+                    <path
+                        d="
+                            M447 82
+                            C466 67
+                            495 67
+                            517 79
+                            L529 91
+                            L519 103
+                            L498 108
+                            L485 122
+                            L464 126
+                            L449 115
+                            L440 99
+                            Z
+                        "
+                    />
+
+                    <path
+                        d="
+                            M479 126
+                            C500 130
+                            514 143
+                            515 160
+                            L507 181
+                            L496 205
+                            L482 211
+                            L471 193
+                            L468 171
+                            L473 145
+                            Z
+                        "
+                    />
+
+                    <path
+                        d="
+                            M537 87
+                            C555 77
+                            578 79
+                            596 92
+                            L605 106
+                            L597 117
+                            L579 120
+                            L568 131
+                            L551 126
+                            L541 113
+                            Z
+                        "
+                    />
+
+                    <path
+                        d="
+                            M551 129
+                            C570 134
+                            582 146
+                            584 163
+                            L578 181
+                            L566 199
+                            L552 195
+                            L545 178
+                            L543 154
+                            Z
+                        "
+                    />
+
+                </g>
+
+
+                <g
+                    fill="none"
+                    stroke="url(#leadsOrbit)"
+                    stroke-width="1.5"
+                >
+
+                    <ellipse
+                        cx="525"
+                        cy="145"
+                        rx="184"
+                        ry="57"
+                        transform="
+                            rotate(
+                                13
+                                525
+                                145
+                            )
+                        "
+                    />
+
+                    <ellipse
+                        cx="525"
+                        cy="145"
+                        rx="170"
+                        ry="48"
+                        transform="
+                            rotate(
+                                -17
+                                525
+                                145
+                            )
+                        "
+                    />
+
+                </g>
+
+
+                <g fill="#38e1d4">
+
+                    <circle cx="447" cy="108" r="3.8" />
+                    <circle cx="494" cy="87" r="3.2" />
+                    <circle cx="575" cy="97" r="3.7" />
+                    <circle cx="598" cy="144" r="4" />
+                    <circle cx="522" cy="193" r="3.7" />
+
+                </g>
+
+            </svg>
+
+        </div>
+
+
+        <div class="ec-leads-hero-message">
+
+            <span>
+                Operação SDR
+            </span>
+
+            <strong>
+                priorize as melhores oportunidades
+            </strong>
+
+        </div>
+
+    </section>
 
 
     @if ($commercialActionMessage !== '')
@@ -2240,12 +2551,7 @@ new class extends Component
 
 
     {{-- RESUMO --}}
-    <div
-        class="
-            grid gap-3
-            md:grid-cols-3
-        "
-    >
+    <div class="ec-leads-summary">
 
         <div class="ec-intelligence-card">
 
@@ -2305,6 +2611,7 @@ new class extends Component
         type="button"
         wire:click="applyDailyView"
         class="
+            ec-leads-daily-queue
             group flex w-full
             items-center justify-between
             gap-5 rounded-2xl
@@ -2406,7 +2713,7 @@ new class extends Component
 
 
     {{-- PAINEL DIÁRIO --}}
-    <section class="mt-5">
+    <section class="ec-leads-operation">
 
         <div
             class="
@@ -2812,6 +3119,7 @@ new class extends Component
         type="button"
         wire:click="applyReprospectingReadyView"
         class="
+            ec-leads-reprospecting
             mt-3 flex w-full
             items-center justify-between
             gap-4 rounded-xl
@@ -2869,14 +3177,7 @@ new class extends Component
 
 
     {{-- FILTROS --}}
-    <div
-        class="
-            mt-5 rounded-2xl
-            border border-white/[0.06]
-            bg-white/[0.025]
-            p-4
-        "
-    >
+    <div class="ec-leads-filter-panel">
 
         <div
             class="
@@ -3194,14 +3495,7 @@ new class extends Component
 
 
     {{-- LISTA --}}
-    <div
-        class="
-            mt-5 overflow-hidden
-            rounded-2xl
-            border border-white/[0.06]
-            bg-white/[0.02]
-        "
-    >
+    <div class="ec-leads-list">
 
         @forelse (
             $this->leads
@@ -3278,6 +3572,7 @@ new class extends Component
 
             <div
                 class="
+                    ec-leads-row
                     grid gap-4
                     border-b border-white/[0.05]
                     px-5 py-5
@@ -4117,8 +4412,138 @@ new class extends Component
     </div>
 
 
-    <div class="mt-5">
-        {{ $this->leads->links() }}
-    </div>
+    @if (
+        $this
+            ->leads
+            ->hasPages()
+    )
+
+        <div class="ec-leads-pagination">
+
+            <div class="ec-leads-pagination-info">
+
+                Exibindo
+
+                <strong>
+                    {{
+                        $this
+                            ->leads
+                            ->firstItem()
+                    }}
+                </strong>
+
+                a
+
+                <strong>
+                    {{
+                        $this
+                            ->leads
+                            ->lastItem()
+                    }}
+                </strong>
+
+                de
+
+                <strong>
+                    {{
+                        number_format(
+                            $this
+                                ->leads
+                                ->total(),
+                            0,
+                            ',',
+                            '.'
+                        )
+                    }}
+                </strong>
+
+                leads
+
+            </div>
+
+
+            <div class="ec-leads-pagination-actions">
+
+                <button
+                    type="button"
+                    wire:click="previousPage"
+                    @disabled(
+                        $this
+                            ->leads
+                            ->onFirstPage()
+                    )
+                >
+                    ‹
+                </button>
+
+
+                @php
+                    $currentPage =
+                        $this
+                            ->leads
+                            ->currentPage();
+
+                    $lastPage =
+                        $this
+                            ->leads
+                            ->lastPage();
+
+                    $startPage =
+                        max(
+                            1,
+                            $currentPage - 2
+                        );
+
+                    $endPage =
+                        min(
+                            $lastPage,
+                            $currentPage + 2
+                        );
+                @endphp
+
+
+                @for (
+                    $page = $startPage;
+                    $page <= $endPage;
+                    $page++
+                )
+
+                    <button
+                        type="button"
+                        wire:click="
+                            gotoPage(
+                                {{ $page }}
+                            )
+                        "
+                        class="{{
+                            $page
+                            === $currentPage
+                                ? 'is-active'
+                                : ''
+                        }}"
+                    >
+                        {{ $page }}
+                    </button>
+
+                @endfor
+
+
+                <button
+                    type="button"
+                    wire:click="nextPage"
+                    @disabled(
+                        ! $this
+                            ->leads
+                            ->hasMorePages()
+                    )
+                >
+                    ›
+                </button>
+
+            </div>
+
+        </div>
+
+    @endif
 
 </div>

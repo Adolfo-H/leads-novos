@@ -155,7 +155,7 @@ new class extends Component
             return [];
         }
 
-        return \App\Models\ImportItem::query()
+        return ImportItem::query()
             ->where(
                 'import_batch_id',
                 $this->batchId
@@ -181,8 +181,7 @@ new class extends Component
 
         return collect($statuses)
             ->sum(
-                fn ($status) =>
-                    $this->currentStatusCounts[
+                fn ($status) => $this->currentStatusCounts[
                         $status
                     ] ?? 0
             );
@@ -265,32 +264,23 @@ new class extends Component
             );
 
         return [
-            'clients' =>
-                (int) ($crmCounts['client'] ?? 0),
+            'clients' => (int) ($crmCounts['client'] ?? 0),
 
-            'opportunities' =>
-                (int) ($crmCounts['opportunity'] ?? 0),
+            'opportunities' => (int) ($crmCounts['opportunity'] ?? 0),
 
-            'prospected' =>
-                (int) ($crmCounts['prospected'] ?? 0),
+            'prospected' => (int) ($crmCounts['prospected'] ?? 0),
 
-            'known' =>
-                (int) ($crmCounts['known'] ?? 0),
+            'known' => (int) ($crmCounts['known'] ?? 0),
 
-            'new' =>
-                (int) ($crmCounts['not_found'] ?? 0),
+            'new' => (int) ($crmCounts['not_found'] ?? 0),
 
-            'icp_a' =>
-                (int) ($icpCounts['A'] ?? 0),
+            'icp_a' => (int) ($icpCounts['A'] ?? 0),
 
-            'icp_b' =>
-                (int) ($icpCounts['B'] ?? 0),
+            'icp_b' => (int) ($icpCounts['B'] ?? 0),
 
-            'icp_c' =>
-                (int) ($icpCounts['C'] ?? 0),
+            'icp_c' => (int) ($icpCounts['C'] ?? 0),
 
-            'icp_d' =>
-                (int) ($icpCounts['D'] ?? 0),
+            'icp_d' => (int) ($icpCounts['D'] ?? 0),
         ];
     }
 
@@ -312,7 +302,7 @@ new class extends Component
             return collect();
         }
 
-        return \App\Models\ImportItem::query()
+        return ImportItem::query()
             ->where(
                 'import_batch_id',
                 $this->batchId
@@ -353,7 +343,6 @@ new class extends Component
         };
     }
 
-
     public function crmStatusLabel(
         ?string $status
     ): string {
@@ -371,23 +360,17 @@ new class extends Component
         ?string $status
     ): string {
         return match ($status) {
-            'client' =>
-                'bg-emerald-500/15 text-emerald-300',
+            'client' => 'bg-emerald-500/15 text-emerald-300',
 
-            'opportunity' =>
-                'bg-amber-500/15 text-amber-300',
+            'opportunity' => 'bg-amber-500/15 text-amber-300',
 
-            'prospected' =>
-                'bg-sky-500/15 text-sky-300',
+            'prospected' => 'bg-sky-500/15 text-sky-300',
 
-            'known' =>
-                'bg-violet-500/15 text-violet-300',
+            'known' => 'bg-violet-500/15 text-violet-300',
 
-            'not_found' =>
-                'bg-white/5 text-[#a8afc8]',
+            'not_found' => 'bg-white/5 text-[#a8afc8]',
 
-            default =>
-                'bg-white/5 text-[#7f87a7]',
+            default => 'bg-white/5 text-[#7f87a7]',
         };
     }
 
@@ -395,17 +378,13 @@ new class extends Component
         ?string $grade
     ): string {
         return match ($grade) {
-            'A' =>
-                'bg-emerald-500/15 text-emerald-300',
+            'A' => 'bg-emerald-500/15 text-emerald-300',
 
-            'B' =>
-                'bg-sky-500/15 text-sky-300',
+            'B' => 'bg-sky-500/15 text-sky-300',
 
-            'C' =>
-                'bg-amber-500/15 text-amber-300',
+            'C' => 'bg-amber-500/15 text-amber-300',
 
-            default =>
-                'bg-rose-500/15 text-rose-300',
+            default => 'bg-rose-500/15 text-rose-300',
         };
     }
 
@@ -431,8 +410,7 @@ new class extends Component
 
                 'label' => 'CNPJ inválido',
 
-                'detail' =>
-                    $item->error_message
+                'detail' => $item->error_message
                         ? mb_substr(
                             $item->error_message,
                             0,
@@ -448,11 +426,9 @@ new class extends Component
             $alerts[] = [
                 'type' => 'danger',
 
-                'label' =>
-                    'Falha no enriquecimento',
+                'label' => 'Falha no enriquecimento',
 
-                'detail' =>
-                    $item->error_message
+                'detail' => $item->error_message
                         ? mb_substr(
                             $item->error_message,
                             0,
@@ -473,8 +449,7 @@ new class extends Component
             $alerts[] = [
                 'type' => 'warning',
 
-                'label' =>
-                    'Nova tentativa pendente',
+                'label' => 'Nova tentativa pendente',
 
                 'detail' => mb_substr(
                     $item->error_message,
@@ -521,11 +496,9 @@ new class extends Component
             $alerts[] = [
                 'type' => 'warning',
 
-                'label' =>
-                    'CRM não verificado',
+                'label' => 'CRM não verificado',
 
-                'detail' =>
-                    is_string($crmError)
+                'detail' => is_string($crmError)
                     && $crmError !== ''
                         ? mb_substr(
                             $crmError,
@@ -582,11 +555,9 @@ new class extends Component
             $alerts[] = [
                 'type' => 'warning',
 
-                'label' =>
-                    'Divergência CRM',
+                'label' => 'Divergência CRM',
 
-                'detail' =>
-                    'Prospector: '
+                'detail' => 'Prospector: '
                     .$prospectorStatus
                     .' · HubSpot: '
                     .$hubspotStatus,
@@ -617,11 +588,9 @@ new class extends Component
             $alerts[] = [
                 'type' => 'info',
 
-                'label' =>
-                    'Receita via fallback',
+                'label' => 'Receita via fallback',
 
-                'detail' =>
-                    'Não constava na base mensal; '
+                'detail' => 'Não constava na base mensal; '
                     .'os dados foram obtidos por '
                     .'consulta pontual na BrasilAPI.',
             ];
@@ -668,28 +637,22 @@ new class extends Component
 
             if ($eligible) {
                 $alerts[] = [
-                    'type' =>
-                        'success',
+                    'type' => 'success',
 
-                    'label' =>
-                        'Pesquisa de exportação elegível',
+                    'label' => 'Pesquisa de exportação elegível',
 
-                    'detail' =>
-                        'Empresa aprovada nos filtros '
+                    'detail' => 'Empresa aprovada nos filtros '
                         .'de ICP e CRM.',
                 ];
             } else {
                 $alerts[] = [
-                    'type' =>
-                        'neutral',
+                    'type' => 'neutral',
 
-                    'label' =>
-                        'Pesquisa de exportação bloqueada',
+                    'label' => 'Pesquisa de exportação bloqueada',
 
-                    'detail' =>
-                        is_string(
-                            $message
-                        )
+                    'detail' => is_string(
+                        $message
+                    )
                         && $message !== ''
                             ? $message
                             : (
@@ -711,62 +674,373 @@ new class extends Component
         string $type
     ): string {
         return match ($type) {
-            'success' =>
-                'border-emerald-400/15 '
+            'success' => 'border-emerald-400/15 '
                 .'bg-emerald-400/[0.06] '
                 .'text-emerald-300',
 
-            'neutral' =>
-                'border-white/[0.06] '
+            'neutral' => 'border-white/[0.06] '
                 .'bg-white/[0.03] '
                 .'text-[#9ca5c5]',
 
-            'danger' =>
-                'border-rose-400/15 '
+            'danger' => 'border-rose-400/15 '
                 .'bg-rose-400/[0.06] '
                 .'text-rose-300',
 
-            'warning' =>
-                'border-amber-400/15 '
+            'warning' => 'border-amber-400/15 '
                 .'bg-amber-400/[0.06] '
                 .'text-amber-300',
 
-            'info' =>
-                'border-sky-400/15 '
+            'info' => 'border-sky-400/15 '
                 .'bg-sky-400/[0.06] '
                 .'text-sky-300',
 
-            default =>
-                'border-white/[0.06] '
+            default => 'border-white/[0.06] '
                 .'bg-white/[0.03] '
                 .'text-[#aab2cc]',
         };
     }
-
 };
 ?>
 
-<div class="ec-page-shell">
+<div class="ec-page-shell ec-imports-page">
 
-    <div class="ec-page-header">
+    <section class="ec-imports-hero">
 
-        <div>
+        <div class="ec-imports-hero-copy">
 
             <div class="ec-page-kicker">
                 Entrada de dados
             </div>
 
-            <h1 class="ec-page-title mt-1">
+            <h1 class="ec-imports-title">
                 Importações
             </h1>
 
-            <p class="ec-page-description">
-                Insira CNPJs para validação, deduplicação e processamento pelo Prospector.
+            <p class="ec-imports-subtitle">
+                Insira CNPJs para validação,
+                deduplicação e processamento
+                pelo Prospector.
             </p>
 
         </div>
 
-    </div>
+
+        <div
+            class="ec-imports-hero-visual"
+            aria-hidden="true"
+        >
+
+            <svg
+                viewBox="0 0 760 300"
+                role="presentation"
+            >
+
+                <defs>
+
+                    <radialGradient
+                        id="importsGlobeHalo"
+                        cx="50%"
+                        cy="50%"
+                        r="50%"
+                    >
+                        <stop
+                            offset="0%"
+                            stop-color="#148fff"
+                            stop-opacity=".28"
+                        />
+
+                        <stop
+                            offset="60%"
+                            stop-color="#148fff"
+                            stop-opacity=".10"
+                        />
+
+                        <stop
+                            offset="100%"
+                            stop-color="#148fff"
+                            stop-opacity="0"
+                        />
+                    </radialGradient>
+
+
+                    <linearGradient
+                        id="importsOrbit"
+                        x1="0"
+                        y1="0"
+                        x2="1"
+                        y2="1"
+                    >
+                        <stop
+                            offset="0%"
+                            stop-color="#2be0d1"
+                            stop-opacity="0"
+                        />
+
+                        <stop
+                            offset="42%"
+                            stop-color="#2a9fff"
+                            stop-opacity=".70"
+                        />
+
+                        <stop
+                            offset="74%"
+                            stop-color="#39dfd1"
+                            stop-opacity=".58"
+                        />
+
+                        <stop
+                            offset="100%"
+                            stop-color="#39dfd1"
+                            stop-opacity="0"
+                        />
+                    </linearGradient>
+
+
+                    <pattern
+                        id="importsBgDots"
+                        width="15"
+                        height="15"
+                        patternUnits="userSpaceOnUse"
+                    >
+                        <circle
+                            cx="2"
+                            cy="2"
+                            r="1.1"
+                            fill="#1482db"
+                            opacity=".28"
+                        />
+                    </pattern>
+
+
+                    <pattern
+                        id="importsWorldDots"
+                        width="7"
+                        height="7"
+                        patternUnits="userSpaceOnUse"
+                    >
+                        <circle
+                            cx="2"
+                            cy="2"
+                            r="1.25"
+                            fill="#39afff"
+                        />
+                    </pattern>
+
+
+                    <clipPath id="importsGlobeClip">
+                        <circle
+                            cx="525"
+                            cy="145"
+                            r="112"
+                        />
+                    </clipPath>
+
+                </defs>
+
+
+                <rect
+                    x="250"
+                    y="5"
+                    width="450"
+                    height="270"
+                    fill="url(#importsBgDots)"
+                    opacity=".68"
+                />
+
+
+                <circle
+                    cx="525"
+                    cy="145"
+                    r="180"
+                    fill="url(#importsGlobeHalo)"
+                />
+
+
+                <circle
+                    cx="525"
+                    cy="145"
+                    r="112"
+                    fill="none"
+                    stroke="#269cff"
+                    stroke-opacity=".33"
+                />
+
+
+                <g
+                    fill="none"
+                    stroke="#2d8de5"
+                    stroke-opacity=".21"
+                    clip-path="url(#importsGlobeClip)"
+                >
+
+                    <ellipse
+                        cx="525"
+                        cy="145"
+                        rx="112"
+                        ry="38"
+                    />
+
+                    <ellipse
+                        cx="525"
+                        cy="145"
+                        rx="112"
+                        ry="70"
+                    />
+
+                    <ellipse
+                        cx="525"
+                        cy="145"
+                        rx="42"
+                        ry="112"
+                    />
+
+                    <ellipse
+                        cx="525"
+                        cy="145"
+                        rx="79"
+                        ry="112"
+                    />
+
+                </g>
+
+
+                <g
+                    fill="url(#importsWorldDots)"
+                    clip-path="url(#importsGlobeClip)"
+                >
+
+                    <path
+                        d="
+                            M447 82
+                            C466 67
+                            495 67
+                            517 79
+                            L529 91
+                            L519 103
+                            L498 108
+                            L485 122
+                            L464 126
+                            L449 115
+                            L440 99
+                            Z
+                        "
+                    />
+
+                    <path
+                        d="
+                            M479 126
+                            C500 130
+                            514 143
+                            515 160
+                            L507 181
+                            L496 205
+                            L482 211
+                            L471 193
+                            L468 171
+                            L473 145
+                            Z
+                        "
+                    />
+
+                    <path
+                        d="
+                            M537 87
+                            C555 77
+                            578 79
+                            596 92
+                            L605 106
+                            L597 117
+                            L579 120
+                            L568 131
+                            L551 126
+                            L541 113
+                            Z
+                        "
+                    />
+
+                    <path
+                        d="
+                            M551 129
+                            C570 134
+                            582 146
+                            584 163
+                            L578 181
+                            L566 199
+                            L552 195
+                            L545 178
+                            L543 154
+                            Z
+                        "
+                    />
+
+                </g>
+
+
+                <g
+                    fill="none"
+                    stroke="url(#importsOrbit)"
+                    stroke-width="1.5"
+                >
+
+                    <ellipse
+                        cx="525"
+                        cy="145"
+                        rx="184"
+                        ry="57"
+                        transform="
+                            rotate(
+                                13
+                                525
+                                145
+                            )
+                        "
+                    />
+
+                    <ellipse
+                        cx="525"
+                        cy="145"
+                        rx="170"
+                        ry="48"
+                        transform="
+                            rotate(
+                                -17
+                                525
+                                145
+                            )
+                        "
+                    />
+
+                </g>
+
+
+                <g fill="#38e1d4">
+
+                    <circle cx="447" cy="108" r="3.8" />
+                    <circle cx="494" cy="87" r="3.2" />
+                    <circle cx="575" cy="97" r="3.7" />
+                    <circle cx="598" cy="144" r="4" />
+                    <circle cx="522" cy="193" r="3.7" />
+
+                </g>
+
+            </svg>
+
+        </div>
+
+
+        <div class="ec-imports-hero-message">
+
+            <span>
+                Entrada confiável
+            </span>
+
+            <strong>
+                dados limpos para decisões comerciais
+            </strong>
+
+        </div>
+
+    </section>
 
 
     @if (session('success'))
@@ -790,7 +1064,12 @@ new class extends Component
     <div class="ec-import-grid">
 
         {{-- NOVA IMPORTAÇÃO --}}
-        <section class="ec-detail-panel">
+        <section
+            class="
+                ec-detail-panel
+                ec-imports-input-panel
+            "
+        >
 
             <div class="ec-detail-header">
 
@@ -879,7 +1158,12 @@ new class extends Component
 
 
         {{-- HISTÓRICO --}}
-        <section class="ec-detail-panel">
+        <section
+            class="
+                ec-detail-panel
+                ec-imports-recent-panel
+            "
+        >
 
             <div class="ec-detail-header">
 
@@ -948,7 +1232,7 @@ new class extends Component
     @if ($this->currentBatch)
 
         {{-- RESUMO --}}
-        <section>
+        <section class="ec-imports-batch-section">
 
             <div class="ec-section-heading">
 
@@ -1717,14 +2001,7 @@ new class extends Component
                         {{-- INTELIGÊNCIA DO LOTE --}}
             @if ($showCommercialIntelligence)
 
-                <div
-                    class="
-                        mt-6 rounded-2xl
-                        border border-white/[0.07]
-                        bg-white/[0.025]
-                        p-5
-                    "
-                >
+                <div class="ec-imports-intelligence">
 
                     <div
                         class="
@@ -2105,7 +2382,12 @@ new class extends Component
 
 
         {{-- ITENS --}}
-        <section class="ec-table-panel">
+        <section
+            class="
+                ec-table-panel
+                ec-imports-items-panel
+            "
+        >
 
             <div class="ec-table-toolbar">
 
