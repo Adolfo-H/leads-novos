@@ -7,17 +7,20 @@ use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Actions\DisableTwoFactorAuthentication;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
-use Livewire\Attributes\Title;
-use Livewire\Component;
 use Laravel\Passkeys\Actions\DeletePasskey;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\On;
+use Livewire\Attributes\Title;
+use Livewire\Component;
 
-new #[Title('Security settings')] class extends Component {
+new #[Title('Security settings')] class extends Component
+{
     use PasswordValidationRules;
 
     public string $current_password = '';
+
     public string $password = '';
+
     public string $password_confirmation = '';
 
     public bool $canManageTwoFactor;
@@ -166,147 +169,441 @@ new #[Title('Security settings')] class extends Component {
     }
 }; ?>
 
-<section class="w-full">
+
+<section class="ec-settings-screen">
+
     @include('partials.settings-heading')
 
-    <flux:heading level="2" class="sr-only">{{ __('Security settings') }}</flux:heading>
 
-    <x-pages::settings.layout :heading="__('Update password')" :subheading="__('Ensure your account is using a long, random password to stay secure')">
-        <form method="POST" wire:submit="updatePassword" class="mt-6 space-y-6">
-            <flux:input
-                wire:model="current_password"
-                :label="__('Current password')"
-                type="password"
-                required
-                autocomplete="current-password"
-                viewable
-            />
-            <flux:input
-                wire:model="password"
-                :label="__('New password')"
-                type="password"
-                required
-                autocomplete="new-password"
-                passwordrules="{{ \Illuminate\Validation\Rules\Password::defaults()->toPasswordRulesString() }}"
-                viewable
-            />
-            <flux:input
-                wire:model="password_confirmation"
-                :label="__('Confirm password')"
-                type="password"
-                required
-                autocomplete="new-password"
-                passwordrules="{{ \Illuminate\Validation\Rules\Password::defaults()->toPasswordRulesString() }}"
-                viewable
-            />
+    <x-pages::settings.layout
+        heading="Segurança"
+        subheading="Proteja sua conta e gerencie suas credenciais de acesso."
+    >
 
-            <div class="flex items-center gap-4">
-                <flux:button variant="primary" type="submit" data-test="update-password-button">
-                    {{ __('Save') }}
-                </flux:button>
-            </div>
-        </form>
+        {{-- ALTERAR SENHA --}}
+        <div class="ec-settings-card">
 
-        @if ($canManageTwoFactor)
-            <section class="mt-12">
-                <flux:heading>{{ __('Two-factor authentication') }}</flux:heading>
-                <flux:subheading>{{ __('Manage your two-factor authentication settings') }}</flux:subheading>
+            <div class="ec-settings-card-title">
 
-                <div class="flex flex-col w-full mx-auto space-y-6 text-sm" wire:cloak>
-                    @if ($twoFactorEnabled)
-                        <div class="space-y-4">
-                            <flux:text>
-                                {{ __('You will be prompted for a secure, random pin during login, which you can retrieve from the TOTP-supported application on your phone.') }}
-                            </flux:text>
+                <div class="ec-settings-card-icon">
 
-                            <div class="flex justify-start">
-                                <flux:button
-                                    variant="danger"
-                                    wire:click="disable"
-                                >
-                                    {{ __('Disable 2FA') }}
-                                </flux:button>
-                            </div>
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                    >
+                        <rect
+                            x="5"
+                            y="10"
+                            width="14"
+                            height="11"
+                            rx="2"
+                        />
 
-                            <livewire:pages::settings.two-factor.recovery-codes :$requiresConfirmation />
-                        </div>
-                    @else
-                        <div class="space-y-4">
-                            <flux:text variant="subtle">
-                                {{ __('When you enable two-factor authentication, you will be prompted for a secure pin during login. This pin can be retrieved from a TOTP-supported application on your phone.') }}
-                            </flux:text>
+                        <path
+                            d="
+                                M8 10
+                                V7
+                                a4 4 0 0 1
+                                8 0
+                                v3
+                            "
+                        />
+                    </svg>
 
-                            <flux:modal.trigger name="two-factor-setup-modal">
-                                <flux:button
-                                    variant="primary"
-                                    wire:click="$dispatch('start-two-factor-setup')"
-                                >
-                                    {{ __('Enable 2FA') }}
-                                </flux:button>
-                            </flux:modal.trigger>
-
-                            <livewire:pages::settings.two-factor-setup-modal :requires-confirmation="$requiresConfirmation" />
-                        </div>
-                    @endif
                 </div>
-            </section>
-        @endif
 
-        @if ($canManagePasskeys)
-            <section class="mt-12">
-                <flux:heading>{{ __('Passkeys') }}</flux:heading>
-                <flux:subheading>{{ __('Manage your passkeys for passwordless sign-in') }}</flux:subheading>
+                <div>
 
-                <div class="mt-6 flex flex-col w-full mx-auto space-y-6 text-sm" wire:cloak>
-                    <div class="border rounded-lg border-zinc-200 dark:border-zinc-700 overflow-hidden">
-                        @forelse ($passkeys as $passkey)
-                            <div class="flex items-center justify-between p-4 {{ ! $loop->last ? 'border-b border-zinc-200 dark:border-zinc-700' : '' }}">
-                                <div class="flex items-center gap-4">
-                                    <div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800">
-                                        <flux:icon.key class="size-5 text-zinc-500 dark:text-zinc-400" />
-                                    </div>
-                                    <div class="space-y-1">
-                                        <div class="flex items-center gap-2.5">
-                                            <p class="font-medium tracking-tight">{{ $passkey['name'] }}</p>
-                                            @if ($passkey['authenticator'])
-                                                <flux:badge size="sm">{{ $passkey['authenticator'] }}</flux:badge>
-                                            @endif
-                                        </div>
-                                        <p class="text-zinc-500 dark:text-zinc-400 text-xs">
-                                            {{ __('Added :time', ['time' => $passkey['created_at_diff']]) }}
-                                            @if ($passkey['last_used_at_diff'])
-                                                <span class="opacity-50 mx-1">/</span>
-                                                {{ __('Last used :time', ['time' => $passkey['last_used_at_diff']]) }}
-                                            @endif
-                                        </p>
-                                    </div>
-                                </div>
+                    <h3>
+                        Alterar senha
+                    </h3>
 
-                                <flux:button
-                                    variant="ghost"
-                                    size="sm"
-                                    icon="trash"
-                                    icon:variant="outline"
-                                    wire:click="confirmDelete({{ $passkey['id'] }})"
-                                    class="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50"
-                                />
-                            </div>
-                        @empty
-                            <div class="p-8 text-center">
-                                <div class="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-zinc-100 dark:bg-zinc-800">
-                                    <flux:icon.key class="size-7 text-zinc-400 dark:text-zinc-500" />
-                                </div>
-                                <p class="font-medium">{{ __('No passkeys yet') }}</p>
-                                <flux:text class="mt-1">{{ __('Add a passkey to sign in without a password') }}</flux:text>
-                            </div>
-                        @endforelse
+                    <p>
+                        Use uma senha forte e exclusiva
+                        para proteger sua conta.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <form
+                method="POST"
+                wire:submit="updatePassword"
+                class="ec-settings-form"
+            >
+
+                <div class="ec-settings-field">
+
+                    <label for="current-password">
+                        Senha atual
+                    </label>
+
+                    <input
+                        id="current-password"
+                        wire:model="current_password"
+                        type="password"
+                        required
+                        autocomplete="current-password"
+                    >
+
+                    @error('current_password')
+
+                        <span class="ec-settings-error">
+                            {{ $message }}
+                        </span>
+
+                    @enderror
+
+                </div>
+
+
+                <div class="ec-settings-form-grid">
+
+                    <div class="ec-settings-field">
+
+                        <label for="new-password">
+                            Nova senha
+                        </label>
+
+                        <input
+                            id="new-password"
+                            wire:model="password"
+                            type="password"
+                            required
+                            autocomplete="new-password"
+                        >
+
+                        @error('password')
+
+                            <span class="ec-settings-error">
+                                {{ $message }}
+                            </span>
+
+                        @enderror
+
                     </div>
 
-                    <x-passkey-registration />
+
+                    <div class="ec-settings-field">
+
+                        <label for="password-confirmation">
+                            Confirmar nova senha
+                        </label>
+
+                        <input
+                            id="password-confirmation"
+                            wire:model="password_confirmation"
+                            type="password"
+                            required
+                            autocomplete="new-password"
+                        >
+
+                    </div>
+
                 </div>
+
+
+                <div class="ec-settings-actions">
+
+                    <button
+                        type="submit"
+                        class="ec-settings-primary-button"
+                        data-test="update-password-button"
+                    >
+                        Atualizar senha
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+
+        {{-- 2FA --}}
+        @if ($canManageTwoFactor)
+
+            <section class="ec-settings-card">
+
+                <div class="ec-settings-card-title">
+
+                    <div class="ec-settings-card-icon">
+
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                        >
+                            <path
+                                d="
+                                    M12 3
+                                    19 6
+                                    v5
+                                    c0 5
+                                    -3 8
+                                    -7 10
+                                    -4-2
+                                    -7-5
+                                    -7-10
+                                    V6
+                                    Z
+                                "
+                            />
+
+                            <path
+                                d="m9 12 2 2 4-5"
+                            />
+                        </svg>
+
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Autenticação em dois fatores
+                        </h3>
+
+                        <p>
+                            Adicione uma segunda camada
+                            de proteção ao seu acesso.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="ec-settings-security-content"
+                    wire:cloak
+                >
+
+                    @if ($twoFactorEnabled)
+
+                        <div class="ec-settings-security-status is-enabled">
+
+                            <span></span>
+
+                            Autenticação em dois fatores ativada
+
+                        </div>
+
+
+                        <p>
+                            Durante o login será solicitado
+                            um código gerado pelo aplicativo
+                            autenticador configurado.
+                        </p>
+
+
+                        <button
+                            type="button"
+                            wire:click="disable"
+                            class="ec-settings-danger-outline"
+                        >
+                            Desativar 2FA
+                        </button>
+
+
+                        <div class="ec-settings-recovery-codes">
+
+                            <livewire:pages::settings.two-factor.recovery-codes
+                                :$requiresConfirmation
+                            />
+
+                        </div>
+
+                    @else
+
+                        <div class="ec-settings-security-status">
+
+                            <span></span>
+
+                            Autenticação em dois fatores desativada
+
+                        </div>
+
+
+                        <p>
+                            Ao ativar, será solicitado um código
+                            adicional durante o login.
+                        </p>
+
+
+                        <flux:modal.trigger
+                            name="two-factor-setup-modal"
+                        >
+
+                            <button
+                                type="button"
+                                wire:click="
+                                    $dispatch(
+                                        'start-two-factor-setup'
+                                    )
+                                "
+                                class="ec-settings-primary-button"
+                            >
+                                Ativar 2FA
+                            </button>
+
+                        </flux:modal.trigger>
+
+
+                        <livewire:pages::settings.two-factor-setup-modal
+                            :requires-confirmation="$requiresConfirmation"
+                        />
+
+                    @endif
+
+                </div>
+
             </section>
+
         @endif
+
+
+        {{-- PASSKEYS --}}
+        @if ($canManagePasskeys)
+
+            <section class="ec-settings-card">
+
+                <div class="ec-settings-card-title">
+
+                    <div class="ec-settings-card-icon">
+
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.7"
+                        >
+                            <circle
+                                cx="8"
+                                cy="15"
+                                r="4"
+                            />
+
+                            <path
+                                d="m11 12 8-8"
+                            />
+
+                            <path
+                                d="m15 8 2 2"
+                            />
+
+                            <path
+                                d="m17 6 2 2"
+                            />
+                        </svg>
+
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Chaves de acesso
+                        </h3>
+
+                        <p>
+                            Gerencie suas chaves para
+                            acesso sem senha.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    class="ec-settings-passkeys"
+                    wire:cloak
+                >
+
+                    @forelse (
+                        $passkeys
+                        as $passkey
+                    )
+
+                        <div class="ec-settings-passkey-row">
+
+                            <div>
+
+                                <strong>
+                                    {{ $passkey['name'] }}
+                                </strong>
+
+                                <span>
+                                    Adicionada
+                                    {{ $passkey['created_at_diff'] }}
+
+                                    @if (
+                                        $passkey[
+                                            'last_used_at_diff'
+                                        ]
+                                    )
+
+                                        · Último uso
+                                        {{
+                                            $passkey[
+                                                'last_used_at_diff'
+                                            ]
+                                        }}
+
+                                    @endif
+                                </span>
+
+                            </div>
+
+
+                            <button
+                                type="button"
+                                wire:click="
+                                    confirmDelete(
+                                        {{ $passkey['id'] }}
+                                    )
+                                "
+                                class="ec-settings-passkey-delete"
+                            >
+                                Remover
+                            </button>
+
+                        </div>
+
+                    @empty
+
+                        <div class="ec-settings-passkey-empty">
+
+                            <strong>
+                                Nenhuma chave de acesso cadastrada
+                            </strong>
+
+                            <span>
+                                Você pode adicionar uma chave
+                                de acesso opcional abaixo.
+                            </span>
+
+                        </div>
+
+                    @endforelse
+
+
+                    <div class="ec-settings-passkey-register">
+                        <x-passkey-registration />
+                    </div>
+
+                </div>
+
+            </section>
+
+        @endif
+
     </x-pages::settings.layout>
+
 
     <flux:modal
         name="delete-passkey-modal"
@@ -314,28 +611,45 @@ new #[Title('Security settings')] class extends Component {
         @close="closeDeleteModal"
         wire:model="showDeleteModal"
     >
-        <div class="space-y-6">
-            <div class="space-y-2">
-                <flux:heading size="lg">{{ __('Remove passkey') }}</flux:heading>
-                <flux:text>
-                    {{ __('Are you sure you want to remove the passkey ":name"? You will no longer be able to use it to sign in.', ['name' => $deletingPasskeyName]) }}
-                </flux:text>
+
+        <div class="ec-settings-delete-modal">
+
+            <div>
+
+                <h3>
+                    Remover chave de acesso?
+                </h3>
+
+                <p>
+                    A chave "{{ $deletingPasskeyName }}"
+                    não poderá mais ser usada para entrar.
+                </p>
+
             </div>
 
-            <div class="flex gap-3 justify-end">
-                <flux:button
-                    variant="outline"
+
+            <div class="ec-settings-modal-actions">
+
+                <button
+                    type="button"
                     wire:click="closeDeleteModal"
+                    class="ec-settings-secondary-button"
                 >
-                    {{ __('Cancel') }}
-                </flux:button>
-                <flux:button
-                    variant="danger"
+                    Cancelar
+                </button>
+
+                <button
+                    type="button"
                     wire:click="deletePasskey"
+                    class="ec-settings-danger-button"
                 >
-                    {{ __('Remove passkey') }}
-                </flux:button>
+                    Remover chave
+                </button>
+
             </div>
+
         </div>
+
     </flux:modal>
+
 </section>

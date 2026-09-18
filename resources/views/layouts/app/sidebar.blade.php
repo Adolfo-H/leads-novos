@@ -9,7 +9,25 @@
     @include('partials.head')
 </head>
 
-<body class="ec-app-body">
+<body
+    class="
+        ec-app-body
+        {{
+            request()->routeIs(
+                'dashboard',
+                'prospecting.*',
+                'companies.*',
+                'imports.*',
+                'leads.*',
+                'profile.edit',
+                'security.edit',
+                'appearance.edit'
+            )
+                ? 'ec-dashboard-mode'
+                : ''
+        }}
+    "
+>
 
     {{-- SIDEBAR DESKTOP / MOBILE --}}
     <flux:sidebar
@@ -104,26 +122,12 @@
                     Importações
                 </flux:sidebar.item>
 
-                <div
-                    class="
-                        mx-2 flex items-center justify-between
-                        rounded-lg px-3 py-2 text-sm
-                        text-[#777e9e]
-                    "
-                >
+                <div class="ec-coming-soon-row">
+
                     <span>
                         Pesquisas
                     </span>
 
-                    <span
-                        class="
-                            rounded bg-white/5 px-1.5 py-0.5
-                            text-[9px] font-semibold uppercase
-                            tracking-wide
-                        "
-                    >
-                        breve
-                    </span>
                 </div>
 
                 @endif
@@ -178,17 +182,6 @@
 
             </flux:sidebar.nav>
 
-            <div
-                class="
-                    mx-5 mb-4 mt-3
-                    text-[10px] leading-4
-                    text-[#676e8e]
-                "
-            >
-                Prospector ExportControl
-                <br>
-                Inteligência Comercial
-            </div>
 
         </div>
 
@@ -214,48 +207,50 @@
 
         <flux:spacer />
 
-        <div class="flex items-center gap-1">
+        <div class="ec-topbar-tools">
 
-            <span class="ec-topbar-brand mr-3">
-                EXPORTCONTROL
-            </span>
-
-            <button
-                type="button"
-                class="ec-topbar-action"
-                title="Busca global — em breve"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    class="size-5"
-                >
-                    <circle
-                        cx="11"
-                        cy="11"
-                        r="7"
-                    />
-
-                    <path
-                        d="m20 20-3.5-3.5"
-                    />
-                </svg>
-            </button>
-
+            {{-- USUARIO --}}
             <flux:dropdown
                 position="bottom"
                 align="end"
             >
 
-                <flux:profile
-                    :name="auth()->user()->name"
-                    :initials="auth()->user()->initials()"
-                    icon-trailing="chevron-down"
-                    class="ml-2"
-                />
+                <flux:button
+                    variant="ghost"
+                    class="ec-topbar-profile-trigger"
+                >
+
+                    <span class="ec-topbar-avatar">
+                        {{
+                            auth()
+                                ->user()
+                                ->initials()
+                        }}
+                    </span>
+
+                    <span class="ec-topbar-profile-name">
+                        {{
+                            auth()
+                                ->user()
+                                ->name
+                        }}
+                    </span>
+
+                    <svg
+                        class="ec-topbar-profile-chevron"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="m8 10 4 4 4-4"
+                        />
+                    </svg>
+
+                </flux:button>
+
 
                 <flux:menu>
 
@@ -291,7 +286,9 @@
 
                     </div>
 
+
                     <flux:menu.separator />
+
 
                     <flux:menu.item
                         :href="route('profile.edit')"
@@ -300,6 +297,7 @@
                     >
                         Configurações
                     </flux:menu.item>
+
 
                     <form
                         method="POST"
@@ -325,6 +323,7 @@
             </flux:dropdown>
 
         </div>
+
 
     </flux:header>
 

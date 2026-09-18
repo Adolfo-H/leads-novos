@@ -129,7 +129,7 @@ new class extends Component
             $this->loadPreview(
                 $engine
             );
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $this->prospects = [];
 
             $this->searched = true;
@@ -226,7 +226,7 @@ new class extends Component
                 $engine
             );
 
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $this->confirmingExecution =
                 false;
 
@@ -294,11 +294,25 @@ new class extends Component
                 'min:1',
             ],
         ], [
-            'selectedStates.min' =>
-                'Selecione pelo menos um estado.',
+            'limit.required' => 'Selecione a quantidade de candidatos.',
 
-            'selectedCnaes.min' =>
-                'Selecione pelo menos um CNAE.',
+            'limit.integer' => 'A quantidade de candidatos deve ser um número inteiro.',
+
+            'limit.min' => 'A quantidade mínima é de 1 candidato.',
+
+            'limit.max' => 'A quantidade máxima é de 200 candidatos.',
+
+            'selectedStates.required' => 'Selecione pelo menos um estado.',
+
+            'selectedStates.array' => 'A seleção de estados é inválida.',
+
+            'selectedStates.min' => 'Selecione pelo menos um estado.',
+
+            'selectedCnaes.required' => 'Selecione pelo menos um CNAE.',
+
+            'selectedCnaes.array' => 'A seleção de CNAEs é inválida.',
+
+            'selectedCnaes.min' => 'Selecione pelo menos um CNAE.',
         ]);
     }
 
@@ -316,20 +330,15 @@ new class extends Component
         string $status
     ): string {
         return match ($status) {
-            'completed' =>
-                'Concluído',
+            'completed' => 'Concluído',
 
-            'processing' =>
-                'Processando',
+            'processing' => 'Processando',
 
-            'failed' =>
-                'Falhou',
+            'failed' => 'Falhou',
 
-            'ready' =>
-                'Pronto',
+            'ready' => 'Pronto',
 
-            default =>
-                ucfirst($status),
+            default => ucfirst($status),
         };
     }
 
@@ -351,10 +360,10 @@ new class extends Component
 };
 ?>
 
-<div class="ec-page-shell">
+<div class="ec-page-shell ec-prospecting-page">
 
     {{-- CABEÇALHO --}}
-    <div class="ec-page-header">
+    <div class="ec-page-header ec-prospecting-hero">
 
         <div>
 
@@ -373,31 +382,498 @@ new class extends Component
 
         </div>
 
+
         <div
-            class="
-                hidden rounded-xl
-                border border-cyan-300/15
-                bg-cyan-300/[0.04]
-                px-4 py-2
-                text-xs text-cyan-300
-                md:block
-            "
+            class="ec-prospecting-global-visual"
+            aria-hidden="true"
         >
-            Pré-visualização segura
+
+            <svg
+                viewBox="0 0 760 300"
+                role="presentation"
+            >
+
+                <defs>
+
+                    <radialGradient
+                        id="prospectorGlobeHalo"
+                        cx="50%"
+                        cy="50%"
+                        r="50%"
+                    >
+
+                        <stop
+                            offset="0%"
+                            stop-color="#168dff"
+                            stop-opacity=".30"
+                        />
+
+                        <stop
+                            offset="62%"
+                            stop-color="#0878ef"
+                            stop-opacity=".12"
+                        />
+
+                        <stop
+                            offset="100%"
+                            stop-color="#0878ef"
+                            stop-opacity="0"
+                        />
+
+                    </radialGradient>
+
+
+                    <radialGradient
+                        id="prospectorGlobeSurface"
+                        cx="40%"
+                        cy="30%"
+                        r="72%"
+                    >
+
+                        <stop
+                            offset="0%"
+                            stop-color="#0d68c7"
+                            stop-opacity=".25"
+                        />
+
+                        <stop
+                            offset="100%"
+                            stop-color="#031a37"
+                            stop-opacity=".12"
+                        />
+
+                    </radialGradient>
+
+
+                    <linearGradient
+                        id="prospectorOrbit"
+                        x1="0"
+                        y1="0"
+                        x2="1"
+                        y2="1"
+                    >
+
+                        <stop
+                            offset="0%"
+                            stop-color="#21dfda"
+                            stop-opacity="0"
+                        />
+
+                        <stop
+                            offset="34%"
+                            stop-color="#249cff"
+                            stop-opacity=".72"
+                        />
+
+                        <stop
+                            offset="69%"
+                            stop-color="#2fe2d4"
+                            stop-opacity=".66"
+                        />
+
+                        <stop
+                            offset="100%"
+                            stop-color="#2fe2d4"
+                            stop-opacity="0"
+                        />
+
+                    </linearGradient>
+
+
+                    <pattern
+                        id="prospectorGlobeDots"
+                        width="7"
+                        height="7"
+                        patternUnits="userSpaceOnUse"
+                    >
+
+                        <circle
+                            cx="2"
+                            cy="2"
+                            r="1.4"
+                            fill="#2faaff"
+                        />
+
+                    </pattern>
+
+
+                    <pattern
+                        id="prospectorHeroDots"
+                        width="15"
+                        height="15"
+                        patternUnits="userSpaceOnUse"
+                    >
+
+                        <circle
+                            cx="2"
+                            cy="2"
+                            r="1.15"
+                            fill="#137bd8"
+                            opacity=".32"
+                        />
+
+                    </pattern>
+
+
+                    <clipPath
+                        id="prospectorGlobeClip"
+                    >
+
+                        <circle
+                            cx="505"
+                            cy="155"
+                            r="128"
+                        />
+
+                    </clipPath>
+
+                </defs>
+
+
+                {{-- HALO --}}
+                <circle
+                    cx="505"
+                    cy="155"
+                    r="210"
+                    fill="url(#prospectorGlobeHalo)"
+                />
+
+
+                {{-- MATRIZ DE PONTOS --}}
+                <rect
+                    x="245"
+                    y="8"
+                    width="475"
+                    height="270"
+                    fill="url(#prospectorHeroDots)"
+                    opacity=".70"
+                />
+
+
+                {{-- ESFERA --}}
+                <circle
+                    cx="505"
+                    cy="155"
+                    r="128"
+                    fill="url(#prospectorGlobeSurface)"
+                    stroke="#2099fa"
+                    stroke-opacity=".36"
+                    stroke-width="1.3"
+                />
+
+
+                {{-- LATITUDES / LONGITUDES --}}
+                <g
+                    fill="none"
+                    stroke="#258ff0"
+                    stroke-opacity=".23"
+                    stroke-width="1"
+                    clip-path="url(#prospectorGlobeClip)"
+                >
+
+                    <ellipse
+                        cx="505"
+                        cy="155"
+                        rx="128"
+                        ry="40"
+                    />
+
+                    <ellipse
+                        cx="505"
+                        cy="155"
+                        rx="128"
+                        ry="78"
+                    />
+
+                    <ellipse
+                        cx="505"
+                        cy="155"
+                        rx="128"
+                        ry="105"
+                    />
+
+                    <ellipse
+                        cx="505"
+                        cy="155"
+                        rx="45"
+                        ry="128"
+                    />
+
+                    <ellipse
+                        cx="505"
+                        cy="155"
+                        rx="87"
+                        ry="128"
+                    />
+
+                </g>
+
+
+                {{-- AMERICA DO NORTE --}}
+                <path
+                    d="
+                        M407 77
+                        C423 60
+                        451 52
+                        474 56
+                        L493 68
+                        L486 80
+                        L465 84
+                        L454 98
+                        L432 102
+                        L422 118
+                        L407 113
+                        L399 96
+                        Z
+                    "
+                    fill="url(#prospectorGlobeDots)"
+                    clip-path="url(#prospectorGlobeClip)"
+                />
+
+
+                {{-- AMERICA CENTRAL --}}
+                <path
+                    d="
+                        M431 116
+                        L449 119
+                        L454 131
+                        L445 139
+                        L435 130
+                        Z
+                    "
+                    fill="url(#prospectorGlobeDots)"
+                    clip-path="url(#prospectorGlobeClip)"
+                />
+
+
+                {{-- AMERICA DO SUL --}}
+                <path
+                    d="
+                        M449 139
+                        C467 139
+                        480 149
+                        480 164
+                        L470 181
+                        L465 202
+                        L453 225
+                        L441 210
+                        L436 186
+                        L428 163
+                        L435 148
+                        Z
+                    "
+                    fill="url(#prospectorGlobeDots)"
+                    clip-path="url(#prospectorGlobeClip)"
+                />
+
+
+                {{-- EUROPA --}}
+                <path
+                    d="
+                        M528 83
+                        L544 75
+                        L565 78
+                        L573 89
+                        L561 99
+                        L543 97
+                        L533 107
+                        L521 99
+                        Z
+                    "
+                    fill="url(#prospectorGlobeDots)"
+                    clip-path="url(#prospectorGlobeClip)"
+                />
+
+
+                {{-- AFRICA --}}
+                <path
+                    d="
+                        M534 105
+                        C557 102
+                        580 111
+                        586 132
+                        L579 159
+                        L562 188
+                        L545 184
+                        L531 157
+                        L523 128
+                        Z
+                    "
+                    fill="url(#prospectorGlobeDots)"
+                    clip-path="url(#prospectorGlobeClip)"
+                />
+
+
+                {{-- ASIA --}}
+                <path
+                    d="
+                        M566 78
+                        C594 65
+                        633 71
+                        657 89
+                        L676 104
+                        L666 123
+                        L641 126
+                        L624 143
+                        L600 135
+                        L586 117
+                        L566 110
+                        L555 96
+                        Z
+                    "
+                    fill="url(#prospectorGlobeDots)"
+                    clip-path="url(#prospectorGlobeClip)"
+                />
+
+
+                {{-- OCEANIA --}}
+                <path
+                    d="
+                        M637 177
+                        L659 169
+                        L677 181
+                        L668 197
+                        L647 199
+                        Z
+                    "
+                    fill="url(#prospectorGlobeDots)"
+                    clip-path="url(#prospectorGlobeClip)"
+                />
+
+
+                {{-- ORBITAS --}}
+                <g
+                    fill="none"
+                    stroke="url(#prospectorOrbit)"
+                >
+
+                    <ellipse
+                        cx="505"
+                        cy="155"
+                        rx="205"
+                        ry="74"
+                        stroke-width="1.5"
+                        transform="
+                            rotate(
+                                -12
+                                505
+                                155
+                            )
+                        "
+                    />
+
+                    <ellipse
+                        cx="505"
+                        cy="155"
+                        rx="192"
+                        ry="57"
+                        stroke-width="1.2"
+                        transform="
+                            rotate(
+                                18
+                                505
+                                155
+                            )
+                        "
+                    />
+
+                    <ellipse
+                        cx="505"
+                        cy="155"
+                        rx="178"
+                        ry="103"
+                        stroke-width="1.1"
+                        transform="
+                            rotate(
+                                -28
+                                505
+                                155
+                            )
+                        "
+                    />
+
+                </g>
+
+
+                {{-- CONEXOES --}}
+                <g fill="#37e3d5">
+
+                    <circle
+                        cx="390"
+                        cy="130"
+                        r="4"
+                    />
+
+                    <circle
+                        cx="450"
+                        cy="94"
+                        r="3.4"
+                    />
+
+                    <circle
+                        cx="533"
+                        cy="90"
+                        r="3.6"
+                    />
+
+                    <circle
+                        cx="595"
+                        cy="118"
+                        r="3.8"
+                    />
+
+                    <circle
+                        cx="646"
+                        cy="155"
+                        r="3.6"
+                    />
+
+                    <circle
+                        cx="466"
+                        cy="198"
+                        r="4"
+                    />
+
+                </g>
+
+
+                {{-- BRILHOS --}}
+                <g
+                    fill="none"
+                    stroke="#45e6dc"
+                    stroke-opacity=".35"
+                >
+
+                    <circle
+                        cx="390"
+                        cy="130"
+                        r="9"
+                    />
+
+                    <circle
+                        cx="595"
+                        cy="118"
+                        r="8"
+                    />
+
+                    <circle
+                        cx="466"
+                        cy="198"
+                        r="9"
+                    />
+
+                </g>
+
+            </svg>
+
         </div>
+
 
     </div>
 
 
     {{-- CONFIGURAÇÃO --}}
-    <div
-        class="
-            mt-5 rounded-2xl
-            border border-white/[0.06]
-            bg-white/[0.025]
-            p-5
-        "
-    >
+    <div class="ec-prospecting-panel ec-prospecting-config">
 
         <div
             class="
@@ -429,17 +905,6 @@ new class extends Component
 
             </div>
 
-            <div
-                class="
-                    rounded-lg
-                    bg-white/[0.03]
-                    px-3 py-2
-                    text-[11px]
-                    text-[#7781a2]
-                "
-            >
-                Nenhuma pesquisa externa é executada nesta etapa.
-            </div>
 
         </div>
 
@@ -953,14 +1418,7 @@ new class extends Component
     {{-- RESULTADOS --}}
     @if ($searched)
 
-        <section
-            class="
-                mt-5 overflow-hidden
-                rounded-2xl
-                border border-white/[0.06]
-                bg-white/[0.02]
-            "
-        >
+        <section class="ec-prospecting-panel ec-prospecting-results">
 
             <div
                 class="
@@ -1464,14 +1922,7 @@ new class extends Component
 
 
     {{-- HISTÓRICO --}}
-    <section
-        class="
-            mt-5 overflow-hidden
-            rounded-2xl
-            border border-white/[0.06]
-            bg-white/[0.02]
-        "
-    >
+    <section class="ec-prospecting-panel ec-prospecting-history">
 
         <div
             class="
