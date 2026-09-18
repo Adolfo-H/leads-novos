@@ -39,6 +39,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     )->name('leads.index');
 
     Route::livewire(
+        '/leads/gestao',
+        'pages::leads.management'
+    )->name('leads.management');
+
+    Route::livewire(
         '/empresas',
         'pages::companies.index'
     )->name('companies.index');

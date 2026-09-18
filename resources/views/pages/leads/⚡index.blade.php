@@ -13,6 +13,7 @@ use App\Services\HubSpotLeadStatusSyncService;
 use App\Services\LeadOwnershipService;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -30,10 +31,13 @@ new class extends Component
 
     public string $state = '';
 
+    #[Url]
     public string $owner = '';
 
+    #[Url]
     public string $workStatus = '';
 
+    #[Url]
     public string $followUp = '';
 
     public string $dailyView = '';
