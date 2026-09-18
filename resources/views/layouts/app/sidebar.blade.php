@@ -113,11 +113,21 @@
                 <flux:sidebar.item
                     icon="user-group"
                     :href="route('leads.index')"
-                    :current="request()->routeIs('leads.*')"
+                    :current="request()->routeIs('leads.index')"
                     wire:navigate
                     class="ec-nav-item"
                 >
                     Leads
+                </flux:sidebar.item>
+
+                <flux:sidebar.item
+                    icon="chart-bar"
+                    :href="route('leads.management')"
+                    :current="request()->routeIs('leads.management')"
+                    wire:navigate
+                    class="ec-nav-item"
+                >
+                    Gestão Comercial
                 </flux:sidebar.item>
 
             </flux:sidebar.group>
