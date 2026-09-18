@@ -10,6 +10,19 @@ use Livewire\Component;
 
 new class extends Component
 {
+    public function mount(): void
+    {
+        $user =
+            auth()->user();
+
+        abort_unless(
+            $user instanceof User
+            && $user
+                ->isCommercialManager(),
+            403
+        );
+    }
+
     /**
      * @var array<int, int|string>
      */
