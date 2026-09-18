@@ -9,7 +9,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire(
         '/importacoes',
         'pages::imports.index'
-    )->name('imports.index');
+    )
+        ->middleware(
+            'commercial.manager'
+        )
+        ->name('imports.index');
 
     Route::view('dashboard', 'dashboard')->name('dashboard');
 });
@@ -26,12 +30,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire(
         '/prospeccao',
         'pages::prospecting.index'
-    )->name('prospecting.index');
+    )
+        ->middleware(
+            'commercial.manager'
+        )
+        ->name('prospecting.index');
 
     Route::livewire(
         '/prospeccao/rodadas/{batch:uuid}',
         'pages::prospecting.show'
-    )->name('prospecting.show');
+    )
+        ->middleware(
+            'commercial.manager'
+        )
+        ->name('prospecting.show');
 
     Route::livewire(
         '/leads',
@@ -41,30 +53,54 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire(
         '/leads/gestao',
         'pages::leads.management'
-    )->name('leads.management');
+    )
+        ->middleware(
+            'commercial.manager'
+        )
+        ->name('leads.management');
 
     Route::livewire(
         '/empresas',
         'pages::companies.index'
-    )->name('companies.index');
+    )
+        ->middleware(
+            'commercial.manager'
+        )
+        ->name('companies.index');
 
     Route::livewire(
         '/empresas/nova',
         'pages::companies.create'
-    )->name('companies.create');
+    )
+        ->middleware(
+            'commercial.manager'
+        )
+        ->name('companies.create');
 
     Route::livewire(
         '/empresas/{company:uuid}/editar',
         'pages::companies.edit'
-    )->name('companies.edit');
+    )
+        ->middleware(
+            'commercial.manager'
+        )
+        ->name('companies.edit');
 
     Route::livewire(
         '/empresas/{company:uuid}/filiais/nova',
         'pages::companies.branches.create'
-    )->name('companies.branches.create');
+    )
+        ->middleware(
+            'commercial.manager'
+        )
+        ->name('companies.branches.create');
 
     Route::livewire(
         '/empresas/{company:uuid}',
         'pages::companies.show'
-    )->name('companies.show');
+    )
+        ->middleware(
+            'commercial.company-access'
+        )
+        ->name('companies.show');
 });

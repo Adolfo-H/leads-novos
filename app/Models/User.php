@@ -21,6 +21,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $name
  * @property string $email
  * @property Carbon|null $email_verified_at
+ * @property string $commercial_role
  * @property string $password
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
@@ -33,6 +34,10 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
+    public const ROLE_MANAGER = 'manager';
+
+    public const ROLE_SELLER = 'seller';
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
@@ -47,6 +52,25 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function isCommercialManager(): bool
+    {
+        return $this->commercial_role
+            === self::ROLE_MANAGER;
+    }
+
+    public function isCommercialSeller(): bool
+    {
+        return $this->commercial_role
+            === self::ROLE_SELLER;
+    }
+
+    public function commercialRoleLabel(): string
+    {
+        return $this->isCommercialManager()
+            ? 'Gestor'
+            : 'Vendedor';
     }
 
     /**

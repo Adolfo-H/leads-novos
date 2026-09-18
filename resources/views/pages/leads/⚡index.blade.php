@@ -4,6 +4,7 @@ use App\Models\Company;
 use App\Models\CompanyCrmCheck;
 use App\Models\CompanyExportIntelligence;
 use App\Models\CompanyHubSpotLead;
+use App\Models\CompanyLeadWorkState;
 use App\Models\CompanySdrScore;
 use App\Models\Establishment;
 use App\Models\User;
@@ -49,6 +50,53 @@ new class extends Component
     public string $commercialActionMessage = '';
 
     public string $commercialActionError = '';
+
+    public function isCommercialManager(): bool
+    {
+        $user =
+            auth()->user();
+
+        return $user instanceof User
+            && $user
+                ->isCommercialManager();
+    }
+
+    private function assertCanOperateLead(
+        CompanyHubSpotLead $lead
+    ): void {
+        if (
+            $this
+                ->isCommercialManager()
+        ) {
+            return;
+        }
+
+        $userId =
+            $this
+                ->authenticatedUserId();
+
+        abort_unless(
+            $userId !== null,
+            403
+        );
+
+        $allowed =
+            CompanyLeadWorkState::query()
+                ->where(
+                    'company_id',
+                    $lead->company_id
+                )
+                ->where(
+                    'assigned_user_id',
+                    $userId
+                )
+                ->exists();
+
+        abort_unless(
+            $allowed,
+            403
+        );
+    }
 
     public function updatedSearch(): void
     {
@@ -175,6 +223,30 @@ new class extends Component
                         ->orWhereNotNull(
                             'work.hubspot_deal_id'
                         );
+                }
+            )
+            ->when(
+                ! $this->isCommercialManager(),
+                function ($query): void {
+                    $userId =
+                        $this
+                            ->authenticatedUserId();
+
+                    if ($userId === null) {
+                        $query->whereRaw(
+                            '1 = 0'
+                        );
+
+                        return;
+                    }
+
+                    $query->whereHas(
+                        'leadWorkState',
+                        fn ($ownerQuery) => $ownerQuery->where(
+                            'assigned_user_id',
+                            $userId
+                        )
+                    );
                 }
             )
             ->with([
@@ -694,9 +766,10 @@ new class extends Component
     #[Computed]
     public function eligibleCount(): int
     {
-        return CompanySdrScore::query()
+        return $this
+            ->operationalLeadQuery()
             ->where(
-                'is_eligible',
+                'sdr.is_eligible',
                 true
             )
             ->count();
@@ -705,13 +778,14 @@ new class extends Component
     #[Computed]
     public function veryHighCount(): int
     {
-        return CompanySdrScore::query()
+        return $this
+            ->operationalLeadQuery()
             ->where(
-                'is_eligible',
+                'sdr.is_eligible',
                 true
             )
             ->where(
-                'priority',
+                'sdr.priority',
                 'very_high'
             )
             ->count();
@@ -720,13 +794,14 @@ new class extends Component
     #[Computed]
     public function highCount(): int
     {
-        return CompanySdrScore::query()
+        return $this
+            ->operationalLeadQuery()
             ->where(
-                'is_eligible',
+                'sdr.is_eligible',
                 true
             )
             ->where(
-                'priority',
+                'sdr.priority',
                 'high'
             )
             ->count();
@@ -852,6 +927,12 @@ new class extends Component
     public function applyOwnerView(
         string $view
     ): void {
+        abort_unless(
+            $this
+                ->isCommercialManager(),
+            403
+        );
+
         $this->dailyView = '';
 
         if (
@@ -880,6 +961,12 @@ new class extends Component
         string $userId,
         LeadOwnershipService $service,
     ): void {
+        abort_unless(
+            $this
+                ->isCommercialManager(),
+            403
+        );
+
         $this->commercialActionMessage = '';
         $this->commercialActionError = '';
 
@@ -957,6 +1044,12 @@ new class extends Component
         int $companyId,
         LeadOwnershipService $service,
     ): void {
+        abort_unless(
+            $this
+                ->isCommercialManager(),
+            403
+        );
+
         $user =
             auth()->user();
 
@@ -1004,6 +1097,30 @@ new class extends Component
                         ->orWhereNotNull(
                             'work.hubspot_deal_id'
                         );
+                }
+            )
+            ->when(
+                ! $this->isCommercialManager(),
+                function ($query): void {
+                    $userId =
+                        $this
+                            ->authenticatedUserId();
+
+                    if ($userId === null) {
+                        $query->whereRaw(
+                            '1 = 0'
+                        );
+
+                        return;
+                    }
+
+                    $query->whereHas(
+                        'leadWorkState',
+                        fn ($ownerQuery) => $ownerQuery->where(
+                            'assigned_user_id',
+                            $userId
+                        )
+                    );
                 }
             );
     }
@@ -1518,6 +1635,10 @@ new class extends Component
                     $leadId
                 );
 
+        $this->assertCanOperateLead(
+            $lead
+        );
+
         try {
             $updated =
                 $service->resume(
@@ -1552,6 +1673,10 @@ new class extends Component
                 ->findOrFail(
                     $leadId
                 );
+
+        $this->assertCanOperateLead(
+            $lead
+        );
 
         $service->sync(
             $lead
@@ -2623,6 +2748,10 @@ new class extends Component
     </div>
 
 
+    @if (
+        $this->isCommercialManager()
+    )
+
     {{-- CARTEIRA --}}
     <div
         class="
@@ -2673,6 +2802,9 @@ new class extends Component
             Sem responsável · {{ $this->unassignedCount }}
         </button>
     </div>
+
+
+    @endif
 
 
     {{-- REPROSPECÇÃO --}}
@@ -2909,6 +3041,10 @@ new class extends Component
             </select>
 
 
+            @if (
+                $this->isCommercialManager()
+            )
+
             <select
                 wire:model.live="owner"
                 class="
@@ -2942,6 +3078,9 @@ new class extends Component
                     </option>
                 @endforeach
             </select>
+
+
+            @endif
 
 
             <select
@@ -3503,6 +3642,10 @@ new class extends Component
                         Responsável
                     </div>
 
+                    @if (
+                        $this->isCommercialManager()
+                    )
+
                     <select
                         wire:key="owner-{{ $lead->id }}-{{ $assignedUser?->id ?? 'none' }}"
                         wire:change="
@@ -3547,9 +3690,31 @@ new class extends Component
                         @endforeach
                     </select>
 
+                    @else
+
+                        <div
+                            class="
+                                mt-1 rounded-lg
+                                border border-white/[0.06]
+                                bg-white/[0.025]
+                                px-2.5 py-2
+                                text-[11px]
+                                font-semibold
+                                text-[#d9ddef]
+                            "
+                        >
+                            {{
+                                $assignedUser?->name
+                                ?? 'Sem responsável'
+                            }}
+                        </div>
+
+                    @endif
+
                     @if (
-                        $assignedUser
-                        === null
+                        $this->isCommercialManager()
+                        && $assignedUser
+                            === null
                     )
 
                         <button
