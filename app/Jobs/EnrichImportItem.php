@@ -26,7 +26,7 @@ class EnrichImportItem implements ShouldQueue
 
     public int $tries = 4;
 
-    public int $timeout = 300;
+    public int $timeout = 600;
 
     public function __construct(
         public int $importItemId

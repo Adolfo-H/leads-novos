@@ -185,3 +185,50 @@ it('does not duplicate a company when processing it twice', function () {
         Establishment::count()
     )->toBe(1);
 });
+
+it('can skip relation reload during large group enrichment', function () {
+    $service = app(
+        CompanyService::class
+    );
+
+    $company = $service
+        ->createOrUpdateFromEstablishment(
+            [
+                'corporate_name' => 'Grupo Grande Performance Ltda',
+            ],
+            [
+                'cnpj' => '11.222.333/0001-81',
+
+                'type' => 'matrix',
+
+                'registration_status' => 'ATIVA',
+
+                'state' => 'PR',
+            ],
+            [
+                [
+                    'code' => '4622200',
+
+                    'description' => 'Comércio atacadista de soja',
+
+                    'is_primary' => true,
+                ],
+            ],
+            loadRelations: false,
+        );
+
+    expect(
+        $company
+            ->relationLoaded(
+                'establishments'
+            )
+    )->toBeFalse();
+
+    expect(
+        Company::count()
+    )->toBe(1);
+
+    expect(
+        Establishment::count()
+    )->toBe(1);
+});

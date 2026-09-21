@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\CrmCompanyProvider;
 use App\Models\Company;
 use App\Models\CompanyCrmCheck;
 use App\Models\CompanyExportIntelligence;
@@ -8,6 +9,7 @@ use App\Models\CompanyLeadWorkState;
 use App\Models\CompanySdrScore;
 use App\Models\Establishment;
 use App\Models\User;
+use App\Services\CrmCheckService;
 use App\Services\HubSpotLeadReprospectingActionService;
 use App\Services\HubSpotLeadReprospectingService;
 use App\Services\HubSpotLeadStatusSyncService;
@@ -317,13 +319,66 @@ new class extends Component
             )
             ->when(
                 $this->crm !== '',
-                fn ($query) => $query->whereHas(
-                    'crmCheck',
-                    fn ($crmQuery) => $crmQuery->where(
-                        'status',
-                        $this->crm
-                    )
-                )
+                function ($query): void {
+                    $crmFilter =
+                        trim(
+                            $this->crm
+                        );
+
+                    /*
+                     * stage:<nome>
+                     *
+                     * Filtra empresas que possuem
+                     * pelo menos um negócio naquela
+                     * etapa real do HubSpot.
+                     */
+                    if (
+                        str_starts_with(
+                            $crmFilter,
+                            'stage:'
+                        )
+                    ) {
+                        $stage =
+                            trim(
+                                substr(
+                                    $crmFilter,
+                                    6
+                                )
+                            );
+
+                        if ($stage === '') {
+                            return;
+                        }
+
+                        $query->whereHas(
+                            'crmCheck',
+                            fn ($crmQuery) => $crmQuery
+                                ->whereJsonContains(
+                                    'metadata->deal_summary->stages',
+                                    $stage
+                                )
+                        );
+
+                        return;
+                    }
+
+                    /*
+                     * Mantém os filtros antigos:
+                     *
+                     * not_found
+                     * known
+                     * prospected
+                     * opportunity
+                     * client
+                     */
+                    $query->whereHas(
+                        'crmCheck',
+                        fn ($crmQuery) => $crmQuery->where(
+                            'status',
+                            $crmFilter
+                        )
+                    );
+                }
             )
             ->when(
                 $this->state !== '',
@@ -749,6 +804,157 @@ new class extends Component
                 'companies.corporate_name'
             )
             ->paginate(20);
+    }
+
+    /**
+     * Etapas reais encontradas nos negócios
+     * armazenados a partir do HubSpot.
+     *
+     * @return list<array{
+     *     label: string,
+     *     count: int
+     * }>
+     */
+    #[Computed]
+    public function crmStageOptions(): array
+    {
+        $counts = [];
+
+        $checks =
+            CompanyCrmCheck::query()
+                ->whereNotNull(
+                    'metadata'
+                )
+                ->get([
+                    'metadata',
+                ]);
+
+        foreach ($checks as $check) {
+            $metadata =
+                $check->metadata
+                ?? [];
+
+            /*
+             * Preferimos os negócios individuais
+             * porque assim contamos quantos negócios
+             * existem em cada etapa.
+             */
+            $deals =
+                data_get(
+                    $metadata,
+                    'deals',
+                    []
+                );
+
+            $foundFromDeals =
+                false;
+
+            if (is_array($deals)) {
+                foreach ($deals as $deal) {
+                    if (! is_array($deal)) {
+                        continue;
+                    }
+
+                    $rawStage =
+                        $deal[
+                            'stage_label'
+                        ]
+                        ?? null;
+
+                    if (! is_scalar($rawStage)) {
+                        continue;
+                    }
+
+                    $stage =
+                        trim(
+                            (string) $rawStage
+                        );
+
+                    if ($stage === '') {
+                        continue;
+                    }
+
+                    $counts[$stage] =
+                        (
+                            $counts[$stage]
+                            ?? 0
+                        )
+                        + 1;
+
+                    $foundFromDeals =
+                        true;
+                }
+            }
+
+            /*
+             * Compatibilidade com registros antigos:
+             * se não houver deals completos,
+             * usa o resumo salvo pelo CrmCheckService.
+             */
+            if ($foundFromDeals) {
+                continue;
+            }
+
+            $stages =
+                data_get(
+                    $metadata,
+                    'deal_summary.stages',
+                    []
+                );
+
+            if (! is_array($stages)) {
+                continue;
+            }
+
+            foreach ($stages as $rawStage) {
+                if (! is_scalar($rawStage)) {
+                    continue;
+                }
+
+                $stage =
+                    trim(
+                        (string) $rawStage
+                    );
+
+                if ($stage === '') {
+                    continue;
+                }
+
+                $counts[$stage] =
+                    (
+                        $counts[$stage]
+                        ?? 0
+                    )
+                    + 1;
+            }
+        }
+
+        $options = [];
+
+        foreach (
+            $counts as $label => $count
+        ) {
+            $options[] = [
+                'label' => $label,
+
+                'count' => $count,
+            ];
+        }
+
+        usort(
+            $options,
+            static fn (
+                array $a,
+                array $b
+            ): int => strnatcasecmp(
+                $a['label'],
+                $b['label']
+            )
+        );
+
+        return array_values(
+            $options
+        );
     }
 
     #[Computed]
@@ -1667,9 +1873,14 @@ new class extends Component
     public function refreshHubSpotStatus(
         int $leadId,
         HubSpotLeadStatusSyncService $service,
+        CrmCheckService $crmService,
+        CrmCompanyProvider $crmProvider,
     ): void {
         $lead =
             CompanyHubSpotLead::query()
+                ->with(
+                    'company'
+                )
                 ->findOrFail(
                     $leadId
                 );
@@ -1678,9 +1889,33 @@ new class extends Component
             $lead
         );
 
+        /*
+         * Atualiza status operacional,
+         * tarefas e negócio principal.
+         */
         $service->sync(
             $lead
         );
+
+        /*
+         * Atualiza também TODO o contexto CRM
+         * da empresa:
+         *
+         * - todos os negócios associados;
+         * - etapa atual de cada negócio;
+         * - negócios abertos;
+         * - ganhos;
+         * - encerrados.
+         */
+        $company =
+            $lead->company;
+
+        if ($company !== null) {
+            $crmService->check(
+                $company,
+                $crmProvider,
+            );
+        }
     }
 
     public function crmLabel(
@@ -1699,6 +1934,227 @@ new class extends Component
 
             default => 'Não verificado',
         };
+    }
+
+    public function scoreQualityLabel(
+        int $score
+    ): string {
+        return match (true) {
+            $score >= 85 => 'Excelente',
+
+            $score >= 70 => 'Muito bom',
+
+            $score >= 50 => 'Bom',
+
+            default => 'Baixo',
+        };
+    }
+
+    public function scoreQualityClass(
+        int $score
+    ): string {
+        return $score >= 50
+            ? 'is-good'
+            : 'is-low';
+    }
+
+    /**
+     * Todos os negócios encontrados para
+     * a empresa no HubSpot.
+     *
+     * Negócios abertos aparecem primeiro,
+     * depois ganhos e por último os demais
+     * negócios encerrados.
+     *
+     * @return list<array{
+     *     id: string,
+     *     name: string,
+     *     stage: string,
+     *     state: string,
+     *     url: string|null
+     * }>
+     */
+    public function crmDeals(
+        ?CompanyCrmCheck $crm
+    ): array {
+        if ($crm === null) {
+            return [];
+        }
+
+        $rawDeals =
+            data_get(
+                $crm->metadata ?? [],
+                'deals',
+                []
+            );
+
+        if (! is_array($rawDeals)) {
+            return [];
+        }
+
+        $deals = [];
+
+        foreach ($rawDeals as $deal) {
+            if (! is_array($deal)) {
+                continue;
+            }
+
+            $rawId =
+                $deal['id']
+                ?? null;
+
+            $id =
+                is_scalar($rawId)
+                    ? trim(
+                        (string) $rawId
+                    )
+                    : '';
+
+            $rawStage =
+                $deal['stage_label']
+                ?? $deal['stage_id']
+                ?? null;
+
+            $stage =
+                is_scalar($rawStage)
+                    ? trim(
+                        (string) $rawStage
+                    )
+                    : '';
+
+            if ($stage === '') {
+                $stage =
+                    'Sem etapa';
+            }
+
+            $rawName =
+                $deal['name']
+                ?? null;
+
+            $name =
+                is_scalar($rawName)
+                    ? trim(
+                        (string) $rawName
+                    )
+                    : '';
+
+            if ($name === '') {
+                $name =
+                    'Negócio HubSpot';
+            }
+
+            $isWon =
+                (bool) (
+                    $deal['is_closed_won']
+                    ?? false
+                );
+
+            $isClosed =
+                (bool) (
+                    $deal['is_closed']
+                    ?? false
+                );
+
+            $state =
+                $isWon
+                    ? 'won'
+                    : (
+                        $isClosed
+                            ? 'closed'
+                            : 'active'
+                    );
+
+            $deals[] = [
+                'id' => $id,
+
+                'name' => $name,
+
+                'stage' => $stage,
+
+                'state' => $state,
+
+                'url' => $id !== ''
+                        ? $this
+                            ->hubSpotDealUrlById(
+                                $id
+                            )
+                        : null,
+            ];
+        }
+
+        $rank = [
+            'active' => 0,
+            'won' => 1,
+            'closed' => 2,
+        ];
+
+        usort(
+            $deals,
+            static function (
+                array $a,
+                array $b
+            ) use (
+                $rank
+            ): int {
+                $aRank =
+                    $rank[
+                        $a['state']
+                    ]
+                    ?? 99;
+
+                $bRank =
+                    $rank[
+                        $b['state']
+                    ]
+                    ?? 99;
+
+                if ($aRank !== $bRank) {
+                    return $aRank
+                        <=>
+                        $bRank;
+                }
+
+                return strcasecmp(
+                    $a['stage'],
+                    $b['stage']
+                );
+            }
+        );
+
+        return $deals;
+    }
+
+    public function hubSpotDealUrlById(
+        string $dealId
+    ): ?string {
+        $dealId =
+            trim(
+                $dealId
+            );
+
+        $portalId =
+            trim(
+                (string) config(
+                    'services.hubspot.portal_id'
+                )
+            );
+
+        if (
+            $dealId === ''
+            || $portalId === ''
+        ) {
+            return null;
+        }
+
+        return sprintf(
+            'https://app.hubspot.com/contacts/%s/record/0-3/%s',
+            rawurlencode(
+                $portalId
+            ),
+            rawurlencode(
+                $dealId
+            ),
+        );
     }
 
     public function priorityLabel(
@@ -3268,29 +3724,80 @@ new class extends Component
                     text-sm text-[#d9ddef]
                 "
             >
+
                 <option value="">
-                    Todo CRM
+                    CRM e etapas HubSpot
                 </option>
 
-                <option value="not_found">
-                    Novo
-                </option>
 
-                <option value="known">
-                    Conhecido
-                </option>
+                <optgroup
+                    label="Situação comercial"
+                >
 
-                <option value="prospected">
-                    Reprospecção
-                </option>
+                    <option value="not_found">
+                        Novo
+                    </option>
 
-                <option value="opportunity">
-                    Oportunidade
-                </option>
+                    <option value="known">
+                        Conhecido
+                    </option>
 
-                <option value="client">
-                    Cliente
-                </option>
+                    <option value="prospected">
+                        Reprospecção
+                    </option>
+
+                    <option value="opportunity">
+                        Oportunidade
+                    </option>
+
+                    <option value="client">
+                        Cliente
+                    </option>
+
+                </optgroup>
+
+
+                @if (
+                    $this->crmStageOptions
+                    !== []
+                )
+
+                    <optgroup
+                        label="Etapas dos negócios no HubSpot"
+                    >
+
+                        @foreach (
+                            $this->crmStageOptions
+                            as $stageOption
+                        )
+
+                            <option
+                                value="{{
+                                    'stage:'
+                                    .$stageOption[
+                                        'label'
+                                    ]
+                                }}"
+                            >
+                                {{
+                                    $stageOption[
+                                        'label'
+                                    ]
+                                }}
+                                ·
+                                {{
+                                    $stageOption[
+                                        'count'
+                                    ]
+                                }}
+                            </option>
+
+                        @endforeach
+
+                    </optgroup>
+
+                @endif
+
             </select>
 
             
@@ -3579,7 +4086,7 @@ new class extends Component
                     transition
                     last:border-b-0
                     hover:bg-white/[0.025]
-                    lg:grid-cols-[minmax(0,2.5fr)_100px_80px_120px_160px_140px_170px_180px]
+                    lg:grid-cols-[minmax(0,2.25fr)_105px_75px_230px_145px_125px_165px_180px]
                     lg:items-center
                 "
             >
@@ -3746,16 +4253,44 @@ new class extends Component
                         Score
                     </div>
 
-                    <div
-                        class="
-                            mt-1 text-lg
-                            font-bold
-                            text-cyan-300
-                        "
-                    >
-                        {{
-                            $displayScore
-                        }}/100
+                    <div class="ec-leads-score">
+
+                        <strong
+                            class="
+                                ec-leads-score-number
+                                {{
+                                    $this
+                                        ->scoreQualityClass(
+                                            $displayScore
+                                        )
+                                }}
+                            "
+                        >
+                            {{
+                                $displayScore
+                            }}/100
+                        </strong>
+
+
+                        <span
+                            class="
+                                ec-leads-score-quality
+                                {{
+                                    $this
+                                        ->scoreQualityClass(
+                                            $displayScore
+                                        )
+                                }}
+                            "
+                        >
+                            {{
+                                $this
+                                    ->scoreQualityLabel(
+                                        $displayScore
+                                    )
+                            }}
+                        </span>
+
                     </div>
 
                 </div>
@@ -3791,7 +4326,28 @@ new class extends Component
                 </div>
 
 
-                <div>
+                <div class="ec-leads-crm-column">
+
+                    @php
+                        $crmDeals =
+                            $this->crmDeals(
+                                $crmCheck
+                            );
+
+                        $visibleDeals =
+                            array_slice(
+                                $crmDeals,
+                                0,
+                                3
+                            );
+
+                        $hiddenDeals =
+                            array_slice(
+                                $crmDeals,
+                                3
+                            );
+                    @endphp
+
 
                     <div
                         class="
@@ -3805,19 +4361,198 @@ new class extends Component
                         CRM
                     </div>
 
-                    <div
-                        class="
-                            mt-1 text-xs
-                            font-semibold
-                            text-[#cbd1e7]
-                        "
-                    >
-                        {{
-                            $this->crmLabel(
-                                $crmCheck?->status
-                            )
-                        }}
+
+                    <div class="ec-leads-crm-summary">
+
+                        <strong>
+                            {{
+                                $this->crmLabel(
+                                    $crmCheck?->status
+                                )
+                            }}
+                        </strong>
+
+
+                        @if ($crmDeals !== [])
+
+                            <span>
+                                {{
+                                    count($crmDeals)
+                                    .' '
+                                    .(
+                                        count($crmDeals) === 1
+                                            ? 'negócio'
+                                            : 'negócios'
+                                    )
+                                }}
+                            </span>
+
+                        @endif
+
                     </div>
+
+
+                    @if ($visibleDeals !== [])
+
+                        <div class="ec-leads-crm-stages">
+
+                            @foreach (
+                                $visibleDeals
+                                as $deal
+                            )
+
+                                @if ($deal['url'])
+
+                                    <a
+                                        href="{{ $deal['url'] }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="
+                                            ec-leads-crm-stage
+                                            is-{{ $deal['state'] }}
+                                        "
+                                        title="{{
+                                            $deal['name']
+                                        }}"
+                                    >
+                                        <span></span>
+
+                                        {{
+                                            $deal['stage']
+                                        }}
+
+                                        <small>
+                                            ↗
+                                        </small>
+                                    </a>
+
+                                @else
+
+                                    <span
+                                        class="
+                                            ec-leads-crm-stage
+                                            is-{{ $deal['state'] }}
+                                        "
+                                        title="{{
+                                            $deal['name']
+                                        }}"
+                                    >
+                                        <span></span>
+
+                                        {{
+                                            $deal['stage']
+                                        }}
+                                    </span>
+
+                                @endif
+
+                            @endforeach
+
+                        </div>
+
+
+                        @if ($hiddenDeals !== [])
+
+                            <details class="ec-leads-crm-more">
+
+                                <summary>
+                                    +{{
+                                        count(
+                                            $hiddenDeals
+                                        )
+                                    }}
+
+                                    {{
+                                        count(
+                                            $hiddenDeals
+                                        ) === 1
+                                            ? 'outro negócio'
+                                            : 'outros negócios'
+                                    }}
+                                </summary>
+
+
+                                <div>
+
+                                    @foreach (
+                                        $hiddenDeals
+                                        as $deal
+                                    )
+
+                                        @if ($deal['url'])
+
+                                            <a
+                                                href="{{ $deal['url'] }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="
+                                                    ec-leads-crm-stage
+                                                    is-{{ $deal['state'] }}
+                                                "
+                                                title="{{
+                                                    $deal['name']
+                                                }}"
+                                            >
+                                                <span></span>
+
+                                                {{
+                                                    $deal['stage']
+                                                }}
+
+                                                <small>
+                                                    ↗
+                                                </small>
+                                            </a>
+
+                                        @else
+
+                                            <span
+                                                class="
+                                                    ec-leads-crm-stage
+                                                    is-{{ $deal['state'] }}
+                                                "
+                                            >
+                                                <span></span>
+
+                                                {{
+                                                    $deal['stage']
+                                                }}
+                                            </span>
+
+                                        @endif
+
+                                    @endforeach
+
+                                </div>
+
+                            </details>
+
+                        @endif
+
+                    @else
+
+                        <div class="ec-leads-crm-empty">
+
+                            @if (
+                                $crmCheck?->status
+                                === 'not_found'
+                            )
+
+                                Nenhum negócio no HubSpot
+
+                            @elseif ($crmCheck === null)
+
+                                CRM ainda não verificado
+
+                            @else
+
+                                Sem negócio associado
+
+                            @endif
+
+                        </div>
+
+                    @endif
 
                 </div>
 

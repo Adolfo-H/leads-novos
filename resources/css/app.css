@@ -15238,3 +15238,608 @@ button:disabled {
 
 
 /* SETTINGS REDESIGN - END */
+
+
+/*
+|--------------------------------------------------------------------------
+| LOGIN BACKGROUND - RESTAURACAO
+|--------------------------------------------------------------------------
+*/
+
+.ec-auth-login-page {
+    position: relative;
+
+    min-height: 100vh;
+
+    overflow: hidden;
+
+    isolation: isolate;
+
+    background: #041a2a;
+}
+
+
+.ec-auth-login-background {
+    position: absolute !important;
+
+    z-index: -3 !important;
+
+    inset: 0 !important;
+
+    width: 100% !important;
+    height: 100% !important;
+
+    background-repeat: no-repeat !important;
+
+    background-position:
+        center center !important;
+
+    background-size:
+        cover !important;
+
+    opacity: 1 !important;
+
+    transform:
+        scale(1.01);
+
+    pointer-events: none;
+}
+
+
+/*
+ * Camada azul escura por cima da foto.
+ * Mantém a imagem visível sem prejudicar
+ * a leitura do login.
+ */
+
+.ec-auth-login-overlay {
+    position: absolute !important;
+
+    z-index: -2 !important;
+
+    inset: 0 !important;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(
+                2,
+                21,
+                35,
+                .70
+            ) 0%,
+            rgba(
+                2,
+                24,
+                39,
+                .54
+            ) 42%,
+            rgba(
+                3,
+                28,
+                44,
+                .60
+            ) 100%
+        ),
+        linear-gradient(
+            180deg,
+            rgba(
+                0,
+                13,
+                24,
+                .10
+            ),
+            rgba(
+                0,
+                15,
+                27,
+                .28
+            )
+        ) !important;
+
+    pointer-events: none;
+}
+
+
+.ec-auth-login-layout {
+    position: relative;
+
+    z-index: 1;
+}
+
+
+/* CRM DEAL STAGES - START */
+
+
+/*
+|--------------------------------------------------------------------------
+| Score comercial
+|--------------------------------------------------------------------------
+*/
+
+.ec-leads-score {
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: 7px;
+
+    margin-top: 5px;
+}
+
+
+.ec-leads-score-number {
+    font-size: 20px;
+
+    line-height: 1;
+
+    font-weight: 750;
+}
+
+
+.ec-leads-score-number.is-good {
+    color: #35dfcc;
+}
+
+
+.ec-leads-score-number.is-low {
+    color: #e5b857;
+}
+
+
+.ec-leads-score-quality {
+    display: inline-flex;
+
+    align-items: center;
+
+    min-height: 22px;
+
+    padding:
+        0
+        7px;
+
+    border-radius: 999px;
+
+    font-size: 8px;
+
+    font-weight: 750;
+
+    white-space: nowrap;
+}
+
+
+.ec-leads-score-quality.is-good {
+    border:
+        1px solid
+        rgba(
+            48,
+            216,
+            194,
+            .19
+        );
+
+    color: #52dfcd;
+
+    background:
+        rgba(
+            48,
+            216,
+            194,
+            .07
+        );
+}
+
+
+.ec-leads-score-quality.is-low {
+    border:
+        1px solid
+        rgba(
+            229,
+            184,
+            87,
+            .19
+        );
+
+    color: #dfbd70;
+
+    background:
+        rgba(
+            229,
+            184,
+            87,
+            .06
+        );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CRM / negócios HubSpot
+|--------------------------------------------------------------------------
+*/
+
+.ec-leads-crm-column {
+    min-width: 0;
+}
+
+
+.ec-leads-crm-summary {
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap:
+        5px
+        7px;
+
+    margin-top: 5px;
+}
+
+
+.ec-leads-crm-summary strong {
+    color: #dce8f5;
+
+    font-size: 11px;
+
+    font-weight: 700;
+}
+
+
+.ec-leads-crm-summary > span {
+    display: inline-flex;
+
+    align-items: center;
+
+    padding:
+        3px
+        6px;
+
+    border:
+        1px solid
+        rgba(
+            73,
+            132,
+            193,
+            .17
+        );
+
+    border-radius: 999px;
+
+    color: #738fac;
+
+    background:
+        rgba(
+            17,
+            58,
+            96,
+            .18
+        );
+
+    font-size: 8px;
+
+    font-weight: 650;
+}
+
+
+.ec-leads-crm-stages {
+    display: flex;
+
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+    margin-top: 8px;
+}
+
+
+.ec-leads-crm-stage {
+    width: fit-content;
+
+    max-width: 100%;
+
+    min-height: 25px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    padding:
+        4px
+        7px;
+
+    overflow: hidden;
+
+    border-radius: 6px;
+
+    font-size: 9px;
+
+    font-weight: 700;
+
+    line-height: 1.25;
+
+    text-decoration: none;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    transition:
+        border-color 150ms ease,
+        background-color 150ms ease,
+        transform 150ms ease;
+}
+
+
+.ec-leads-crm-stage
+> span {
+    width: 6px;
+    height: 6px;
+
+    flex:
+        0
+        0
+        6px;
+
+    border-radius: 50%;
+
+    background: currentColor;
+}
+
+
+.ec-leads-crm-stage small {
+    opacity: .65;
+
+    font-size: 8px;
+}
+
+
+/*
+ * Negócio ABERTO.
+ *
+ * Ex.:
+ * Leads frios
+ * Leads qualificado
+ * Reunião agendada
+ * Proposta apresentada
+ */
+
+.ec-leads-crm-stage.is-active {
+    border:
+        1px solid
+        rgba(
+            47,
+            211,
+            199,
+            .22
+        );
+
+    color: #51ddcb;
+
+    background:
+        rgba(
+            31,
+            155,
+            151,
+            .075
+        );
+}
+
+
+.ec-leads-crm-stage.is-active:hover {
+    border-color:
+        rgba(
+            47,
+            211,
+            199,
+            .40
+        );
+
+    background:
+        rgba(
+            31,
+            155,
+            151,
+            .13
+        );
+
+    transform:
+        translateX(1px);
+}
+
+
+/*
+ * Negócio ganho.
+ */
+
+.ec-leads-crm-stage.is-won {
+    border:
+        1px solid
+        rgba(
+            67,
+            213,
+            146,
+            .22
+        );
+
+    color: #5be0a4;
+
+    background:
+        rgba(
+            67,
+            213,
+            146,
+            .075
+        );
+}
+
+
+/*
+ * Negócio encerrado / perdido.
+ */
+
+.ec-leads-crm-stage.is-closed {
+    border:
+        1px solid
+        rgba(
+            125,
+            144,
+            169,
+            .16
+        );
+
+    color: #8298b1;
+
+    background:
+        rgba(
+            77,
+            103,
+            134,
+            .08
+        );
+}
+
+
+.ec-leads-crm-empty {
+    margin-top: 7px;
+
+    color: #607d9b;
+
+    font-size: 9px;
+
+    line-height: 1.4;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Vários negócios
+|--------------------------------------------------------------------------
+*/
+
+.ec-leads-crm-more {
+    position: relative;
+
+    margin-top: 6px;
+}
+
+
+.ec-leads-crm-more summary {
+    width: fit-content;
+
+    color: #7896b4;
+
+    font-size: 9px;
+
+    font-weight: 650;
+
+    cursor: pointer;
+
+    list-style: none;
+}
+
+
+.ec-leads-crm-more summary::-webkit-details-marker {
+    display: none;
+}
+
+
+.ec-leads-crm-more summary:hover {
+    color: #39ddca;
+}
+
+
+.ec-leads-crm-more > div {
+    display: flex;
+
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+    margin-top: 7px;
+
+    padding-left: 4px;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CRM em telas menores
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 1250px) {
+
+    .ec-leads-crm-stage {
+        max-width: 190px;
+    }
+
+}
+
+
+/* CRM DEAL STAGES - END */
+
+
+/*
+|--------------------------------------------------------------------------
+| FILTRO CRM + ETAPAS HUBSPOT
+|--------------------------------------------------------------------------
+*/
+
+.ec-leads-filter-panel
+select
+optgroup {
+    color: #46dcca;
+
+    background: #081f3b;
+
+    font-weight: 700;
+}
+
+
+.ec-leads-filter-panel
+select
+option {
+    color: #dce8f5;
+
+    background: #081f3b;
+
+    font-weight: 500;
+}
+
+
+.ec-leads-filter-panel
+select
+optgroup
+option {
+    padding-left: 12px;
+
+    color: #c4d4e4;
+}
+
+
+.ec-leads-crm-summary
+strong {
+    font-size: 11px;
+}
+
+
+.ec-leads-crm-stage {
+    box-shadow:
+        inset 0 1px 0
+        rgba(
+            255,
+            255,
+            255,
+            .018
+        );
+}

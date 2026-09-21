@@ -23,6 +23,10 @@
             <div
                 class="ec-auth-login-background"
                 aria-hidden="true"
+                style="
+                    background-image:
+                        url('{{ asset('images/brand/login-background.png') }}');
+                "
             ></div>
 
             <div

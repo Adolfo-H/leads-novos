@@ -79,7 +79,7 @@ services:
             - redis
             - --sleep=1
             - --tries=4
-            - --timeout=300
+            - --timeout=600
             - --max-time=3600
         restart: unless-stopped
 

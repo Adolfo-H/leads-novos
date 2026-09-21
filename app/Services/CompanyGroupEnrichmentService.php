@@ -113,6 +113,7 @@ final class CompanyGroupEnrichmentService
                         $companyData,
                         $establishmentData,
                         $cnaes,
+                        loadRelations: false,
                     );
         }
 

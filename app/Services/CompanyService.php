@@ -20,11 +20,13 @@ final class CompanyService
         array $companyData,
         array $establishmentData,
         array $cnaes = [],
+        bool $loadRelations = true,
     ): Company {
         return DB::transaction(function () use (
             $companyData,
             $establishmentData,
             $cnaes,
+            $loadRelations,
         ): Company {
             if (
                 empty($establishmentData['cnpj'])
@@ -290,6 +292,21 @@ final class CompanyService
                             ),
                         ],
                     ]);
+            }
+
+            /*
+             * Importações de grupos empresariais grandes
+             * podem passar por centenas de estabelecimentos.
+             *
+             * Durante esse processamento não devemos
+             * recarregar matriz + todas as filiais + CNAEs
+             * a cada unidade processada.
+             *
+             * A carga completa continua sendo o padrão
+             * para os demais fluxos do sistema.
+             */
+            if (! $loadRelations) {
+                return $company;
             }
 
             return $company
