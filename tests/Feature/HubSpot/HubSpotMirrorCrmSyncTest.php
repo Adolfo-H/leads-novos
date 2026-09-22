@@ -139,11 +139,18 @@ it(
         expect(
             $score
                 ?->score
-        )->toBe(0);
+        )->toBe(22);
+
+        expect(
+            $score
+                ?->priority
+        )->toBe(
+            'low'
+        );
 
         expect(
             $score
                 ?->is_eligible
-        )->toBeFalse();
+        )->toBeTrue();
     }
 );

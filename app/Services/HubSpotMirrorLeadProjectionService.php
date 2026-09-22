@@ -6,11 +6,15 @@ use App\Models\Company;
 use App\Models\CompanyHubSpotLead;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
-use Illuminate\Support\Str;
 use Throwable;
 
 final class HubSpotMirrorLeadProjectionService
 {
+    public function __construct(
+        private readonly LeadOperationalClassificationService $classification,
+        private readonly LeadQualificationScoreService $qualification,
+    ) {}
+
     /**
      * @return array{
      *     hubspot_company_id: string|null,
@@ -19,6 +23,7 @@ final class HubSpotMirrorLeadProjectionService
      *     pipeline_id: string|null,
      *     deal_stage_id: string|null,
      *     work_status: string,
+     *     commercial_status: string,
      *     last_activity_type: string|null,
      *     last_activity_at: CarbonImmutable|null,
      *     open_task_count: int,
@@ -81,13 +86,19 @@ final class HubSpotMirrorLeadProjectionService
             );
 
         $workStatus =
-            $this->workStatus(
-                crmStatus: $crm?->status,
+            $this
+                ->classification
+                ->workStatus(
+                    $crm,
+                    $openTasks
+                );
 
-                deals: $deals,
-
-                openTasks: $openTasks,
-            );
+        $commercialStatus =
+            $this
+                ->classification
+                ->commercialStatus(
+                    $crm
+                );
 
         $nextTaskDueAt =
             $this->nextTaskDueAt(
@@ -219,6 +230,8 @@ final class HubSpotMirrorLeadProjectionService
 
             'work_status' => $workStatus,
 
+            'commercial_status' => $commercialStatus,
+
             'last_activity_type' => $lastActivityAt !== null
                     ? 'hubspot_activity'
                     : null,
@@ -257,6 +270,8 @@ final class HubSpotMirrorLeadProjectionService
                     ),
 
                     'work_status' => $workStatus,
+
+                    'commercial_status' => $commercialStatus,
                 ],
 
                 /*
@@ -351,6 +366,10 @@ final class HubSpotMirrorLeadProjectionService
 
                     'work_status' => $nextStatus,
 
+                    'commercial_status' => $projection[
+                            'commercial_status'
+                        ],
+
                     'work_status_changed_at' => $statusChangedAt,
 
                     'last_activity_type' => $projection[
@@ -381,119 +400,6 @@ final class HubSpotMirrorLeadProjectionService
                 ]
             )
             ->refresh();
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $deals
-     * @param  list<array<string, mixed>>  $openTasks
-     */
-    private function workStatus(
-        ?string $crmStatus,
-        array $deals,
-        array $openTasks,
-    ): string {
-        foreach ($deals as $deal) {
-            if (
-                $this->boolean(
-                    $deal[
-                        'is_closed_won'
-                    ]
-                    ?? false
-                )
-            ) {
-                return 'converted';
-            }
-        }
-
-        $openDeals = [];
-
-        foreach ($deals as $deal) {
-            if (
-                ! $this->boolean(
-                    $deal[
-                        'is_closed'
-                    ]
-                    ?? false
-                )
-            ) {
-                $openDeals[] =
-                    $deal;
-            }
-        }
-
-        if ($openDeals !== []) {
-            $allFuture =
-                true;
-
-            foreach ($openDeals as $deal) {
-                if (
-                    ! $this->isFutureStage(
-                        $deal[
-                            'stage_label'
-                        ]
-                        ?? null
-                    )
-                ) {
-                    $allFuture =
-                        false;
-
-                    break;
-                }
-            }
-
-            if ($allFuture) {
-                return 'future';
-            }
-
-            if ($openTasks !== []) {
-                return 'waiting';
-            }
-
-            return 'contacting';
-        }
-
-        $representative =
-            $this->representativeDeal(
-                $deals
-            );
-
-        $stage =
-            $this->normalizedStage(
-                $representative[
-                    'stage_label'
-                ]
-                ?? null
-            );
-
-        if (
-            str_contains(
-                $stage,
-                'RECUSOU'
-            )
-        ) {
-            return 'refused';
-        }
-
-        if (
-            str_contains(
-                $stage,
-                'OPORTUNIDADE FUTURA'
-            )
-        ) {
-            return 'future';
-        }
-
-        if ($deals !== []) {
-            return 'discarded';
-        }
-
-        if (
-            $crmStatus === 'prospected'
-        ) {
-            return 'discarded';
-        }
-
-        return 'new';
     }
 
     /**
@@ -649,112 +555,27 @@ final class HubSpotMirrorLeadProjectionService
     private function qualificationSnapshot(
         Company $company
     ): array {
-        $grade =
-            trim(
-                (string) (
-                    $company->icpScore->grade ?? ''
-                )
-            );
-
-        $score =
-            match ($grade) {
-                'A' => 30,
-                'B' => 22,
-                'C' => 10,
-                default => 0,
-            };
-
-        $export =
-            $company
-                ->exportIntelligence;
-
-        $score +=
-            $this->exportPoints(
-                $export
-                    ?->direct_status,
-                $export
-                    ?->direct_confidence,
-                25,
-            );
-
-        $score +=
-            $this->exportPoints(
-                $export
-                    ?->indirect_status,
-                $export
-                    ?->indirect_confidence,
-                25,
-            );
-
-        $score +=
-            $this->exportPoints(
-                $export
-                    ?->trading_status,
-                $export
-                    ?->trading_confidence,
-                10,
-            );
-
-        $score =
-            min(
-                100,
-                $score
-            );
-
-        $priority =
-            match (true) {
-                $score >= 85 => 'very_high',
-
-                $score >= 70 => 'high',
-
-                $score >= 50 => 'medium',
-
-                default => 'low',
-            };
+        $result =
+            $this
+                ->qualification
+                ->calculate(
+                    $company
+                );
 
         return [
-            'score' => $score,
+            'score' => $result[
+                    'score'
+                ],
 
-            'priority' => $priority,
+            'priority' => $result[
+                    'priority'
+                ],
 
-            'source' => 'qualification_before_crm_block',
+            'source' => 'lead_qualification_v3',
 
             'calculated_at' => now()
                 ->toIso8601String(),
         ];
-    }
-
-    private function exportPoints(
-        mixed $status,
-        mixed $confidence,
-        int $maximum,
-    ): int {
-        if (
-            $status !== 'yes'
-        ) {
-            return 0;
-        }
-
-        $confidence =
-            is_numeric(
-                $confidence
-            )
-                ? max(
-                    0,
-                    min(
-                        100,
-                        (int) $confidence
-                    )
-                )
-                : 0;
-
-        return (int) round(
-            $maximum
-            * (
-                $confidence
-                / 100
-            )
-        );
     }
 
     /**
@@ -842,33 +663,6 @@ final class HubSpotMirrorLeadProjectionService
         return $value !== ''
             ? $value
             : null;
-    }
-
-    private function isFutureStage(
-        mixed $stage
-    ): bool {
-        return str_contains(
-            $this->normalizedStage(
-                $stage
-            ),
-            'OPORTUNIDADE FUTURA'
-        );
-    }
-
-    private function normalizedStage(
-        mixed $stage
-    ): string {
-        if (! is_string($stage)) {
-            return '';
-        }
-
-        return mb_strtoupper(
-            Str::ascii(
-                trim(
-                    $stage
-                )
-            )
-        );
     }
 
     private function boolean(

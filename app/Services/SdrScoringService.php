@@ -3,32 +3,34 @@
 namespace App\Services;
 
 use App\Models\Company;
-use App\Models\CompanyExportIntelligence;
 use App\Models\CompanySdrScore;
 
 final class SdrScoringService
 {
-    private const VERSION = 'v2';
+    private const VERSION = 'v3';
 
     /**
+     * Cliente não deve voltar para a fila
+     * operacional SDR.
+     *
+     * Oportunidade aberta NÃO é mais bloqueada:
+     * ela continua recebendo score e prioridade.
+     *
      * @var list<string>
      */
     private const BLOCKED_CRM_STATUSES = [
         'client',
-        'opportunity',
     ];
 
     public function __construct(
-        private readonly CrmReprospectingPolicyService $reprospecting,
+        private readonly LeadQualificationScoreService $qualification,
     ) {}
 
     public function recalculate(
         Company $company
     ): CompanySdrScore {
         $company->loadMissing([
-            'icpScore',
             'crmCheck',
-            'exportIntelligence',
         ]);
 
         $crm =
@@ -36,13 +38,12 @@ final class SdrScoringService
 
         $crmStatus =
             $this->stringValue(
-                $crm
-                    ?->getAttribute('status')
+                $crm?->status
             );
 
-        $reprospecting =
-            null;
-
+        /*
+         * Cliente continua bloqueado para SDR.
+         */
         if (
             $crmStatus !== null
             && in_array(
@@ -57,187 +58,11 @@ final class SdrScoringService
             );
         }
 
-        /*
-         * Prospectado não é bloqueio eterno.
-         *
-         * Se o período de carência terminou,
-         * a empresa volta a poder receber Score.
-         */
-        if (
-            $crmStatus === 'prospected'
-            && $crm !== null
-        ) {
-            $reprospecting =
-                $this->reprospecting
-                    ->evaluate(
-                        $crm
-                    );
-
-            if (
-                ! $reprospecting[
-                    'eligible'
-                ]
-            ) {
-                return $this->storeBlocked(
-                    company: $company,
-                    crmStatus: 'prospected',
-                    reason: $reprospecting[
-                        'message'
-                    ],
-                    extraMetadata: [
-                        'reprospecting' => $reprospecting,
-                    ],
+        $result =
+            $this->qualification
+                ->calculate(
+                    $company
                 );
-            }
-        }
-
-        $factors = [];
-
-        /*
-         * ICP
-         *
-         * A = 30
-         * B = 22
-         * C = 10
-         * D = 0
-         */
-        $grade =
-            $this->stringValue(
-                $company
-                    ->icpScore
-                    ?->getAttribute('grade')
-            );
-
-        $icpPoints =
-            match ($grade) {
-                'A' => 30,
-                'B' => 22,
-                'C' => 10,
-                default => 0,
-            };
-
-        $factors[] =
-            $this->factor(
-                key: 'icp',
-                label: 'Perfil ICP',
-                points: $icpPoints,
-                maxPoints: 30,
-                detail: $grade
-                        ? 'ICP '.$grade
-                        : 'ICP não calculado',
-            );
-
-        /*
-         * CRM
-         *
-         * Não encontrado = ótima oportunidade
-         * Conhecido = já existe registro, mas
-         * ainda não bloqueia prospecção.
-         */
-        $crmPoints =
-            match ($crmStatus) {
-                'not_found' => 10,
-                'known' => 5,
-                'prospected' => 0,
-                default => 0,
-            };
-
-        $factors[] =
-            $this->factor(
-                key: 'crm',
-                label: 'Disponibilidade comercial',
-                points: $crmPoints,
-                maxPoints: 10,
-                detail: match ($crmStatus) {
-                    'not_found' => 'Empresa nova no CRM',
-
-                    'known' => 'Empresa conhecida no CRM',
-
-                    'prospected' => 'Reprospecção liberada',
-
-                    null => 'CRM não verificado',
-
-                    default => 'Sem bônus comercial',
-                },
-            );
-
-        $export =
-            $company->exportIntelligence;
-
-        $direct =
-            $this->dimensionScore(
-                intelligence: $export,
-                dimension: 'direct',
-                label: 'Exportação direta',
-                maxYes: 25,
-            );
-
-        $indirect =
-            $this->dimensionScore(
-                intelligence: $export,
-                dimension: 'indirect',
-                label: 'Exportação indireta',
-                maxYes: 25,
-            );
-
-        $trading =
-            $this->dimensionScore(
-                intelligence: $export,
-                dimension: 'trading',
-                label: 'Relação com trading',
-                maxYes: 10,
-            );
-
-        $factors[] =
-            $direct['factor'];
-
-        $factors[] =
-            $indirect['factor'];
-
-        $factors[] =
-            $trading['factor'];
-
-        $score =
-            min(
-                100,
-                $icpPoints
-                + $crmPoints
-                + $direct['points']
-                + $indirect['points']
-                + $trading['points']
-            );
-
-        $priority =
-            match (true) {
-                $score >= 85 => 'very_high',
-
-                $score >= 70 => 'high',
-
-                $score >= 50 => 'medium',
-
-                default => 'low',
-            };
-
-        $label =
-            match ($priority) {
-                'very_high' => 'Prioridade muito alta',
-
-                'high' => 'Prioridade alta',
-
-                'medium' => 'Prioridade média',
-
-                default => 'Prioridade baixa',
-            };
-
-        $researchComplete =
-            ! $direct['not_researched']
-            && ! $indirect['not_researched']
-            && ! $trading['not_researched'];
-
-        $isProvisional =
-            $grade === null
-            || $crmStatus === null
-            || ! $researchComplete;
 
         return CompanySdrScore::query()
             ->updateOrCreate(
@@ -245,30 +70,51 @@ final class SdrScoringService
                     'company_id' => $company->id,
                 ],
                 [
-                    'score' => $score,
+                    'score' => $result[
+                            'score'
+                        ],
 
-                    'priority' => $priority,
+                    'priority' => $result[
+                            'priority'
+                        ],
 
-                    'label' => $label,
+                    'label' => $result[
+                            'label'
+                        ],
 
                     'is_eligible' => true,
 
-                    'is_provisional' => $isProvisional,
+                    'is_provisional' => ! $result[
+                            'research_complete'
+                        ],
 
                     'blocked_reason' => null,
 
-                    'factors' => $factors,
+                    'factors' => $result[
+                            'factors'
+                        ],
 
                     'version' => self::VERSION,
 
                     'metadata' => [
-                        'research_complete' => $researchComplete,
+                        'research_complete' => $result[
+                                'research_complete'
+                            ],
 
                         'crm_status' => $crmStatus,
 
-                        'icp_grade' => $grade,
+                        'commercial_status' => $result[
+                                'commercial_status'
+                            ],
 
-                        'reprospecting' => $reprospecting,
+                        'work_status' => $result[
+                                'work_status'
+                            ],
+
+                        'icp_raw_score' => $result[
+                                'icp_raw_score'
+                            ],
+
                     ],
 
                     'calculated_at' => now(),
@@ -289,9 +135,7 @@ final class SdrScoringService
             match ($crmStatus) {
                 'client' => 'Empresa já é cliente',
 
-                'opportunity' => 'Empresa já possui oportunidade',
-
-                'prospected' => 'Empresa já foi prospectada',
+                'prospected' => 'Empresa prospectada recentemente',
 
                 default => 'Empresa não elegível',
             };
@@ -314,15 +158,7 @@ final class SdrScoringService
 
                     'blocked_reason' => $reason,
 
-                    'factors' => [
-                        $this->factor(
-                            key: 'crm_block',
-                            label: 'Bloqueio comercial',
-                            points: 0,
-                            maxPoints: 0,
-                            detail: $reason,
-                        ),
-                    ],
+                    'factors' => [],
 
                     'version' => self::VERSION,
 
@@ -338,147 +174,18 @@ final class SdrScoringService
             );
     }
 
-    /**
-     * @return array{
-     *     points: int,
-     *     not_researched: bool,
-     *     factor: array{
-     *         key: string,
-     *         label: string,
-     *         points: int,
-     *         max_points: int,
-     *         detail: string
-     *     }
-     * }
-     */
-    private function dimensionScore(
-        ?CompanyExportIntelligence $intelligence,
-        string $dimension,
-        string $label,
-        int $maxYes,
-    ): array {
-        if (! $intelligence) {
-            return [
-                'points' => 0,
-
-                'not_researched' => true,
-
-                'factor' => $this->factor(
-                    key: $dimension,
-                    label: $label,
-                    points: 0,
-                    maxPoints: $maxYes,
-                    detail: 'Não pesquisada',
-                ),
-            ];
-        }
-
-        $status =
-            $this->stringValue(
-                $intelligence
-                    ->getAttribute(
-                        $dimension.'_status'
-                    )
-            )
-            ?? 'not_researched';
-
-        $rawConfidence =
-            $intelligence
-                ->getAttribute(
-                    $dimension.'_confidence'
-                );
-
-        $confidence =
-            is_numeric($rawConfidence)
-                ? max(
-                    0,
-                    min(
-                        100,
-                        (int) $rawConfidence
-                    )
-                )
-                : 0;
-
-        $points =
-            match ($status) {
-                'yes' => (int) round(
-                    $maxYes
-                    * (
-                        $confidence
-                        / 100
-                    )
-                ),
-
-                'uncertain' => 0,
-
-                default => 0,
-            };
-
-        $detail =
-            match ($status) {
-                'yes' => 'Sim · '
-                    .$confidence
-                    .'% de confiança',
-
-                'no' => 'Não · '
-                    .$confidence
-                    .'% de confiança',
-
-                'uncertain' => 'Sem comprovação suficiente',
-
-                default => 'Não pesquisada',
-            };
-
-        return [
-            'points' => $points,
-
-            'not_researched' => $status === 'not_researched',
-
-            'factor' => $this->factor(
-                key: $dimension,
-                label: $label,
-                points: $points,
-                maxPoints: $maxYes,
-                detail: $detail,
-            ),
-        ];
-    }
-
-    /**
-     * @return array{
-     *     key: string,
-     *     label: string,
-     *     points: int,
-     *     max_points: int,
-     *     detail: string
-     * }
-     */
-    private function factor(
-        string $key,
-        string $label,
-        int $points,
-        int $maxPoints,
-        string $detail,
-    ): array {
-        return [
-            'key' => $key,
-
-            'label' => $label,
-
-            'points' => $points,
-
-            'max_points' => $maxPoints,
-
-            'detail' => $detail,
-        ];
-    }
-
     private function stringValue(
         mixed $value
     ): ?string {
-        return is_string($value)
-            && $value !== ''
-                ? $value
+        return is_string(
+            $value
+        )
+            && trim(
+                $value
+            ) !== ''
+                ? trim(
+                    $value
+                )
                 : null;
     }
 }

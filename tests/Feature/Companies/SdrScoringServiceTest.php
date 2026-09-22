@@ -87,7 +87,7 @@ it('blocks an existing client regardless of ICP', function () {
         ->toBe('Não priorizar');
 });
 
-it('gives very high priority to a strong new exporter', function () {
+it('gives high priority to a strong new exporter', function () {
     $company =
         sdrCompany(
             crmStatus: 'not_found',
@@ -125,23 +125,24 @@ it('gives very high priority to a strong new exporter', function () {
     );
 
     /*
-     * ICP     30
-     * CRM     10
-     * Direta  23
-     * Indireta20
-     * Trading  7
-     * ----------
-     * Total    90
+     * ICP real 100 x 60% = 60
+     * Situação Novo      = 15
+     * Acompanhamento Novo = 5
+     * Exportação direta   = 4
+     * Exportação indireta = 3
+     * Trading             = 1
+     * ------------------------
+     * Total               = 88
      */
     expect($score->score)
-        ->toBe(90);
+        ->toBe(88);
 
     expect($score->priority)
-        ->toBe('very_high');
+        ->toBe('high');
 
     expect($score->label)
         ->toBe(
-            'Prioridade muito alta'
+            'Prioridade alta'
         );
 
     expect($score->is_provisional)
@@ -162,10 +163,10 @@ it('keeps the score provisional before export research', function () {
     );
 
     expect($score->score)
-        ->toBe(40);
+        ->toBe(80);
 
     expect($score->priority)
-        ->toBe('low');
+        ->toBe('high');
 
     expect($score->is_provisional)
         ->toBeTrue();
@@ -232,14 +233,16 @@ it('does not award export points for uncertain research', function () {
     );
 
     /*
-     * ICP A = 30
-     * CRM novo = 10
+     * ICP real 100 x 60% = 60
+     * Situação Novo      = 15
+     * Acompanhamento Novo = 5
      *
      * Pesquisa inconclusiva não dá bônus.
+     * Total = 80.
      */
     expect(
         $score->score
-    )->toBe(40);
+    )->toBe(80);
 
     $factors =
         collect(

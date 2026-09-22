@@ -57,14 +57,21 @@ it('recalculates SDR score automatically after ICP calculation', function () {
 
     expect(
         $score->score
-    )->toBe(30);
+    )->toBe(74);
 
     expect(
         data_get(
             $score->metadata,
-            'icp_grade'
+            'icp_raw_score'
         )
-    )->toBe('A');
+    )->toBe(90);
+
+    expect(
+        data_get(
+            $score->metadata,
+            'commercial_status'
+        )
+    )->toBe('new');
 
     expect(
         $score->is_provisional
@@ -143,7 +150,9 @@ it('recalculates SDR score automatically after CRM change', function () {
                         ],
                     ],
 
-                    'last_contacted_at' => '2026-09-01T10:00:00Z',
+                    'last_contacted_at' => now()
+                        ->subDays(5)
+                        ->toIso8601String(),
 
                     'matched_by' => 'domain',
 
@@ -169,16 +178,22 @@ it('recalculates SDR score automatically after CRM change', function () {
             ->firstOrFail();
 
     expect(
+        $score->score
+    )->toBe(76);
+
+    expect(
         $score->priority
     )->toBe(
-        'blocked'
+        'high'
     );
 
     expect(
         $score->blocked_reason
-    )->toBe(
-        'Empresa já possui oportunidade'
-    );
+    )->toBeNull();
+
+    expect(
+        $score->is_eligible
+    )->toBeTrue();
 
     expect(
         data_get(
@@ -245,20 +260,21 @@ it('recalculates SDR score automatically after export classification', function 
             ->firstOrFail();
 
     /*
-     * ICP A     = 30
-     * CRM novo  = 10
-     * Direta    = 25
-     * ----------------
-     * Total     = 65
+     * ICP real 90 x 60% = 54
+     * Situação Novo     = 15
+     * Acompanhamento    = 5
+     * Exportação direta = 4
+     * -----------------------
+     * Total             = 78
      */
     expect(
         $score->score
-    )->toBe(65);
+    )->toBe(78);
 
     expect(
         $score->priority
     )->toBe(
-        'medium'
+        'high'
     );
 
     expect(

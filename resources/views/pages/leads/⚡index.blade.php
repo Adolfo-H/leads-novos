@@ -1023,6 +1023,8 @@ new class extends Component
 
             'future' => 'Oportunidade futura',
 
+            'reprospecting' => 'Reprospecção',
+
             'refused' => 'Recusou',
 
             'converted' => 'Convertido',
@@ -1042,6 +1044,8 @@ new class extends Component
             'waiting' => 'text-amber-300',
 
             'future' => 'text-violet-300',
+
+            'reprospecting' => 'text-rose-300',
 
             'refused' => 'text-rose-300',
 
@@ -2381,7 +2385,9 @@ new class extends Component
         return match (
             $lead->work_status
         ) {
-            'future' => 'Oportunidade reservada para momento futuro',
+            'future' => 'Último contato há mais de 30 dias',
+
+            'reprospecting' => 'Sem atividade comercial há mais de 90 dias',
 
             'refused' => 'Negócio marcado como recusado no HubSpot',
 
@@ -2418,6 +2424,8 @@ new class extends Component
 
             'future' => 'text-violet-300',
 
+            'reprospecting' => 'text-rose-300',
+
             'refused' => 'text-rose-300',
 
             'converted' => 'text-emerald-300',
@@ -2446,6 +2454,8 @@ new class extends Component
             'contacting' => 'Continuar abordagem',
 
             'future' => 'Ver oportunidade futura',
+
+            'reprospecting' => 'Retomar contato',
 
             'refused' => 'Ver recusa',
 
@@ -2481,6 +2491,8 @@ new class extends Component
             'contacting' => 'text-cyan-300 hover:text-cyan-200',
 
             'future' => 'text-violet-300 hover:text-violet-200',
+
+            'reprospecting' => 'text-rose-300 hover:text-rose-200',
 
             'refused' => 'text-rose-300 hover:text-rose-200',
 
@@ -2622,367 +2634,975 @@ new class extends Component
 ?>
 
 <div
-    class="ec-page-shell ec-leads-page"
+    class="ec-page-shell leads-rf"
     wire:poll.15s="$refresh"
 >
 
-    <section class="ec-leads-hero">
+<style>
+    .leads-rf {
+        --rf-bg: #071b31;
+        --rf-panel: #0b2845;
+        --rf-panel-2: #0d3152;
+        --rf-border: rgba(111, 181, 226, .16);
+        --rf-border-strong: rgba(63, 213, 210, .32);
+        --rf-text: #f2f7ff;
+        --rf-muted: #7896b5;
+        --rf-muted-2: #9cb3ca;
+        --rf-cyan: #2eddd2;
+        --rf-blue: #4aa8ff;
+        --rf-green: #42dfac;
+        --rf-yellow: #f5c54b;
+        --rf-red: #ff6e7b;
+        --rf-violet: #b18cff;
+        color: var(--rf-text);
+    }
 
-        <div class="ec-leads-hero-copy">
+    .leads-rf * {
+        box-sizing: border-box;
+    }
 
-            <div class="ec-page-kicker">
-                Prioridade Comercial
+    .rf-shell {
+        display: grid;
+        gap: 18px;
+    }
+
+    .rf-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 24px;
+        padding: 4px 2px 8px;
+    }
+
+    .rf-kicker {
+        color: var(--rf-cyan);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+    }
+
+    .rf-title-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 4px;
+    }
+
+    .rf-title {
+        margin: 0;
+        color: white;
+        font-size: clamp(30px, 3vw, 46px);
+        line-height: 1;
+        letter-spacing: -.035em;
+        font-weight: 800;
+    }
+
+    .rf-count-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border: 1px solid rgba(46,221,210,.3);
+        border-radius: 999px;
+        background: rgba(46,221,210,.07);
+        color: var(--rf-cyan);
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .rf-subtitle {
+        max-width: 680px;
+        margin: 10px 0 0;
+        color: var(--rf-muted-2);
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .rf-header-guide {
+        max-width: 350px;
+        padding: 12px 14px;
+        border: 1px solid var(--rf-border);
+        border-radius: 14px;
+        background: linear-gradient(
+            135deg,
+            rgba(46,221,210,.06),
+            rgba(74,168,255,.025)
+        );
+    }
+
+    .rf-header-guide strong {
+        display: block;
+        color: var(--rf-text);
+        font-size: 12px;
+    }
+
+    .rf-header-guide span {
+        display: block;
+        margin-top: 3px;
+        color: var(--rf-muted);
+        font-size: 11px;
+        line-height: 1.45;
+    }
+
+    .rf-alert {
+        padding: 12px 15px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .rf-alert-ok {
+        border: 1px solid rgba(66,223,172,.24);
+        background: rgba(66,223,172,.07);
+        color: var(--rf-green);
+    }
+
+    .rf-alert-error {
+        border: 1px solid rgba(255,110,123,.24);
+        background: rgba(255,110,123,.07);
+        color: var(--rf-red);
+    }
+
+    .rf-kpis {
+        display: grid;
+        grid-template-columns:
+            repeat(6, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .rf-kpi {
+        position: relative;
+        min-height: 100px;
+        padding: 16px;
+        overflow: hidden;
+        border: 1px solid var(--rf-border);
+        border-radius: 15px;
+        background:
+            linear-gradient(
+                145deg,
+                rgba(18, 60, 96, .72),
+                rgba(7, 32, 57, .94)
+            );
+    }
+
+    .rf-kpi::after {
+        content: "";
+        position: absolute;
+        width: 70px;
+        height: 70px;
+        top: -25px;
+        right: -22px;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: .04;
+    }
+
+    .rf-kpi-label {
+        color: var(--rf-muted);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+    }
+
+    .rf-kpi-value {
+        margin-top: 8px;
+        color: white;
+        font-size: 26px;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -.03em;
+    }
+
+    .rf-kpi-caption {
+        margin-top: 8px;
+        color: var(--rf-muted-2);
+        font-size: 10px;
+        line-height: 1.35;
+    }
+
+    .rf-kpi-total {
+        color: var(--rf-cyan);
+    }
+
+    .rf-kpi-high {
+        color: var(--rf-red);
+    }
+
+    .rf-kpi-new {
+        color: var(--rf-blue);
+    }
+
+    .rf-kpi-contacting {
+        color: var(--rf-green);
+    }
+
+    .rf-kpi-waiting {
+        color: var(--rf-yellow);
+    }
+
+    .rf-kpi-future {
+        color: var(--rf-violet);
+    }
+
+    .rf-status-guide {
+        display: grid;
+        grid-template-columns:
+            175px repeat(5, minmax(0, 1fr));
+        border: 1px solid var(--rf-border);
+        border-radius: 15px;
+        overflow: hidden;
+        background: rgba(7, 30, 52, .65);
+    }
+
+    .rf-guide-title,
+    .rf-guide-item {
+        min-height: 72px;
+        padding: 13px 15px;
+    }
+
+    .rf-guide-title {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        border-right: 1px solid var(--rf-border);
+    }
+
+    .rf-guide-title strong {
+        font-size: 12px;
+    }
+
+    .rf-guide-title span {
+        margin-top: 3px;
+        color: var(--rf-muted);
+        font-size: 10px;
+        line-height: 1.35;
+    }
+
+    .rf-guide-item {
+        border-right: 1px solid rgba(111,181,226,.09);
+    }
+
+    .rf-guide-item:last-child {
+        border-right: 0;
+    }
+
+    .rf-guide-item strong {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+    }
+
+    .rf-guide-dot {
+        width: 7px;
+        height: 7px;
+        flex: 0 0 7px;
+        border-radius: 50%;
+    }
+
+    .rf-guide-item span {
+        display: block;
+        margin-top: 6px;
+        color: var(--rf-muted);
+        font-size: 10px;
+        line-height: 1.35;
+    }
+
+    .rf-panel {
+        border: 1px solid var(--rf-border);
+        border-radius: 16px;
+        background:
+            linear-gradient(
+                180deg,
+                rgba(10, 39, 66, .9),
+                rgba(6, 28, 50, .9)
+            );
+    }
+
+    .rf-filters {
+        padding: 14px;
+    }
+
+    .rf-filter-main {
+        display: grid;
+        grid-template-columns:
+            minmax(220px, 1.7fr)
+            repeat(4, minmax(145px, .85fr));
+        gap: 9px;
+    }
+
+    .rf-filter-secondary {
+        display: grid;
+        grid-template-columns:
+            repeat(2, minmax(150px, 1fr))
+            auto auto;
+        align-items: center;
+        gap: 9px;
+        margin-top: 9px;
+    }
+
+    .rf-input,
+    .rf-select {
+        width: 100%;
+        height: 40px;
+        border: 1px solid rgba(128,184,222,.16);
+        border-radius: 10px;
+        outline: none;
+        background: #081f37;
+        color: #dcecff;
+        font-size: 11px;
+        transition: border-color .18s ease,
+                    background .18s ease;
+    }
+
+    .rf-input {
+        padding: 0 12px;
+    }
+
+    .rf-select {
+        padding: 0 10px;
+    }
+
+    .rf-input:focus,
+    .rf-select:focus {
+        border-color: rgba(46,221,210,.55);
+        background: #092742;
+    }
+
+    .rf-filter-action {
+        height: 40px;
+        padding: 0 13px;
+        border: 1px solid var(--rf-border);
+        border-radius: 10px;
+        background: rgba(255,255,255,.025);
+        color: var(--rf-muted-2);
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .rf-filter-action:hover {
+        border-color: var(--rf-border-strong);
+        color: var(--rf-cyan);
+    }
+
+    .rf-filter-action.is-active {
+        border-color: rgba(46,221,210,.34);
+        background: rgba(46,221,210,.08);
+        color: var(--rf-cyan);
+    }
+
+    .rf-list-panel {
+        overflow: hidden;
+    }
+
+    .rf-list-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 14px 17px;
+        border-bottom: 1px solid var(--rf-border);
+    }
+
+    .rf-list-toolbar strong {
+        display: block;
+        font-size: 12px;
+    }
+
+    .rf-list-toolbar span {
+        display: block;
+        margin-top: 2px;
+        color: var(--rf-muted);
+        font-size: 10px;
+    }
+
+    .rf-list-legend {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--rf-muted);
+        font-size: 10px;
+    }
+
+    .rf-list-scroll {
+        overflow-x: auto;
+    }
+
+    .rf-list-head,
+    .rf-lead-row {
+        display: grid;
+        grid-template-columns:
+            minmax(270px, 1.5fr)
+            145px
+            minmax(185px, 1fr)
+            minmax(200px, 1.05fr)
+            minmax(175px, .85fr)
+            185px;
+        min-width: 1220px;
+        gap: 14px;
+        align-items: center;
+    }
+
+    .rf-list-head {
+        padding: 10px 17px;
+        border-bottom: 1px solid rgba(111,181,226,.09);
+        background: rgba(26, 77, 113, .16);
+        color: #6e91b2;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    .rf-lead-row {
+        position: relative;
+        padding: 17px;
+        border-bottom: 1px solid rgba(111,181,226,.09);
+        transition: background .16s ease;
+    }
+
+    .rf-lead-row:last-child {
+        border-bottom: 0;
+    }
+
+    .rf-lead-row:hover {
+        background: rgba(58, 151, 211, .035);
+    }
+
+    .rf-company-name {
+        overflow: hidden;
+        color: #f2f6ff;
+        font-size: 12px;
+        font-weight: 800;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .rf-location {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 4px;
+        color: var(--rf-muted);
+        font-size: 10px;
+    }
+
+    .rf-company-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 9px;
+    }
+
+    .rf-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 22px;
+        padding: 0 8px;
+        border: 1px solid rgba(134,190,228,.14);
+        border-radius: 999px;
+        background: rgba(255,255,255,.025);
+        color: #a8bdd1;
+        font-size: 9px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .rf-chip-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .rf-commercial-new {
+        color: #78bfff;
+        border-color: rgba(74,168,255,.2);
+        background: rgba(74,168,255,.07);
+    }
+
+    .rf-commercial-known {
+        color: #70d4ff;
+        border-color: rgba(112,212,255,.2);
+        background: rgba(112,212,255,.06);
+    }
+
+    .rf-commercial-client {
+        color: #55e0aa;
+        border-color: rgba(85,224,170,.2);
+        background: rgba(85,224,170,.06);
+    }
+
+    .rf-commercial-reprospecting {
+        color: #ff8090;
+        border-color: rgba(255,128,144,.2);
+        background: rgba(255,128,144,.06);
+    }
+
+    .rf-score-top {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+    }
+
+    .rf-score-number {
+        color: var(--rf-text);
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -.025em;
+    }
+
+    .rf-score-max {
+        color: var(--rf-muted);
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .rf-score-bar {
+        width: 90px;
+        height: 4px;
+        margin-top: 7px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255,255,255,.07);
+    }
+
+    .rf-score-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(
+            90deg,
+            #2fd8ce,
+            #59e3b2
+        );
+    }
+
+    .rf-score-low .rf-score-fill {
+        background: linear-gradient(
+            90deg,
+            #f3b94f,
+            #f06c62
+        );
+    }
+
+    .rf-score-info {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 8px;
+    }
+
+    .rf-priority {
+        display: inline-flex;
+        align-items: center;
+        min-height: 22px;
+        padding: 0 8px;
+        border-radius: 999px;
+        font-size: 9px;
+        font-weight: 800;
+    }
+
+    .rf-priority-high {
+        border: 1px solid rgba(255,110,123,.24);
+        background: rgba(255,110,123,.08);
+        color: #ff8490;
+    }
+
+    .rf-priority-medium {
+        border: 1px solid rgba(245,197,75,.24);
+        background: rgba(245,197,75,.08);
+        color: #ffd467;
+    }
+
+    .rf-priority-low {
+        border: 1px solid rgba(74,168,255,.2);
+        background: rgba(74,168,255,.07);
+        color: #72baff;
+    }
+
+    .rf-icp {
+        color: var(--rf-muted-2);
+        font-size: 9px;
+        font-weight: 800;
+    }
+
+    .rf-section-label {
+        color: #668bad;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+    }
+
+    .rf-deals {
+        display: grid;
+        gap: 5px;
+        margin-top: 6px;
+    }
+
+    .rf-deal {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-width: 0;
+    }
+
+    .rf-deal-stage {
+        max-width: 150px;
+        overflow: hidden;
+        color: #5fe0d1;
+        font-size: 9px;
+        font-weight: 800;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .rf-deal-name {
+        overflow: hidden;
+        color: var(--rf-muted);
+        font-size: 9px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .rf-empty {
+        margin-top: 6px;
+        color: #617f9b;
+        font-size: 10px;
+    }
+
+    .rf-work-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 27px;
+        margin-top: 5px;
+        padding: 0 9px;
+        border: 1px solid rgba(124,184,222,.13);
+        border-radius: 8px;
+        background: rgba(255,255,255,.025);
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+    .rf-work-new {
+        color: #8ab5da;
+    }
+
+    .rf-work-contacting {
+        color: #52e0c6;
+    }
+
+    .rf-work-waiting {
+        color: #ffd25f;
+    }
+
+    .rf-work-future {
+        color: #9eabff;
+    }
+
+    .rf-work-reprospecting {
+        color: #ff8290;
+    }
+
+    .rf-work-context {
+        max-width: 230px;
+        margin-top: 7px;
+        color: var(--rf-muted-2);
+        font-size: 9px;
+        line-height: 1.45;
+    }
+
+    .rf-work-date {
+        margin-top: 5px;
+        color: #6787a4;
+        font-size: 9px;
+    }
+
+    .rf-owner-select {
+        width: 100%;
+        height: 34px;
+        margin-top: 6px;
+        padding: 0 8px;
+        border: 1px solid rgba(128,184,222,.15);
+        border-radius: 8px;
+        outline: none;
+        background: #081f37;
+        color: #dcecff;
+        font-size: 10px;
+    }
+
+    .rf-owner-name {
+        margin-top: 6px;
+        color: #dbe9f7;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .rf-owner-helper {
+        margin-top: 5px;
+        color: #6686a4;
+        font-size: 9px;
+    }
+
+    .rf-claim {
+        margin-top: 6px;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--rf-cyan);
+        font-size: 9px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .rf-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .rf-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 31px;
+        padding: 0 10px;
+        border: 1px solid rgba(128,184,222,.16);
+        border-radius: 8px;
+        background: rgba(255,255,255,.025);
+        color: #b9cce0;
+        font-size: 9px;
+        font-weight: 800;
+        text-decoration: none;
+        cursor: pointer;
+        transition: border-color .15s ease,
+                    color .15s ease,
+                    background .15s ease;
+    }
+
+    .rf-btn:hover {
+        border-color: rgba(46,221,210,.35);
+        color: var(--rf-cyan);
+        background: rgba(46,221,210,.04);
+    }
+
+    .rf-btn-primary {
+        border-color: rgba(46,221,210,.28);
+        background: rgba(46,221,210,.07);
+        color: var(--rf-cyan);
+    }
+
+    .rf-btn-warning {
+        border-color: rgba(245,197,75,.24);
+        background: rgba(245,197,75,.06);
+        color: #ffd469;
+    }
+
+    .rf-btn-reprospect {
+        border-color: rgba(255,110,123,.24);
+        background: rgba(255,110,123,.06);
+        color: #ff8490;
+    }
+
+    .rf-mini-note {
+        margin-top: 6px;
+        color: #6586a3;
+        font-size: 9px;
+        line-height: 1.4;
+    }
+
+    .rf-empty-state {
+        padding: 50px 20px;
+        text-align: center;
+    }
+
+    .rf-empty-state strong {
+        display: block;
+        font-size: 14px;
+    }
+
+    .rf-empty-state span {
+        display: block;
+        margin-top: 5px;
+        color: var(--rf-muted);
+        font-size: 11px;
+    }
+
+    .rf-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        padding: 13px 17px;
+        border-top: 1px solid var(--rf-border);
+    }
+
+    .rf-pagination-info {
+        color: var(--rf-muted);
+        font-size: 10px;
+    }
+
+    .rf-pagination-info strong {
+        color: var(--rf-text);
+    }
+
+    .rf-pagination-buttons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .rf-page-btn {
+        min-width: 30px;
+        height: 30px;
+        padding: 0 8px;
+        border: 1px solid var(--rf-border);
+        border-radius: 8px;
+        background: rgba(255,255,255,.025);
+        color: #91abc4;
+        font-size: 10px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .rf-page-btn:hover:not(:disabled),
+    .rf-page-btn.is-active {
+        border-color: rgba(46,221,210,.35);
+        background: rgba(46,221,210,.09);
+        color: var(--rf-cyan);
+    }
+
+    .rf-page-btn:disabled {
+        cursor: not-allowed;
+        opacity: .3;
+    }
+
+    @media (max-width: 1350px) {
+        .rf-kpis {
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+        }
+
+        .rf-status-guide {
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+        }
+
+        .rf-guide-title {
+            grid-column: 1 / -1;
+            min-height: auto;
+            border-right: 0;
+            border-bottom: 1px solid var(--rf-border);
+        }
+    }
+
+    @media (max-width: 900px) {
+        .rf-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .rf-header-guide {
+            width: 100%;
+            max-width: none;
+        }
+
+        .rf-kpis {
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+        }
+
+        .rf-status-guide {
+            grid-template-columns:
+                1fr;
+        }
+
+        .rf-guide-item {
+            min-height: auto;
+            border-right: 0;
+            border-bottom: 1px solid var(--rf-border);
+        }
+
+        .rf-filter-main,
+        .rf-filter-secondary {
+            grid-template-columns: 1fr;
+        }
+
+        .rf-pagination {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+</style>
+
+
+<div class="rf-shell">
+
+    <header class="rf-header">
+
+        <div>
+
+            <div class="rf-kicker">
+                Operação comercial
             </div>
 
-            <div class="ec-leads-title-row">
+            <div class="rf-title-row">
 
-                <h1 class="ec-leads-title">
+                <h1 class="rf-title">
                     Leads
                 </h1>
 
-                <span class="ec-leads-count">
-                    {{ $this->operationalCount }}
+                <span class="rf-count-pill">
+                    {{
+                        number_format(
+                            $this->operationalCount,
+                            0,
+                            ',',
+                            '.'
+                        )
+                    }}
                 </span>
 
             </div>
 
-            <p class="ec-leads-subtitle">
-                Empresas elegíveis ordenadas pela
-                prioridade calculada para o SDR.
+            <p class="rf-subtitle">
+                Veja rapidamente quem priorizar,
+                em que situação cada empresa está
+                e qual é o próximo passo comercial.
             </p>
 
         </div>
 
 
-        <div
-            class="ec-leads-hero-visual"
-            aria-hidden="true"
-        >
-
-            <svg
-                viewBox="0 0 760 300"
-                role="presentation"
-            >
-
-                <defs>
-
-                    <radialGradient
-                        id="leadsGlobeHalo"
-                        cx="50%"
-                        cy="50%"
-                        r="50%"
-                    >
-                        <stop
-                            offset="0%"
-                            stop-color="#148fff"
-                            stop-opacity=".28"
-                        />
-
-                        <stop
-                            offset="60%"
-                            stop-color="#148fff"
-                            stop-opacity=".10"
-                        />
-
-                        <stop
-                            offset="100%"
-                            stop-color="#148fff"
-                            stop-opacity="0"
-                        />
-                    </radialGradient>
-
-
-                    <linearGradient
-                        id="leadsOrbit"
-                        x1="0"
-                        y1="0"
-                        x2="1"
-                        y2="1"
-                    >
-                        <stop
-                            offset="0%"
-                            stop-color="#2be0d1"
-                            stop-opacity="0"
-                        />
-
-                        <stop
-                            offset="42%"
-                            stop-color="#2a9fff"
-                            stop-opacity=".72"
-                        />
-
-                        <stop
-                            offset="74%"
-                            stop-color="#39dfd1"
-                            stop-opacity=".60"
-                        />
-
-                        <stop
-                            offset="100%"
-                            stop-color="#39dfd1"
-                            stop-opacity="0"
-                        />
-                    </linearGradient>
-
-
-                    <pattern
-                        id="leadsBgDots"
-                        width="15"
-                        height="15"
-                        patternUnits="userSpaceOnUse"
-                    >
-                        <circle
-                            cx="2"
-                            cy="2"
-                            r="1.1"
-                            fill="#1482db"
-                            opacity=".28"
-                        />
-                    </pattern>
-
-
-                    <pattern
-                        id="leadsWorldDots"
-                        width="7"
-                        height="7"
-                        patternUnits="userSpaceOnUse"
-                    >
-                        <circle
-                            cx="2"
-                            cy="2"
-                            r="1.25"
-                            fill="#39afff"
-                        />
-                    </pattern>
-
-
-                    <clipPath id="leadsGlobeClip">
-                        <circle
-                            cx="525"
-                            cy="145"
-                            r="112"
-                        />
-                    </clipPath>
-
-                </defs>
-
-
-                <rect
-                    x="250"
-                    y="5"
-                    width="450"
-                    height="270"
-                    fill="url(#leadsBgDots)"
-                    opacity=".68"
-                />
-
-
-                <circle
-                    cx="525"
-                    cy="145"
-                    r="180"
-                    fill="url(#leadsGlobeHalo)"
-                />
-
-
-                <circle
-                    cx="525"
-                    cy="145"
-                    r="112"
-                    fill="none"
-                    stroke="#269cff"
-                    stroke-opacity=".34"
-                />
-
-
-                <g
-                    fill="none"
-                    stroke="#2d8de5"
-                    stroke-opacity=".21"
-                    clip-path="url(#leadsGlobeClip)"
-                >
-
-                    <ellipse
-                        cx="525"
-                        cy="145"
-                        rx="112"
-                        ry="38"
-                    />
-
-                    <ellipse
-                        cx="525"
-                        cy="145"
-                        rx="112"
-                        ry="70"
-                    />
-
-                    <ellipse
-                        cx="525"
-                        cy="145"
-                        rx="42"
-                        ry="112"
-                    />
-
-                    <ellipse
-                        cx="525"
-                        cy="145"
-                        rx="79"
-                        ry="112"
-                    />
-
-                </g>
-
-
-                <g
-                    fill="url(#leadsWorldDots)"
-                    clip-path="url(#leadsGlobeClip)"
-                >
-
-                    <path
-                        d="
-                            M447 82
-                            C466 67
-                            495 67
-                            517 79
-                            L529 91
-                            L519 103
-                            L498 108
-                            L485 122
-                            L464 126
-                            L449 115
-                            L440 99
-                            Z
-                        "
-                    />
-
-                    <path
-                        d="
-                            M479 126
-                            C500 130
-                            514 143
-                            515 160
-                            L507 181
-                            L496 205
-                            L482 211
-                            L471 193
-                            L468 171
-                            L473 145
-                            Z
-                        "
-                    />
-
-                    <path
-                        d="
-                            M537 87
-                            C555 77
-                            578 79
-                            596 92
-                            L605 106
-                            L597 117
-                            L579 120
-                            L568 131
-                            L551 126
-                            L541 113
-                            Z
-                        "
-                    />
-
-                    <path
-                        d="
-                            M551 129
-                            C570 134
-                            582 146
-                            584 163
-                            L578 181
-                            L566 199
-                            L552 195
-                            L545 178
-                            L543 154
-                            Z
-                        "
-                    />
-
-                </g>
-
-
-                <g
-                    fill="none"
-                    stroke="url(#leadsOrbit)"
-                    stroke-width="1.5"
-                >
-
-                    <ellipse
-                        cx="525"
-                        cy="145"
-                        rx="184"
-                        ry="57"
-                        transform="
-                            rotate(
-                                13
-                                525
-                                145
-                            )
-                        "
-                    />
-
-                    <ellipse
-                        cx="525"
-                        cy="145"
-                        rx="170"
-                        ry="48"
-                        transform="
-                            rotate(
-                                -17
-                                525
-                                145
-                            )
-                        "
-                    />
-
-                </g>
-
-
-                <g fill="#38e1d4">
-
-                    <circle cx="447" cy="108" r="3.8" />
-                    <circle cx="494" cy="87" r="3.2" />
-                    <circle cx="575" cy="97" r="3.7" />
-                    <circle cx="598" cy="144" r="4" />
-                    <circle cx="522" cy="193" r="3.7" />
-
-                </g>
-
-            </svg>
-
-        </div>
-
-
-        <div class="ec-leads-hero-message">
-
-            <span>
-                Operação SDR
-            </span>
+        <div class="rf-header-guide">
 
             <strong>
-                priorize as melhores oportunidades
+                Como ler esta tela
             </strong>
+
+            <span>
+                Score mede potencial. Prioridade
+                define ordem de ataque. Situação
+                comercial mostra o relacionamento
+                com a empresa. Acompanhamento mostra
+                o que está acontecendo agora.
+            </span>
 
         </div>
 
-    </section>
+    </header>
 
 
     @if ($commercialActionMessage !== '')
 
-        <div
-            class="
-                mb-4 rounded-xl
-                border border-emerald-300/20
-                bg-emerald-300/[0.06]
-                px-4 py-3
-                text-sm text-emerald-300
-            "
-        >
+        <div class="rf-alert rf-alert-ok">
             {{ $commercialActionMessage }}
         </div>
 
@@ -2991,748 +3611,352 @@ new class extends Component
 
     @if ($commercialActionError !== '')
 
-        <div
-            class="
-                mb-4 rounded-xl
-                border border-red-300/20
-                bg-red-300/[0.06]
-                px-4 py-3
-                text-sm text-red-300
-            "
-        >
+        <div class="rf-alert rf-alert-error">
             {{ $commercialActionError }}
         </div>
 
     @endif
 
 
-    {{-- RESUMO --}}
-    <div class="ec-leads-summary">
+    <section class="rf-kpis">
 
-        <div class="ec-intelligence-card">
+        <div class="rf-kpi rf-kpi-total">
 
-            <div class="ec-intelligence-label">
+            <div class="rf-kpi-label">
                 Leads na operação
             </div>
 
-            <div class="ec-score-value">
-                {{ $this->operationalCount }}
+            <div class="rf-kpi-value">
+                {{
+                    number_format(
+                        $this->operationalCount,
+                        0,
+                        ',',
+                        '.'
+                    )
+                }}
             </div>
 
-            <div class="ec-intelligence-caption">
-                Fila comercial ativa
-            </div>
-
-        </div>
-
-
-        <div class="ec-intelligence-card">
-
-            <div class="ec-intelligence-label">
-                Prioridade muito alta
-            </div>
-
-            <div class="ec-score-value">
-                {{ $this->veryHighCount }}
-            </div>
-
-            <div class="ec-intelligence-caption">
-                Atacar primeiro
+            <div class="rf-kpi-caption">
+                Total da fila comercial
             </div>
 
         </div>
 
 
-        <div class="ec-intelligence-card">
+        <div class="rf-kpi rf-kpi-high">
 
-            <div class="ec-intelligence-label">
+            <div class="rf-kpi-label">
                 Prioridade alta
             </div>
 
-            <div class="ec-score-value">
-                {{ $this->highCount }}
-            </div>
-
-            <div class="ec-intelligence-caption">
-                Segunda faixa comercial
-            </div>
-
-        </div>
-
-    </div>
-
-
-    {{-- MINHA FILA HOJE --}}
-    <button
-        type="button"
-        wire:click="applyDailyView"
-        class="
-            ec-leads-daily-queue
-            group flex w-full
-            items-center justify-between
-            gap-5 rounded-2xl
-            border px-5 py-4
-            text-left transition
-            {{
-                $dailyView === 'today'
-                    ? 'border-cyan-300/30 bg-cyan-300/[0.08]'
-                    : 'border-white/[0.06] bg-white/[0.025] hover:border-cyan-300/20 hover:bg-cyan-300/[0.03]'
-            }}
-        "
-    >
-        <div
-            class="
-                flex min-w-0
-                items-center gap-4
-            "
-        >
-            <div
-                class="
-                    flex h-10 w-10
-                    shrink-0 items-center
-                    justify-center
-                    rounded-xl
-                    border border-cyan-300/20
-                    bg-cyan-300/[0.07]
-                    text-lg text-cyan-300
-                "
-            >
-                ◎
-            </div>
-
-            <div class="min-w-0">
-                <div
-                    class="
-                        text-xs font-bold
-                        uppercase tracking-wider
-                        text-cyan-300
-                    "
-                >
-                    Minha fila hoje
-                </div>
-
-                <div
-                    class="
-                        mt-1 text-sm
-                        font-semibold
-                        text-[#eef1ff]
-                    "
-                >
-                    Seus atrasados, tarefas de hoje
-                    e contatos em andamento
-                </div>
-
-                <div
-                    class="
-                        mt-1 text-[11px]
-                        text-[#7882a4]
-                    "
-                >
-                    Somente leads da sua carteira
-                    que exigem atenção agora.
-                </div>
-            </div>
-        </div>
-
-        <div
-            class="
-                flex shrink-0
-                items-center gap-3
-            "
-        >
-            <span
-                class="
-                    text-2xl font-bold
-                    text-cyan-300
-                "
-            >
-                {{ $this->dailyQueueCount }}
-            </span>
-
-            <span
-                class="
-                    text-xs font-semibold
-                    text-[#8791b2]
-                    transition
-                    group-hover:text-white
-                "
-            >
+            <div class="rf-kpi-value">
                 {{
-                    $dailyView === 'today'
-                        ? 'Mostrar todos'
-                        : 'Abrir fila'
+                    number_format(
+                        $this->highCount,
+                        0,
+                        ',',
+                        '.'
+                    )
                 }}
-                →
-            </span>
-        </div>
-    </button>
-
-
-    {{-- PAINEL DIÁRIO --}}
-    <section class="ec-leads-operation">
-
-        <div
-            class="
-                mb-3 flex flex-wrap
-                items-end justify-between
-                gap-3
-            "
-        >
-            <div>
-                <div class="ec-page-kicker">
-                    Operação SDR
-                </div>
-
-                <div
-                    class="
-                        mt-1 text-sm
-                        font-semibold
-                        text-[#eef1ff]
-                    "
-                >
-                    O que precisa da sua atenção
-                </div>
             </div>
-                
+
+            <div class="rf-kpi-caption">
+                Score 75 a 100
+            </div>
+
+        </div>
 
 
-            
+        <div class="rf-kpi rf-kpi-new">
+
+            <div class="rf-kpi-label">
+                Novo
+            </div>
+
+            <div class="rf-kpi-value">
+                {{
+                    number_format(
+                        $this->newCount,
+                        0,
+                        ',',
+                        '.'
+                    )
+                }}
+            </div>
+
+            <div class="rf-kpi-caption">
+                Sem chamada registrada
+            </div>
+
+        </div>
 
 
-            <button
-                type="button"
-                wire:click="applyQuickView('new')"
-                class="
-                    ec-intelligence-card
-                    text-left transition
-                    hover:border-cyan-300/20
-                    hover:bg-cyan-300/[0.03]
-                "
-            >
-                <div class="ec-intelligence-label">
-                    Novos
-                </div>
+        <div class="rf-kpi rf-kpi-contacting">
 
-                <div
-                    class="
-                        mt-2 text-2xl
-                        font-bold text-cyan-300
-                    "
-                >
-                    {{ $this->newCount }}
-                </div>
+            <div class="rf-kpi-label">
+                Em contato
+            </div>
 
-                <div class="ec-intelligence-caption">
-                    Ainda não trabalhados
-                </div>
-            </button>
+            <div class="rf-kpi-value">
+                {{
+                    number_format(
+                        $this->contactingCount,
+                        0,
+                        ',',
+                        '.'
+                    )
+                }}
+            </div>
+
+            <div class="rf-kpi-caption">
+                Atividade nos últimos 30 dias
+            </div>
+
+        </div>
 
 
-            <button
-                type="button"
-                wire:click="applyQuickView('contacting')"
-                class="
-                    ec-intelligence-card
-                    text-left transition
-                    hover:bg-white/[0.04]
-                "
-            >
-                <div class="ec-intelligence-label">
-                    Em contato
-                </div>
+        <div class="rf-kpi rf-kpi-waiting">
 
-                <div
-                    class="
-                        mt-2 text-2xl
-                        font-bold text-[#eef1ff]
-                    "
-                >
-                    {{ $this->contactingCount }}
-                </div>
+            <div class="rf-kpi-label">
+                Aguardando retorno
+            </div>
 
-                <div class="ec-intelligence-caption">
-                    Abordagem em andamento
-                </div>
-            </button>
+            <div class="rf-kpi-value">
+                {{
+                    number_format(
+                        $this->waitingCount,
+                        0,
+                        ',',
+                        '.'
+                    )
+                }}
+            </div>
+
+            <div class="rf-kpi-caption">
+                Existe tarefa pendente
+            </div>
+
+        </div>
 
 
-            <button
-                type="button"
-                wire:click="applyQuickView('waiting')"
-                class="
-                    ec-intelligence-card
-                    text-left transition
-                    hover:bg-white/[0.04]
-                "
-            >
-                <div class="ec-intelligence-label">
-                    Aguardando retorno
-                </div>
+        <div class="rf-kpi rf-kpi-future">
 
-                <div
-                    class="
-                        mt-2 text-2xl
-                        font-bold text-[#eef1ff]
-                    "
-                >
-                    {{ $this->waitingCount }}
-                </div>
+            <div class="rf-kpi-label">
+                Oportunidade futura
+            </div>
 
-                <div class="ec-intelligence-caption">
-                    Follow-up pendente
-                </div>
-            </button>
+            <div class="rf-kpi-value">
+                {{
+                    number_format(
+                        $this->futureCount,
+                        0,
+                        ',',
+                        '.'
+                    )
+                }}
+            </div>
 
-
-            <button
-                type="button"
-                wire:click="applyQuickView('discarded')"
-                class="
-                    ec-intelligence-card
-                    text-left transition
-                    hover:border-emerald-300/20
-                    hover:bg-emerald-300/[0.03]
-                "
-            >
-                <div class="ec-intelligence-label">
-                    Descartados
-                </div>
-
-                <div
-                    class="
-                        mt-2 text-2xl
-                        font-bold text-emerald-300
-                    "
-                >
-                    {{ $this->discardedCount }}
-                </div>
-
-                <div class="ec-intelligence-caption">
-                    Resultado comercial
-                </div>
-            </button>
+            <div class="rf-kpi-caption">
+                Último contato há mais de 30 dias
+            </div>
 
         </div>
 
     </section>
 
 
-    {{-- FOLLOW-UP --}}
-    <div
-        class="
-            mt-1 flex flex-wrap
-            items-center gap-2
-        "
-    >
-        <span
-            class="
-                mr-1 text-[10px]
-                font-semibold uppercase
-                tracking-wider
-                text-[#697394]
-            "
-        >
-            Follow-up
-        </span>
+    <section class="rf-status-guide">
 
-        <button
-            type="button"
-            wire:click="applyFollowUpView('overdue')"
-            class="
-                rounded-lg border px-3 py-2
-                text-xs font-semibold transition
-                {{
-                    $followUp === 'overdue'
-                        ? 'border-red-400/30 bg-red-400/10 text-red-300'
-                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
-                }}
-            "
-        >
-            Atrasados · {{ $this->overdueCount }}
-        </button>
+        <div class="rf-guide-title">
 
-        <button
-            type="button"
-            wire:click="applyFollowUpView('today')"
-            class="
-                rounded-lg border px-3 py-2
-                text-xs font-semibold transition
-                {{
-                    $followUp === 'today'
-                        ? 'border-amber-300/30 bg-amber-300/10 text-amber-300'
-                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
-                }}
-            "
-        >
-            Hoje · {{ $this->dueTodayCount }}
-        </button>
+            <strong>
+                Acompanhamento
+            </strong>
 
-        <button
-            type="button"
-            wire:click="applyFollowUpView('upcoming')"
-            class="
-                rounded-lg border px-3 py-2
-                text-xs font-semibold transition
-                {{
-                    $followUp === 'upcoming'
-                        ? 'border-cyan-300/30 bg-cyan-300/10 text-cyan-300'
-                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
-                }}
-            "
-        >
-            Próximos · {{ $this->upcomingCount }}
-        </button>
+            <span>
+                O que cada status significa.
+            </span>
 
-        <button
-            type="button"
-            wire:click="applyFollowUpView('unscheduled')"
-            class="
-                rounded-lg border px-3 py-2
-                text-xs font-semibold transition
-                {{
-                    $followUp === 'unscheduled'
-                        ? 'border-white/20 bg-white/[0.07] text-white'
-                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
-                }}
-            "
-        >
-            Sem prazo · {{ $this->unscheduledCount }}
-        </button>
-
-        @if ($followUp !== '')
-            <button
-                type="button"
-                wire:click="applyFollowUpView('')"
-                class="
-                    px-2 py-2 text-xs
-                    font-semibold text-cyan-300
-                    hover:text-cyan-200
-                "
-            >
-                Limpar prazo
-            </button>
-        @endif
-    </div>
+        </div>
 
 
-    {{-- DESTINO COMERCIAL / ATENÇÃO --}}
-    <div
-        class="
-            mt-3 flex flex-wrap
-            items-center gap-2
-        "
-    >
-        <span
-            class="
-                mr-1 text-[10px]
-                font-semibold uppercase
-                tracking-wider
-                text-[#697394]
-            "
-        >
-            Destino
-        </span>
+        <div class="rf-guide-item">
 
-        <button
-            type="button"
-            wire:click="applyQuickView('future')"
-            class="
-                rounded-lg border px-3 py-2
-                text-xs font-semibold transition
-                {{
-                    $workStatus === 'future'
-                        ? 'border-violet-300/30 bg-violet-300/10 text-violet-300'
-                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
-                }}
-            "
-        >
-            Oportunidade futura · {{ $this->futureCount }}
-        </button>
+            <strong style="color:#78bfff">
 
-        <button
-            type="button"
-            wire:click="applyQuickView('refused')"
-            class="
-                rounded-lg border px-3 py-2
-                text-xs font-semibold transition
-                {{
-                    $workStatus === 'refused'
-                        ? 'border-rose-300/30 bg-rose-300/10 text-rose-300'
-                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
-                }}
-            "
-        >
-            Recusou · {{ $this->refusedCount }}
-        </button>
+                <i
+                    class="rf-guide-dot"
+                    style="background:#78bfff"
+                ></i>
 
-        <button
-            type="button"
-            wire:click="applyQuickView('converted')"
-            class="
-                rounded-lg border px-3 py-2
-                text-xs font-semibold transition
-                {{
-                    $workStatus === 'converted'
-                        ? 'border-emerald-300/30 bg-emerald-300/10 text-emerald-300'
-                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
-                }}
-            "
-        >
-            Convertidos · {{ $this->convertedCount }}
-        </button>
+                Novo
 
-        <span
-            class="
-                ml-3 mr-1 text-[10px]
-                font-semibold uppercase
-                tracking-wider
-                text-[#697394]
-            "
-        >
-            Atenção
-        </span>
+            </strong>
 
-        <button
-            type="button"
-            wire:click="applyStaleView"
-            class="
-                rounded-lg border px-3 py-2
-                text-xs font-semibold transition
-                {{
-                    $staleOnly
-                        ? 'border-orange-300/30 bg-orange-300/10 text-orange-300'
-                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
-                }}
-            "
-        >
-            Parados {{ $this->staleAfterDays() }}+ dias
-            · {{ $this->staleCount }}
-        </button>
-    </div>
+            <span>
+                Ainda não existe chamada
+                registrada para a empresa.
+            </span>
+
+        </div>
 
 
-    @if (
-        $this->isCommercialManager()
-    )
+        <div class="rf-guide-item">
 
-    {{-- CARTEIRA --}}
-    <div
-        class="
-            mt-3 flex flex-wrap
-            items-center gap-2
-        "
-    >
-        <span
-            class="
-                mr-1 text-[10px]
-                font-semibold uppercase
-                tracking-wider
-                text-[#697394]
-            "
-        >
-            Carteira
-        </span>
+            <strong style="color:#52e0c6">
 
-        <button
-            type="button"
-            wire:click="applyOwnerView('mine')"
-            class="
-                rounded-lg border px-3 py-2
-                text-xs font-semibold transition
-                {{
-                    $owner === 'mine'
-                        ? 'border-cyan-300/30 bg-cyan-300/10 text-cyan-300'
-                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
-                }}
-            "
-        >
-            Meus leads · {{ $this->myLeadsCount }}
-        </button>
+                <i
+                    class="rf-guide-dot"
+                    style="background:#52e0c6"
+                ></i>
 
-        <button
-            type="button"
-            wire:click="applyOwnerView('unassigned')"
-            class="
-                rounded-lg border px-3 py-2
-                text-xs font-semibold transition
-                {{
-                    $owner === 'unassigned'
-                        ? 'border-amber-300/30 bg-amber-300/10 text-amber-300'
-                        : 'border-white/[0.07] bg-white/[0.025] text-[#9ba5c8] hover:text-white'
-                }}
-            "
-        >
-            Sem responsável · {{ $this->unassignedCount }}
-        </button>
-    </div>
+                Em contato
+
+            </strong>
+
+            <span>
+                Houve chamada ou contato
+                nos últimos 30 dias.
+            </span>
+
+        </div>
 
 
-    @endif
+        <div class="rf-guide-item">
+
+            <strong style="color:#ffd25f">
+
+                <i
+                    class="rf-guide-dot"
+                    style="background:#ffd25f"
+                ></i>
+
+                Aguardando retorno
+
+            </strong>
+
+            <span>
+                Existe tarefa aberta
+                aguardando uma ação.
+            </span>
+
+        </div>
 
 
-    {{-- REPROSPECÇÃO --}}
-    <button
-        type="button"
-        wire:click="applyReprospectingReadyView"
-        class="
-            ec-leads-reprospecting
-            mt-3 flex w-full
-            items-center justify-between
-            gap-4 rounded-xl
-            border px-4 py-3
-            text-left transition
-            {{
-                $reprospectingReadyOnly
-                    ? 'border-emerald-300/30 bg-emerald-300/[0.08]'
-                    : 'border-white/[0.06] bg-white/[0.025] hover:border-emerald-300/20'
-            }}
-        "
-    >
-        <div>
-            <div
-                class="
-                    text-[10px]
-                    font-semibold uppercase
-                    tracking-wider
-                    text-emerald-300
-                "
-            >
+        <div class="rf-guide-item">
+
+            <strong style="color:#9eabff">
+
+                <i
+                    class="rf-guide-dot"
+                    style="background:#9eabff"
+                ></i>
+
+                Oportunidade futura
+
+            </strong>
+
+            <span>
+                Último contato passou
+                de 30 dias.
+            </span>
+
+        </div>
+
+
+        <div class="rf-guide-item">
+
+            <strong style="color:#ff8290">
+
+                <i
+                    class="rf-guide-dot"
+                    style="background:#ff8290"
+                ></i>
+
                 Reprospecção
-            </div>
 
-            <div
-                class="
-                    mt-1 text-sm
-                    font-semibold
-                    text-[#eef1ff]
-                "
-            >
-                Prontos para retomar
-            </div>
+            </strong>
 
-            <div
-                class="
-                    mt-0.5 text-[11px]
-                    text-[#7782a3]
-                "
-            >
-                Oportunidades futuras vencidas
-                e recusas com carência encerrada.
-            </div>
+            <span>
+                Sem atividade comercial
+                há mais de 90 dias.
+            </span>
+
         </div>
 
-        <div
-            class="
-                text-2xl font-bold
-                text-emerald-300
-            "
-        >
-            {{ $this->reprospectingReadyCount }}
-        </div>
-    </button>
+    </section>
 
 
-    {{-- FILTROS --}}
-    <div class="ec-leads-filter-panel">
+    <section class="rf-panel rf-filters">
 
-        <div
-            class="
-                grid gap-3
-                md:grid-cols-2
-                xl:grid-cols-8
-            "
-        >
+        <div class="rf-filter-main">
 
             <input
                 type="search"
                 wire:model.live.debounce.350ms="search"
-                placeholder="Empresa ou CNPJ..."
-                class="
-                    rounded-xl border
-                    border-white/[0.08]
-                    bg-white/[0.035]
-                    px-3 py-2.5
-                    text-sm text-[#eef1ff]
-                    outline-none
-                    placeholder:text-[#66708f]
-                    xl:col-span-2
-                "
+                class="rf-input"
+                placeholder="Buscar empresa ou CNPJ..."
             >
+
 
             <select
                 wire:model.live="priority"
-                class="
-                    rounded-xl border
-                    border-white/[0.08]
-                    bg-[#151a36]
-                    px-3 py-2.5
-                    text-sm text-[#d9ddef]
-                "
+                class="rf-select"
             >
                 <option value="">
                     Todas prioridades
                 </option>
 
-                <option value="very_high">
-                    Muito alta
-                </option>
-
                 <option value="high">
-                    Alta
+                    Prioridade alta
                 </option>
 
                 <option value="medium">
-                    Média
+                    Prioridade média
                 </option>
 
                 <option value="low">
-                    Baixa
+                    Prioridade baixa
                 </option>
             </select>
 
+
             <select
                 wire:model.live="icp"
-                class="
-                    rounded-xl border
-                    border-white/[0.08]
-                    bg-[#151a36]
-                    px-3 py-2.5
-                    text-sm text-[#d9ddef]
-                "
+                class="rf-select"
             >
                 <option value="">
                     Todos ICP
                 </option>
 
-                @foreach (
-                    ['A', 'B', 'C', 'D']
-                    as $grade
-                )
-                    <option value="{{ $grade }}">
-                        ICP {{ $grade }}
-                    </option>
-                @endforeach
+                <option value="A">
+                    ICP A
+                </option>
+
+                <option value="B">
+                    ICP B
+                </option>
+
+                <option value="C">
+                    ICP C
+                </option>
+
+                <option value="D">
+                    ICP D
+                </option>
             </select>
+
 
             <select
                 wire:model.live="crm"
-                class="
-                    rounded-xl border
-                    border-white/[0.08]
-                    bg-[#151a36]
-                    px-3 py-2.5
-                    text-sm text-[#d9ddef]
-                "
+                class="rf-select"
             >
-
                 <option value="">
-                    CRM e etapas HubSpot
+                    CRM / etapa HubSpot
                 </option>
 
-
-                <optgroup
-                    label="Situação comercial"
-                >
+                <optgroup label="Situação no CRM">
 
                     <option value="not_found">
                         Novo
@@ -3742,20 +3966,15 @@ new class extends Component
                         Conhecido
                     </option>
 
-                    <option value="prospected">
-                        Reprospecção
-                    </option>
-
-                    <option value="opportunity">
-                        Oportunidade
-                    </option>
-
                     <option value="client">
                         Cliente
                     </option>
 
-                </optgroup>
+                    <option value="prospected">
+                        Reprospecção
+                    </option>
 
+                </optgroup>
 
                 @if (
                     $this->crmStageOptions
@@ -3768,27 +3987,18 @@ new class extends Component
 
                         @foreach (
                             $this->crmStageOptions
-                            as $stageOption
+                            as $option
                         )
 
                             <option
-                                value="{{
-                                    'stage:'
-                                    .$stageOption[
-                                        'label'
-                                    ]
-                                }}"
+                                value="stage:{{ $option['label'] }}"
                             >
                                 {{
-                                    $stageOption[
-                                        'label'
-                                    ]
+                                    $option['label']
                                 }}
                                 ·
                                 {{
-                                    $stageOption[
-                                        'count'
-                                    ]
+                                    $option['count']
                                 }}
                             </option>
 
@@ -3800,18 +4010,10 @@ new class extends Component
 
             </select>
 
-            
-
 
             <select
                 wire:model.live="workStatus"
-                class="
-                    rounded-xl border
-                    border-white/[0.08]
-                    bg-[#151a36]
-                    px-3 py-2.5
-                    text-sm text-[#d9ddef]
-                "
+                class="rf-select"
             >
                 <option value="">
                     Todo acompanhamento
@@ -3833,73 +4035,61 @@ new class extends Component
                     Oportunidade futura
                 </option>
 
-                <option value="refused">
-                    Recusou
+                <option value="reprospecting">
+                    Reprospecção
                 </option>
-
-                <option value="converted">
-                    Convertido
-                </option>
-
-                <option value="discarded">
-                    Descartado
-                </option>
-
-                
             </select>
 
+        </div>
+
+
+        <div class="rf-filter-secondary">
 
             @if (
                 $this->isCommercialManager()
             )
 
-            <select
-                wire:model.live="owner"
-                class="
-                    rounded-xl border
-                    border-white/[0.08]
-                    bg-[#151a36]
-                    px-3 py-2.5
-                    text-sm text-[#d9ddef]
-                "
-            >
-                <option value="">
-                    Todos responsáveis
-                </option>
-
-                <option value="mine">
-                    Meus leads
-                </option>
-
-                <option value="unassigned">
-                    Sem responsável
-                </option>
-
-                @foreach (
-                    $this->salesUsers
-                    as $salesUser
-                )
-                    <option
-                        value="{{ $salesUser->id }}"
-                    >
-                        {{ $salesUser->name }}
+                <select
+                    wire:model.live="owner"
+                    class="rf-select"
+                >
+                    <option value="">
+                        Todos responsáveis
                     </option>
-                @endforeach
-            </select>
 
+                    <option value="mine">
+                        Meus leads
+                    </option>
+
+                    <option value="unassigned">
+                        Sem responsável
+                    </option>
+
+                    @foreach (
+                        $this->salesUsers
+                        as $salesUser
+                    )
+
+                        <option
+                            value="{{ $salesUser->id }}"
+                        >
+                            {{ $salesUser->name }}
+                        </option>
+
+                    @endforeach
+
+                </select>
+
+            @else
+
+                <div></div>
 
             @endif
 
 
             <select
                 wire:model.live="state"
-                class="
-                    rounded-xl border
-                    border-white/[0.08]
-                    bg-[#151a36]
-                    px-3 py-2.5
-                    text-sm text-[#d9ddef]
-                "
+                class="rf-select"
             >
                 <option value="">
                     Todos estados
@@ -3909,1376 +4099,1198 @@ new class extends Component
                     $this->states
                     as $stateOption
                 )
+
                     <option
                         value="{{ $stateOption }}"
                     >
                         {{ $stateOption }}
                     </option>
+
                 @endforeach
             </select>
 
-        </div>
-
-
-        @if (
-            $search !== ''
-            || $priority !== ''
-            || $icp !== ''
-            || $crm !== ''
-            || $state !== ''
-            || $owner !== ''
-            || $workStatus !== ''
-            || $followUp !== ''
-            || $dailyView !== ''
-            || $staleOnly
-            || $reprospectingReadyOnly
-        )
-
-            <button
-                type="button"
-                wire:click="clearFilters"
-                class="
-                    mt-3 text-xs
-                    font-semibold
-                    text-cyan-300
-                    hover:text-cyan-200
-                "
-            >
-                Limpar filtros
-            </button>
-
-        @endif
-
-    </div>
-
-
-    @if ($dailyView === 'today')
-
-        <div
-            class="
-                mt-5 flex flex-wrap
-                items-center justify-between
-                gap-3 rounded-xl
-                border border-cyan-300/15
-                bg-cyan-300/[0.04]
-                px-4 py-3
-            "
-        >
-            <div>
-                <div
-                    class="
-                        text-xs font-semibold
-                        text-cyan-300
-                    "
-                >
-                    Minha fila hoje
-                </div>
-
-                <div
-                    class="
-                        mt-0.5 text-[11px]
-                        text-[#7f89aa]
-                    "
-                >
-                    Leads novos e follow-ups
-                    futuros estão ocultos.
-                </div>
-            </div>
 
             <button
                 type="button"
                 wire:click="applyDailyView"
                 class="
-                    text-xs font-semibold
-                    text-[#a6aec9]
-                    hover:text-white
+                    rf-filter-action
+                    {{
+                        $dailyView === 'today'
+                            ? 'is-active'
+                            : ''
+                    }}
                 "
             >
-                Voltar para todos
+                Minha fila hoje
+                ·
+                {{ $this->dailyQueueCount }}
             </button>
+
+
+            <button
+                type="button"
+                wire:click="clearFilters"
+                class="rf-filter-action"
+            >
+                Limpar filtros
+            </button>
+
         </div>
 
-    @endif
+    </section>
 
 
-    {{-- LISTA --}}
-    <div class="ec-leads-list">
+    <section class="rf-panel rf-list-panel">
 
-        @forelse (
-            $this->leads
-            as $lead
-        )
+        <div class="rf-list-toolbar">
 
-            @php
-                $score =
-                    $lead->sdrScore;
-
-                $icpScore =
-                    $lead->icpScore;
-
-                $crmCheck =
-                    $lead->crmCheck;
-
-                $export =
-                    $lead->exportIntelligence;
-
-                $matrix =
-                    $lead->matrix;
-
-                $hubSpotLead =
-                    $lead->hubSpotLead;
-
-                $leadWorkState =
-                    $lead->leadWorkState;
-
-                $assignedUser =
-                    $leadWorkState
-                        ?->assignedUser;
-
-                $reprospectingInfo =
-                    $this->reprospectingInfo(
-                        $hubSpotLead
-                    );
-
-                $currentWorkStatus =
-                    $hubSpotLead?->work_status
-                    ?? 'new';
-
-                $snapshot =
-                    data_get(
-                        $hubSpotLead?->metadata
-                            ?? [],
-                        'qualification_snapshot',
-                        []
-                    );
-
-                if (! is_array($snapshot)) {
-                    $snapshot = [];
-                }
-
-                $displayScore =
-                    is_numeric(
-                        $snapshot['score']
-                            ?? null
-                    )
-                        ? (int) $snapshot['score']
-                        : (int) (
-                            $score?->score
-                            ?? 0
-                        );
-
-                $displayPriority =
-                    is_string(
-                        $snapshot['priority']
-                            ?? null
-                    )
-                        ? $snapshot['priority']
-                        : $score?->priority;
-
-            @endphp
-
-            <div
-                class="
-                    ec-leads-row
-                    grid gap-4
-                    border-b border-white/[0.05]
-                    px-5 py-5
-                    transition
-                    last:border-b-0
-                    hover:bg-white/[0.025]
-                    lg:grid-cols-[minmax(0,2.25fr)_105px_75px_230px_145px_125px_165px_180px]
-                    lg:items-center
-                "
-            >
-
-                <div class="min-w-0">
-
-                    <div
-                        class="
-                            truncate text-sm
-                            font-semibold
-                            text-[#eef1ff]
-                        "
-                    >
-                        {{ $lead->corporate_name }}
-                    </div>
-
-                    <div
-                        class="
-                            mt-1 flex flex-wrap
-                            items-center gap-2
-                            text-xs text-[#7781a2]
-                        "
-                    >
-
-                        @if ($matrix?->state)
-
-                            <span>
-                                {{ $matrix->state }}
-                            </span>
-
-                        @endif
-
-                        @if (
-                            $matrix?->municipality_name
-                        )
-
-                            <span>•</span>
-
-                            <span>
-                                {{
-                                    $matrix
-                                        ->municipality_name
-                                }}
-                            </span>
-
-                        @endif
-
-                    </div>
-
-                    @php
-                        $scoreReasons =
-                            $this->scoreReasons(
-                                $score
-                            );
-
-                        $hubSpotUrl =
-                            $this->hubSpotCompanyUrl(
-                                $crmCheck
-                            );
-
-                        $hubSpotDealUrl =
-                            $this->hubSpotDealUrl(
-                                $hubSpotLead
-                            );
-                    @endphp
-
-                    @if ($scoreReasons !== [])
-
-                        <div
-                            class="
-                                mt-3 flex flex-wrap
-                                gap-1.5
-                            "
-                        >
-
-                            @foreach (
-                                $scoreReasons
-                                as $reason
-                            )
-
-                                <span
-                                    class="
-                                        rounded-md
-                                        border border-white/[0.06]
-                                        bg-white/[0.025]
-                                        px-2 py-1
-                                        text-[10px]
-                                        text-[#9da6c5]
-                                    "
-                                    title="{{ $reason['detail'] }}"
-                                >
-                                    {{ $reason['label'] }}
-
-                                    <strong
-                                        class="text-cyan-300"
-                                    >
-                                        +{{ $reason['points'] }}
-                                    </strong>
-                                </span>
-
-                            @endforeach
-
-                        </div>
-
-                    @endif
-
-                    <div
-                        class="
-                            mt-3 flex flex-wrap
-                            items-center gap-3
-                        "
-                    >
-
-                        <a
-                            href="{{
-                                route(
-                                    'companies.show',
-                                    $lead
-                                )
-                            }}"
-                            wire:navigate
-                            class="
-                                text-xs font-semibold
-                                text-cyan-300
-                                hover:text-cyan-200
-                            "
-                        >
-                            Abrir dossiê →
-                        </a>
-
-                        @if ($hubSpotUrl)
-
-                            <a
-                                href="{{ $hubSpotUrl }}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="
-                                    text-xs font-semibold
-                                    text-[#9ba5c8]
-                                    hover:text-white
-                                "
-                            >
-                                Abrir HubSpot ↗
-                            </a>
-
-                        @endif
-
-                    </div>
-
-                </div>
-
-
-                <div>
-
-                    <div
-                        class="
-                            text-[10px]
-                            font-semibold
-                            uppercase
-                            tracking-wide
-                            text-[#697394]
-                        "
-                    >
-                        Score
-                    </div>
-
-                    <div class="ec-leads-score">
-
-                        <strong
-                            class="
-                                ec-leads-score-number
-                                {{
-                                    $this
-                                        ->scoreQualityClass(
-                                            $displayScore
-                                        )
-                                }}
-                            "
-                        >
-                            {{
-                                $displayScore
-                            }}/100
-                        </strong>
-
-
-                        <span
-                            class="
-                                ec-leads-score-quality
-                                {{
-                                    $this
-                                        ->scoreQualityClass(
-                                            $displayScore
-                                        )
-                                }}
-                            "
-                        >
-                            {{
-                                $this
-                                    ->scoreQualityLabel(
-                                        $displayScore
-                                    )
-                            }}
-                        </span>
-
-                    </div>
-
-                </div>
-
-
-                <div>
-
-                    <div
-                        class="
-                            text-[10px]
-                            font-semibold
-                            uppercase
-                            tracking-wide
-                            text-[#697394]
-                        "
-                    >
-                        ICP
-                    </div>
-
-                    <div
-                        class="
-                            mt-1 text-sm
-                            font-bold
-                            text-[#e5e9fa]
-                        "
-                    >
-                        {{
-                            $icpScore?->grade
-                            ?? '—'
-                        }}
-                    </div>
-
-                </div>
-
-
-                <div class="ec-leads-crm-column">
-
-                    @php
-                        $crmDeals =
-                            $this->crmDeals(
-                                $crmCheck
-                            );
-
-                        $visibleDeals =
-                            array_slice(
-                                $crmDeals,
-                                0,
-                                3
-                            );
-
-                        $hiddenDeals =
-                            array_slice(
-                                $crmDeals,
-                                3
-                            );
-                    @endphp
-
-
-                    <div
-                        class="
-                            text-[10px]
-                            font-semibold
-                            uppercase
-                            tracking-wide
-                            text-[#697394]
-                        "
-                    >
-                        CRM
-                    </div>
-
-
-                    <div class="ec-leads-crm-summary">
-
-                        <strong>
-                            {{
-                                $this->crmLabel(
-                                    $crmCheck?->status
-                                )
-                            }}
-                        </strong>
-
-
-                        @if ($crmDeals !== [])
-
-                            <span>
-                                {{
-                                    count($crmDeals)
-                                    .' '
-                                    .(
-                                        count($crmDeals) === 1
-                                            ? 'negócio'
-                                            : 'negócios'
-                                    )
-                                }}
-                            </span>
-
-                        @endif
-
-                    </div>
-
-
-                    @if ($visibleDeals !== [])
-
-                        <div class="ec-leads-crm-stages">
-
-                            @foreach (
-                                $visibleDeals
-                                as $deal
-                            )
-
-                                @if ($deal['url'])
-
-                                    <a
-                                        href="{{ $deal['url'] }}"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="
-                                            ec-leads-crm-stage
-                                            is-{{ $deal['state'] }}
-                                        "
-                                        title="{{
-                                            $deal['name']
-                                        }}"
-                                    >
-                                        <span></span>
-
-                                        {{
-                                            $deal['stage']
-                                        }}
-
-                                        <small>
-                                            ↗
-                                        </small>
-                                    </a>
-
-                                @else
-
-                                    <span
-                                        class="
-                                            ec-leads-crm-stage
-                                            is-{{ $deal['state'] }}
-                                        "
-                                        title="{{
-                                            $deal['name']
-                                        }}"
-                                    >
-                                        <span></span>
-
-                                        {{
-                                            $deal['stage']
-                                        }}
-                                    </span>
-
-                                @endif
-
-                            @endforeach
-
-                        </div>
-
-
-                        @if ($hiddenDeals !== [])
-
-                            <details class="ec-leads-crm-more">
-
-                                <summary>
-                                    +{{
-                                        count(
-                                            $hiddenDeals
-                                        )
-                                    }}
-
-                                    {{
-                                        count(
-                                            $hiddenDeals
-                                        ) === 1
-                                            ? 'outro negócio'
-                                            : 'outros negócios'
-                                    }}
-                                </summary>
-
-
-                                <div>
-
-                                    @foreach (
-                                        $hiddenDeals
-                                        as $deal
-                                    )
-
-                                        @if ($deal['url'])
-
-                                            <a
-                                                href="{{ $deal['url'] }}"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                class="
-                                                    ec-leads-crm-stage
-                                                    is-{{ $deal['state'] }}
-                                                "
-                                                title="{{
-                                                    $deal['name']
-                                                }}"
-                                            >
-                                                <span></span>
-
-                                                {{
-                                                    $deal['stage']
-                                                }}
-
-                                                <small>
-                                                    ↗
-                                                </small>
-                                            </a>
-
-                                        @else
-
-                                            <span
-                                                class="
-                                                    ec-leads-crm-stage
-                                                    is-{{ $deal['state'] }}
-                                                "
-                                            >
-                                                <span></span>
-
-                                                {{
-                                                    $deal['stage']
-                                                }}
-                                            </span>
-
-                                        @endif
-
-                                    @endforeach
-
-                                </div>
-
-                            </details>
-
-                        @endif
-
-                    @else
-
-                        <div class="ec-leads-crm-empty">
-
-                            @if (
-                                $crmCheck?->status
-                                === 'not_found'
-                            )
-
-                                Nenhum negócio no HubSpot
-
-                            @elseif ($crmCheck === null)
-
-                                CRM ainda não verificado
-
-                            @else
-
-                                Sem negócio associado
-
-                            @endif
-
-                        </div>
-
-                    @endif
-
-                </div>
-
-
-                <div>
-
-                    <div
-                        class="
-                            text-[10px]
-                            font-semibold
-                            uppercase
-                            tracking-wide
-                            text-[#697394]
-                        "
-                    >
-                        Exportação
-                    </div>
-
-                    <div
-                        class="
-                            mt-1 text-xs
-                            font-semibold
-                            {{
-                                $this->exportLabel(
-                                    $export
-                                ) === 'Atuação identificada'
-                                    ? 'text-emerald-300'
-                                    : 'text-[#cbd1e7]'
-                            }}
-                        "
-                    >
-                        {{
-                            $this->exportLabel(
-                                $export
-                            )
-                        }}
-                    </div>
-
-                </div>
-
-
-                <div>
-
-                    <div
-                        class="
-                            text-[10px]
-                            font-semibold
-                            uppercase
-                            tracking-wide
-                            text-[#697394]
-                        "
-                    >
-                        Prioridade
-                    </div>
-
-                    <div
-                        class="
-                            mt-1 text-sm
-                            font-bold
-                            {{
-                                match (
-                                    $displayPriority
-                                ) {
-                                    'very_high' =>
-                                        'text-emerald-300',
-
-                                    'high' =>
-                                        'text-cyan-300',
-
-                                    'medium' =>
-                                        'text-amber-300',
-
-                                    default =>
-                                        'text-[#9ca5c5]',
-                                }
-                            }}
-                        "
-                    >
-                        {{
-                            $this
-                                ->priorityLabel(
-                                    $displayPriority
-                                )
-                        }}
-                    </div>
-
-                    @if (
-                        $score
-                        ?->is_provisional
-                    )
-
-                        <div
-                            class="
-                                mt-0.5 text-[10px]
-                                text-[#687394]
-                            "
-                        >
-                            score provisório
-                        </div>
-
-                    @endif
-
-                </div>
-
-
-                <div>
-
-                    <div
-                        class="
-                            text-[10px]
-                            font-semibold
-                            uppercase
-                            tracking-wide
-                            text-[#697394]
-                        "
-                    >
-                        Responsável
-                    </div>
-
-                    @if (
-                        $this->isCommercialManager()
-                    )
-
-                    <select
-                        wire:key="owner-{{ $lead->id }}-{{ $assignedUser?->id ?? 'none' }}"
-                        wire:change="
-                            assignOwner(
-                                {{ $lead->id }},
-                                $event.target.value
-                            )
-                        "
-                        class="
-                            mt-1 w-full
-                            rounded-lg border
-                            border-white/[0.08]
-                            bg-[#151a36]
-                            px-2 py-2
-                            text-[11px]
-                            text-[#d9ddef]
-                        "
-                    >
-                        <option
-                            value=""
-                            @selected(
-                                $assignedUser
-                                === null
-                            )
-                        >
-                            Sem responsável
-                        </option>
-
-                        @foreach (
-                            $this->salesUsers
-                            as $salesUser
-                        )
-                            <option
-                                value="{{ $salesUser->id }}"
-                                @selected(
-                                    $assignedUser?->id
-                                    === $salesUser->id
-                                )
-                            >
-                                {{ $salesUser->name }}
-                            </option>
-                        @endforeach
-                    </select>
-
-                    @else
-
-                        <div
-                            class="
-                                mt-1 rounded-lg
-                                border border-white/[0.06]
-                                bg-white/[0.025]
-                                px-2.5 py-2
-                                text-[11px]
-                                font-semibold
-                                text-[#d9ddef]
-                            "
-                        >
-                            {{
-                                $assignedUser?->name
-                                ?? 'Sem responsável'
-                            }}
-                        </div>
-
-                    @endif
-
-                    @if (
-                        $this->isCommercialManager()
-                        && $assignedUser
-                            === null
-                    )
-
-                        <button
-                            type="button"
-                            wire:click="
-                                claimLead(
-                                    {{ $lead->id }}
-                                )
-                            "
-                            wire:loading.attr="disabled"
-                            wire:target="
-                                claimLead(
-                                    {{ $lead->id }}
-                                )
-                            "
-                            class="
-                                mt-2 text-[10px]
-                                font-semibold
-                                text-cyan-300
-                                transition
-                                hover:text-cyan-200
-                                disabled:opacity-50
-                            "
-                        >
-                            <span
-                                wire:loading.remove
-                                wire:target="
-                                    claimLead(
-                                        {{ $lead->id }}
-                                    )
-                                "
-                            >
-                                Assumir lead
-                            </span>
-
-                            <span
-                                wire:loading
-                                wire:target="
-                                    claimLead(
-                                        {{ $lead->id }}
-                                    )
-                                "
-                            >
-                                Assumindo...
-                            </span>
-                        </button>
-
-                    @else
-
-                        <div
-                            class="
-                                mt-2 truncate
-                                text-[10px]
-                                text-[#7f89aa]
-                            "
-                            title="{{ $assignedUser->name }}"
-                        >
-                            Carteira de
-                            {{ $assignedUser->name }}
-                        </div>
-
-                    @endif
-
-                </div>
-
-
-                <div>
-
-                    <div
-                        class="
-                            text-[10px]
-                            font-semibold
-                            uppercase
-                            tracking-wide
-                            text-[#697394]
-                        "
-                    >
-                        Acompanhamento
-                    </div>
-
-                    <div
-                        class="
-                            mt-1 inline-flex
-                            rounded-lg
-                            border border-white/[0.08]
-                            bg-white/[0.03]
-                            px-2.5 py-2
-                            text-xs font-semibold
-                            {{
-                                $this->workStatusClass(
-                                    $currentWorkStatus
-                                )
-                            }}
-                        "
-                    >
-                        {{
-                            $this->workStatusLabel(
-                                $currentWorkStatus
-                            )
-                        }}
-                    </div>
-
-                    <div
-                        class="
-                            mt-2 max-w-[190px]
-                            text-[10px]
-                            leading-relaxed
-                            {{
-                                $this->workContextClass(
-                                    $hubSpotLead
-                                )
-                            }}
-                        "
-                    >
-                        {{
-                            $this->workContext(
-                                $hubSpotLead
-                            )
-                        }}
-                    </div>
-
-
-                    @if ($reprospectingInfo)
-
-                        <div
-                            class="
-                                mt-2 text-[10px]
-                                {{
-                                    $reprospectingInfo[
-                                        'eligible'
-                                    ]
-                                        ? 'font-semibold text-emerald-300'
-                                        : 'text-[#7f89aa]'
-                                }}
-                            "
-                        >
-                            {{
-                                $reprospectingInfo[
-                                    'message'
-                                ]
-                            }}
-                        </div>
-
-                    @endif
-
-
-                    @if (
-                        $reprospectingInfo
-                        && $reprospectingInfo['eligible']
-                        && $hubSpotLead
-                    )
-
-                        <button
-                            type="button"
-                            wire:click="
-                                resumeLead(
-                                    {{ $hubSpotLead->id }}
-                                )
-                            "
-                            wire:confirm="
-                                Retomar este lead e mover
-                                o negócio novamente para
-                                Prospects no HubSpot?
-                            "
-                            wire:loading.attr="disabled"
-                            wire:target="
-                                resumeLead(
-                                    {{ $hubSpotLead->id }}
-                                )
-                            "
-                            class="
-                                mt-2 block
-                                rounded-lg
-                                border border-emerald-300/20
-                                bg-emerald-300/[0.07]
-                                px-3 py-2
-                                text-[11px]
-                                font-semibold
-                                text-emerald-300
-                                transition
-                                hover:bg-emerald-300/[0.12]
-                                disabled:opacity-50
-                            "
-                        >
-                            <span
-                                wire:loading.remove
-                                wire:target="
-                                    resumeLead(
-                                        {{ $hubSpotLead->id }}
-                                    )
-                                "
-                            >
-                                Retomar lead ↻
-                            </span>
-
-                            <span
-                                wire:loading
-                                wire:target="
-                                    resumeLead(
-                                        {{ $hubSpotLead->id }}
-                                    )
-                                "
-                            >
-                                Retomando...
-                            </span>
-                        </button>
-
-                    @endif
-
-
-                    @if ($hubSpotDealUrl)
-
-                        <a
-                            href="{{ $hubSpotDealUrl }}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="
-                                mt-2 inline-flex
-                                items-center gap-1
-                                text-[11px]
-                                font-semibold
-                                {{
-                                    $this->nextActionClass(
-                                        $hubSpotLead
-                                    )
-                                }}
-                            "
-                        >
-                            {{
-                                $this->nextActionLabel(
-                                    $hubSpotLead
-                                )
-                            }}
-                            ↗
-                        </a>
-
-                    @endif
-
-                                        @if (
-                        $hubSpotLead
-                        && $hubSpotLead
-                            ->hubspot_company_id
-                        && $hubSpotLead
-                            ->hubspot_deal_id
-                    )
-
-                        <button
-                            type="button"
-                            wire:click="
-                                refreshHubSpotStatus(
-                                    {{ $hubSpotLead->id }}
-                                )
-                            "
-                            wire:loading.attr="disabled"
-                            wire:target="
-                                refreshHubSpotStatus(
-                                    {{ $hubSpotLead->id }}
-                                )
-                            "
-                            class="
-                                mt-2 block
-                                text-[10px]
-                                font-semibold
-                                text-[#6f789a]
-                                transition
-                                hover:text-cyan-300
-                                disabled:opacity-50
-                            "
-                        >
-                            <span
-                                wire:loading.remove
-                                wire:target="
-                                    refreshHubSpotStatus(
-                                        {{ $hubSpotLead->id }}
-                                    )
-                                "
-                            >
-                                Atualizar HubSpot ↻
-                            </span>
-
-                            <span
-                                wire:loading
-                                wire:target="
-                                    refreshHubSpotStatus(
-                                        {{ $hubSpotLead->id }}
-                                    )
-                                "
-                            >
-                                Atualizando...
-                            </span>
-                        </button>
-
-                    @endif
-
-
-                    @if (
-                        $hubSpotLead?->work_status
-                            === 'waiting'
-                        && $hubSpotLead
-                            ?->last_task_due_at
-                    )
-
-                        @php
-                            $taskIsOverdue =
-                                $hubSpotLead
-                                    ->last_task_due_at
-                                    ->isPast();
-                        @endphp
-
-                        <div
-                            class="
-                                mt-2 text-[10px]
-                                font-semibold
-                                {{
-                                    $taskIsOverdue
-                                        ? 'text-red-300'
-                                        : 'text-amber-300'
-                                }}
-                            "
-                        >
-                            {{
-                                $taskIsOverdue
-                                    ? 'Atrasado'
-                                    : 'Próxima ação'
-                            }}
-                            ·
-                            {{
-                                $hubSpotLead
-                                    ->last_task_due_at
-                                    ->format(
-                                        'd/m/Y H:i'
-                                    )
-                            }}
-                        </div>
-
-                    @endif
-
-
-                    @if (
-                        $hubSpotLead
-                            ?->last_activity_at
-                    )
-
-                        <div
-                            class="
-                                mt-3 text-[10px]
-                                text-[#697394]
-                            "
-                        >
-                            Último contato no HubSpot ·
-                            {{
-                                $hubSpotLead
-                                    ->last_activity_at
-                                    ->format(
-                                        'd/m/Y H:i'
-                                    )
-                            }}
-                        </div>
-
-                    @endif
-
-
-
-                </div>
-
-            </div>
-
-        @empty
-
-            <div
-                class="
-                    px-6 py-14
-                    text-center
-                "
-            >
-
-                <div
-                    class="
-                        text-sm font-semibold
-                        text-[#c8cee3]
-                    "
-                >
-                    Nenhum lead elegível encontrado
-                </div>
-
-                <div
-                    class="
-                        mt-1 text-xs
-                        text-[#707a9d]
-                    "
-                >
-                    Ajuste os filtros ou importe
-                    novas empresas.
-                </div>
-
-            </div>
-
-        @endforelse
-
-    </div>
-
-
-    @if (
-        $this
-            ->leads
-            ->hasPages()
-    )
-
-        <div class="ec-leads-pagination">
-
-            <div class="ec-leads-pagination-info">
-
-                Exibindo
-
-                <strong>
-                    {{
-                        $this
-                            ->leads
-                            ->firstItem()
-                    }}
-                </strong>
-
-                a
-
-                <strong>
-                    {{
-                        $this
-                            ->leads
-                            ->lastItem()
-                    }}
-                </strong>
-
-                de
+            <div>
 
                 <strong>
                     {{
                         number_format(
-                            $this
-                                ->leads
-                                ->total(),
+                            $this->leads->total(),
                             0,
                             ',',
                             '.'
                         )
                     }}
+                    leads encontrados
                 </strong>
 
-                leads
+                <span>
+                    Ordenados pela necessidade
+                    de atenção comercial e score.
+                </span>
 
             </div>
 
 
-            <div class="ec-leads-pagination-actions">
+            <div class="rf-list-legend">
 
-                <button
-                    type="button"
-                    wire:click="previousPage"
-                    @disabled(
-                        $this
-                            ->leads
-                            ->onFirstPage()
-                    )
-                >
-                    ‹
-                </button>
+                <span>
+                    Score 50+ = bom potencial
+                </span>
 
+                <span>
+                    •
+                </span>
 
-                @php
-                    $currentPage =
-                        $this
-                            ->leads
-                            ->currentPage();
-
-                    $lastPage =
-                        $this
-                            ->leads
-                            ->lastPage();
-
-                    $startPage =
-                        max(
-                            1,
-                            $currentPage - 2
-                        );
-
-                    $endPage =
-                        min(
-                            $lastPage,
-                            $currentPage + 2
-                        );
-                @endphp
-
-
-                @for (
-                    $page = $startPage;
-                    $page <= $endPage;
-                    $page++
-                )
-
-                    <button
-                        type="button"
-                        wire:click="
-                            gotoPage(
-                                {{ $page }}
-                            )
-                        "
-                        class="{{
-                            $page
-                            === $currentPage
-                                ? 'is-active'
-                                : ''
-                        }}"
-                    >
-                        {{ $page }}
-                    </button>
-
-                @endfor
-
-
-                <button
-                    type="button"
-                    wire:click="nextPage"
-                    @disabled(
-                        ! $this
-                            ->leads
-                            ->hasMorePages()
-                    )
-                >
-                    ›
-                </button>
+                <span>
+                    Alta = 75 a 100
+                </span>
 
             </div>
 
         </div>
 
-    @endif
+
+        <div class="rf-list-scroll">
+
+            <div class="rf-list-head">
+
+                <div>
+                    Empresa
+                </div>
+
+                <div>
+                    Score / prioridade
+                </div>
+
+                <div>
+                    CRM / HubSpot
+                </div>
+
+                <div>
+                    Acompanhamento
+                </div>
+
+                <div>
+                    Responsável
+                </div>
+
+                <div>
+                    Ações
+                </div>
+
+            </div>
+
+
+            @forelse (
+                $this->leads
+                as $lead
+            )
+
+                @php
+                    $score =
+                        $lead->sdrScore;
+
+                    $icpScore =
+                        $lead->icpScore;
+
+                    $crmCheck =
+                        $lead->crmCheck;
+
+                    $export =
+                        $lead->exportIntelligence;
+
+                    $matrix =
+                        $lead->matrix;
+
+                    $hubSpotLead =
+                        $lead->hubSpotLead;
+
+                    $leadWorkState =
+                        $lead->leadWorkState;
+
+                    $assignedUser =
+                        $leadWorkState
+                            ?->assignedUser;
+
+                    $snapshot =
+                        data_get(
+                            $hubSpotLead?->metadata
+                                ?? [],
+                            'qualification_snapshot',
+                            []
+                        );
+
+                    if (! is_array($snapshot)) {
+                        $snapshot = [];
+                    }
+
+                    $displayScore =
+                        is_numeric(
+                            $snapshot['score']
+                                ?? null
+                        )
+                            ? (int) $snapshot['score']
+                            : (int) (
+                                $score?->score
+                                ?? 0
+                            );
+
+                    $displayScore =
+                        max(
+                            0,
+                            min(
+                                100,
+                                $displayScore
+                            )
+                        );
+
+                    $displayPriority =
+                        is_string(
+                            $snapshot['priority']
+                                ?? null
+                        )
+                            ? $snapshot['priority']
+                            : (
+                                $score?->priority
+                                ?? 'low'
+                            );
+
+                    if (
+                        ! in_array(
+                            $displayPriority,
+                            [
+                                'very_high',
+                                'high',
+                                'medium',
+                                'low',
+                            ],
+                            true
+                        )
+                    ) {
+                        $displayPriority =
+                            'low';
+                    }
+
+                    $commercialStatus =
+                        $hubSpotLead
+                            ?->commercial_status;
+
+                    if (
+                        ! in_array(
+                            $commercialStatus,
+                            [
+                                'new',
+                                'known',
+                                'client',
+                                'reprospecting',
+                            ],
+                            true
+                        )
+                    ) {
+                        $commercialStatus =
+                            match (
+                                $crmCheck?->status
+                            ) {
+                                'not_found' =>
+                                    'new',
+
+                                'client' =>
+                                    'client',
+
+                                'prospected' =>
+                                    'reprospecting',
+
+                                default =>
+                                    'known',
+                            };
+                    }
+
+                    $commercialLabel =
+                        match (
+                            $commercialStatus
+                        ) {
+                            'new' =>
+                                'Novo',
+
+                            'client' =>
+                                'Cliente',
+
+                            'reprospecting' =>
+                                'Reprospecção',
+
+                            default =>
+                                'Conhecido',
+                        };
+
+                    $commercialClass =
+                        match (
+                            $commercialStatus
+                        ) {
+                            'new' =>
+                                'rf-commercial-new',
+
+                            'client' =>
+                                'rf-commercial-client',
+
+                            'reprospecting' =>
+                                'rf-commercial-reprospecting',
+
+                            default =>
+                                'rf-commercial-known',
+                        };
+
+                    $currentWorkStatus =
+                        $hubSpotLead
+                            ?->work_status
+                        ?? 'new';
+
+                    $workClass =
+                        match (
+                            $currentWorkStatus
+                        ) {
+                            'contacting' =>
+                                'rf-work-contacting',
+
+                            'waiting' =>
+                                'rf-work-waiting',
+
+                            'future' =>
+                                'rf-work-future',
+
+                            'reprospecting' =>
+                                'rf-work-reprospecting',
+
+                            default =>
+                                'rf-work-new',
+                        };
+
+                    $priorityClass =
+                        match (
+                            $displayPriority
+                        ) {
+                            'very_high' =>
+                                'rf-priority-high',
+
+                            'high' =>
+                                'rf-priority-high',
+
+                            'medium' =>
+                                'rf-priority-medium',
+
+                            default =>
+                                'rf-priority-low',
+                        };
+
+                    $crmDeals =
+                        $this->crmDeals(
+                            $crmCheck
+                        );
+
+                    $visibleDeals =
+                        array_slice(
+                            $crmDeals,
+                            0,
+                            3
+                        );
+
+                    $hiddenDealCount =
+                        max(
+                            0,
+                            count(
+                                $crmDeals
+                            ) - 3
+                        );
+
+                    $dealCount =
+                        count(
+                            $crmDeals
+                        );
+
+                    $hubSpotUrl =
+                        $this->hubSpotCompanyUrl(
+                            $crmCheck
+                        );
+
+                    $hubSpotDealUrl =
+                        $this->hubSpotDealUrl(
+                            $hubSpotLead
+                        );
+
+                    $hubSpotActionUrl =
+                        $hubSpotDealUrl
+                        ?? $hubSpotUrl;
+
+                    $reprospectingInfo =
+                        $this->reprospectingInfo(
+                            $hubSpotLead
+                        );
+
+                    $scoreReasons =
+                        $this->scoreReasons(
+                            $score
+                        );
+                @endphp
+
+
+                <article
+                    wire:key="lead-rf-{{ $lead->id }}"
+                    class="rf-lead-row"
+                >
+
+                    {{-- EMPRESA --}}
+                    <div>
+
+                        <div class="rf-company-name">
+                            {{ $lead->corporate_name }}
+                        </div>
+
+                        <div class="rf-location">
+
+                            @if ($matrix?->state)
+
+                                <span>
+                                    {{ $matrix->state }}
+                                </span>
+
+                            @endif
+
+                            @if (
+                                $matrix?->municipality_name
+                            )
+
+                                @if ($matrix?->state)
+                                    <span>•</span>
+                                @endif
+
+                                <span>
+                                    {{
+                                        $matrix
+                                            ->municipality_name
+                                    }}
+                                </span>
+
+                            @endif
+
+                        </div>
+
+
+                        <div class="rf-company-meta">
+
+                            <span
+                                class="
+                                    rf-chip
+                                    {{ $commercialClass }}
+                                "
+                            >
+                                <i class="rf-chip-dot"></i>
+
+                                {{ $commercialLabel }}
+                            </span>
+
+
+                            <span class="rf-chip">
+                                {{
+                                    $this->exportLabel(
+                                        $export
+                                    )
+                                }}
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- SCORE --}}
+                    <div
+                        class="{{
+                            $displayScore >= 50
+                                ? ''
+                                : 'rf-score-low'
+                        }}"
+                    >
+
+                        <div class="rf-section-label">
+                            Score
+                        </div>
+
+                        <div class="rf-score-top">
+
+                            <span class="rf-score-number">
+                                {{ $displayScore }}/100
+                            </span>
+
+                        </div>
+
+                        <div class="rf-score-bar">
+
+                            <div
+                                class="rf-score-fill"
+                                style="
+                                    width:
+                                    {{ $displayScore }}%;
+                                "
+                            ></div>
+
+                        </div>
+
+                        <div class="rf-score-info">
+
+                            <span class="rf-chip">
+                                {{
+                                    $this
+                                        ->scoreQualityLabel(
+                                            $displayScore
+                                        )
+                                }}
+                            </span>
+
+                            <span
+                                class="
+                                    rf-priority
+                                    {{ $priorityClass }}
+                                "
+                            >
+                                {{
+                                    $this
+                                        ->priorityLabel(
+                                            $displayPriority
+                                        )
+                                }}
+                            </span>
+
+                            <span class="rf-icp">
+                                ICP
+                                {{
+                                    $icpScore?->grade
+                                    ?? '—'
+                                }}
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- CRM --}}
+                    <div>
+
+                        <div class="rf-section-label">
+                            CRM / HubSpot
+                        </div>
+
+                        <div
+                            style="
+                                display:flex;
+                                align-items:center;
+                                gap:6px;
+                                margin-top:5px;
+                                flex-wrap:wrap;
+                            "
+                        >
+
+                            <span class="rf-chip">
+                                {{
+                                    $this->crmLabel(
+                                        $crmCheck?->status
+                                    )
+                                }}
+                            </span>
+
+                            @if ($dealCount > 0)
+
+                                <span class="rf-chip">{{ $dealCount }} {{ $dealCount === 1 ? 'negócio' : 'negócios' }}</span>
+
+                            @endif
+
+                        </div>
+
+                        @if ($visibleDeals !== [])
+
+                            <div class="rf-deals">
+
+                                @foreach (
+                                    $visibleDeals
+                                    as $deal
+                                )
+
+                                    <div
+                                        class="rf-deal"
+                                        title="{{
+                                            $deal['name']
+                                        }}"
+                                    >
+
+                                        @if (
+                                            $deal['url']
+                                            ?? null
+                                        )
+
+                                            <a
+                                                href="{{
+                                                    $deal[
+                                                        'url'
+                                                    ]
+                                                }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="rf-deal-stage"
+                                            >
+                                                {{
+                                                    $deal[
+                                                        'stage'
+                                                    ]
+                                                }}
+                                            </a>
+
+                                        @else
+
+                                            <span
+                                                class="rf-deal-stage"
+                                            >
+                                                {{
+                                                    $deal[
+                                                        'stage'
+                                                    ]
+                                                }}
+                                            </span>
+
+                                        @endif
+
+                                        <span
+                                            class="rf-deal-name"
+                                        >
+                                            {{
+                                                $deal[
+                                                    'name'
+                                                ]
+                                            }}
+                                        </span>
+
+                                    </div>
+
+                                @endforeach
+
+                                @if (
+                                    $hiddenDealCount > 0
+                                )
+
+                                    <div class="rf-empty">
+                                        +
+                                        {{ $hiddenDealCount }}
+                                        negócio(s)
+                                    </div>
+
+                                @endif
+
+                            </div>
+
+                        @else
+
+                            <div class="rf-empty">
+                                Sem negócio associado
+                            </div>
+
+                        @endif
+
+                    </div>
+
+
+                    {{-- ACOMPANHAMENTO --}}
+                    <div>
+
+                        <div class="rf-section-label">
+                            Acompanhamento
+                        </div>
+
+                        <div
+                            class="
+                                rf-work-badge
+                                {{ $workClass }}
+                            "
+                        >
+                            {{
+                                $this
+                                    ->workStatusLabel(
+                                        $currentWorkStatus
+                                    )
+                            }}
+                        </div>
+
+
+                        <div class="rf-work-context">
+                            {{
+                                $this->workContext(
+                                    $hubSpotLead
+                                )
+                            }}
+                        </div>
+
+
+                        @if ($reprospectingInfo)
+
+                            <div
+                                class="
+                                    rf-work-context
+                                    {{
+                                        $reprospectingInfo[
+                                            'eligible'
+                                        ]
+                                            ? 'text-emerald-300'
+                                            : 'text-amber-300'
+                                    }}
+                                "
+                                style="
+                                    margin-top:6px;
+                                    font-weight:700;
+                                "
+                            >
+                                {{
+                                    $reprospectingInfo[
+                                        'message'
+                                    ]
+                                }}
+                            </div>
+
+                        @endif
+
+
+                        @if (
+                            $hubSpotLead
+                                ?->last_task_due_at
+                        )
+
+                            <div class="rf-work-date">
+
+                                Tarefa:
+                                {{
+                                    $hubSpotLead
+                                        ->last_task_due_at
+                                        ->format(
+                                            'd/m/Y H:i'
+                                        )
+                                }}
+
+                            </div>
+
+                        @elseif (
+                            $hubSpotLead
+                                ?->last_activity_at
+                        )
+
+                            <div class="rf-work-date">
+
+                                Última interação:
+                                {{
+                                    $hubSpotLead
+                                        ->last_activity_at
+                                        ->format(
+                                            'd/m/Y'
+                                        )
+                                }}
+
+                            </div>
+
+                        @endif
+
+                    </div>
+
+
+                    {{-- RESPONSAVEL --}}
+                    <div>
+
+                        <div class="rf-section-label">
+                            Responsável
+                        </div>
+
+
+                        @if (
+                            $this->isCommercialManager()
+                        )
+
+                            <select
+                                wire:key="
+                                    owner-rf-{{ $lead->id }}-{{
+                                        $assignedUser?->id
+                                        ?? 'none'
+                                    }}
+                                "
+                                wire:change="
+                                    assignOwner(
+                                        {{ $lead->id }},
+                                        $event.target.value
+                                    )
+                                "
+                                class="rf-owner-select"
+                            >
+
+                                <option
+                                    value=""
+                                    @selected(
+                                        $assignedUser
+                                        === null
+                                    )
+                                >
+                                    Sem responsável
+                                </option>
+
+                                @foreach (
+                                    $this->salesUsers
+                                    as $salesUser
+                                )
+
+                                    <option
+                                        value="{{
+                                            $salesUser->id
+                                        }}"
+                                        @selected(
+                                            $assignedUser?->id
+                                            === $salesUser->id
+                                        )
+                                    >
+                                        {{
+                                            $salesUser->name
+                                        }}
+                                    </option>
+
+                                @endforeach
+
+                            </select>
+
+                        @else
+
+                            <div class="rf-owner-name">
+                                {{
+                                    $assignedUser?->name
+                                    ?? 'Sem responsável'
+                                }}
+                            </div>
+
+                        @endif
+
+
+                        @if (
+                            $this->isCommercialManager()
+                            && $assignedUser === null
+                        )
+
+                            <button
+                                type="button"
+                                wire:click="
+                                    claimLead(
+                                        {{ $lead->id }}
+                                    )
+                                "
+                                wire:loading.attr="disabled"
+                                wire:target="
+                                    claimLead(
+                                        {{ $lead->id }}
+                                    )
+                                "
+                                class="rf-claim"
+                            >
+                                Assumir lead
+                            </button>
+
+                        @elseif (
+                            $assignedUser !== null
+                        )
+
+                            <div class="rf-owner-helper">
+                                Carteira de
+                                {{ $assignedUser->name }}
+                            </div>
+
+                        @endif
+
+                    </div>
+
+
+                    {{-- ACOES --}}
+                    <div>
+
+                        <div class="rf-section-label">
+                            Próxima ação
+                        </div>
+
+                        @if ($hubSpotLead)
+
+                            <div
+                                class="
+                                    rf-work-context
+                                    {{
+                                        $this
+                                            ->nextActionClass(
+                                                $hubSpotLead
+                                            )
+                                    }}
+                                "
+                                style="
+                                    margin-top:6px;
+                                    font-weight:800;
+                                "
+                            >
+                                {{
+                                    $this
+                                        ->nextActionLabel(
+                                            $hubSpotLead
+                                        )
+                                }}
+                            </div>
+
+                        @endif
+
+                        <div class="rf-actions">
+
+                            <a
+                                href="{{
+                                    route(
+                                        'companies.show',
+                                        $lead
+                                    )
+                                }}"
+                                wire:navigate
+                                class="
+                                    rf-btn
+                                    rf-btn-primary
+                                "
+                            >
+                                Abrir dossiê
+                            </a>
+
+
+                            @if ($hubSpotActionUrl)
+
+                                <a
+                                    href="{{
+                                        $hubSpotActionUrl
+                                    }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="rf-btn"
+                                >
+                                    HubSpot ↗
+                                </a>
+
+                            @endif
+
+                        </div>
+
+
+                        @if (
+                            $reprospectingInfo
+                            && $reprospectingInfo[
+                                'eligible'
+                            ]
+                            && $hubSpotLead
+                        )
+
+                            <button
+                                type="button"
+                                wire:click="
+                                    resumeLead(
+                                        {{ $hubSpotLead->id }}
+                                    )
+                                "
+                                wire:confirm="
+                                    Retomar este lead no HubSpot?
+                                "
+                                wire:loading.attr="disabled"
+                                wire:target="
+                                    resumeLead(
+                                        {{ $hubSpotLead->id }}
+                                    )
+                                "
+                                class="
+                                    rf-btn
+                                    rf-btn-reprospect
+                                "
+                                style="margin-top:6px"
+                            >
+                                Retomar lead
+                            </button>
+
+                        @endif
+
+
+                        @if (
+                            $hubSpotLead
+                            && $hubSpotLead
+                                ->hubspot_company_id
+                            && $hubSpotLead
+                                ->hubspot_deal_id
+                        )
+
+                            <button
+                                type="button"
+                                wire:click="
+                                    refreshHubSpotStatus(
+                                        {{ $hubSpotLead->id }}
+                                    )
+                                "
+                                wire:loading.attr="disabled"
+                                wire:target="
+                                    refreshHubSpotStatus(
+                                        {{ $hubSpotLead->id }}
+                                    )
+                                "
+                                class="rf-claim"
+                            >
+                                Atualizar HubSpot
+                            </button>
+
+                        @endif
+
+
+                        @if (
+                            $scoreReasons !== []
+                        )
+
+                            <div
+                                class="rf-mini-note"
+                                title="{{
+                                    collect(
+                                        $scoreReasons
+                                    )
+                                        ->map(
+                                            fn ($reason) =>
+                                                $reason[
+                                                    'label'
+                                                ]
+                                                .' +'
+                                                .$reason[
+                                                    'points'
+                                                ]
+                                        )
+                                        ->implode(
+                                            ' · '
+                                        )
+                                }}"
+                            >
+                                @foreach (
+                                    array_slice(
+                                        $scoreReasons,
+                                        0,
+                                        2
+                                    )
+                                    as $reason
+                                )
+
+                                    <span>
+                                        {{
+                                            $reason[
+                                                'label'
+                                            ]
+                                        }}
+                                        +{{
+                                            $reason[
+                                                'points'
+                                            ]
+                                        }}
+                                    </span>
+
+                                    @if (! $loop->last)
+                                        ·
+                                    @endif
+
+                                @endforeach
+                            </div>
+
+                        @endif
+
+                    </div>
+
+                </article>
+
+
+            @empty
+
+                <div class="rf-empty-state">
+
+                    <strong>
+                        Nenhum lead encontrado
+                    </strong>
+
+                    <span>
+                        Ajuste os filtros para
+                        ampliar a busca.
+                    </span>
+
+                </div>
+
+            @endforelse
+
+        </div>
+
+
+        @if (
+            $this->leads->hasPages()
+        )
+
+            <div class="rf-pagination">
+
+                <div class="rf-pagination-info">
+
+                    Exibindo
+
+                    <strong>
+                        {{
+                            $this->leads
+                                ->firstItem()
+                        }}
+                    </strong>
+
+                    a
+
+                    <strong>
+                        {{
+                            $this->leads
+                                ->lastItem()
+                        }}
+                    </strong>
+
+                    de
+
+                    <strong>
+                        {{
+                            number_format(
+                                $this->leads
+                                    ->total(),
+                                0,
+                                ',',
+                                '.'
+                            )
+                        }}
+                    </strong>
+
+                    leads
+
+                </div>
+
+
+                <div class="rf-pagination-buttons">
+
+                    <button
+                        type="button"
+                        wire:click="previousPage"
+                        @disabled(
+                            $this->leads
+                                ->onFirstPage()
+                        )
+                        class="rf-page-btn"
+                    >
+                        ‹
+                    </button>
+
+
+                    @php
+                        $currentPage =
+                            $this->leads
+                                ->currentPage();
+
+                        $lastPage =
+                            $this->leads
+                                ->lastPage();
+
+                        $startPage =
+                            max(
+                                1,
+                                $currentPage - 2
+                            );
+
+                        $endPage =
+                            min(
+                                $lastPage,
+                                $currentPage + 2
+                            );
+                    @endphp
+
+
+                    @for (
+                        $page = $startPage;
+                        $page <= $endPage;
+                        $page++
+                    )
+
+                        <button
+                            type="button"
+                            wire:click="
+                                gotoPage(
+                                    {{ $page }}
+                                )
+                            "
+                            class="
+                                rf-page-btn
+                                {{
+                                    $page
+                                    === $currentPage
+                                        ? 'is-active'
+                                        : ''
+                                }}
+                            "
+                        >
+                            {{ $page }}
+                        </button>
+
+                    @endfor
+
+
+                    <button
+                        type="button"
+                        wire:click="nextPage"
+                        @disabled(
+                            ! $this->leads
+                                ->hasMorePages()
+                        )
+                        class="rf-page-btn"
+                    >
+                        ›
+                    </button>
+
+                </div>
+
+            </div>
+
+        @endif
+
+    </section>
+
+</div>
 
 </div>

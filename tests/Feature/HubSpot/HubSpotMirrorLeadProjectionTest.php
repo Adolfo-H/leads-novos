@@ -136,6 +136,12 @@ it(
         );
 
         expect(
+            $lead->commercial_status
+        )->toBe(
+            'known'
+        );
+
+        expect(
             $lead->hubspot_company_id
         )->toBe(
             'company-1'
@@ -163,7 +169,7 @@ it(
                 $lead->metadata,
                 'qualification_snapshot.score'
             )
-        )->toBe(30);
+        )->toBe(79);
 
         expect(
             data_get(

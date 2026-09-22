@@ -18,6 +18,7 @@ class CompanyHubSpotLead extends Model
         'pipeline_id',
         'deal_stage_id',
         'work_status',
+        'commercial_status',
         'work_status_changed_at',
         'last_activity_type',
         'last_activity_at',

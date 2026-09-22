@@ -27,7 +27,7 @@ final class CrmReprospectingPolicyService
                 1,
                 (int) config(
                     'prospector.crm.reprospecting_after_days',
-                    180
+                    90
                 )
             );
 

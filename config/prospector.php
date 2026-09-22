@@ -3,13 +3,21 @@
 return [
     'crm' => [
         /*
-         * Depois deste período, empresas
-         * apenas prospectadas podem voltar
-         * automaticamente para a fila SDR.
+         * Até este período consideramos
+         * o lead em contato recente.
+         */
+        'contacting_after_days' => (int) env(
+            'CRM_CONTACTING_AFTER_DAYS',
+            30
+        ),
+
+        /*
+         * Depois deste período sem atividade,
+         * o lead entra em reprospecção.
          */
         'reprospecting_after_days' => (int) env(
             'CRM_REPROSPECT_AFTER_DAYS',
-            180
+            90
         ),
     ],
 
