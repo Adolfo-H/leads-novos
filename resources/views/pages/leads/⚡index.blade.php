@@ -1,6 +1,7 @@
 <?php
 
 use App\Contracts\CrmCompanyProvider;
+use App\Jobs\RefreshCompanyFromHubSpot;
 use App\Models\Company;
 use App\Models\CompanyCrmCheck;
 use App\Models\CompanyExportIntelligence;
@@ -61,6 +62,70 @@ new class extends Component
         return $user instanceof User
             && $user
                 ->isCommercialManager();
+    }
+
+    public function refreshAllHubSpotData(): void
+    {
+        abort_unless(
+            $this->isCommercialManager(),
+            403
+        );
+
+        $this->commercialActionMessage = '';
+        $this->commercialActionError = '';
+
+        /*
+         * Atualizamos toda a fila comercial
+         * exibida na operação.
+         *
+         * Cada empresa vira um Job independente,
+         * portanto o clique não fica esperando
+         * centenas de chamadas ao HubSpot.
+         */
+        $companyIds =
+            $this
+                ->operationalLeadQuery()
+                ->pluck(
+                    'companies.id'
+                )
+                ->map(
+                    static fn (
+                        mixed $id
+                    ): int => (int) $id
+                )
+                ->unique()
+                ->values();
+
+        $total =
+            $companyIds
+                ->count();
+
+        if ($total === 0) {
+            $this->commercialActionMessage =
+                'Nenhuma empresa disponível para atualização.';
+
+            return;
+        }
+
+        foreach (
+            $companyIds as $companyId
+        ) {
+            RefreshCompanyFromHubSpot::dispatch(
+                $companyId
+            );
+        }
+
+        $label =
+            $total === 1
+                ? 'empresa'
+                : 'empresas';
+
+        $this->commercialActionMessage =
+            'Atualização CRM/HubSpot iniciada para '
+            .$total
+            .' '
+            .$label
+            .'. Os dados serão atualizados em segundo plano.';
     }
 
     private function assertCanOperateLead(
@@ -2663,7 +2728,7 @@ new class extends Component
 
     .rf-shell {
         display: grid;
-        gap: 18px;
+        gap: 12px;
     }
 
     .rf-header {
@@ -2720,8 +2785,8 @@ new class extends Component
     }
 
     .rf-header-guide {
-        max-width: 350px;
-        padding: 12px 14px;
+        max-width: 310px;
+        padding: 10px 12px;
         border: 1px solid var(--rf-border);
         border-radius: 14px;
         background: linear-gradient(
@@ -2773,8 +2838,8 @@ new class extends Component
 
     .rf-kpi {
         position: relative;
-        min-height: 100px;
-        padding: 16px;
+        min-height: 92px;
+        padding: 14px 15px;
         overflow: hidden;
         border: 1px solid var(--rf-border);
         border-radius: 15px;
@@ -2858,8 +2923,8 @@ new class extends Component
 
     .rf-guide-title,
     .rf-guide-item {
-        min-height: 72px;
-        padding: 13px 15px;
+        min-height: 62px;
+        padding: 11px 14px;
     }
 
     .rf-guide-title {
@@ -3035,13 +3100,14 @@ new class extends Component
     .rf-lead-row {
         display: grid;
         grid-template-columns:
-            minmax(270px, 1.5fr)
-            145px
-            minmax(185px, 1fr)
-            minmax(200px, 1.05fr)
-            minmax(175px, .85fr)
-            185px;
-        min-width: 1220px;
+            minmax(255px, 1.45fr)
+            135px
+            135px
+            minmax(165px, .92fr)
+            minmax(205px, 1.12fr)
+            150px
+            170px;
+        min-width: 1250px;
         gap: 14px;
         align-items: center;
     }
@@ -3059,9 +3125,34 @@ new class extends Component
 
     .rf-lead-row {
         position: relative;
-        padding: 17px;
+        min-height: 106px;
+        padding: 13px 17px 13px 19px;
         border-bottom: 1px solid rgba(111,181,226,.09);
-        transition: background .16s ease;
+        border-left: 3px solid transparent;
+        transition:
+            background .16s ease,
+            border-color .16s ease;
+    }
+
+    .rf-row-high {
+        border-left-color: rgba(255,110,123,.72);
+    }
+
+    .rf-row-medium {
+        border-left-color: rgba(245,197,75,.42);
+    }
+
+    .rf-row-low {
+        border-left-color: rgba(74,168,255,.18);
+    }
+
+    .rf-row-overdue {
+        background:
+            linear-gradient(
+                90deg,
+                rgba(255,80,92,.045),
+                transparent 38%
+            );
     }
 
     .rf-lead-row:last-child {
@@ -3073,21 +3164,26 @@ new class extends Component
     }
 
     .rf-company-name {
+        display: -webkit-box;
         overflow: hidden;
-        color: #f2f6ff;
-        font-size: 12px;
+        min-height: 34px;
+        color: #f5f9ff;
+        font-size: 14px;
         font-weight: 800;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        line-height: 1.28;
+        letter-spacing: -.01em;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
     }
 
     .rf-location {
         display: flex;
         align-items: center;
         gap: 6px;
-        margin-top: 4px;
-        color: var(--rf-muted);
+        margin-top: 5px;
+        color: #91abc3;
         font-size: 10px;
+        font-weight: 600;
     }
 
     .rf-company-meta {
@@ -3101,8 +3197,8 @@ new class extends Component
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        min-height: 22px;
-        padding: 0 8px;
+        min-height: 21px;
+        padding: 0 7px;
         border: 1px solid rgba(134,190,228,.14);
         border-radius: 999px;
         background: rgba(255,255,255,.025);
@@ -3150,10 +3246,11 @@ new class extends Component
     }
 
     .rf-score-number {
-        color: var(--rf-text);
-        font-size: 22px;
-        font-weight: 800;
-        letter-spacing: -.025em;
+        color: #ffffff;
+        font-size: 27px;
+        line-height: 1;
+        font-weight: 850;
+        letter-spacing: -.045em;
     }
 
     .rf-score-max {
@@ -3197,6 +3294,13 @@ new class extends Component
         margin-top: 8px;
     }
 
+    .rf-score-quality {
+        color: #7896b5;
+        font-size: 9px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
     .rf-priority {
         display: inline-flex;
         align-items: center;
@@ -3232,10 +3336,10 @@ new class extends Component
     }
 
     .rf-section-label {
-        color: #668bad;
+        color: #6f97b9;
         font-size: 9px;
-        font-weight: 800;
-        letter-spacing: .05em;
+        font-weight: 850;
+        letter-spacing: .07em;
         text-transform: uppercase;
     }
 
@@ -3268,6 +3372,21 @@ new class extends Component
         font-size: 9px;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .rf-more-stages {
+        display: inline-flex;
+        align-items: center;
+        min-height: 21px;
+        margin-top: 1px;
+        padding: 0 7px;
+        border: 1px dashed rgba(126,168,201,.22);
+        border-radius: 6px;
+        background: rgba(126,168,201,.045);
+        color: #8da7c0;
+        font-size: 9px;
+        font-weight: 750;
+        cursor: help;
     }
 
     .rf-empty {
@@ -3311,11 +3430,15 @@ new class extends Component
     }
 
     .rf-work-context {
+        display: -webkit-box;
+        overflow: hidden;
         max-width: 230px;
         margin-top: 7px;
-        color: var(--rf-muted-2);
-        font-size: 9px;
+        color: #adc2d6;
+        font-size: 10px;
         line-height: 1.45;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
     }
 
     .rf-work-date {
@@ -3393,6 +3516,18 @@ new class extends Component
         background: rgba(46,221,210,.04);
     }
 
+    .rf-btn-secondary {
+        border-color: rgba(128,184,222,.10);
+        background: transparent;
+        color: #829db7;
+    }
+
+    .rf-btn-secondary:hover {
+        border-color: rgba(46,221,210,.25);
+        background: rgba(46,221,210,.035);
+        color: #b9e7e3;
+    }
+
     .rf-btn-primary {
         border-color: rgba(46,221,210,.28);
         background: rgba(46,221,210,.07);
@@ -3409,6 +3544,37 @@ new class extends Component
         border-color: rgba(255,110,123,.24);
         background: rgba(255,110,123,.06);
         color: #ff8490;
+    }
+
+    .rf-refresh-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 31px;
+        height: 31px;
+        padding: 0;
+        border: 1px solid rgba(128,184,222,.12);
+        border-radius: 8px;
+        background: transparent;
+        color: #7896b5;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        transition:
+            color .15s ease,
+            border-color .15s ease,
+            background .15s ease;
+    }
+
+    .rf-refresh-btn:hover {
+        border-color: rgba(46,221,210,.28);
+        background: rgba(46,221,210,.045);
+        color: #5ee2d7;
+    }
+
+    .rf-refresh-btn:disabled {
+        cursor: wait;
+        opacity: .45;
     }
 
     .rf-mini-note {
@@ -3484,6 +3650,116 @@ new class extends Component
         opacity: .3;
     }
 
+    .rf-export-state {
+        margin-top: 8px;
+        color: #718da8;
+        font-size: 9px;
+        line-height: 1.35;
+    }
+
+    .rf-export-state strong {
+        color: #91abc3;
+        font-weight: 700;
+    }
+
+    .rf-crm-status {
+        margin-top: 6px;
+        color: #7996b1;
+        font-size: 9px;
+        line-height: 1.35;
+    }
+
+    .rf-stages {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 7px;
+    }
+
+    .rf-stage {
+        display: inline-flex;
+        align-items: center;
+        min-height: 21px;
+        max-width: 155px;
+        padding: 0 7px;
+        overflow: hidden;
+        border: 1px solid rgba(46,221,210,.15);
+        border-radius: 6px;
+        background: rgba(46,221,210,.05);
+        color: #58ddce;
+        font-size: 9px;
+        font-weight: 750;
+        text-decoration: none;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .rf-overdue-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 20px;
+        margin-left: 5px;
+        padding: 0 6px;
+        border: 1px solid rgba(255,110,123,.24);
+        border-radius: 999px;
+        background: rgba(255,110,123,.07);
+        color: #ff7f8b;
+        font-size: 8px;
+        font-weight: 850;
+        text-transform: uppercase;
+    }
+
+    .rf-commercial-box {
+        margin-top: 6px;
+    }
+
+    .rf-commercial-explain {
+        margin-top: 7px;
+        color: #718eaa;
+        font-size: 9px;
+        line-height: 1.4;
+    }
+
+    .rf-next-action {
+        margin-top: 6px;
+        color: #ecf5ff;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.35;
+    }
+
+    .rf-next-action.is-overdue {
+        color: #ff7e8a;
+    }
+
+    .rf-deal-stage {
+        display: inline-flex;
+        align-items: center;
+        max-width: 165px;
+        min-height: 22px;
+        padding: 0 7px;
+        border: 1px solid rgba(46,221,210,.13);
+        border-radius: 6px;
+        background: rgba(46,221,210,.045);
+        text-decoration: none;
+    }
+
+    .rf-deal-name {
+        display: none;
+    }
+
+    .rf-deals {
+        gap: 6px;
+    }
+
+    .rf-owner-select {
+        font-size: 11px;
+    }
+
+    .rf-btn {
+        font-size: 10px;
+    }
+
     @media (max-width: 1350px) {
         .rf-kpis {
             grid-template-columns:
@@ -3540,6 +3816,115 @@ new class extends Component
             flex-direction: column;
         }
     }
+
+
+
+
+
+
+    /* LEADS_WIDTH_ONLY_START */
+
+    /*
+     * A tela padrão possui:
+     *
+     * .ec-page-shell {
+     *     max-width: 1380px;
+     * }
+     *
+     * Para Leads queremos aproveitar toda a largura
+     * disponível da área principal, mantendo os
+     * mesmos tamanhos de fonte/componentes.
+     */
+    .ec-page-shell.leads-rf {
+        width: 100% !important;
+        max-width: none !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .leads-rf .rf-shell {
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    .leads-rf .rf-header,
+    .leads-rf .rf-kpis,
+    .leads-rf .rf-status-guide,
+    .leads-rf .rf-filters,
+    .leads-rf .rf-list-panel {
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    /* LEADS_WIDTH_ONLY_END */
+
+
+    .rf-header-sync {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        width: min(390px, 100%);
+        padding: 11px 12px;
+        border: 1px solid rgba(111, 181, 226, .16);
+        border-radius: 14px;
+        background:
+            linear-gradient(
+                135deg,
+                rgba(46,221,210,.055),
+                rgba(74,168,255,.025)
+            );
+    }
+
+    .rf-header-sync-copy {
+        min-width: 0;
+    }
+
+    .rf-header-sync-copy strong {
+        display: block;
+        color: #eef7ff;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .rf-header-sync-copy span {
+        display: block;
+        margin-top: 3px;
+        color: #7896b5;
+        font-size: 9px;
+        line-height: 1.35;
+    }
+
+    .rf-sync-btn {
+        flex: 0 0 auto;
+        min-height: 36px;
+        padding: 0 12px;
+        border: 1px solid rgba(46,221,210,.30);
+        border-radius: 9px;
+        background: rgba(46,221,210,.08);
+        color: #4de1d6;
+        font-size: 10px;
+        font-weight: 800;
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+            background .15s ease,
+            border-color .15s ease,
+            color .15s ease;
+    }
+
+    .rf-sync-btn:hover {
+        border-color: rgba(46,221,210,.52);
+        background: rgba(46,221,210,.13);
+        color: #7cf0e7;
+    }
+
+    .rf-sync-btn:disabled {
+        cursor: wait;
+        opacity: .55;
+    }
+
+
 </style>
 
 
@@ -3581,21 +3966,53 @@ new class extends Component
         </div>
 
 
-        <div class="rf-header-guide">
+        @if (
+            $this->isCommercialManager()
+        )
 
-            <strong>
-                Como ler esta tela
-            </strong>
+            <div class="rf-header-sync">
 
-            <span>
-                Score mede potencial. Prioridade
-                define ordem de ataque. Situação
-                comercial mostra o relacionamento
-                com a empresa. Acompanhamento mostra
-                o que está acontecendo agora.
-            </span>
+                <div class="rf-header-sync-copy">
 
-        </div>
+                    <strong>
+                        CRM / HubSpot
+                    </strong>
+
+                    <span>
+                        Sincronize negócios, etapas,
+                        tarefas e contatos alterados
+                        no HubSpot.
+                    </span>
+
+                </div>
+
+                <button
+                    type="button"
+                    wire:click="refreshAllHubSpotData"
+                    wire:loading.attr="disabled"
+                    wire:target="refreshAllHubSpotData"
+                    class="rf-sync-btn"
+                >
+
+                    <span
+                        wire:loading.remove
+                        wire:target="refreshAllHubSpotData"
+                    >
+                        ↻ Atualizar CRM / HubSpot
+                    </span>
+
+                    <span
+                        wire:loading
+                        wire:target="refreshAllHubSpotData"
+                    >
+                        Enfileirando...
+                    </span>
+
+                </button>
+
+            </div>
+
+        @endif
 
     </header>
 
@@ -4199,6 +4616,10 @@ new class extends Component
                 </div>
 
                 <div>
+                    Situação comercial
+                </div>
+
+                <div>
                     CRM / HubSpot
                 </div>
 
@@ -4211,7 +4632,7 @@ new class extends Component
                 </div>
 
                 <div>
-                    Ações
+                    Próxima ação / acesso
                 </div>
 
             </div>
@@ -4426,15 +4847,34 @@ new class extends Component
                         array_slice(
                             $crmDeals,
                             0,
-                            3
+                            2
+                        );
+
+                    $hiddenDeals =
+                        array_slice(
+                            $crmDeals,
+                            2
                         );
 
                     $hiddenDealCount =
-                        max(
-                            0,
-                            count(
-                                $crmDeals
-                            ) - 3
+                        count(
+                            $hiddenDeals
+                        );
+
+                    $hiddenStagesTitle =
+                        implode(
+                            ' · ',
+                            array_map(
+                                static fn (
+                                    array $deal
+                                ): string => (string) (
+                                    $deal[
+                                        'stage'
+                                    ]
+                                    ?? ''
+                                ),
+                                $hiddenDeals
+                            )
                         );
 
                     $dealCount =
@@ -4470,7 +4910,18 @@ new class extends Component
 
                 <article
                     wire:key="lead-rf-{{ $lead->id }}"
-                    class="rf-lead-row"
+                    class="
+                        rf-lead-row
+                        rf-row-{{ $displayPriority }}
+                        {{
+                            $currentWorkStatus === 'waiting'
+                            && $hubSpotLead
+                                ?->last_task_due_at
+                                ?->isPast()
+                                ? 'rf-row-overdue'
+                                : ''
+                        }}
+                    "
                 >
 
                     {{-- EMPRESA --}}
@@ -4510,27 +4961,26 @@ new class extends Component
                         </div>
 
 
-                        <div class="rf-company-meta">
+                        <div class="rf-export-state">
 
-                            <span
-                                class="
-                                    rf-chip
-                                    {{ $commercialClass }}
-                                "
-                            >
-                                <i class="rf-chip-dot"></i>
+                            @if (
+                                $this->exportLabel(
+                                    $export
+                                ) === 'Não pesquisada'
+                            )
 
-                                {{ $commercialLabel }}
-                            </span>
+                                Exportação não pesquisada
 
+                            @else
 
-                            <span class="rf-chip">
+                                Exportação ·
                                 {{
                                     $this->exportLabel(
                                         $export
                                     )
                                 }}
-                            </span>
+
+                            @endif
 
                         </div>
 
@@ -4572,7 +5022,7 @@ new class extends Component
 
                         <div class="rf-score-info">
 
-                            <span class="rf-chip">
+                            <span class="rf-score-quality">
                                 {{
                                     $this
                                         ->scoreQualityLabel(
@@ -4608,6 +5058,53 @@ new class extends Component
                     </div>
 
 
+                    {{-- SITUACAO COMERCIAL --}}
+                    <div>
+
+                        <div class="rf-section-label">
+                            Situação comercial
+                        </div>
+
+                        <div class="rf-commercial-box">
+
+                            <span
+                                class="
+                                    rf-chip
+                                    {{ $commercialClass }}
+                                "
+                            >
+                                <i class="rf-chip-dot"></i>
+
+                                {{ $commercialLabel }}
+                            </span>
+
+                        </div>
+
+                        <div class="rf-commercial-explain">
+
+                            {{
+                                match (
+                                    $commercialStatus
+                                ) {
+                                    'new' =>
+                                        'Nova na operação.',
+
+                                    'client' =>
+                                        'Já é cliente.',
+
+                                    'reprospecting' =>
+                                        'Disponível para nova abordagem.',
+
+                                    default =>
+                                        'Já conhecida no CRM.',
+                                }
+                            }}
+
+                        </div>
+
+                    </div>
+
+
                     {{-- CRM --}}
                     <div>
 
@@ -4615,27 +5112,27 @@ new class extends Component
                             CRM / HubSpot
                         </div>
 
-                        <div
-                            style="
-                                display:flex;
-                                align-items:center;
-                                gap:6px;
-                                margin-top:5px;
-                                flex-wrap:wrap;
-                            "
-                        >
 
-                            <span class="rf-chip">
-                                {{
-                                    $this->crmLabel(
-                                        $crmCheck?->status
-                                    )
-                                }}
-                            </span>
+                        <div class="rf-crm-status">
+
+                            {{
+                                $this->crmLabel(
+                                    $crmCheck?->status
+                                )
+                            }}
 
                             @if ($dealCount > 0)
 
-                                <span class="rf-chip">{{ $dealCount }} {{ $dealCount === 1 ? 'negócio' : 'negócios' }}</span>
+                                ·
+                                {{
+                                    $dealCount
+                                    .' '
+                                    .(
+                                        $dealCount === 1
+                                            ? 'negócio'
+                                            : 'negócios'
+                                    )
+                                }}
 
                             @endif
 
@@ -4643,7 +5140,7 @@ new class extends Component
 
                         @if ($visibleDeals !== [])
 
-                            <div class="rf-deals">
+                            <div class="rf-stages">
 
                                 @foreach (
                                     $visibleDeals
@@ -4670,7 +5167,7 @@ new class extends Component
                                                 }}"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                class="rf-deal-stage"
+                                                class="rf-stage"
                                             >
                                                 {{
                                                     $deal[
@@ -4682,7 +5179,7 @@ new class extends Component
                                         @else
 
                                             <span
-                                                class="rf-deal-stage"
+                                                class="rf-stage"
                                             >
                                                 {{
                                                     $deal[
@@ -4693,15 +5190,6 @@ new class extends Component
 
                                         @endif
 
-                                        <span
-                                            class="rf-deal-name"
-                                        >
-                                            {{
-                                                $deal[
-                                                    'name'
-                                                ]
-                                            }}
-                                        </span>
 
                                     </div>
 
@@ -4711,10 +5199,18 @@ new class extends Component
                                     $hiddenDealCount > 0
                                 )
 
-                                    <div class="rf-empty">
-                                        +
-                                        {{ $hiddenDealCount }}
-                                        negócio(s)
+                                    <div
+                                        class="rf-more-stages"
+                                        title="{{
+                                            $hiddenStagesTitle
+                                        }}"
+                                    >
+                                        +{{ $hiddenDealCount }}
+                                        {{
+                                            $hiddenDealCount === 1
+                                                ? 'etapa'
+                                                : 'etapas'
+                                        }}
                                     </div>
 
                                 @endif
@@ -4740,17 +5236,40 @@ new class extends Component
                         </div>
 
                         <div
-                            class="
-                                rf-work-badge
-                                {{ $workClass }}
+                            style="
+                                display:flex;
+                                align-items:center;
+                                flex-wrap:wrap;
                             "
                         >
-                            {{
-                                $this
-                                    ->workStatusLabel(
-                                        $currentWorkStatus
-                                    )
-                            }}
+
+                            <div
+                                class="
+                                    rf-work-badge
+                                    {{ $workClass }}
+                                "
+                            >
+                                {{
+                                    $this
+                                        ->workStatusLabel(
+                                            $currentWorkStatus
+                                        )
+                                }}
+                            </div>
+
+                            @if (
+                                $currentWorkStatus === 'waiting'
+                                && $hubSpotLead
+                                    ?->last_task_due_at
+                                    ?->isPast()
+                            )
+
+                                <span class="rf-overdue-badge">
+                                    Atrasado
+                                </span>
+
+                            @endif
+
                         </div>
 
 
@@ -4953,28 +5472,61 @@ new class extends Component
 
                             <div
                                 class="
-                                    rf-work-context
+                                    rf-next-action
                                     {{
-                                        $this
-                                            ->nextActionClass(
-                                                $hubSpotLead
-                                            )
+                                        $hubSpotLead
+                                            ?->work_status
+                                            === 'waiting'
+                                        && $hubSpotLead
+                                            ?->last_task_due_at
+                                            ?->isPast()
+                                                ? 'is-overdue'
+                                                : ''
                                     }}
-                                "
-                                style="
-                                    margin-top:6px;
-                                    font-weight:800;
                                 "
                             >
                                 {{
-                                    $this
-                                        ->nextActionLabel(
-                                            $hubSpotLead
-                                        )
+                                    $currentWorkStatus === 'waiting'
+                                    && $hubSpotLead
+                                        ?->last_task_due_at
+                                        ?->isPast()
+                                            ? 'Retomar contato'
+                                            : $this
+                                                ->nextActionLabel(
+                                                    $hubSpotLead
+                                                )
                                 }}
                             </div>
 
                         @endif
+
+                        @if (
+                            $hubSpotLead
+                                ?->last_task_due_at
+                        )
+
+                            <div class="rf-mini-note">
+
+                                {{
+                                    $hubSpotLead
+                                        ->last_task_due_at
+                                        ->isPast()
+                                            ? 'Vencida em '
+                                            : 'Prevista para '
+                                }}
+
+                                {{
+                                    $hubSpotLead
+                                        ->last_task_due_at
+                                        ->format(
+                                            'd/m/Y H:i'
+                                        )
+                                }}
+
+                            </div>
+
+                        @endif
+
 
                         <div class="rf-actions">
 
@@ -5003,14 +5555,52 @@ new class extends Component
                                     }}"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    class="rf-btn"
+                                    class="
+                                        rf-btn
+                                        rf-btn-secondary
+                                    "
                                 >
                                     HubSpot ↗
                                 </a>
 
                             @endif
 
-                        </div>
+
+
+@if (
+                            $hubSpotLead
+                            && $hubSpotLead
+                                ->hubspot_company_id
+                            && $hubSpotLead
+                                ->hubspot_deal_id
+                        )
+
+                            <button
+                                type="button"
+                                wire:click="
+                                    refreshHubSpotStatus(
+                                        {{ $hubSpotLead->id }}
+                                    )
+                                "
+                                wire:loading.attr="disabled"
+                                wire:target="
+                                    refreshHubSpotStatus(
+                                        {{ $hubSpotLead->id }}
+                                    )
+                                "
+                                class="rf-refresh-btn"
+                            title="Atualizar dados do HubSpot"
+                            aria-label="Atualizar dados do HubSpot"
+                            >
+                                <span aria-hidden="true">↻</span>
+                            <span class="sr-only">
+                                Atualizar HubSpot
+                            </span>
+                            </button>
+
+                        @endif
+
+</div>
 
 
                         @if (
@@ -5049,33 +5639,7 @@ new class extends Component
                         @endif
 
 
-                        @if (
-                            $hubSpotLead
-                            && $hubSpotLead
-                                ->hubspot_company_id
-                            && $hubSpotLead
-                                ->hubspot_deal_id
-                        )
 
-                            <button
-                                type="button"
-                                wire:click="
-                                    refreshHubSpotStatus(
-                                        {{ $hubSpotLead->id }}
-                                    )
-                                "
-                                wire:loading.attr="disabled"
-                                wire:target="
-                                    refreshHubSpotStatus(
-                                        {{ $hubSpotLead->id }}
-                                    )
-                                "
-                                class="rf-claim"
-                            >
-                                Atualizar HubSpot
-                            </button>
-
-                        @endif
 
 
                         @if (

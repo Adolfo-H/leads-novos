@@ -225,7 +225,7 @@ it('shows a direct contextual action to the HubSpot deal', function () {
             'Lead Acao Rapida'
         )
         ->assertSee(
-            'Retomar atrasado'
+            'Retomar contato'
         )
         ->assertSee(
             'https://app.hubspot.com/contacts/21358298/record/0-3/987654',
