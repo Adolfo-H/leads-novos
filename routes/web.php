@@ -1,6 +1,18 @@
 <?php
 
+use App\Http\Controllers\HubSpotWebhookController;
 use Illuminate\Support\Facades\Route;
+
+Route::post(
+    '/webhooks/hubspot',
+    HubSpotWebhookController::class
+)
+    ->middleware(
+        'hubspot.signature'
+    )
+    ->name(
+        'webhooks.hubspot'
+    );
 
 Route::view('/', 'welcome')->name('home');
 

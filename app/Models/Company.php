@@ -161,6 +161,10 @@ class Company extends Model
         return $this->hasMany(
             CompanyLeadActivity::class
         )
+            ->where(
+                'is_deleted',
+                false
+            )
             ->orderByDesc(
                 'occurred_at'
             )

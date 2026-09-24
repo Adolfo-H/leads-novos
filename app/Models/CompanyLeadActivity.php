@@ -11,17 +11,27 @@ class CompanyLeadActivity extends Model
         'company_id',
         'user_id',
         'type',
+        'source',
+        'source_object_type',
+        'source_object_id',
         'title',
         'description',
         'metadata',
         'occurred_at',
+        'source_updated_at',
+        'is_deleted',
     ];
 
     protected function casts(): array
     {
         return [
             'metadata' => 'array',
+
             'occurred_at' => 'datetime',
+
+            'source_updated_at' => 'datetime',
+
+            'is_deleted' => 'boolean',
         ];
     }
 

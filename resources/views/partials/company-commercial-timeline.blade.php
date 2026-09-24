@@ -587,6 +587,21 @@
                                 'hubspot_task_changed' =>
                                     'Follow-up HubSpot',
 
+                                'hubspot_call' =>
+                                    'Ligação HubSpot',
+
+                                'hubspot_note' =>
+                                    'Observação HubSpot',
+
+                                'hubspot_task' =>
+                                    'Tarefa HubSpot',
+
+                                'hubspot_meeting' =>
+                                    'Reunião HubSpot',
+
+                                'hubspot_email' =>
+                                    'E-mail HubSpot',
+
                                 'status_changed' =>
                                     'Status',
 
@@ -618,11 +633,22 @@
                                     'bg-violet-300',
 
                                 'hubspot_task_changed',
+                                'hubspot_task',
                                 'follow_up_updated' =>
                                     'bg-amber-300',
 
+                                'hubspot_call' =>
+                                    'bg-cyan-300',
+
+                                'hubspot_note',
                                 'note_updated' =>
                                     'bg-blue-300',
+
+                                'hubspot_meeting' =>
+                                    'bg-violet-300',
+
+                                'hubspot_email' =>
+                                    'bg-emerald-300',
 
                                 default =>
                                     'bg-[#697394]',

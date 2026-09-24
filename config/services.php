@@ -113,6 +113,19 @@ return [
             'HUBSPOT_PORTAL_ID'
         ),
 
+        'webhook_secret' => env(
+            'HUBSPOT_WEBHOOK_SECRET'
+        ),
+
+        'webhook_public_url' => env(
+            'HUBSPOT_WEBHOOK_PUBLIC_URL'
+        ),
+
+        'webhook_verify_signature' => (bool) env(
+            'HUBSPOT_WEBHOOK_VERIFY_SIGNATURE',
+            true
+        ),
+
         'lead_sync_enabled' => (bool) env(
             'HUBSPOT_LEAD_SYNC_ENABLED',
             false
