@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Models\CompanyCrmCheck;
 use App\Models\CompanyHubSpotLead;
+use App\Models\HubSpotCompany;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -17,62 +19,38 @@ final class HubSpotWebhookAssociationResolver
     ) {}
 
     /**
+     * Resolve um objeto HubSpot para uma ou mais
+     * empresas fiscais do Prospector.
+     *
      * @return list<int>
      */
     public function companyIds(
         string $objectType,
         string $objectId,
     ): array {
-        $ids = [];
-
-        if (
-            $objectType === 'company'
-        ) {
-            $ids = array_merge(
-                $ids,
-                $this->localByCompany(
-                    $objectId
-                )
-            );
-        }
-
-        if (
-            $objectType === 'deal'
-        ) {
-            $ids = array_merge(
-                $ids,
-                $this->localByDeal(
-                    $objectId
-                )
-            );
-        }
-
-        if (
-            $objectType === 'contact'
-        ) {
-            $ids = array_merge(
-                $ids,
-                CompanyHubSpotLead::query()
-                    ->where(
-                        'hubspot_contact_id',
-                        $objectId
-                    )
-                    ->pluck(
-                        'company_id'
-                    )
-                    ->map(
-                        static fn (
-                            mixed $id
-                        ): int => (int) $id
-                    )
-                    ->all()
-            );
-        }
-
         /*
-         * Se já encontramos localmente,
-         * evitamos chamadas extras à API.
+         * Primeiro tentamos somente dados locais.
+         *
+         * Além das projeções operacionais,
+         * consultamos o espelho completo do HubSpot.
          */
+        $ids =
+            match ($objectType) {
+                'company' => $this->localByCompany(
+                    $objectId
+                ),
+
+                'deal' => $this->localByDeal(
+                    $objectId
+                ),
+
+                'contact' => $this->localByContact(
+                    $objectId
+                ),
+
+                default => [],
+            };
+
         $ids =
             $this->unique(
                 $ids
@@ -94,9 +72,11 @@ final class HubSpotWebhookAssociationResolver
         }
 
         /*
-         * Atividades, contatos e negócios
-         * podem estar associados diretamente
-         * a Company.
+         * 1. Associação direta com Company.
+         *
+         * Exemplo:
+         * Note -> Company
+         * Call -> Company
          */
         $companyExternalIds =
             $this->associationIds(
@@ -112,17 +92,32 @@ final class HubSpotWebhookAssociationResolver
         ) {
             $ids = array_merge(
                 $ids,
+
                 $this->localByCompany(
                     $companyExternalId
                 )
             );
         }
 
+        $ids =
+            $this->unique(
+                $ids
+            );
+
         /*
-         * Também procuramos via Deal.
-         * É comum chamada/nota/tarefa estar
-         * associada ao negócio, não diretamente
-         * à empresa.
+         * Se a atividade já aponta diretamente
+         * para uma Company conhecida, não fazemos
+         * consultas desnecessárias.
+         */
+        if ($ids !== []) {
+            return $ids;
+        }
+
+        /*
+         * 2. Associação via Deal.
+         *
+         * Atividades podem estar vinculadas
+         * somente a um negócio.
          */
         $dealExternalIds =
             $this->associationIds(
@@ -138,8 +133,46 @@ final class HubSpotWebhookAssociationResolver
         ) {
             $ids = array_merge(
                 $ids,
+
                 $this->localByDeal(
                     $dealExternalId
+                )
+            );
+        }
+
+        $ids =
+            $this->unique(
+                $ids
+            );
+
+        if ($ids !== []) {
+            return $ids;
+        }
+
+        /*
+         * 3. Associação via Contact.
+         *
+         * Algumas ligações, notas, e-mails e
+         * reuniões podem estar ligadas somente
+         * ao contato.
+         */
+        $contactExternalIds =
+            $this->associationIds(
+                fromType: $fromType,
+
+                fromId: $objectId,
+
+                toType: 'contacts',
+            );
+
+        foreach (
+            $contactExternalIds as $contactExternalId
+        ) {
+            $ids = array_merge(
+                $ids,
+
+                $this->localByContact(
+                    $contactExternalId
                 )
             );
         }
@@ -150,6 +183,13 @@ final class HubSpotWebhookAssociationResolver
     }
 
     /**
+     * Resolve HubSpot Company ID.
+     *
+     * Fontes:
+     * - projeção de leads;
+     * - CRM Check;
+     * - espelho HubSpot reconstruído.
+     *
      * @return list<int>
      */
     private function localByCompany(
@@ -191,21 +231,51 @@ final class HubSpotWebhookAssociationResolver
                 )
                 ->all();
 
+        /*
+         * Fonte principal de fallback:
+         *
+         * hubspot_companies contém todos os
+         * registros importados/reconstruídos do
+         * HubSpot e o vínculo company_id quando
+         * a empresa fiscal foi identificada.
+         */
+        $mirrorIds =
+            HubSpotCompany::query()
+                ->where(
+                    'hubspot_id',
+                    $hubSpotCompanyId
+                )
+                ->whereNotNull(
+                    'company_id'
+                )
+                ->pluck(
+                    'company_id'
+                )
+                ->map(
+                    static fn (
+                        mixed $id
+                    ): int => (int) $id
+                )
+                ->all();
+
         return $this->unique(
             array_merge(
                 $leadIds,
-                $crmIds
+                $crmIds,
+                $mirrorIds,
             )
         );
     }
 
     /**
+     * Resolve HubSpot Deal ID.
+     *
      * @return list<int>
      */
     private function localByDeal(
         string $hubSpotDealId
     ): array {
-        return $this->unique(
+        $leadIds =
             CompanyHubSpotLead::query()
                 ->where(
                     'hubspot_deal_id',
@@ -219,7 +289,125 @@ final class HubSpotWebhookAssociationResolver
                         mixed $id
                     ): int => (int) $id
                 )
-                ->all()
+                ->all();
+
+        /*
+         * hubspot_deals
+         *      ↓
+         * hubspot_company_deal
+         *      ↓
+         * hubspot_companies.company_id
+         */
+        $mirrorIds =
+            DB::table(
+                'hubspot_deals as hd'
+            )
+                ->join(
+                    'hubspot_company_deal as hcd',
+                    'hcd.hubspot_deal_id',
+                    '=',
+                    'hd.id'
+                )
+                ->join(
+                    'hubspot_companies as hc',
+                    'hc.id',
+                    '=',
+                    'hcd.hubspot_company_id'
+                )
+                ->where(
+                    'hd.hubspot_id',
+                    $hubSpotDealId
+                )
+                ->whereNotNull(
+                    'hc.company_id'
+                )
+                ->pluck(
+                    'hc.company_id'
+                )
+                ->map(
+                    static fn (
+                        mixed $id
+                    ): int => (int) $id
+                )
+                ->all();
+
+        return $this->unique(
+            array_merge(
+                $leadIds,
+                $mirrorIds,
+            )
+        );
+    }
+
+    /**
+     * Resolve HubSpot Contact ID.
+     *
+     * @return list<int>
+     */
+    private function localByContact(
+        string $hubSpotContactId
+    ): array {
+        $leadIds =
+            CompanyHubSpotLead::query()
+                ->where(
+                    'hubspot_contact_id',
+                    $hubSpotContactId
+                )
+                ->pluck(
+                    'company_id'
+                )
+                ->map(
+                    static fn (
+                        mixed $id
+                    ): int => (int) $id
+                )
+                ->all();
+
+        /*
+         * hubspot_contacts
+         *      ↓
+         * hubspot_company_contact
+         *      ↓
+         * hubspot_companies.company_id
+         */
+        $mirrorIds =
+            DB::table(
+                'hubspot_contacts as hct'
+            )
+                ->join(
+                    'hubspot_company_contact as hcc',
+                    'hcc.hubspot_contact_id',
+                    '=',
+                    'hct.id'
+                )
+                ->join(
+                    'hubspot_companies as hc',
+                    'hc.id',
+                    '=',
+                    'hcc.hubspot_company_id'
+                )
+                ->where(
+                    'hct.hubspot_id',
+                    $hubSpotContactId
+                )
+                ->whereNotNull(
+                    'hc.company_id'
+                )
+                ->pluck(
+                    'hc.company_id'
+                )
+                ->map(
+                    static fn (
+                        mixed $id
+                    ): int => (int) $id
+                )
+                ->all();
+
+        return $this->unique(
+            array_merge(
+                $leadIds,
+                $mirrorIds,
+            )
         );
     }
 
@@ -263,10 +451,13 @@ final class HubSpotWebhookAssociationResolver
         }
 
         /*
-         * Um objeto excluído pode deixar
-         * de estar disponível imediatamente.
+         * Objeto removido ou associação
+         * inexistente.
          */
-        if ($response->status() === 404) {
+        if (
+            $response->status()
+            === 404
+        ) {
             return [];
         }
 
@@ -293,7 +484,9 @@ final class HubSpotWebhookAssociationResolver
 
         $ids = [];
 
-        foreach ($results as $result) {
+        foreach (
+            $results as $result
+        ) {
             if (! is_array($result)) {
                 continue;
             }
@@ -367,19 +560,28 @@ final class HubSpotWebhookAssociationResolver
     private function ensureSuccess(
         Response $response
     ): void {
-        if ($response->status() === 401) {
+        if (
+            $response->status()
+            === 401
+        ) {
             throw new RuntimeException(
                 'Token do HubSpot inválido ou expirado.'
             );
         }
 
-        if ($response->status() === 403) {
+        if (
+            $response->status()
+            === 403
+        ) {
             throw new RuntimeException(
                 'Token sem permissão para consultar associações do HubSpot.'
             );
         }
 
-        if ($response->status() === 429) {
+        if (
+            $response->status()
+            === 429
+        ) {
             throw new RuntimeException(
                 'Limite de API do HubSpot atingido.'
             );
@@ -395,10 +597,6 @@ final class HubSpotWebhookAssociationResolver
     }
 
     /**
-     * A entrada pode possuir índices não sequenciais
-     * após merges/plucks. O retorno é normalizado
-     * com array_values(), portanto é sempre list<int>.
-     *
      * @param  array<int>  $ids
      * @return list<int>
      */
@@ -408,7 +606,12 @@ final class HubSpotWebhookAssociationResolver
         return array_values(
             array_unique(
                 array_filter(
-                    $ids,
+                    array_map(
+                        static fn (
+                            mixed $id
+                        ): int => (int) $id,
+                        $ids
+                    ),
                     static fn (
                         int $id
                     ): bool => $id > 0

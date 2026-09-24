@@ -44,20 +44,14 @@ final class HubSpotWebhookController extends Controller
         $duplicates = 0;
         $invalid = 0;
 
-        foreach ($payloads as $payload) {
+        foreach (
+            $payloads as $payload
+        ) {
             if (! is_array($payload)) {
                 $invalid++;
 
                 continue;
             }
-
-            $objectId =
-                $this->scalarString(
-                    $payload[
-                        'objectId'
-                    ]
-                    ?? null
-                );
 
             $subscriptionType =
                 $this->scalarString(
@@ -68,14 +62,64 @@ final class HubSpotWebhookController extends Controller
                 );
 
             if (
-                $objectId === null
-                || $subscriptionType === null
+                $subscriptionType
+                === null
             ) {
                 $invalid++;
 
                 continue;
             }
 
+            /*
+             * Eventos normais:
+             *
+             * objectId
+             *
+             * Association change também pode
+             * chegar identificado através de:
+             *
+             * fromObjectId
+             * toObjectId
+             */
+            $objectId =
+                $this->scalarString(
+                    $payload[
+                        'objectId'
+                    ]
+                    ?? null
+                );
+
+            if (
+                $objectId === null
+                && $this->isAssociationChange(
+                    $subscriptionType
+                )
+            ) {
+                $objectId =
+                    $this->scalarString(
+                        $payload[
+                            'fromObjectId'
+                        ]
+                        ?? null
+                    )
+                    ?? $this->scalarString(
+                        $payload[
+                            'toObjectId'
+                        ]
+                        ?? null
+                    );
+            }
+
+            if ($objectId === null) {
+                $invalid++;
+
+                continue;
+            }
+
+            /*
+             * Mesmo princípio para o tipo
+             * do objeto.
+             */
             $objectTypeId =
                 $this->scalarString(
                     $payload[
@@ -84,12 +128,36 @@ final class HubSpotWebhookController extends Controller
                     ?? null
                 );
 
+            if (
+                $objectTypeId === null
+                && $this->isAssociationChange(
+                    $subscriptionType
+                )
+            ) {
+                $objectTypeId =
+                    $this->scalarString(
+                        $payload[
+                            'fromObjectTypeId'
+                        ]
+                        ?? null
+                    )
+                    ?? $this->scalarString(
+                        $payload[
+                            'toObjectTypeId'
+                        ]
+                        ?? null
+                    );
+            }
+
             $objectType =
                 $types->normalize(
                     objectTypeId: $objectTypeId,
 
                     objectType: $payload[
                             'objectType'
+                        ]
+                        ?? $payload[
+                            'objectName'
                         ]
                         ?? null,
 
@@ -191,36 +259,97 @@ final class HubSpotWebhookController extends Controller
     private function eventKey(
         array $payload
     ): string {
+        /*
+         * eventId é normalmente suficiente,
+         * porém mantemos os demais campos no
+         * fingerprint para tolerar payloads
+         * sem eventId.
+         */
         $parts = [
-            $payload['appId']
-                ?? null,
+            $payload[
+                'appId'
+            ]
+            ?? null,
 
-            $payload['eventId']
-                ?? null,
+            $payload[
+                'eventId'
+            ]
+            ?? null,
 
-            $payload['subscriptionId']
-                ?? null,
+            $payload[
+                'subscriptionId'
+            ]
+            ?? null,
 
-            $payload['portalId']
-                ?? null,
+            $payload[
+                'portalId'
+            ]
+            ?? null,
 
-            $payload['subscriptionType']
-                ?? null,
+            $payload[
+                'subscriptionType'
+            ]
+            ?? null,
 
-            $payload['objectTypeId']
-                ?? null,
+            $payload[
+                'objectTypeId'
+            ]
+            ?? null,
 
-            $payload['objectId']
-                ?? null,
+            $payload[
+                'objectId'
+            ]
+            ?? null,
 
-            $payload['propertyName']
-                ?? null,
+            $payload[
+                'fromObjectTypeId'
+            ]
+            ?? null,
 
-            $payload['propertyValue']
-                ?? null,
+            $payload[
+                'fromObjectId'
+            ]
+            ?? null,
 
-            $payload['occurredAt']
-                ?? null,
+            $payload[
+                'toObjectTypeId'
+            ]
+            ?? null,
+
+            $payload[
+                'toObjectId'
+            ]
+            ?? null,
+
+            $payload[
+                'associationTypeId'
+            ]
+            ?? null,
+
+            $payload[
+                'associationCategory'
+            ]
+            ?? null,
+
+            $payload[
+                'associationRemoved'
+            ]
+            ?? null,
+
+            $payload[
+                'propertyName'
+            ]
+            ?? null,
+
+            $payload[
+                'propertyValue'
+            ]
+            ?? null,
+
+            $payload[
+                'occurredAt'
+            ]
+            ?? null,
         ];
 
         return hash(
@@ -231,6 +360,17 @@ final class HubSpotWebhookController extends Controller
                 | JSON_UNESCAPED_SLASHES
             )
                 ?: ''
+        );
+    }
+
+    private function isAssociationChange(
+        string $subscriptionType
+    ): bool {
+        return str_contains(
+            mb_strtolower(
+                $subscriptionType
+            ),
+            'associationchange'
         );
     }
 
