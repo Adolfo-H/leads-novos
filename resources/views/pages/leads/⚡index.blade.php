@@ -3068,7 +3068,7 @@ new class extends Component
 
             'known' => 'Conhecido',
 
-            'not_found' => 'Novo',
+            'not_found' => 'Não encontrado',
 
             default => 'Não verificado',
         };
