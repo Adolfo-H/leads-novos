@@ -105,6 +105,23 @@ class HubSpotCompany extends Model
     }
 
     /**
+     * Atividades comerciais preservadas mesmo
+     * antes da identificação fiscal.
+     *
+     * @return BelongsToMany<HubSpotActivity, $this>
+     */
+    public function activities(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            HubSpotActivity::class,
+            'hubspot_activity_company',
+            'hubspot_company_id',
+            'hubspot_activity_id',
+        )
+            ->withTimestamps();
+    }
+
+    /**
      * @return BelongsToMany<HubSpotTask, $this>
      */
     public function tasks(): BelongsToMany

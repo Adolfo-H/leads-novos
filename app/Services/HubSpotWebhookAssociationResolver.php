@@ -183,6 +183,165 @@ final class HubSpotWebhookAssociationResolver
     }
 
     /**
+     * Resolve IDs externos de Companies do
+     * HubSpot sem exigir vínculo fiscal.
+     *
+     * Isto permite preservar atividades mesmo
+     * quando hubspot_companies.company_id ainda
+     * é NULL.
+     *
+     * @return list<string>
+     */
+    public function hubSpotCompanyIds(
+        string $objectType,
+        string $objectId,
+    ): array {
+        $ids = [];
+
+        if ($objectType === 'company') {
+            $ids[] =
+                $objectId;
+        }
+
+        $fromType =
+            $this
+                ->types
+                ->apiPlural(
+                    $objectType
+                );
+
+        if ($fromType === null) {
+            return $this->uniqueStrings(
+                $ids
+            );
+        }
+
+        /*
+         * Associação direta.
+         *
+         * Note -> Company
+         * Call -> Company
+         * Task -> Company
+         * etc.
+         */
+        if ($objectType !== 'company') {
+            $ids =
+                array_merge(
+                    $ids,
+
+                    $this->associationIds(
+                        fromType: $fromType,
+
+                        fromId: $objectId,
+
+                        toType: 'companies',
+                    )
+                );
+        }
+
+        /*
+         * Via negócio.
+         */
+        $dealIds =
+            $objectType === 'deal'
+                ? [
+                    $objectId,
+                ]
+                : $this->associationIds(
+                    fromType: $fromType,
+
+                    fromId: $objectId,
+
+                    toType: 'deals',
+                );
+
+        foreach ($dealIds as $dealId) {
+            $ids =
+                array_merge(
+                    $ids,
+
+                    $this->associationIds(
+                        fromType: 'deals',
+
+                        fromId: $dealId,
+
+                        toType: 'companies',
+                    )
+                );
+        }
+
+        /*
+         * Via contato.
+         *
+         * Algumas atividades não são ligadas
+         * diretamente à Company, apenas ao
+         * Contact.
+         */
+        $contactIds =
+            $objectType === 'contact'
+                ? [
+                    $objectId,
+                ]
+                : $this->associationIds(
+                    fromType: $fromType,
+
+                    fromId: $objectId,
+
+                    toType: 'contacts',
+                );
+
+        foreach (
+            $contactIds as $contactId
+        ) {
+            $ids =
+                array_merge(
+                    $ids,
+
+                    $this->associationIds(
+                        fromType: 'contacts',
+
+                        fromId: $contactId,
+
+                        toType: 'companies',
+                    )
+                );
+
+            /*
+             * Contact -> Deal -> Company.
+             */
+            $contactDealIds =
+                $this->associationIds(
+                    fromType: 'contacts',
+
+                    fromId: $contactId,
+
+                    toType: 'deals',
+                );
+
+            foreach (
+                $contactDealIds as $dealId
+            ) {
+                $ids =
+                    array_merge(
+                        $ids,
+
+                        $this->associationIds(
+                            fromType: 'deals',
+
+                            fromId: $dealId,
+
+                            toType: 'companies',
+                        )
+                    );
+            }
+        }
+
+        return $this->uniqueStrings(
+            $ids
+        );
+    }
+
+    /**
      * Resolve HubSpot Company ID.
      *
      * Fontes:
@@ -594,6 +753,34 @@ final class HubSpotWebhookAssociationResolver
                 .'.'
             );
         }
+    }
+
+    /**
+     * @param  array<int, string>  $ids
+     * @return list<string>
+     */
+    private function uniqueStrings(
+        array $ids
+    ): array {
+        $result = [];
+
+        foreach ($ids as $id) {
+            $id =
+                trim(
+                    $id
+                );
+
+            if ($id !== '') {
+                $result[] =
+                    $id;
+            }
+        }
+
+        return array_values(
+            array_unique(
+                $result
+            )
+        );
     }
 
     /**

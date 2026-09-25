@@ -20,6 +20,7 @@ final class HubSpotCompanyLinkService
         private readonly HubSpotMirrorLeadProjectionService $projections,
         private readonly CompanyGroupEnrichmentService $groups,
         private readonly ReceitaLocalCnpjGroupProvider $receita,
+        private readonly HubSpotActivitySyncService $activities,
     ) {}
 
     public function importAndLink(
@@ -151,6 +152,19 @@ final class HubSpotCompanyLinkService
 
                     'match_source' => 'manual_manager',
                 ])->save();
+
+                /*
+                 * Atividades recebidas antes da
+                 * identificação fiscal passam
+                 * para o histórico da Company.
+                 */
+                $this
+                    ->activities
+                    ->promoteForCompany(
+                        hubSpotCompany: $hubSpotCompany,
+
+                        company: $company,
+                    );
 
                 /*
                  * Recria CRM consolidado e score.

@@ -257,6 +257,22 @@
                             ->unique()
                             ->values();
 
+                    $hubSpotActivities =
+                        $hubSpotCompany
+                            ->activities
+                            ->where(
+                                'is_deleted',
+                                false
+                            )
+                            ->values();
+
+                    $lastHubSpotActivity =
+                        $hubSpotActivities
+                            ->sortByDesc(
+                                'occurred_at'
+                            )
+                            ->first();
+
                     $hubSpotUrl =
                         $this->hubSpotCompanyUrlById(
                             (string)
@@ -410,8 +426,31 @@
                                     ->contacts
                                     ->count()
                             }}
-                            contato(s) associado(s)
+                            contato(s)
+                            ·
+                            {{
+                                $hubSpotActivities
+                                    ->count()
+                            }}
+                            atividade(s)
                         </div>
+
+                        @if ($lastHubSpotActivity)
+
+                            <div class="rf-crm-only-helper">
+                                Última atividade:
+
+                                {{
+                                    $lastHubSpotActivity
+                                        ->occurred_at
+                                        ?->format(
+                                            'd/m/Y H:i'
+                                        )
+                                    ?? '—'
+                                }}
+                            </div>
+
+                        @endif
 
                     </div>
 

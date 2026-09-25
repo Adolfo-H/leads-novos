@@ -1792,6 +1792,15 @@ new class extends Component
                     ),
 
                 'contacts',
+
+                'activities' => fn ($activityQuery) => $activityQuery
+                    ->where(
+                        'hubspot_activities.is_deleted',
+                        false
+                    )
+                    ->orderByDesc(
+                        'occurred_at'
+                    ),
             ])
             ->orderByRaw(
                 "

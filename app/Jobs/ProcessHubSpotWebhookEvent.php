@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\HubSpotWebhookEvent;
 use App\Services\HubSpotActivitySyncService;
 use App\Services\HubSpotWebhookAssociationResolver;
+use App\Services\HubSpotWebhookMirrorSyncService;
 use App\Services\HubSpotWebhookObjectTypeService;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -72,6 +73,7 @@ class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
         HubSpotWebhookAssociationResolver $resolver,
         HubSpotWebhookObjectTypeService $types,
         HubSpotActivitySyncService $activities,
+        HubSpotWebhookMirrorSyncService $mirror,
     ): void {
         $event =
             HubSpotWebhookEvent::query()
@@ -119,14 +121,45 @@ class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
         }
 
         /*
-         * Primeiro tentamos resolver a empresa
-         * pelas associações atuais do objeto.
+         * Primeiro preservamos qualquer Company
+         * fiscal já conhecida antes de alterar
+         * ou remover objetos do mirror.
          */
         $companyIds =
             $resolver->companyIds(
                 objectType: $event->object_type,
 
                 objectId: $event->object_id,
+            );
+
+        /*
+         * Atualiza Company / Deal / Contact /
+         * Task no espelho local mesmo quando
+         * ainda não conhecemos o CNPJ.
+         */
+        $mirrorHandled =
+            $mirror->syncEvent(
+                $event
+            );
+
+        /*
+         * O mirror pode ter acabado de criar ou
+         * corrigir associações. Resolvemos outra
+         * vez e agregamos os resultados.
+         */
+        $companyIds =
+            array_values(
+                array_unique(
+                    array_merge(
+                        $companyIds,
+
+                        $resolver->companyIds(
+                            objectType: $event->object_type,
+
+                            objectId: $event->object_id,
+                        )
+                    )
+                )
             );
 
         /*
@@ -137,6 +170,9 @@ class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
          * - em exclusão, encontra também a
          *   associação já salva localmente.
          */
+        $activityHandled =
+            false;
+
         if (
             $types->isActivity(
                 $event->object_type
@@ -148,11 +184,26 @@ class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
 
                     companyIds: $companyIds,
                 );
+
+            $activityHandled =
+                true;
         }
 
         if ($companyIds === []) {
+            /*
+             * Se o mirror foi atualizado, o
+             * webhook foi útil mesmo sem CNPJ.
+             *
+             * Ele já ficará refletido na área
+             * "CRM sem CNPJ".
+             */
             $event->forceFill([
-                'status' => 'ignored',
+                'status' => (
+                    $mirrorHandled
+                    || $activityHandled
+                )
+                        ? 'processed'
+                        : 'ignored',
 
                 'processed_at' => now(),
             ])->save();

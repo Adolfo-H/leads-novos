@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\Company;
 use App\Models\CompanyLeadActivity;
+use App\Models\HubSpotActivity;
+use App\Models\HubSpotCompany;
 use App\Models\HubSpotWebhookEvent;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -17,6 +20,7 @@ final class HubSpotActivitySyncService
 {
     public function __construct(
         private readonly HubSpotWebhookObjectTypeService $types,
+        private readonly HubSpotWebhookAssociationResolver $resolver,
     ) {}
 
     /**
@@ -47,9 +51,14 @@ final class HubSpotActivitySyncService
             );
         }
 
+        /*
+         * Company fiscal já conhecida por
+         * atividades antigas.
+         */
         $companyIds =
             array_merge(
                 $companyIds,
+
                 $this->localCompanyIds(
                     type: $type,
 
@@ -57,11 +66,82 @@ final class HubSpotActivitySyncService
                 )
             );
 
+        /*
+         * Primeiro aproveitamos vínculos locais
+         * já conhecidos.
+         *
+         * Se a Company fiscal já foi resolvida,
+         * não precisamos consultar novamente
+         * associações no HubSpot.
+         */
+        $hubSpotCompanies =
+            [];
+
+        if ($companyIds !== []) {
+            $hubSpotCompanies =
+                HubSpotCompany::query()
+                    ->whereIn(
+                        'company_id',
+                        $companyIds
+                    )
+                    ->get()
+                    ->all();
+        } else {
+            /*
+             * Somente quando ainda não sabemos
+             * qual é a Company fiscal consultamos
+             * as associações do próprio HubSpot.
+             *
+             * Esse é o fluxo das empresas em
+             * "CRM sem CNPJ".
+             */
+            $hubSpotCompanyIds =
+                $this
+                    ->resolver
+                    ->hubSpotCompanyIds(
+                        objectType: $type,
+
+                        objectId: $event->object_id,
+                    );
+
+            foreach (
+                $hubSpotCompanyIds as $hubSpotCompanyId
+            ) {
+                $hubSpotCompany =
+                    HubSpotCompany::query()
+                        ->firstOrCreate([
+                            'hubspot_id' => $hubSpotCompanyId,
+                        ]);
+
+                $hubSpotCompanies[] =
+                    $hubSpotCompany;
+
+                if (
+                    is_numeric(
+                        $hubSpotCompany
+                            ->company_id
+                    )
+                ) {
+                    $companyIds[] =
+                        (int)
+                        $hubSpotCompany
+                            ->company_id;
+                }
+            }
+        }
+
         $companyIds =
             $this->companyIds(
                 $companyIds
             );
 
+        /*
+         * Exclusão:
+         *
+         * mantemos tombstone no mirror para
+         * preservar auditoria e ocultamos a
+         * projeção fiscal.
+         */
         if (
             $this->isDeletion(
                 $event->subscription_type
@@ -84,9 +164,8 @@ final class HubSpotActivitySyncService
             );
 
         /*
-         * Se o objeto desapareceu entre
-         * webhook e processamento, tratamos
-         * como exclusão.
+         * Se desapareceu entre webhook e worker,
+         * tratamos como excluído.
          */
         if ($record === null) {
             $this->markDeleted(
@@ -96,10 +175,6 @@ final class HubSpotActivitySyncService
             );
 
             return $companyIds;
-        }
-
-        if ($companyIds === []) {
-            return [];
         }
 
         $properties =
@@ -136,55 +211,196 @@ final class HubSpotActivitySyncService
                 $properties
             );
 
-        foreach (
-            $companyIds as $companyId
-        ) {
-            CompanyLeadActivity::query()
+        /*
+         * Espelho independente de CNPJ.
+         */
+        $activity =
+            HubSpotActivity::query()
                 ->updateOrCreate(
                     [
-                        'company_id' => $companyId,
+                        'object_type' => $type,
 
-                        'source' => 'hubspot',
-
-                        'source_object_type' => $type,
-
-                        'source_object_id' => $event->object_id,
+                        'hubspot_id' => $event
+                            ->object_id,
                     ],
                     [
-                        'user_id' => null,
-
-                        'type' => 'hubspot_'.$type,
-
                         'title' => mb_strimwidth(
                             $title,
                             0,
-                            150,
+                            180,
                             '…'
                         ),
 
                         'description' => $description,
-
-                        'metadata' => [
-                            'hubspot_object_type' => $type,
-
-                            'hubspot_object_id' => $event->object_id,
-
-                            'subscription_type' => $event
-                                ->subscription_type,
-
-                            'properties' => $properties,
-                        ],
 
                         'occurred_at' => $occurredAt,
 
                         'source_updated_at' => $sourceUpdatedAt,
 
                         'is_deleted' => false,
+
+                        'raw_properties' => $properties,
                     ]
                 );
+
+        $activity
+            ->companies()
+            ->syncWithoutDetaching(
+                array_values(
+                    array_unique(
+                        array_map(
+                            static fn (
+                                HubSpotCompany $company
+                            ): int => (int)
+                                $company->id,
+
+                            $hubSpotCompanies
+                        )
+                    )
+                )
+            );
+
+        /*
+         * Se alguma dessas HubSpot Companies já
+         * estiver identificada fiscalmente,
+         * projetamos imediatamente no histórico
+         * tradicional.
+         */
+        foreach (
+            $hubSpotCompanies as $hubSpotCompany
+        ) {
+            if (
+                ! is_numeric(
+                    $hubSpotCompany
+                        ->company_id
+                )
+            ) {
+                continue;
+            }
+
+            $companyIds[] =
+                (int)
+                $hubSpotCompany
+                    ->company_id;
+        }
+
+        $companyIds =
+            $this->companyIds(
+                $companyIds
+            );
+
+        foreach (
+            $companyIds as $companyId
+        ) {
+            $this->projectActivity(
+                activity: $activity,
+
+                companyId: $companyId,
+
+                subscriptionType: $event
+                    ->subscription_type,
+            );
         }
 
         return $companyIds;
+    }
+
+    /**
+     * Projeta atividades previamente recebidas
+     * enquanto a HubSpot Company ainda estava
+     * sem CNPJ.
+     */
+    public function promoteForCompany(
+        HubSpotCompany $hubSpotCompany,
+        Company $company,
+    ): int {
+        $activities =
+            $hubSpotCompany
+                ->activities()
+                ->get();
+
+        $count = 0;
+
+        foreach (
+            $activities as $activity
+        ) {
+            $this->projectActivity(
+                activity: $activity,
+
+                companyId: $company->id,
+
+                subscriptionType: null,
+            );
+
+            $count++;
+        }
+
+        return $count;
+    }
+
+    private function projectActivity(
+        HubSpotActivity $activity,
+        int $companyId,
+        ?string $subscriptionType,
+    ): void {
+        $properties =
+            $activity
+                ->getAttribute(
+                    'raw_properties'
+                );
+
+        CompanyLeadActivity::query()
+            ->updateOrCreate(
+                [
+                    'company_id' => $companyId,
+
+                    'source' => 'hubspot',
+
+                    'source_object_type' => $activity
+                        ->object_type,
+
+                    'source_object_id' => $activity
+                        ->hubspot_id,
+                ],
+                [
+                    'user_id' => null,
+
+                    'type' => 'hubspot_'
+                        .$activity
+                            ->object_type,
+
+                    'title' => $activity->title
+                        ?? 'Atividade HubSpot',
+
+                    'description' => $activity
+                        ->description,
+
+                    'metadata' => [
+                        'hubspot_object_type' => $activity
+                            ->object_type,
+
+                        'hubspot_object_id' => $activity
+                            ->hubspot_id,
+
+                        'subscription_type' => $subscriptionType,
+
+                        'properties' => is_array(
+                            $properties
+                        )
+                                ? $properties
+                                : [],
+                    ],
+
+                    'occurred_at' => $activity
+                        ->occurred_at,
+
+                    'source_updated_at' => $activity
+                        ->source_updated_at,
+
+                    'is_deleted' => $activity
+                        ->is_deleted,
+                ]
+            );
     }
 
     /**
@@ -693,6 +909,23 @@ final class HubSpotActivitySyncService
         string $type,
         string $externalId,
     ): void {
+        HubSpotActivity::query()
+            ->where(
+                'object_type',
+                $type
+            )
+            ->where(
+                'hubspot_id',
+                $externalId
+            )
+            ->update([
+                'is_deleted' => true,
+
+                'source_updated_at' => now(),
+
+                'updated_at' => now(),
+            ]);
+
         CompanyLeadActivity::query()
             ->where(
                 'source',
