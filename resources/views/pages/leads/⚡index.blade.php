@@ -4549,6 +4549,46 @@ new class extends Component
         font-size: 9px;
     }
 
+    .rf-sync-state {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 6px;
+        color: #6889a7;
+        font-size: 8px;
+        line-height: 1.35;
+    }
+
+    .rf-sync-dot {
+        flex: 0 0 auto;
+        width: 5px;
+        height: 5px;
+        border-radius: 999px;
+        background: #42dfac;
+        box-shadow:
+            0 0 0 2px rgba(66,223,172,.08);
+    }
+
+    .rf-sync-state.is-aging {
+        color: #9b8c64;
+    }
+
+    .rf-sync-state.is-aging .rf-sync-dot {
+        background: #f5c54b;
+        box-shadow:
+            0 0 0 2px rgba(245,197,75,.08);
+    }
+
+    .rf-sync-state.is-old {
+        color: #ba7680;
+    }
+
+    .rf-sync-state.is-old .rf-sync-dot {
+        background: #ff6e7b;
+        box-shadow:
+            0 0 0 2px rgba(255,110,123,.08);
+    }
+
     .rf-owner-select {
         width: 100%;
         height: 34px;
@@ -6341,6 +6381,71 @@ new class extends Component
                     $hubSpotLead =
                         $lead->hubSpotLead;
 
+                    $hubSpotSyncedAt =
+                        $hubSpotLead
+                            ?->status_synced_at;
+
+                    $hubSpotSyncMinutes =
+                        $hubSpotSyncedAt
+                            ? max(
+                                0,
+                                (int) floor(
+                                    $hubSpotSyncedAt
+                                        ->diffInSeconds(
+                                            now()
+                                        )
+                                    / 60
+                                )
+                            )
+                            : null;
+
+                    $hubSpotSyncLabel =
+                        match (true) {
+                            $hubSpotSyncedAt === null =>
+                                'HubSpot ainda não verificado',
+
+                            $hubSpotSyncMinutes <= 1 =>
+                                'HubSpot verificado agora',
+
+                            $hubSpotSyncMinutes < 60 =>
+                                'HubSpot verificado há '
+                                .$hubSpotSyncMinutes
+                                .' min',
+
+                            $hubSpotSyncMinutes < 1440 =>
+                                'HubSpot verificado há '
+                                .max(
+                                    1,
+                                    (int) floor(
+                                        $hubSpotSyncMinutes
+                                        / 60
+                                    )
+                                )
+                                .' h',
+
+                            default =>
+                                'HubSpot verificado em '
+                                .$hubSpotSyncedAt
+                                    ->format(
+                                        'd/m H:i'
+                                    ),
+                        };
+
+                    $hubSpotSyncClass =
+                        match (true) {
+                            $hubSpotSyncMinutes === null =>
+                                'is-old',
+
+                            $hubSpotSyncMinutes <= 10 =>
+                                '',
+
+                            $hubSpotSyncMinutes <= 30 =>
+                                'is-aging',
+
+                            default =>
+                                'is-old',
+                        };
+
                     $leadWorkState =
                         $lead->leadWorkState;
 
@@ -6959,6 +7064,33 @@ new class extends Component
                                 )
                             }}
                         </div>
+
+
+                        @if ($hubSpotLead)
+
+                            <div
+                                class="
+                                    rf-sync-state
+                                    {{ $hubSpotSyncClass }}
+                                "
+                                title="{{
+                                    $hubSpotSyncedAt
+                                        ?->format(
+                                            'd/m/Y H:i:s'
+                                        )
+                                    ?? 'Nunca sincronizado'
+                                }}"
+                            >
+                                <span class="rf-sync-dot"></span>
+
+                                <span>
+                                    {{
+                                        $hubSpotSyncLabel
+                                    }}
+                                </span>
+                            </div>
+
+                        @endif
 
 
                         @if ($reprospectingInfo)

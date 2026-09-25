@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\CompanyHubSpotLead;
+use App\Services\HubSpotLeadStatusCandidateService;
 use App\Services\HubSpotLeadStatusSyncService;
 use Illuminate\Console\Command;
 use Throwable;
@@ -17,7 +17,8 @@ class SyncHubSpotLeadStatuses extends Command
         'Atualiza o acompanhamento dos leads usando o HubSpot';
 
     public function handle(
-        HubSpotLeadStatusSyncService $service
+        HubSpotLeadStatusSyncService $service,
+        HubSpotLeadStatusCandidateService $candidates,
     ): int {
         $limit =
             max(
@@ -28,20 +29,10 @@ class SyncHubSpotLeadStatuses extends Command
             );
 
         $leads =
-            CompanyHubSpotLead::query()
-                ->whereNotNull(
-                    'hubspot_company_id'
-                )
-                ->whereNotNull(
-                    'hubspot_deal_id'
-                )
-                ->orderBy(
-                    'status_synced_at'
-                )
-                ->limit(
+            $candidates
+                ->candidates(
                     $limit
-                )
-                ->get();
+                );
 
         $processed = 0;
         $failed = 0;
