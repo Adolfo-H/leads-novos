@@ -154,6 +154,23 @@ class Company extends Model
     }
 
     /**
+     * Registros Company do HubSpot vinculados
+     * a esta empresa fiscal.
+     *
+     * Uma empresa local pode possuir mais de
+     * um registro correspondente no CRM.
+     *
+     * @return HasMany<HubSpotCompany, $this>
+     */
+    public function hubSpotCompanies(): HasMany
+    {
+        return $this->hasMany(
+            HubSpotCompany::class,
+            'company_id'
+        );
+    }
+
+    /**
      * @return HasMany<CompanyLeadActivity, $this>
      */
     public function leadActivities(): HasMany

@@ -10,6 +10,7 @@ use App\Models\CompanyLeadWorkState;
 use App\Models\CompanySdrScore;
 use App\Models\Establishment;
 use App\Models\User;
+use App\Models\HubSpotCompany;
 use App\Models\HubSpotRefreshRun;
 use App\Services\HubSpotRefreshDiffService;
 use App\Services\HubSpotRefreshRunService;
@@ -52,6 +53,8 @@ new class extends Component
     public bool $staleOnly = false;
 
     public bool $reprospectingReadyOnly = false;
+
+    public bool $hubSpotOnly = false;
 
     public string $commercialActionMessage = '';
 
@@ -283,6 +286,10 @@ new class extends Component
     public function updatedSearch(): void
     {
         $this->resetPage();
+
+        $this->resetPage(
+            'hubspotPage'
+        );
     }
 
     public function updatedPriority(): void
@@ -298,11 +305,19 @@ new class extends Component
     public function updatedCrm(): void
     {
         $this->resetPage();
+
+        $this->resetPage(
+            'hubspotPage'
+        );
     }
 
     public function updatedState(): void
     {
         $this->resetPage();
+
+        $this->resetPage(
+            'hubspotPage'
+        );
     }
 
     public function updatedOwner(): void
@@ -359,9 +374,14 @@ new class extends Component
             'dailyView',
             'staleOnly',
             'reprospectingReadyOnly',
+            'hubSpotOnly',
         ]);
 
         $this->resetPage();
+
+        $this->resetPage(
+            'hubspotPage'
+        );
     }
 
     #[Computed]
@@ -475,6 +495,36 @@ new class extends Component
                                     'companies.cnpj_root',
                                     'like',
                                     '%'.$cnpj.'%'
+                                )
+                                ->orWhereHas(
+                                    'hubSpotCompanies',
+                                    function ($hubSpotQuery) use (
+                                        $normalized
+                                    ): void {
+                                        $hubSpotQuery->where(
+                                            function ($aliasQuery) use (
+                                                $normalized
+                                            ): void {
+                                                $aliasQuery
+                                                    ->whereRaw(
+                                                        "LOWER(COALESCE(name, '')) LIKE ?",
+                                                        [
+                                                            '%'
+                                                            .$normalized
+                                                            .'%',
+                                                        ]
+                                                    )
+                                                    ->orWhereRaw(
+                                                        "LOWER(COALESCE(domain, '')) LIKE ?",
+                                                        [
+                                                            '%'
+                                                            .$normalized
+                                                            .'%',
+                                                        ]
+                                                    );
+                                            }
+                                        );
+                                    }
                                 );
                         }
                     );
@@ -984,6 +1034,251 @@ new class extends Component
                 'companies.corporate_name'
             )
             ->paginate(20);
+    }
+
+    #[Computed]
+    public function hubSpotOnlyOpenCount(): int
+    {
+        if (
+            ! $this
+                ->isCommercialManager()
+        ) {
+            return 0;
+        }
+
+        return HubSpotCompany::query()
+            ->whereNull(
+                'company_id'
+            )
+            ->whereHas(
+                'deals',
+                fn ($query) => $query->where(
+                    'is_closed',
+                    false
+                )
+            )
+            ->count();
+    }
+
+    #[Computed]
+    public function hubSpotOnlyLeads()
+    {
+        $search =
+            trim(
+                $this->search
+            );
+
+        $query =
+            HubSpotCompany::query()
+                ->whereNull(
+                    'company_id'
+                );
+
+        /*
+         * Registros sem Company ainda não possuem
+         * carteira/responsável local.
+         *
+         * Até criarmos esse vínculo explicitamente,
+         * somente gestores podem visualizá-los.
+         */
+        if (
+            ! $this
+                ->isCommercialManager()
+        ) {
+            $query->whereRaw(
+                '1 = 0'
+            );
+        }
+
+        /*
+         * No funcionamento normal não misturamos os
+         * registros CRM-only com os leads fiscais.
+         *
+         * Eles aparecem:
+         *
+         * - quando o gestor ativa "CRM sem CNPJ";
+         * - quando uma busca encontra um registro
+         *   existente apenas no HubSpot.
+         */
+        if (
+            ! $this->hubSpotOnly
+            && $search === ''
+        ) {
+            $query->whereRaw(
+                '1 = 0'
+            );
+        }
+
+        /*
+         * A visão CRM sem CNPJ representa a fila
+         * comercial ainda ativa.
+         */
+        if ($this->hubSpotOnly) {
+            $query->whereHas(
+                'deals',
+                fn ($dealQuery) => $dealQuery
+                    ->where(
+                        'is_closed',
+                        false
+                    )
+            );
+        } else {
+            /*
+             * Na busca textual também permitimos
+             * encontrar histórico encerrado.
+             */
+            $query->whereHas(
+                'deals'
+            );
+        }
+
+        if ($search !== '') {
+            $normalized =
+                mb_strtolower(
+                    $search
+                );
+
+            $query->where(
+                function ($searchQuery) use (
+                    $normalized
+                ): void {
+                    $searchQuery
+                        ->whereRaw(
+                            "LOWER(COALESCE(name, '')) LIKE ?",
+                            [
+                                '%'
+                                .$normalized
+                                .'%',
+                            ]
+                        )
+                        ->orWhereRaw(
+                            "LOWER(COALESCE(domain, '')) LIKE ?",
+                            [
+                                '%'
+                                .$normalized
+                                .'%',
+                            ]
+                        );
+                }
+            );
+        }
+
+        /*
+         * Estado pode ser utilizado diretamente
+         * no espelho HubSpot.
+         */
+        if ($this->state !== '') {
+            $query->where(
+                'state',
+                $this->state
+            );
+        }
+
+        /*
+         * Se o filtro selecionado for uma etapa
+         * real do HubSpot, também o aplicamos aos
+         * registros sem CNPJ.
+         */
+        $crmFilter =
+            trim(
+                $this->crm
+            );
+
+        if (
+            str_starts_with(
+                $crmFilter,
+                'stage:'
+            )
+        ) {
+            $stage =
+                trim(
+                    substr(
+                        $crmFilter,
+                        6
+                    )
+                );
+
+            if ($stage !== '') {
+                $query->whereHas(
+                    'deals',
+                    fn ($dealQuery) => $dealQuery
+                        ->where(
+                            'stage_label',
+                            $stage
+                        )
+                );
+            }
+        }
+
+        return $query
+            ->with([
+                'deals' =>
+                    fn ($dealQuery) => $dealQuery
+                        ->orderBy(
+                            'is_closed'
+                        )
+                        ->orderByDesc(
+                            'last_activity_at'
+                        )
+                        ->orderBy(
+                            'name'
+                        ),
+
+                'contacts',
+            ])
+            ->orderByRaw(
+                "
+                CASE
+                    WHEN name IS NULL
+                        OR TRIM(name) = ''
+                        THEN 1
+                    ELSE 0
+                END
+                "
+            )
+            ->orderBy(
+                'name'
+            )
+            ->paginate(
+                20,
+                ['*'],
+                'hubspotPage'
+            );
+    }
+
+    public function applyHubSpotOnlyView(): void
+    {
+        abort_unless(
+            $this->isCommercialManager(),
+            403
+        );
+
+        $this->hubSpotOnly =
+            ! $this->hubSpotOnly;
+
+        if ($this->hubSpotOnly) {
+            /*
+             * Estes filtros dependem de Company,
+             * ICP, score ou carteira local.
+             *
+             * Não devem excluir silenciosamente
+             * registros CRM-only.
+             */
+            $this->priority = '';
+            $this->icp = '';
+            $this->owner = '';
+            $this->workStatus = '';
+            $this->followUp = '';
+            $this->dailyView = '';
+            $this->staleOnly = false;
+            $this->reprospectingReadyOnly = false;
+        }
+
+        $this->resetPage();
+
+        $this->resetPage(
+            'hubspotPage'
+        );
     }
 
     /**
@@ -2446,6 +2741,39 @@ new class extends Component
         };
     }
 
+    public function hubSpotCompanyUrlById(
+        ?string $companyId
+    ): ?string {
+        $companyId =
+            trim(
+                (string) $companyId
+            );
+
+        $portalId =
+            trim(
+                (string) config(
+                    'services.hubspot.portal_id'
+                )
+            );
+
+        if (
+            $portalId === ''
+            || $companyId === ''
+        ) {
+            return null;
+        }
+
+        return sprintf(
+            'https://app.hubspot.com/contacts/%s/record/0-2/%s',
+            rawurlencode(
+                $portalId
+            ),
+            rawurlencode(
+                $companyId
+            ),
+        );
+    }
+
     public function hubSpotCompanyUrl(
         ?CompanyCrmCheck $crm
     ): ?string {
@@ -3208,7 +3536,7 @@ new class extends Component
         display: grid;
         grid-template-columns:
             repeat(2, minmax(150px, 1fr))
-            auto auto;
+            auto auto auto;
         align-items: center;
         gap: 9px;
         margin-top: 9px;
@@ -5266,6 +5594,37 @@ new class extends Component
             </select>
 
 
+            @if (
+                $this->isCommercialManager()
+            )
+
+                <button
+                    type="button"
+                    wire:click="applyHubSpotOnlyView"
+                    class="
+                        rf-filter-action
+                        {{
+                            $hubSpotOnly
+                                ? 'is-active'
+                                : ''
+                        }}
+                    "
+                >
+                    CRM sem CNPJ
+                    ·
+                    {{
+                        number_format(
+                            $this->hubSpotOnlyOpenCount,
+                            0,
+                            ',',
+                            '.'
+                        )
+                    }}
+                </button>
+
+            @endif
+
+
             <button
                 type="button"
                 wire:click="applyDailyView"
@@ -5296,6 +5655,19 @@ new class extends Component
 
     </section>
 
+
+    @include(
+        'partials.hubspot-unmatched-leads'
+    )
+
+
+    @if (
+        ! $hubSpotOnly
+        && (
+            $this->leads->total() > 0
+            || $this->hubSpotOnlyLeads->total() === 0
+        )
+    )
 
     <section class="rf-panel rf-list-panel">
 
@@ -6696,6 +7068,8 @@ new class extends Component
         @endif
 
     </section>
+
+    @endif
 
 </div>
 
