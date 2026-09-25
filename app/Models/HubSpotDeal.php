@@ -90,6 +90,37 @@ class HubSpotDeal extends Model
     }
 
     /**
+     * Company comercial deste negócio.
+     *
+     * Em Deal com várias Companies somente
+     * a Primary participa do CRM operacional.
+     *
+     * @return BelongsToMany<HubSpotCompany, $this>
+     */
+    public function commercialCompanies(): BelongsToMany
+    {
+        return $this
+            ->companies()
+            ->where(
+                function (
+                    $query
+                ): void {
+                    $query
+                        ->where(
+                            'hubspot_company_deal.is_primary',
+                            true
+                        )
+                        ->orWhereRaw(
+                            '(SELECT COUNT(*) '
+                            .'FROM hubspot_company_deal hcd_count '
+                            .'WHERE hcd_count.hubspot_deal_id = '
+                            .'hubspot_company_deal.hubspot_deal_id) = 1'
+                        );
+                }
+            );
+    }
+
+    /**
      * @return BelongsToMany<HubSpotContact, $this>
      */
     public function contacts(): BelongsToMany

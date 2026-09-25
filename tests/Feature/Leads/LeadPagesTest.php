@@ -2,6 +2,8 @@
 
 use App\Models\Company;
 use App\Models\CompanyHubSpotLead;
+use App\Models\HubSpotCompany;
+use App\Models\HubSpotDeal;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -756,7 +758,7 @@ it('filters leads by the real HubSpot deal stage', function () {
         Company::query()->create([
             'cnpj_root' => '60111111',
 
-            'corporate_name' => 'Empresa HubSpot Leads Frios',
+            'corporate_name' => 'Empresa HubSpot Leds Frio',
         ]);
 
     $qualified =
@@ -795,123 +797,104 @@ it('filters leads by the real HubSpot deal stage', function () {
             ]);
     }
 
-    $cold
-        ->crmCheck()
-        ->create([
-            'provider' => 'hubspot',
+    /*
+     * Fonte real da etapa:
+     *
+     * Company local
+     *   ↓
+     * hubspot_companies
+     *   ↓
+     * hubspot_company_deal
+     *   ↓
+     * hubspot_deals.stage_label
+     */
 
-            'status' => 'opportunity',
+    $coldHubSpot =
+        HubSpotCompany::query()
+            ->create([
+                'company_id' => $cold->id,
 
-            'associated_deals_count' => 1,
+                'hubspot_id' => 'company-cold',
 
-            'metadata' => [
-                'deals' => [
-                    [
-                        'id' => 'cold-deal',
+                'name' => 'Empresa HubSpot Leds Frio',
+            ]);
 
-                        'name' => 'Negócio frio',
+    $coldDeal =
+        HubSpotDeal::query()
+            ->create([
+                'hubspot_id' => 'cold-deal',
 
-                        'stage_id' => 'qualifiedtobuy',
+                'name' => 'Negócio frio',
 
-                        'stage_label' => 'Leads frios',
+                'pipeline_id' => 'default',
 
-                        'pipeline_id' => 'default',
+                'stage_id' => 'qualifiedtobuy',
 
-                        'is_closed' => false,
+                'stage_label' => 'Leds frio',
 
-                        'is_closed_won' => false,
+                'is_closed' => false,
 
-                        'closed_at' => null,
-                    ],
-                ],
+                'is_closed_won' => false,
+            ]);
 
-                'deal_summary' => [
-                    'total' => 1,
+    $coldHubSpot
+        ->deals()
+        ->attach(
+            $coldDeal->id
+        );
 
-                    'active' => 1,
+    $qualifiedHubSpot =
+        HubSpotCompany::query()
+            ->create([
+                'company_id' => $qualified->id,
 
-                    'won' => 0,
+                'hubspot_id' => 'company-qualified',
 
-                    'closed_lost' => 0,
+                'name' => 'Empresa HubSpot Qualificada',
+            ]);
 
-                    'stages' => [
-                        'Leads frios',
-                    ],
-                ],
-            ],
+    $qualifiedDeal =
+        HubSpotDeal::query()
+            ->create([
+                'hubspot_id' => 'qualified-deal',
 
-            'checked_at' => now(),
-        ]);
+                'name' => 'Negócio qualificado',
 
-    $qualified
-        ->crmCheck()
-        ->create([
-            'provider' => 'hubspot',
+                'pipeline_id' => 'default',
 
-            'status' => 'opportunity',
+                'stage_id' => 'presentationscheduled',
 
-            'associated_deals_count' => 1,
+                'stage_label' => 'Leds qualificado',
 
-            'metadata' => [
-                'deals' => [
-                    [
-                        'id' => 'qualified-deal',
+                'is_closed' => false,
 
-                        'name' => 'Negócio qualificado',
+                'is_closed_won' => false,
+            ]);
 
-                        'stage_id' => 'presentationscheduled',
+    $qualifiedHubSpot
+        ->deals()
+        ->attach(
+            $qualifiedDeal->id
+        );
 
-                        'stage_label' => 'Leads qualificado',
-
-                        'pipeline_id' => 'default',
-
-                        'is_closed' => false,
-
-                        'is_closed_won' => false,
-
-                        'closed_at' => null,
-                    ],
-                ],
-
-                'deal_summary' => [
-                    'total' => 1,
-
-                    'active' => 1,
-
-                    'won' => 0,
-
-                    'closed_lost' => 0,
-
-                    'stages' => [
-                        'Leads qualificado',
-                    ],
-                ],
-            ],
-
-            'checked_at' => now(),
-        ]);
-
-    $component =
-        Livewire::actingAs(
-            $user
-        )
-            ->test(
-                'pages::leads.index'
-            );
-
-    $component
-        ->assertSee(
-            'Leads frios'
+    Livewire::actingAs(
+        $user
+    )
+        ->test(
+            'pages::leads.index'
         )
         ->assertSee(
-            'Leads qualificado'
+            'Leds frio'
+        )
+        ->assertSee(
+            'Leds qualificado'
         )
         ->set(
             'crm',
-            'stage:Leads frios'
+            'stage:Leds frio'
         )
         ->assertSee(
-            'Empresa HubSpot Leads Frios'
+            'Empresa HubSpot Leds Frio'
         )
         ->assertDontSee(
             'Empresa HubSpot Qualificada'

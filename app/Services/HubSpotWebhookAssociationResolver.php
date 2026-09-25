@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\CompanyCrmCheck;
-use App\Models\CompanyHubSpotLead;
 use App\Models\HubSpotCompany;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
@@ -55,6 +53,19 @@ final class HubSpotWebhookAssociationResolver
             $this->unique(
                 $ids
             );
+
+        /*
+         * Deal múltiplo sem Primary não pode
+         * cair em associação genérica.
+         *
+         * Retornar vazio é mais seguro do que
+         * atribuir o negócio à empresa errada.
+         */
+        if (
+            $objectType === 'deal'
+        ) {
+            return $ids;
+        }
 
         if ($ids !== []) {
             return $ids;
@@ -351,55 +362,20 @@ final class HubSpotWebhookAssociationResolver
      *
      * @return list<int>
      */
+    /**
+     * HubSpot Company -> Company fiscal.
+     *
+     * A única prova local aceita aqui é o
+     * vínculo fiscal confiável do mirror.
+     *
+     * @return list<int>
+     */
     private function localByCompany(
         string $hubSpotCompanyId
     ): array {
-        $leadIds =
-            CompanyHubSpotLead::query()
-                ->where(
-                    'hubspot_company_id',
-                    $hubSpotCompanyId
-                )
-                ->pluck(
-                    'company_id'
-                )
-                ->map(
-                    static fn (
-                        mixed $id
-                    ): int => (int) $id
-                )
-                ->all();
-
-        $crmIds =
-            CompanyCrmCheck::query()
-                ->where(
-                    'provider',
-                    'hubspot'
-                )
-                ->where(
-                    'external_id',
-                    $hubSpotCompanyId
-                )
-                ->pluck(
-                    'company_id'
-                )
-                ->map(
-                    static fn (
-                        mixed $id
-                    ): int => (int) $id
-                )
-                ->all();
-
-        /*
-         * Fonte principal de fallback:
-         *
-         * hubspot_companies contém todos os
-         * registros importados/reconstruídos do
-         * HubSpot e o vínculo company_id quando
-         * a empresa fiscal foi identificada.
-         */
-        $mirrorIds =
+        return array_values(
             HubSpotCompany::query()
+                ->trustedFiscalLink()
                 ->where(
                     'hubspot_id',
                     $hubSpotCompanyId
@@ -415,49 +391,31 @@ final class HubSpotWebhookAssociationResolver
                         mixed $id
                     ): int => (int) $id
                 )
-                ->all();
-
-        return $this->unique(
-            array_merge(
-                $leadIds,
-                $crmIds,
-                $mirrorIds,
-            )
+                ->filter(
+                    static fn (
+                        int $id
+                    ): bool => $id > 0
+                )
+                ->unique()
+                ->values()
+                ->all()
         );
     }
 
     /**
-     * Resolve HubSpot Deal ID.
+     * Deal -> HubSpot Company ->
+     * Company fiscal confiável.
+     *
+     * O Deal pode estar associado a várias
+     * Companies no HubSpot. Isso NÃO transfere
+     * CNPJ entre elas.
      *
      * @return list<int>
      */
     private function localByDeal(
         string $hubSpotDealId
     ): array {
-        $leadIds =
-            CompanyHubSpotLead::query()
-                ->where(
-                    'hubspot_deal_id',
-                    $hubSpotDealId
-                )
-                ->pluck(
-                    'company_id'
-                )
-                ->map(
-                    static fn (
-                        mixed $id
-                    ): int => (int) $id
-                )
-                ->all();
-
-        /*
-         * hubspot_deals
-         *      ↓
-         * hubspot_company_deal
-         *      ↓
-         * hubspot_companies.company_id
-         */
-        $mirrorIds =
+        return array_values(
             DB::table(
                 'hubspot_deals as hd'
             )
@@ -480,6 +438,37 @@ final class HubSpotWebhookAssociationResolver
                 ->whereNotNull(
                     'hc.company_id'
                 )
+                ->where(
+                    function (
+                        $query
+                    ): void {
+                        $query
+                            ->whereNull(
+                                'hc.match_source'
+                            )
+                            ->orWhereNotIn(
+                                'hc.match_source',
+                                HubSpotCompany::UNSAFE_FISCAL_MATCH_SOURCES
+                            );
+                    }
+                )
+                ->where(
+                    function (
+                        $query
+                    ): void {
+                        $query
+                            ->where(
+                                'hcd.is_primary',
+                                true
+                            )
+                            ->orWhereRaw(
+                                '(SELECT COUNT(*) '
+                                .'FROM hubspot_company_deal hcd_count '
+                                .'WHERE hcd_count.hubspot_deal_id = '
+                                .'hcd.hubspot_deal_id) = 1'
+                            );
+                    }
+                )
                 ->pluck(
                     'hc.company_id'
                 )
@@ -488,48 +477,27 @@ final class HubSpotWebhookAssociationResolver
                         mixed $id
                     ): int => (int) $id
                 )
-                ->all();
-
-        return $this->unique(
-            array_merge(
-                $leadIds,
-                $mirrorIds,
-            )
+                ->filter(
+                    static fn (
+                        int $id
+                    ): bool => $id > 0
+                )
+                ->unique()
+                ->values()
+                ->all()
         );
     }
 
     /**
-     * Resolve HubSpot Contact ID.
+     * Contact -> HubSpot Company ->
+     * Company fiscal confiável.
      *
      * @return list<int>
      */
     private function localByContact(
         string $hubSpotContactId
     ): array {
-        $leadIds =
-            CompanyHubSpotLead::query()
-                ->where(
-                    'hubspot_contact_id',
-                    $hubSpotContactId
-                )
-                ->pluck(
-                    'company_id'
-                )
-                ->map(
-                    static fn (
-                        mixed $id
-                    ): int => (int) $id
-                )
-                ->all();
-
-        /*
-         * hubspot_contacts
-         *      ↓
-         * hubspot_company_contact
-         *      ↓
-         * hubspot_companies.company_id
-         */
-        $mirrorIds =
+        return array_values(
             DB::table(
                 'hubspot_contacts as hct'
             )
@@ -552,6 +520,20 @@ final class HubSpotWebhookAssociationResolver
                 ->whereNotNull(
                     'hc.company_id'
                 )
+                ->where(
+                    function (
+                        $query
+                    ): void {
+                        $query
+                            ->whereNull(
+                                'hc.match_source'
+                            )
+                            ->orWhereNotIn(
+                                'hc.match_source',
+                                HubSpotCompany::UNSAFE_FISCAL_MATCH_SOURCES
+                            );
+                    }
+                )
                 ->pluck(
                     'hc.company_id'
                 )
@@ -560,13 +542,14 @@ final class HubSpotWebhookAssociationResolver
                         mixed $id
                     ): int => (int) $id
                 )
-                ->all();
-
-        return $this->unique(
-            array_merge(
-                $leadIds,
-                $mirrorIds,
-            )
+                ->filter(
+                    static fn (
+                        int $id
+                    ): bool => $id > 0
+                )
+                ->unique()
+                ->values()
+                ->all()
         );
     }
 

@@ -106,7 +106,9 @@ final class HubSpotCompanyLinkService
                         : null;
 
                 if (
-                    $currentCompanyId !== null
+                    $hubSpotCompany
+                        ->hasTrustedFiscalLink()
+                    && $currentCompanyId !== null
                     && $currentCompanyId
                         !== $company->id
                 ) {
@@ -135,7 +137,9 @@ final class HubSpotCompanyLinkService
                     );
 
                 if (
-                    $existingRoot !== ''
+                    $hubSpotCompany
+                        ->hasTrustedFiscalLink()
+                    && $existingRoot !== ''
                     && $existingRoot !== $cnpjRoot
                 ) {
                     throw new DomainException(

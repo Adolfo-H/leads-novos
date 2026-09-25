@@ -24,12 +24,13 @@ final class HubSpotMirrorCrmSyncService
     ): array {
         $records =
             HubSpotCompany::query()
+                ->trustedFiscalLink()
                 ->where(
                     'company_id',
                     $company->id
                 )
                 ->with([
-                    'deals',
+                    'commercialDeals',
                     'tasks',
                     'contacts',
                 ])
@@ -85,7 +86,7 @@ final class HubSpotMirrorCrmSyncService
 
         foreach ($records as $record) {
             foreach (
-                $record->deals as $deal
+                $record->commercialDeals as $deal
             ) {
                 $dealId =
                     trim(
@@ -323,7 +324,7 @@ final class HubSpotMirrorCrmSyncService
                 ),
 
                 'deals' => $record
-                    ->deals
+                    ->commercialDeals
                     ->count(),
             ];
         }
@@ -387,7 +388,7 @@ final class HubSpotMirrorCrmSyncService
                     ): int {
                         $leftOpen =
                             $left
-                                ->deals
+                                ->commercialDeals
                                 ->filter(
                                     static fn (
                                         HubSpotDeal $deal
@@ -400,7 +401,7 @@ final class HubSpotMirrorCrmSyncService
 
                         $rightOpen =
                             $right
-                                ->deals
+                                ->commercialDeals
                                 ->filter(
                                     static fn (
                                         HubSpotDeal $deal
@@ -422,11 +423,11 @@ final class HubSpotMirrorCrmSyncService
 
                         $compare =
                             $right
-                                ->deals
+                                ->commercialDeals
                                 ->count()
                             <=>
                             $left
-                                ->deals
+                                ->commercialDeals
                                 ->count();
 
                         if ($compare !== 0) {

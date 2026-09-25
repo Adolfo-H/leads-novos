@@ -52,34 +52,72 @@ final class HubSpotActivitySyncService
         }
 
         /*
-         * Company fiscal já conhecida por
-         * atividades antigas.
+         * companyIds recebidos do processamento
+         * do webhook já passaram pelo resolver
+         * fiscal atual.
+         *
+         * Não fazemos uma nova consulta externa
+         * desnecessária quando eles já existem.
          */
         $companyIds =
-            array_merge(
-                $companyIds,
-
-                $this->localCompanyIds(
-                    type: $type,
-
-                    externalId: $event->object_id,
-                )
+            $this->companyIds(
+                $companyIds
             );
 
         /*
-         * Primeiro aproveitamos vínculos locais
-         * já conhecidos.
+         * EXCLUSÃO
          *
-         * Se a Company fiscal já foi resolvida,
-         * não precisamos consultar novamente
-         * associações no HubSpot.
+         * Quando o HubSpot já removeu o objeto,
+         * suas associações podem não estar mais
+         * disponíveis pela API.
+         *
+         * Podemos consultar a projeção antiga
+         * SOMENTE para saber quais registros
+         * precisam ser marcados como excluídos.
+         *
+         * Isto não é utilizado para descobrir
+         * nem propagar identidade fiscal.
          */
-        $hubSpotCompanies =
-            [];
+        if (
+            $this->isDeletion(
+                $event->subscription_type
+            )
+        ) {
+            if ($companyIds === []) {
+                $companyIds =
+                    $this
+                        ->projectedCompanyIdsForDeletion(
+                            type: $type,
 
+                            externalId: $event->object_id,
+                        );
+            }
+
+            $this->markDeleted(
+                type: $type,
+
+                externalId: $event->object_id,
+            );
+
+            return $this->companyIds(
+                $companyIds
+            );
+        }
+
+        $hubSpotCompanies = [];
+
+        /*
+         * Se a Company fiscal já foi resolvida,
+         * reaproveitamos somente registros
+         * HubSpot com vínculo fiscal confiável.
+         *
+         * Isso também evita uma nova chamada
+         * para a API do HubSpot.
+         */
         if ($companyIds !== []) {
             $hubSpotCompanies =
                 HubSpotCompany::query()
+                    ->trustedFiscalLink()
                     ->whereIn(
                         'company_id',
                         $companyIds
@@ -88,12 +126,14 @@ final class HubSpotActivitySyncService
                     ->all();
         } else {
             /*
-             * Somente quando ainda não sabemos
-             * qual é a Company fiscal consultamos
-             * as associações do próprio HubSpot.
+             * Ainda não sabemos a empresa fiscal.
              *
-             * Esse é o fluxo das empresas em
-             * "CRM sem CNPJ".
+             * Neste caso buscamos somente as
+             * associações reais do objeto no
+             * HubSpot.
+             *
+             * Elas podem ser preservadas no
+             * mirror mesmo sem CNPJ.
              */
             $hubSpotCompanyIds =
                 $this
@@ -116,11 +156,17 @@ final class HubSpotActivitySyncService
                 $hubSpotCompanies[] =
                     $hubSpotCompany;
 
+                /*
+                 * Associação HubSpot não significa
+                 * identidade fiscal.
+                 *
+                 * Somente adicionamos company_id
+                 * quando o vínculo fiscal já foi
+                 * confirmado por fonte confiável.
+                 */
                 if (
-                    is_numeric(
-                        $hubSpotCompany
-                            ->company_id
-                    )
+                    $hubSpotCompany
+                        ->hasTrustedFiscalLink()
                 ) {
                     $companyIds[] =
                         (int)
@@ -128,32 +174,11 @@ final class HubSpotActivitySyncService
                             ->company_id;
                 }
             }
-        }
 
-        $companyIds =
-            $this->companyIds(
-                $companyIds
-            );
-
-        /*
-         * Exclusão:
-         *
-         * mantemos tombstone no mirror para
-         * preservar auditoria e ocultamos a
-         * projeção fiscal.
-         */
-        if (
-            $this->isDeletion(
-                $event->subscription_type
-            )
-        ) {
-            $this->markDeleted(
-                type: $type,
-
-                externalId: $event->object_id,
-            );
-
-            return $companyIds;
+            $companyIds =
+                $this->companyIds(
+                    $companyIds
+                );
         }
 
         $record =
@@ -164,8 +189,8 @@ final class HubSpotActivitySyncService
             );
 
         /*
-         * Se desapareceu entre webhook e worker,
-         * tratamos como excluído.
+         * O objeto pode desaparecer entre o
+         * recebimento do webhook e o worker.
          */
         if ($record === null) {
             $this->markDeleted(
@@ -212,7 +237,8 @@ final class HubSpotActivitySyncService
             );
 
         /*
-         * Espelho independente de CNPJ.
+         * Mirror independente da identificação
+         * fiscal.
          */
         $activity =
             HubSpotActivity::query()
@@ -243,37 +269,48 @@ final class HubSpotActivitySyncService
                     ]
                 );
 
-        $activity
-            ->companies()
-            ->syncWithoutDetaching(
-                array_values(
-                    array_unique(
-                        array_map(
-                            static fn (
-                                HubSpotCompany $company
-                            ): int => (int)
-                                $company->id,
+        /*
+         * Preserva as associações conhecidas
+         * entre a atividade e Companies HubSpot.
+         *
+         * Isso não cria identidade fiscal.
+         */
+        $hubSpotCompanyInternalIds =
+            array_values(
+                array_unique(
+                    array_map(
+                        static fn (
+                            HubSpotCompany $company
+                        ): int => (int)
+                            $company->id,
 
-                            $hubSpotCompanies
-                        )
+                        $hubSpotCompanies
                     )
                 )
             );
 
+        if (
+            $hubSpotCompanyInternalIds
+            !== []
+        ) {
+            $activity
+                ->companies()
+                ->syncWithoutDetaching(
+                    $hubSpotCompanyInternalIds
+                );
+        }
+
         /*
-         * Se alguma dessas HubSpot Companies já
-         * estiver identificada fiscalmente,
-         * projetamos imediatamente no histórico
-         * tradicional.
+         * Só transformamos atividade HubSpot em
+         * atividade da empresa fiscal quando o
+         * vínculo HubSpot -> Company é confiável.
          */
         foreach (
             $hubSpotCompanies as $hubSpotCompany
         ) {
             if (
-                ! is_numeric(
-                    $hubSpotCompany
-                        ->company_id
-                )
+                ! $hubSpotCompany
+                    ->hasTrustedFiscalLink()
             ) {
                 continue;
             }
@@ -867,11 +904,20 @@ final class HubSpotActivitySyncService
     /**
      * @return list<int>
      */
-    private function localCompanyIds(
+    /**
+     * Recupera somente os destinos locais de uma
+     * projeção antiga para processar exclusões.
+     *
+     * Estes IDs NÃO são usados para identificar
+     * CNPJ ou criar vínculo fiscal.
+     *
+     * @return list<int>
+     */
+    private function projectedCompanyIdsForDeletion(
         string $type,
         string $externalId,
     ): array {
-        $ids =
+        return $this->companyIds(
             CompanyLeadActivity::query()
                 ->where(
                     'source',
@@ -888,20 +934,7 @@ final class HubSpotActivitySyncService
                 ->pluck(
                     'company_id'
                 )
-                ->map(
-                    static fn (
-                        mixed $id
-                    ): int => (int) $id
-                )
-                ->filter(
-                    static fn (
-                        int $id
-                    ): bool => $id > 0
-                )
-                ->all();
-
-        return array_values(
-            $ids
+                ->all()
         );
     }
 

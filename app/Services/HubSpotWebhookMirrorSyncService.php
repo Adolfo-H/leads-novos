@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Throwable;
@@ -31,6 +32,7 @@ final class HubSpotWebhookMirrorSyncService
 
     public function __construct(
         private readonly HubSpotWebhookEventContextService $context,
+        private readonly HubSpotDealCompanyAssociationService $dealCompanyAssociations,
     ) {}
 
     /**
@@ -745,7 +747,11 @@ final class HubSpotWebhookMirrorSyncService
     private function syncCompanyAssociations(
         HubSpotCompany $company
     ): void {
-        $company->deals()->sync(
+        /*
+         * Company -> Deal preserva is_primary
+         * já descoberto pelo fluxo Deal -> Company.
+         */
+        $dealIds =
             $this->localIds(
                 HubSpotDeal::class,
                 $this->associationIds(
@@ -753,67 +759,109 @@ final class HubSpotWebhookMirrorSyncService
                     $company->hubspot_id,
                     'deals',
                 )
-            )
-        );
+            );
 
-        $company->contacts()->sync(
-            $this->localIds(
-                HubSpotContact::class,
-                $this->associationIds(
-                    'companies',
-                    $company->hubspot_id,
-                    'contacts',
-                )
+        $primaryByDeal =
+            DB::table(
+                'hubspot_company_deal'
             )
-        );
+                ->where(
+                    'hubspot_company_id',
+                    $company->id
+                )
+                ->pluck(
+                    'is_primary',
+                    'hubspot_deal_id'
+                );
 
-        $company->tasks()->sync(
-            $this->localIds(
-                HubSpotTask::class,
-                $this->associationIds(
-                    'companies',
-                    $company->hubspot_id,
-                    'tasks',
+        $dealPayload = [];
+
+        foreach (
+            $dealIds as $dealId
+        ) {
+            $dealPayload[
+                $dealId
+            ] = [
+                'is_primary' => (bool)
+                    $primaryByDeal
+                        ->get(
+                            $dealId,
+                            false
+                        ),
+            ];
+        }
+
+        $company
+            ->deals()
+            ->sync(
+                $dealPayload
+            );
+
+        $company
+            ->contacts()
+            ->sync(
+                $this->localIds(
+                    HubSpotContact::class,
+                    $this->associationIds(
+                        'companies',
+                        $company->hubspot_id,
+                        'contacts',
+                    )
                 )
-            )
-        );
+            );
+
+        $company
+            ->tasks()
+            ->sync(
+                $this->localIds(
+                    HubSpotTask::class,
+                    $this->associationIds(
+                        'companies',
+                        $company->hubspot_id,
+                        'tasks',
+                    )
+                )
+            );
     }
 
     private function syncDealAssociations(
         HubSpotDeal $deal
     ): void {
-        $deal->companies()->sync(
-            $this->localIds(
-                HubSpotCompany::class,
-                $this->associationIds(
-                    'deals',
-                    $deal->hubspot_id,
-                    'companies',
-                )
-            )
-        );
+        /*
+         * Deal -> Company é o fluxo responsável
+         * por descobrir a Primary Company.
+         */
+        $this
+            ->dealCompanyAssociations
+            ->syncForDeal(
+                $deal
+            );
 
-        $deal->contacts()->sync(
-            $this->localIds(
-                HubSpotContact::class,
-                $this->associationIds(
-                    'deals',
-                    $deal->hubspot_id,
-                    'contacts',
+        $deal
+            ->contacts()
+            ->sync(
+                $this->localIds(
+                    HubSpotContact::class,
+                    $this->associationIds(
+                        'deals',
+                        $deal->hubspot_id,
+                        'contacts',
+                    )
                 )
-            )
-        );
+            );
 
-        $deal->tasks()->sync(
-            $this->localIds(
-                HubSpotTask::class,
-                $this->associationIds(
-                    'deals',
-                    $deal->hubspot_id,
-                    'tasks',
+        $deal
+            ->tasks()
+            ->sync(
+                $this->localIds(
+                    HubSpotTask::class,
+                    $this->associationIds(
+                        'deals',
+                        $deal->hubspot_id,
+                        'tasks',
+                    )
                 )
-            )
-        );
+            );
     }
 
     private function syncContactAssociations(

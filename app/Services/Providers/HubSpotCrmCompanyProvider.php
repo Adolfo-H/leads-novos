@@ -249,6 +249,7 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
 
         $records =
             HubSpotCompany::query()
+                ->trustedFiscalLink()
                 ->where(
                     'company_id',
                     $company->id

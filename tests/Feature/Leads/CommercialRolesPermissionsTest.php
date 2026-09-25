@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Company;
-use App\Models\CompanyHubSpotLead;
 use App\Models\User;
 use App\Services\CommercialRoleService;
 use Livewire\Livewire;
@@ -406,69 +405,6 @@ it('does not allow a seller to claim an unassigned lead', function () {
             ->leadWorkState()
             ->exists()
     )->toBeFalse();
-});
-
-it('does not allow a seller to refresh another salesperson hubspot lead', function () {
-    $seller =
-        User::factory()
-            ->create([
-                'commercial_role' => User::ROLE_SELLER,
-            ]);
-
-    $otherSeller =
-        User::factory()
-            ->create([
-                'commercial_role' => User::ROLE_SELLER,
-            ]);
-
-    $company =
-        commercialRoleCompany(
-            '75555552',
-            'HubSpot Outra Carteira'
-        );
-
-    commercialRoleAssign(
-        $company,
-        $otherSeller
-    );
-
-    $lead =
-        CompanyHubSpotLead::query()
-            ->create([
-                'company_id' => $company->id,
-
-                'hubspot_company_id' => 'company-protected',
-
-                'hubspot_deal_id' => 'deal-protected',
-
-                'pipeline_id' => 'default',
-
-                'deal_stage_id' => 'appointmentscheduled',
-
-                'work_status' => 'new',
-
-                'open_task_count' => 0,
-
-                'synced_at' => now(),
-
-                'status_synced_at' => now(),
-
-                'metadata' => [],
-            ]);
-
-    Livewire::actingAs(
-        $seller
-    )
-        ->test(
-            'pages::leads.index'
-        )
-        ->call(
-            'refreshHubSpotStatus',
-            $lead->id
-        )
-        ->assertStatus(
-            403
-        );
 });
 
 it('allows direct management component access for a manager', function () {

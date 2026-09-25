@@ -29,6 +29,7 @@ class RebuildHubSpotKnownCompanies extends Command
     ): int {
         $roots =
             HubSpotCompany::query()
+                ->trustedFiscalLink()
                 ->whereNotNull(
                     'matched_cnpj_root'
                 )
@@ -217,6 +218,7 @@ class RebuildHubSpotKnownCompanies extends Command
                 ) {
                     $linked =
                         HubSpotCompany::query()
+                            ->trustedFiscalLink()
                             ->where(
                                 'matched_cnpj_root',
                                 $root

@@ -1,7 +1,5 @@
 <?php
 
-use App\Contracts\CrmCompanyProvider;
-use App\Jobs\RefreshCompanyFromHubSpot;
 use App\Models\Company;
 use App\Models\CompanyCrmCheck;
 use App\Models\CompanyExportIntelligence;
@@ -10,15 +8,11 @@ use App\Models\CompanyLeadWorkState;
 use App\Models\CompanySdrScore;
 use App\Models\Establishment;
 use App\Models\HubSpotCompany;
-use App\Models\HubSpotRefreshRun;
+use App\Models\HubSpotDeal;
 use App\Models\User;
-use App\Services\CrmCheckService;
 use App\Services\HubSpotCompanyLinkService;
 use App\Services\HubSpotLeadReprospectingActionService;
 use App\Services\HubSpotLeadReprospectingService;
-use App\Services\HubSpotLeadStatusSyncService;
-use App\Services\HubSpotRefreshDiffService;
-use App\Services\HubSpotRefreshRunService;
 use App\Services\LeadOwnershipService;
 use App\Services\Providers\ReceitaLocalCnpjGroupProvider;
 use App\Support\Cnpj;
@@ -74,11 +68,6 @@ new class extends Component
 
     public string $commercialActionError = '';
 
-    /**
-     * @var array<int, array<string, mixed>>
-     */
-    public array $leadRefreshFeedback = [];
-
     public function isCommercialManager(): bool
     {
         $user =
@@ -87,162 +76,6 @@ new class extends Component
         return $user instanceof User
             && $user
                 ->isCommercialManager();
-    }
-
-    public function refreshAllHubSpotData(
-        HubSpotRefreshRunService $runs,
-    ): void {
-        abort_unless(
-            $this->isCommercialManager(),
-            403
-        );
-
-        $this->commercialActionMessage = '';
-        $this->commercialActionError = '';
-
-        $active =
-            $runs->active();
-
-        if ($active !== null) {
-            $this->commercialActionMessage =
-                'Já existe uma atualização CRM/HubSpot em andamento.';
-
-            return;
-        }
-
-        $companyIds =
-            $this
-                ->operationalLeadQuery()
-                ->pluck(
-                    'companies.id'
-                )
-                ->map(
-                    static fn (
-                        mixed $id
-                    ): int => (int) $id
-                )
-                ->filter(
-                    static fn (
-                        int $id
-                    ): bool => $id > 0
-                )
-                ->unique()
-                ->values()
-                ->all();
-
-        if ($companyIds === []) {
-            $this->commercialActionMessage =
-                'Nenhuma empresa disponível para atualização.';
-
-            return;
-        }
-
-        $run =
-            $runs->start(
-                companyIds: $companyIds,
-
-                userId: $this->authenticatedUserId(),
-            );
-
-        $label =
-            $run->total === 1
-                ? 'empresa'
-                : 'empresas';
-
-        $this->commercialActionMessage =
-            'Atualização CRM/HubSpot iniciada para '
-            .$run->total
-            .' '
-            .$label
-            .'. Os dados serão atualizados em segundo plano.';
-    }
-
-    #[Computed]
-    public function hubSpotRefreshProgress(): ?array
-    {
-        $run =
-            HubSpotRefreshRun::query()
-                ->latest(
-                    'id'
-                )
-                ->first();
-
-        if ($run === null) {
-            return null;
-        }
-
-        $finished =
-            min(
-                $run->total,
-                $run->processed
-                + $run->failed
-            );
-
-        $remaining =
-            max(
-                0,
-                $run->total
-                - $finished
-            );
-
-        $percent =
-            $run->total > 0
-                ? (int) floor(
-                    (
-                        $finished
-                        / $run->total
-                    )
-                    * 100
-                )
-                : 100;
-
-        $running =
-            in_array(
-                $run->status,
-                [
-                    'queued',
-                    'running',
-                ],
-                true
-            );
-
-        return [
-            'id' => $run->id,
-
-            'status' => $run->status,
-
-            'running' => $running,
-
-            'total' => $run->total,
-
-            'finished' => $finished,
-
-            'remaining' => $remaining,
-
-            'changed' => $run->changed,
-
-            'unchanged' => $run->unchanged,
-
-            'failed' => $run->failed,
-
-            'percent' => $percent,
-
-            'summary' => is_array(
-                $run->summary
-            )
-                    ? $run->summary
-                    : [],
-
-            'started_at' => $run->started_at
-                ?->format(
-                    'd/m/Y H:i:s'
-                ),
-
-            'completed_at' => $run->completed_at
-                ?->format(
-                    'd/m/Y H:i:s'
-                ),
-        ];
     }
 
     private function assertCanOperateLead(
@@ -587,11 +420,19 @@ new class extends Component
                             return;
                         }
 
+                        /*
+                         * A etapa agora é filtrada
+                         * diretamente pelo mirror
+                         * dos negócios do HubSpot.
+                         *
+                         * Assim contagem e listagem
+                         * usam a mesma fonte.
+                         */
                         $query->whereHas(
-                            'crmCheck',
-                            fn ($crmQuery) => $crmQuery
-                                ->whereJsonContains(
-                                    'metadata->deal_summary->stages',
+                            'hubSpotCompanies.commercialDeals',
+                            fn ($dealQuery) => $dealQuery
+                                ->where(
+                                    'hubspot_deals.stage_label',
                                     $stage
                                 )
                         );
@@ -1866,146 +1707,125 @@ new class extends Component
      *     count: int
      * }>
      */
+    /**
+     * Etapas REAIS dos negócios atualmente
+     * preservados no mirror do HubSpot.
+     *
+     * Não usamos mais CompanyCrmCheck.metadata
+     * como fonte para esta visão porque ele é
+     * uma projeção derivada.
+     *
+     * O mirror hubspot_deals é atualizado pelos
+     * webhooks e representa melhor o estado atual.
+     *
+     * @return list<array{
+     *     label: string,
+     *     count: int
+     * }>
+     */
     #[Computed]
     public function crmStageOptions(): array
     {
-        $counts = [];
-
-        $checks =
-            CompanyCrmCheck::query()
-                ->whereNotNull(
-                    'metadata'
+        $companyIds =
+            $this
+                ->operationalLeadQuery()
+                ->pluck(
+                    'companies.id'
                 )
-                ->get([
-                    'metadata',
-                ]);
+                ->map(
+                    static fn (
+                        mixed $id
+                    ): int => (int) $id
+                )
+                ->filter(
+                    static fn (
+                        int $id
+                    ): bool => $id > 0
+                )
+                ->unique()
+                ->values()
+                ->all();
 
-        foreach ($checks as $check) {
-            $metadata =
-                $check->metadata
-                ?? [];
+        if ($companyIds === []) {
+            return [];
+        }
 
-            /*
-             * Preferimos os negócios individuais
-             * porque assim contamos quantos negócios
-             * existem em cada etapa.
-             */
-            $deals =
-                data_get(
-                    $metadata,
-                    'deals',
-                    []
-                );
-
-            $foundFromDeals =
-                false;
-
-            if (is_array($deals)) {
-                foreach ($deals as $deal) {
-                    if (! is_array($deal)) {
-                        continue;
-                    }
-
-                    $rawStage =
-                        $deal[
-                            'stage_label'
-                        ]
-                        ?? null;
-
-                    if (! is_scalar($rawStage)) {
-                        continue;
-                    }
-
-                    $stage =
-                        trim(
-                            (string) $rawStage
+        $rows =
+            HubSpotDeal::query()
+                ->whereNotNull(
+                    'stage_label'
+                )
+                ->where(
+                    'stage_label',
+                    '!=',
+                    ''
+                )
+                ->whereHas(
+                    'commercialCompanies',
+                    function (
+                        $query
+                    ) use (
+                        $companyIds
+                    ): void {
+                        $query->whereIn(
+                            'hubspot_companies.company_id',
+                            $companyIds
                         );
 
-                    if ($stage === '') {
-                        continue;
+                        $query->where(
+                            function (
+                                $linkQuery
+                            ): void {
+                                $linkQuery
+                                    ->whereNull(
+                                        'hubspot_companies.match_source'
+                                    )
+                                    ->orWhereNotIn(
+                                        'hubspot_companies.match_source',
+                                        HubSpotCompany::UNSAFE_FISCAL_MATCH_SOURCES
+                                    );
+                            }
+                        );
                     }
-
-                    $counts[$stage] =
-                        (
-                            $counts[$stage]
-                            ?? 0
-                        )
-                        + 1;
-
-                    $foundFromDeals =
-                        true;
-                }
-            }
-
-            /*
-             * Compatibilidade com registros antigos:
-             * se não houver deals completos,
-             * usa o resumo salvo pelo CrmCheckService.
-             */
-            if ($foundFromDeals) {
-                continue;
-            }
-
-            $stages =
-                data_get(
-                    $metadata,
-                    'deal_summary.stages',
-                    []
-                );
-
-            if (! is_array($stages)) {
-                continue;
-            }
-
-            foreach ($stages as $rawStage) {
-                if (! is_scalar($rawStage)) {
-                    continue;
-                }
-
-                $stage =
-                    trim(
-                        (string) $rawStage
-                    );
-
-                if ($stage === '') {
-                    continue;
-                }
-
-                $counts[$stage] =
-                    (
-                        $counts[$stage]
-                        ?? 0
-                    )
-                    + 1;
-            }
-        }
+                )
+                ->select(
+                    'stage_label'
+                )
+                ->selectRaw(
+                    'COUNT(DISTINCT hubspot_deals.id) as total'
+                )
+                ->groupBy(
+                    'stage_label'
+                )
+                ->orderBy(
+                    'stage_label'
+                )
+                ->get();
 
         $options = [];
 
-        foreach (
-            $counts as $label => $count
-        ) {
+        foreach ($rows as $row) {
+            $label =
+                trim(
+                    (string)
+                    $row->stage_label
+                );
+
+            if ($label === '') {
+                continue;
+            }
+
             $options[] = [
                 'label' => $label,
 
-                'count' => $count,
+                'count' => (int)
+                    $row->getAttribute(
+                        'total'
+                    ),
             ];
         }
 
-        usort(
-            $options,
-            static fn (
-                array $a,
-                array $b
-            ): int => strnatcasecmp(
-                $a['label'],
-                $b['label']
-            )
-        );
-
-        return array_values(
-            $options
-        );
+        return $options;
     }
 
     #[Computed]
@@ -2883,6 +2703,107 @@ new class extends Component
         $this->resetPage();
     }
 
+    public function applyKpiView(
+        string $view
+    ): void {
+        /*
+         * O número exibido nos KPIs representa
+         * a fila operacional completa.
+         *
+         * Ao clicar no card limpamos filtros
+         * anteriores para que a lista corresponda
+         * exatamente ao número apresentado.
+         */
+        $this->clearFilters();
+
+        if ($view === 'high') {
+            $this->priority = 'high';
+
+            $this->resetPage();
+
+            return;
+        }
+
+        if (
+            in_array(
+                $view,
+                [
+                    'new',
+                    'contacting',
+                    'waiting',
+                    'future',
+                ],
+                true
+            )
+        ) {
+            $this->workStatus =
+                $view;
+        }
+
+        $this->resetPage();
+    }
+
+    public function applyCrmStageView(
+        int $index
+    ): void {
+        $options =
+            $this->crmStageOptions;
+
+        $stage =
+            $options[
+                $index
+            ]['label']
+            ?? null;
+
+        if (
+            ! is_string($stage)
+            || trim($stage) === ''
+        ) {
+            return;
+        }
+
+        $stage =
+            trim(
+                $stage
+            );
+
+        /*
+         * A contagem das etapas é global.
+         * Limpamos filtros anteriores para que
+         * clicar numa etapa mostre sua base real.
+         */
+        $this->clearFilters();
+
+        $this->crm =
+            'stage:'
+            .$stage;
+
+        $this->resetPage();
+    }
+
+    public function summaryPercent(
+        int $count
+    ): string {
+        $total =
+            $this->operationalCount;
+
+        if ($total <= 0) {
+            return '0%';
+        }
+
+        return number_format(
+            (
+                $count
+                / $total
+            )
+            * 100,
+            1,
+            ',',
+            '.'
+        )
+            .'%';
+    }
+
     public function resumeLead(
         int $leadId,
         HubSpotLeadReprospectingActionService $service,
@@ -2922,137 +2843,6 @@ new class extends Component
 
             $this->commercialActionError =
                 'Não foi possível retomar o lead no HubSpot.';
-        }
-    }
-
-    public function refreshHubSpotStatus(
-        int $leadId,
-        HubSpotLeadStatusSyncService $service,
-        CrmCheckService $crmService,
-        CrmCompanyProvider $crmProvider,
-        HubSpotRefreshDiffService $diff,
-    ): void {
-        $lead =
-            CompanyHubSpotLead::query()
-                ->with(
-                    'company'
-                )
-                ->findOrFail(
-                    $leadId
-                );
-
-        $this->assertCanOperateLead(
-            $lead
-        );
-
-        $company =
-            $lead->company;
-
-        if ($company === null) {
-            return;
-        }
-
-        $companyId =
-            $company->id;
-
-        unset(
-            $this->leadRefreshFeedback[
-                $companyId
-            ]
-        );
-
-        $before =
-            $diff->snapshot(
-                $companyId
-            );
-
-        try {
-            if (
-                trim(
-                    (string)
-                    $lead->hubspot_company_id
-                ) !== ''
-                && trim(
-                    (string)
-                    $lead->hubspot_deal_id
-                ) !== ''
-            ) {
-                $service->sync(
-                    $lead
-                );
-            }
-
-            /*
-             * Atualiza TODO o CRM:
-             * - empresa;
-             * - negócios;
-             * - etapas;
-             * - cliente/oportunidade;
-             * - contatos;
-             * - score/prioridade.
-             */
-            $crmService->check(
-                $company,
-                $crmProvider,
-            );
-
-            $after =
-                $diff->snapshot(
-                    $companyId
-                );
-
-            $changes =
-                $diff->changes(
-                    $before,
-                    $after
-                );
-
-            $this->leadRefreshFeedback[
-                $companyId
-            ] = [
-                'status' => 'success',
-
-                'message' => $changes === []
-                        ? 'HubSpot atualizado. Nenhuma alteração encontrada.'
-                        : (
-                            count(
-                                $changes
-                            )
-                            .' alteração(ões) encontrada(s).'
-                        ),
-
-                'changes' => array_slice(
-                    $changes,
-                    0,
-                    6
-                ),
-
-                'updated_at' => now()
-                    ->format(
-                        'H:i:s'
-                    ),
-            ];
-        } catch (Throwable $exception) {
-            report(
-                $exception
-            );
-
-            $this->leadRefreshFeedback[
-                $companyId
-            ] = [
-                'status' => 'error',
-
-                'message' => 'Não foi possível atualizar esta empresa: '
-                    .$exception
-                        ->getMessage(),
-
-                'changes' => [],
-
-                'updated_at' => now()
-                    ->format(
-                        'H:i:s'
-                    ),
-            ];
         }
     }
 
@@ -3951,6 +3741,120 @@ new class extends Component
                 rgba(18, 60, 96, .72),
                 rgba(7, 32, 57, .94)
             );
+    }
+
+    .rf-kpi-clickable {
+        width: 100%;
+        appearance: none;
+        text-align: left;
+        font: inherit;
+        cursor: pointer;
+        transition:
+            transform .16s ease,
+            border-color .16s ease,
+            background .16s ease,
+            box-shadow .16s ease;
+    }
+
+    .rf-kpi-clickable:hover {
+        transform: translateY(-1px);
+        border-color: rgba(46,221,210,.32);
+        box-shadow:
+            0 8px 22px rgba(0,0,0,.14);
+    }
+
+    .rf-kpi-clickable.is-active {
+        border-color: rgba(46,221,210,.58);
+        box-shadow:
+            inset 0 0 0 1px rgba(46,221,210,.14),
+            0 8px 24px rgba(0,0,0,.16);
+    }
+
+    .rf-stage-summary {
+        padding: 13px 15px;
+        border: 1px solid var(--rf-border);
+        border-radius: 15px;
+        background: rgba(7, 30, 52, .65);
+    }
+
+    .rf-stage-summary-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 10px;
+    }
+
+    .rf-stage-summary-head strong {
+        display: block;
+        color: var(--rf-text);
+        font-size: 12px;
+    }
+
+    .rf-stage-summary-head span {
+        display: block;
+        margin-top: 3px;
+        color: var(--rf-muted);
+        font-size: 10px;
+    }
+
+    .rf-stage-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+    }
+
+    .rf-stage-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 30px;
+        padding: 0 10px;
+        border: 1px solid rgba(74,168,255,.16);
+        border-radius: 9px;
+        background: rgba(74,168,255,.045);
+        color: #9fb9d4;
+        font: inherit;
+        font-size: 10px;
+        cursor: pointer;
+        transition:
+            border-color .16s ease,
+            background .16s ease,
+            color .16s ease;
+    }
+
+    .rf-stage-chip strong {
+        min-width: 22px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.05);
+        color: #e2efff;
+        font-size: 9px;
+        text-align: center;
+    }
+
+    .rf-stage-chip:hover,
+    .rf-stage-chip.is-active {
+        border-color: rgba(46,221,210,.42);
+        background: rgba(46,221,210,.08);
+        color: var(--rf-cyan);
+    }
+
+    .rf-stage-clear {
+        min-height: 28px;
+        padding: 0 9px;
+        border: 1px solid rgba(46,221,210,.18);
+        border-radius: 8px;
+        background: rgba(46,221,210,.05);
+        color: var(--rf-cyan);
+        font-size: 9px;
+        font-weight: 750;
+        cursor: pointer;
+    }
+
+    .rf-stage-empty {
+        color: var(--rf-muted);
+        font-size: 10px;
     }
 
     .rf-kpi::after {
@@ -5270,11 +5174,6 @@ new class extends Component
 
 <div class="rf-shell">
 
-    @php
-        $hubSpotRefreshProgress =
-            $this->hubSpotRefreshProgress;
-    @endphp
-
     <header class="rf-header">
 
         <div>
@@ -5311,385 +5210,7 @@ new class extends Component
         </div>
 
 
-        @if (
-            $this->isCommercialManager()
-        )
-
-            <div class="rf-header-sync">
-
-                <div class="rf-header-sync-copy">
-
-                    <strong>
-                        CRM / HubSpot
-                    </strong>
-
-                    <span>
-                        Sincronize negócios, etapas,
-                        tarefas e contatos alterados
-                        no HubSpot.
-                    </span>
-
-                </div>
-
-                <button
-                    type="button"
-                    wire:click="refreshAllHubSpotData"
-                    wire:loading.attr="disabled"
-                    wire:target="refreshAllHubSpotData"
-                    @disabled(
-                        $hubSpotRefreshProgress
-                        && $hubSpotRefreshProgress[
-                            'running'
-                        ]
-                    )
-                    class="rf-sync-btn"
-                >
-
-                    <span
-                        wire:loading
-                        wire:target="refreshAllHubSpotData"
-                    >
-                        Preparando...
-                    </span>
-
-                    <span
-                        wire:loading.remove
-                        wire:target="refreshAllHubSpotData"
-                    >
-
-                        @if (
-                            $hubSpotRefreshProgress
-                            && $hubSpotRefreshProgress[
-                                'running'
-                            ]
-                        )
-
-                            Atualizando
-                            {{
-                                $hubSpotRefreshProgress[
-                                    'percent'
-                                ]
-                            }}%
-
-                        @else
-
-                            ↻ Atualizar CRM / HubSpot
-
-                        @endif
-
-                    </span>
-
-                </button>
-
-            </div>
-
-        @endif
-
     </header>
-
-
-    {{-- rf-sync-progress-panel-marker --}}
-    @if ($hubSpotRefreshProgress)
-
-        <section class="rf-sync-progress">
-
-            <div class="rf-sync-progress-head">
-
-                <div>
-
-                    <div class="rf-sync-progress-title">
-
-                        @if (
-                            $hubSpotRefreshProgress[
-                                'running'
-                            ]
-                        )
-
-                            Atualizando CRM / HubSpot
-
-                        @else
-
-                            Última atualização CRM / HubSpot
-
-                        @endif
-
-                    </div>
-
-                    <div class="rf-sync-progress-subtitle">
-
-                        {{
-                            $hubSpotRefreshProgress[
-                                'finished'
-                            ]
-                        }}
-                        de
-                        {{
-                            $hubSpotRefreshProgress[
-                                'total'
-                            ]
-                        }}
-                        processadas
-
-                        @if (
-                            $hubSpotRefreshProgress[
-                                'remaining'
-                            ] > 0
-                        )
-
-                            · faltam
-                            {{
-                                $hubSpotRefreshProgress[
-                                    'remaining'
-                                ]
-                            }}
-
-                        @endif
-
-                    </div>
-
-                </div>
-
-
-                <div class="rf-sync-percent">
-                    {{
-                        $hubSpotRefreshProgress[
-                            'percent'
-                        ]
-                    }}%
-                </div>
-
-            </div>
-
-
-            <div class="rf-progress-track">
-
-                <div
-                    class="rf-progress-fill"
-                    style="
-                        width:
-                        {{
-                            $hubSpotRefreshProgress[
-                                'percent'
-                            ]
-                        }}%;
-                    "
-                ></div>
-
-            </div>
-
-
-            <div class="rf-sync-stats">
-
-                <div class="rf-sync-stat">
-                    <span>Processadas</span>
-                    <strong>
-                        {{
-                            $hubSpotRefreshProgress[
-                                'finished'
-                            ]
-                        }}
-                    </strong>
-                </div>
-
-                <div class="rf-sync-stat">
-                    <span>Faltam</span>
-                    <strong>
-                        {{
-                            $hubSpotRefreshProgress[
-                                'remaining'
-                            ]
-                        }}
-                    </strong>
-                </div>
-
-                <div class="rf-sync-stat">
-                    <span>Com alteração</span>
-                    <strong>
-                        {{
-                            $hubSpotRefreshProgress[
-                                'changed'
-                            ]
-                        }}
-                    </strong>
-                </div>
-
-                <div class="rf-sync-stat">
-                    <span>Sem alteração</span>
-                    <strong>
-                        {{
-                            $hubSpotRefreshProgress[
-                                'unchanged'
-                            ]
-                        }}
-                    </strong>
-                </div>
-
-                <div class="rf-sync-stat">
-                    <span>Falhas</span>
-                    <strong>
-                        {{
-                            $hubSpotRefreshProgress[
-                                'failed'
-                            ]
-                        }}
-                    </strong>
-                </div>
-
-            </div>
-
-
-            @if (
-                ! $hubSpotRefreshProgress[
-                    'running'
-                ]
-            )
-
-                @php
-                    $refreshSummary =
-                        $hubSpotRefreshProgress[
-                            'summary'
-                        ];
-
-                    $refreshCategories =
-                        is_array(
-                            $refreshSummary[
-                                'categories'
-                            ]
-                            ?? null
-                        )
-                            ? $refreshSummary[
-                                'categories'
-                            ]
-                            : [];
-
-                    $refreshRecent =
-                        is_array(
-                            $refreshSummary[
-                                'recent'
-                            ]
-                            ?? null
-                        )
-                            ? $refreshSummary[
-                                'recent'
-                            ]
-                            : [];
-                @endphp
-
-
-                @if (
-                    $refreshCategories !== []
-                    || $refreshRecent !== []
-                )
-
-                    <div class="rf-sync-summary">
-
-                        <div class="rf-sync-summary-box">
-
-                            <strong>
-                                O que mudou
-                            </strong>
-
-                            <div class="rf-sync-categories">
-
-                                @foreach (
-                                    $refreshCategories
-                                    as $category
-                                )
-
-                                    <span class="rf-sync-category">
-
-                                        {{
-                                            $category[
-                                                'label'
-                                            ]
-                                        }}
-
-                                        <b>
-                                            {{
-                                                $category[
-                                                    'count'
-                                                ]
-                                            }}
-                                        </b>
-
-                                    </span>
-
-                                @endforeach
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="rf-sync-summary-box">
-
-                            <strong>
-                                Empresas com alterações recentes
-                            </strong>
-
-                            @foreach (
-                                $refreshRecent
-                                as $recent
-                            )
-
-                                <div class="rf-sync-company">
-
-                                    <div class="rf-sync-company-name">
-                                        {{
-                                            $recent[
-                                                'company'
-                                            ]
-                                        }}
-                                    </div>
-
-                                    @foreach (
-                                        $recent[
-                                            'changes'
-                                        ]
-                                        as $change
-                                    )
-
-                                        <div class="rf-sync-change">
-
-                                            {{
-                                                $change[
-                                                    'label'
-                                                ]
-                                            }}:
-
-                                            {{
-                                                $change[
-                                                    'before'
-                                                ]
-                                            }}
-
-                                            →
-
-                                            {{
-                                                $change[
-                                                    'after'
-                                                ]
-                                            }}
-
-                                        </div>
-
-                                    @endforeach
-
-                                </div>
-
-                            @endforeach
-
-                        </div>
-
-                    </div>
-
-                @endif
-
-            @endif
-
-        </section>
-
-    @endif
 
 
     @if ($commercialActionMessage !== '')
@@ -5712,7 +5233,15 @@ new class extends Component
 
     <section class="rf-kpis">
 
-        <div class="rf-kpi rf-kpi-total">
+        <button
+            type="button"
+            wire:click="clearFilters"
+            class="
+                rf-kpi
+                rf-kpi-total
+                rf-kpi-clickable
+            "
+        >
 
             <div class="rf-kpi-label">
                 Leads na operação
@@ -5730,13 +5259,31 @@ new class extends Component
             </div>
 
             <div class="rf-kpi-caption">
-                Total da fila comercial
+                {{
+                    count(
+                        $this->crmStageOptions
+                    )
+                }}
+                etapas HubSpot identificadas
             </div>
 
-        </div>
+        </button>
 
 
-        <div class="rf-kpi rf-kpi-high">
+        <button
+            type="button"
+            wire:click="applyKpiView('high')"
+            class="
+                rf-kpi
+                rf-kpi-high
+                rf-kpi-clickable
+                {{
+                    $priority === 'high'
+                        ? 'is-active'
+                        : ''
+                }}
+            "
+        >
 
             <div class="rf-kpi-label">
                 Prioridade alta
@@ -5754,13 +5301,31 @@ new class extends Component
             </div>
 
             <div class="rf-kpi-caption">
-                Score 75 a 100
+                {{
+                    $this->summaryPercent(
+                        $this->highCount
+                    )
+                }}
+                da fila · Score 75 a 100
             </div>
 
-        </div>
+        </button>
 
 
-        <div class="rf-kpi rf-kpi-new">
+        <button
+            type="button"
+            wire:click="applyKpiView('new')"
+            class="
+                rf-kpi
+                rf-kpi-new
+                rf-kpi-clickable
+                {{
+                    $workStatus === 'new'
+                        ? 'is-active'
+                        : ''
+                }}
+            "
+        >
 
             <div class="rf-kpi-label">
                 Novo
@@ -5778,13 +5343,31 @@ new class extends Component
             </div>
 
             <div class="rf-kpi-caption">
-                Sem chamada registrada
+                {{
+                    $this->summaryPercent(
+                        $this->newCount
+                    )
+                }}
+                da fila · sem interação registrada
             </div>
 
-        </div>
+        </button>
 
 
-        <div class="rf-kpi rf-kpi-contacting">
+        <button
+            type="button"
+            wire:click="applyKpiView('contacting')"
+            class="
+                rf-kpi
+                rf-kpi-contacting
+                rf-kpi-clickable
+                {{
+                    $workStatus === 'contacting'
+                        ? 'is-active'
+                        : ''
+                }}
+            "
+        >
 
             <div class="rf-kpi-label">
                 Em contato
@@ -5802,13 +5385,31 @@ new class extends Component
             </div>
 
             <div class="rf-kpi-caption">
-                Atividade nos últimos 30 dias
+                {{
+                    $this->summaryPercent(
+                        $this->contactingCount
+                    )
+                }}
+                da fila · atividade até 30 dias
             </div>
 
-        </div>
+        </button>
 
 
-        <div class="rf-kpi rf-kpi-waiting">
+        <button
+            type="button"
+            wire:click="applyKpiView('waiting')"
+            class="
+                rf-kpi
+                rf-kpi-waiting
+                rf-kpi-clickable
+                {{
+                    $workStatus === 'waiting'
+                        ? 'is-active'
+                        : ''
+                }}
+            "
+        >
 
             <div class="rf-kpi-label">
                 Aguardando retorno
@@ -5826,13 +5427,31 @@ new class extends Component
             </div>
 
             <div class="rf-kpi-caption">
-                Existe tarefa pendente
+                {{
+                    $this->summaryPercent(
+                        $this->waitingCount
+                    )
+                }}
+                da fila · existe tarefa pendente
             </div>
 
-        </div>
+        </button>
 
 
-        <div class="rf-kpi rf-kpi-future">
+        <button
+            type="button"
+            wire:click="applyKpiView('future')"
+            class="
+                rf-kpi
+                rf-kpi-future
+                rf-kpi-clickable
+                {{
+                    $workStatus === 'future'
+                        ? 'is-active'
+                        : ''
+                }}
+            "
+        >
 
             <div class="rf-kpi-label">
                 Oportunidade futura
@@ -5850,8 +5469,107 @@ new class extends Component
             </div>
 
             <div class="rf-kpi-caption">
-                Último contato há mais de 30 dias
+                {{
+                    $this->summaryPercent(
+                        $this->futureCount
+                    )
+                }}
+                da fila · contato há mais de 30 dias
             </div>
+
+        </button>
+
+    </section>
+
+
+    <section class="rf-stage-summary">
+
+        <div class="rf-stage-summary-head">
+
+            <div>
+
+                <strong>
+                    Etapas atuais no HubSpot
+                </strong>
+
+                <span>
+                    Dados reais dos negócios sincronizados.
+                    Clique em uma etapa para filtrar.
+                </span>
+
+            </div>
+
+            @if (
+                str_starts_with(
+                    $crm,
+                    'stage:'
+                )
+            )
+
+                <button
+                    type="button"
+                    wire:click="$set('crm', '')"
+                    class="rf-stage-clear"
+                >
+                    Limpar etapa
+                </button>
+
+            @endif
+
+        </div>
+
+
+        <div class="rf-stage-chips">
+
+            @forelse (
+                $this->crmStageOptions
+                as $stage
+            )
+
+                <button
+                    type="button"
+                    wire:click="
+                        applyCrmStageView(
+                            {{ $loop->index }}
+                        )
+                    "
+                    class="
+                        rf-stage-chip
+                        {{
+                            $crm
+                                ===
+                                'stage:'
+                                .$stage['label']
+                                    ? 'is-active'
+                                    : ''
+                        }}
+                    "
+                >
+
+                    <span>
+                        {{ $stage['label'] }}
+                    </span>
+
+                    <strong>
+                        {{
+                            number_format(
+                                $stage['count'],
+                                0,
+                                ',',
+                                '.'
+                            )
+                        }}
+                    </strong>
+
+                </button>
+
+            @empty
+
+                <span class="rf-stage-empty">
+                    Nenhuma etapa identificada.
+                </span>
+
+            @endforelse
 
         </div>
 
@@ -7378,143 +7096,8 @@ new class extends Component
 
 
 
-@if (
-                            $hubSpotLead
-                            && $hubSpotLead
-                                ->hubspot_company_id
-                            && $hubSpotLead
-                                ->hubspot_deal_id
-                        )
-
-                            <button
-                                type="button"
-                                wire:click="
-                                    refreshHubSpotStatus(
-                                        {{ $hubSpotLead->id }}
-                                    )
-                                "
-                                wire:loading.attr="disabled"
-                                wire:target="
-                                    refreshHubSpotStatus(
-                                        {{ $hubSpotLead->id }}
-                                    )
-                                "
-                                class="rf-refresh-btn"
-                            title="Atualizar dados do HubSpot"
-                            aria-label="Atualizar dados do HubSpot"
-                            >
-                                <span
-                                    wire:loading.remove
-                                    wire:target="
-                                        refreshHubSpotStatus(
-                                            {{ $hubSpotLead->id }}
-                                        )
-                                    "
-                                    aria-hidden="true"
-                                >
-                                    ↻
-                                </span>
-
-                                <span
-                                    wire:loading
-                                    wire:target="
-                                        refreshHubSpotStatus(
-                                            {{ $hubSpotLead->id }}
-                                        )
-                                    "
-                                    aria-hidden="true"
-                                >
-                                    …
-                                </span>
-
-                                <span class="sr-only">
-                                    Atualizar HubSpot
-                                </span>
-                            </button>
-
-                        @endif
 
 </div>
-
-
-                        {{-- rf-individual-refresh-feedback-marker --}}
-
-                        @php
-                            $individualRefresh =
-                                $leadRefreshFeedback[
-                                    $lead->id
-                                ]
-                                ?? null;
-                        @endphp
-
-                        @if ($individualRefresh)
-
-                            <div
-                                class="
-                                    rf-row-sync-result
-                                    {{
-                                        $individualRefresh[
-                                            'status'
-                                        ] === 'error'
-                                            ? 'is-error'
-                                            : ''
-                                    }}
-                                "
-                            >
-
-                                <strong>
-                                    {{
-                                        $individualRefresh[
-                                            'message'
-                                        ]
-                                    }}
-                                </strong>
-
-                                <span>
-                                    Atualizado às
-                                    {{
-                                        $individualRefresh[
-                                            'updated_at'
-                                        ]
-                                    }}
-                                </span>
-
-                                @foreach (
-                                    $individualRefresh[
-                                        'changes'
-                                    ]
-                                    as $change
-                                )
-
-                                    <span>
-
-                                        {{
-                                            $change[
-                                                'label'
-                                            ]
-                                        }}:
-
-                                        {{
-                                            $change[
-                                                'before'
-                                            ]
-                                        }}
-
-                                        →
-
-                                        {{
-                                            $change[
-                                                'after'
-                                            ]
-                                        }}
-
-                                    </span>
-
-                                @endforeach
-
-                            </div>
-
-                        @endif
 
 
                         @if (

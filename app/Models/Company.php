@@ -167,7 +167,8 @@ class Company extends Model
         return $this->hasMany(
             HubSpotCompany::class,
             'company_id'
-        );
+        )
+            ->trustedFiscalLink();
     }
 
     /**

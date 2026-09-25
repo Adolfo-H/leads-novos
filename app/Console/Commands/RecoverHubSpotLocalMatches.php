@@ -327,15 +327,35 @@ class RecoverHubSpotLocalMatches extends Command
                             count($nameMatches) === 0
                             && count($domainMatches) === 1
                         ) {
-                            $candidate =
-                                $domainMatches[0];
-
-                            $source =
-                                'existing_company_unique_domain';
-
+                            /*
+                             * Domínio sozinho não comprova
+                             * identidade fiscal.
+                             *
+                             * Pode ser grupo econômico,
+                             * contador, escritório,
+                             * consultoria ou terceiro.
+                             */
                             $stats[
-                                'safe_domain'
+                                'conflict'
                             ]++;
+
+                            $review[] = [
+                                'hubspot_id' => $hubspot->hubspot_id,
+
+                                'hubspot_name' => $hubspot->name,
+
+                                'domain' => $domain,
+
+                                'deals' => $hubspot->deals_count,
+
+                                'active_deals' => $activeDeals,
+
+                                'name_candidates' => 0,
+
+                                'domain_candidates' => 1,
+                            ];
+
+                            continue;
 
                         } elseif (
                             count($nameMatches) === 1
@@ -529,7 +549,7 @@ class RecoverHubSpotLocalMatches extends Command
                     ],
                 ],
                 [
-                    'Match seguro por domínio',
+                    'Match seguro nome + domínio',
                     $stats[
                         'safe_domain'
                     ],

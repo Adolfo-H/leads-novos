@@ -38,3 +38,18 @@ Schedule::command(
 )
     ->everyTenMinutes()
     ->withoutOverlapping();
+
+/*
+ * Reconciliação preventiva das Primary Companies.
+ *
+ * Webhooks fazem a atualização em tempo real.
+ * Esta rotina cobre eventos perdidos e dados
+ * históricos.
+ */
+Schedule::command(
+    'hubspot:sync-deal-primary-companies --apply'
+)
+    ->dailyAt(
+        '03:20'
+    )
+    ->withoutOverlapping();
