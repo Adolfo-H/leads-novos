@@ -108,6 +108,23 @@ services:
             - schedule:work
         restart: unless-stopped
 
+    ngrok:
+        profiles:
+            - background
+        image: ngrok/ngrok:latest
+        environment:
+            NGROK_AUTHTOKEN: '${NGROK_AUTHTOKEN}'
+        command:
+            - http
+            - laravel.test:80
+            - --url
+            - 'https://${NGROK_DOMAIN}'
+        networks:
+            - sail
+        depends_on:
+            - laravel.test
+        restart: unless-stopped
+
     pgsql:
         image: 'postgres:18-alpine'
         ports:

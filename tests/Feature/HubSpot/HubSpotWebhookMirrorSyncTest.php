@@ -5,6 +5,7 @@ use App\Jobs\RefreshCompanyFromHubSpot;
 use App\Models\HubSpotCompany;
 use App\Models\HubSpotDeal;
 use App\Models\HubSpotWebhookEvent;
+use App\Services\HubSpotWebhookMirrorSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -263,6 +264,156 @@ it(
 
         Queue::assertNotPushed(
             RefreshCompanyFromHubSpot::class
+        );
+    }
+);
+
+it(
+    'keeps the known owner when HubSpot denies owner lookup',
+    function (): void {
+        config([
+            'services.hubspot.access_token' => 'test-token',
+
+            'services.hubspot.base_url' => 'https://api.hubapi.com',
+        ]);
+
+        $company =
+            HubSpotCompany::query()
+                ->create([
+                    'hubspot_id' => 'company-owner-403',
+
+                    'name' => 'Empresa Owner 403',
+
+                    'owner_name' => 'Responsável já conhecido',
+
+                    'company_id' => null,
+                ]);
+
+        $event =
+            HubSpotWebhookEvent::query()
+                ->create([
+                    'event_key' => 'owner-403-event',
+
+                    'subscription_type' => 'object.propertyChange',
+
+                    'object_type' => 'company',
+
+                    'object_type_id' => '0-2',
+
+                    'object_id' => 'company-owner-403',
+
+                    'property_name' => 'notes_last_updated',
+
+                    'status' => 'received',
+
+                    'payload' => [
+                        'objectTypeId' => '0-2',
+
+                        'objectId' => 'company-owner-403',
+
+                        'subscriptionType' => 'object.propertyChange',
+
+                        'propertyName' => 'notes_last_updated',
+                    ],
+                ]);
+
+        Http::fake(
+            function (
+                Request $request
+            ) {
+                $url =
+                    $request->url();
+
+                if (
+                    str_contains(
+                        $url,
+                        '/crm/v3/objects/companies/company-owner-403'
+                    )
+                ) {
+                    return Http::response([
+                        'id' => 'company-owner-403',
+
+                        'createdAt' => '2026-09-01T12:00:00Z',
+
+                        'updatedAt' => '2026-09-25T18:00:00Z',
+
+                        'properties' => [
+                            'name' => 'Empresa Owner 403',
+
+                            'domain' => null,
+
+                            'lifecyclestage' => 'lead',
+
+                            'hs_lead_status' => null,
+
+                            'hubspot_owner_id' => 'owner-sem-scope',
+
+                            'city' => null,
+
+                            'state' => null,
+
+                            'phone' => null,
+
+                            'notes_last_contacted' => null,
+
+                            'notes_last_updated' => '2026-09-25T18:00:00Z',
+
+                            'num_contacted_notes' => '1',
+
+                            'num_associated_deals' => '0',
+                        ],
+                    ]);
+                }
+
+                if (
+                    str_contains(
+                        $url,
+                        '/crm/v3/owners/owner-sem-scope'
+                    )
+                ) {
+                    return Http::response(
+                        [
+                            'message' => 'Missing permissions',
+                        ],
+                        403
+                    );
+                }
+
+                if (
+                    str_contains(
+                        $url,
+                        '/crm/v4/objects/companies/company-owner-403/associations/'
+                    )
+                ) {
+                    return Http::response([
+                        'results' => [],
+                    ]);
+                }
+
+                return Http::response(
+                    [],
+                    404
+                );
+            }
+        );
+
+        $handled =
+            app(
+                HubSpotWebhookMirrorSyncService::class
+            )->syncEvent(
+                $event
+            );
+
+        expect(
+            $handled
+        )->toBeTrue();
+
+        expect(
+            $company
+                ->refresh()
+                ->owner_name
+        )->toBe(
+            'Responsável já conhecido'
         );
     }
 );

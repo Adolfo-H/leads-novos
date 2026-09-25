@@ -241,7 +241,8 @@ final class HubSpotWebhookMirrorSyncService
                 $properties[
                     'hubspot_owner_id'
                 ]
-                ?? null
+                ?? null,
+                $company->owner_name,
             ),
 
             'city' => $this->stringValue(
@@ -424,7 +425,8 @@ final class HubSpotWebhookMirrorSyncService
                 $properties[
                     'hubspot_owner_id'
                 ]
-                ?? null
+                ?? null,
+                $deal->owner_name,
             ),
 
             'amount' => $this->decimalValue(
@@ -577,7 +579,8 @@ final class HubSpotWebhookMirrorSyncService
                 $properties[
                     'hubspot_owner_id'
                 ]
-                ?? null
+                ?? null,
+                $contact->owner_name,
             ),
 
             'lifecycle_stage' => $this->stringValue(
@@ -699,7 +702,8 @@ final class HubSpotWebhookMirrorSyncService
                 $properties[
                     'hubspot_owner_id'
                 ]
-                ?? null
+                ?? null,
+                $task->assigned_to,
             ),
 
             'is_open' => $isOpen,
@@ -1101,26 +1105,60 @@ final class HubSpotWebhookMirrorSyncService
     }
 
     private function ownerName(
-        mixed $ownerId
+        mixed $ownerId,
+        ?string $fallback = null,
     ): ?string {
         $ownerId =
             $this->stringValue(
                 $ownerId
             );
 
+        /*
+         * Sem owner no objeto significa que a
+         * atribuição foi realmente removida.
+         */
         if ($ownerId === null) {
             return null;
         }
 
-        $response =
-            $this->client()
-                ->get(
-                    $this->baseUrl()
-                    .'/crm/v3/owners/'
-                    .rawurlencode(
-                        $ownerId
-                    )
-                );
+        try {
+            $response =
+                $this->client()
+                    ->get(
+                        $this->baseUrl()
+                        .'/crm/v3/owners/'
+                        .rawurlencode(
+                            $ownerId
+                        )
+                    );
+        } catch (
+            ConnectionException
+        ) {
+            /*
+             * Owner é enriquecimento.
+             *
+             * Falha nessa consulta não pode
+             * impedir Company/Deal/Task/etc.
+             * de serem sincronizados.
+             */
+            return $fallback;
+        }
+
+        /*
+         * O token atual possui acesso aos
+         * objetos CRM necessários ao Prospector,
+         * mas pode não possuir permissão para
+         * consultar Owners.
+         *
+         * Nesse caso mantemos o último nome
+         * conhecido e seguimos o webhook.
+         */
+        if (
+            $response->status()
+            === 403
+        ) {
+            return $fallback;
+        }
 
         if (
             $response->status()
@@ -1137,7 +1175,7 @@ final class HubSpotWebhookMirrorSyncService
             $response->json();
 
         if (! is_array($data)) {
-            return null;
+            return $fallback;
         }
 
         $name =
@@ -1171,7 +1209,8 @@ final class HubSpotWebhookMirrorSyncService
                 'email'
             ]
             ?? null
-        );
+        )
+            ?? $fallback;
     }
 
     /**
