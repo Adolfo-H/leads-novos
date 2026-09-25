@@ -9,16 +9,19 @@ use App\Models\CompanyHubSpotLead;
 use App\Models\CompanyLeadWorkState;
 use App\Models\CompanySdrScore;
 use App\Models\Establishment;
-use App\Models\User;
 use App\Models\HubSpotCompany;
 use App\Models\HubSpotRefreshRun;
-use App\Services\HubSpotRefreshDiffService;
-use App\Services\HubSpotRefreshRunService;
+use App\Models\User;
 use App\Services\CrmCheckService;
+use App\Services\HubSpotCompanyLinkService;
 use App\Services\HubSpotLeadReprospectingActionService;
 use App\Services\HubSpotLeadReprospectingService;
 use App\Services\HubSpotLeadStatusSyncService;
+use App\Services\HubSpotRefreshDiffService;
+use App\Services\HubSpotRefreshRunService;
 use App\Services\LeadOwnershipService;
+use App\Services\Providers\ReceitaLocalCnpjGroupProvider;
+use App\Support\Cnpj;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -55,6 +58,17 @@ new class extends Component
     public bool $reprospectingReadyOnly = false;
 
     public bool $hubSpotOnly = false;
+
+    public ?int $linkingHubSpotCompanyId = null;
+
+    public string $companyLinkSearch = '';
+
+    /**
+     * @var array<string, mixed>
+     */
+    public array $companyLinkReceitaPreview = [];
+
+    public string $companyLinkReceitaError = '';
 
     public string $commercialActionMessage = '';
 
@@ -125,11 +139,9 @@ new class extends Component
 
         $run =
             $runs->start(
-                companyIds:
-                    $companyIds,
+                companyIds: $companyIds,
 
-                userId:
-                    $this->authenticatedUserId(),
+                userId: $this->authenticatedUserId(),
             );
 
         $label =
@@ -195,54 +207,41 @@ new class extends Component
             );
 
         return [
-            'id' =>
-                $run->id,
+            'id' => $run->id,
 
-            'status' =>
-                $run->status,
+            'status' => $run->status,
 
-            'running' =>
-                $running,
+            'running' => $running,
 
-            'total' =>
-                $run->total,
+            'total' => $run->total,
 
-            'finished' =>
-                $finished,
+            'finished' => $finished,
 
-            'remaining' =>
-                $remaining,
+            'remaining' => $remaining,
 
-            'changed' =>
-                $run->changed,
+            'changed' => $run->changed,
 
-            'unchanged' =>
-                $run->unchanged,
+            'unchanged' => $run->unchanged,
 
-            'failed' =>
-                $run->failed,
+            'failed' => $run->failed,
 
-            'percent' =>
-                $percent,
+            'percent' => $percent,
 
-            'summary' =>
-                is_array(
-                    $run->summary
-                )
+            'summary' => is_array(
+                $run->summary
+            )
                     ? $run->summary
                     : [],
 
-            'started_at' =>
-                $run->started_at
-                    ?->format(
-                        'd/m/Y H:i:s'
-                    ),
+            'started_at' => $run->started_at
+                ?->format(
+                    'd/m/Y H:i:s'
+                ),
 
-            'completed_at' =>
-                $run->completed_at
-                    ?->format(
-                        'd/m/Y H:i:s'
-                    ),
+            'completed_at' => $run->completed_at
+                ?->format(
+                    'd/m/Y H:i:s'
+                ),
         ];
     }
 
@@ -290,6 +289,12 @@ new class extends Component
         $this->resetPage(
             'hubspotPage'
         );
+    }
+
+    public function updatedCompanyLinkSearch(): void
+    {
+        $this->companyLinkReceitaPreview = [];
+        $this->companyLinkReceitaError = '';
     }
 
     public function updatedPriority(): void
@@ -375,6 +380,8 @@ new class extends Component
             'staleOnly',
             'reprospectingReadyOnly',
             'hubSpotOnly',
+            'linkingHubSpotCompanyId',
+            'companyLinkSearch',
         ]);
 
         $this->resetPage();
@@ -1036,6 +1043,567 @@ new class extends Component
             ->paginate(20);
     }
 
+    public function openCompanyLink(
+        int $hubSpotCompanyId
+    ): void {
+        abort_unless(
+            $this->isCommercialManager(),
+            403
+        );
+
+        HubSpotCompany::query()
+            ->whereNull(
+                'company_id'
+            )
+            ->findOrFail(
+                $hubSpotCompanyId
+            );
+
+        $this->linkingHubSpotCompanyId =
+            $hubSpotCompanyId;
+
+        $this->companyLinkSearch = '';
+
+        $this->companyLinkReceitaPreview = [];
+        $this->companyLinkReceitaError = '';
+
+        $this->commercialActionError = '';
+        $this->commercialActionMessage = '';
+    }
+
+    public function closeCompanyLink(): void
+    {
+        $this->linkingHubSpotCompanyId =
+            null;
+
+        $this->companyLinkSearch = '';
+    }
+
+    #[Computed]
+    public function linkingHubSpotCompany(): ?HubSpotCompany
+    {
+        if (
+            ! $this->isCommercialManager()
+            || $this->linkingHubSpotCompanyId
+                === null
+        ) {
+            return null;
+        }
+
+        return HubSpotCompany::query()
+            ->whereNull(
+                'company_id'
+            )
+            ->find(
+                $this->linkingHubSpotCompanyId
+            );
+    }
+
+    /**
+     * @return Collection<int, Company>
+     */
+    #[Computed]
+    public function companyLinkCandidates(): Collection
+    {
+        if (
+            ! $this->isCommercialManager()
+            || $this->linkingHubSpotCompanyId
+                === null
+        ) {
+            return new Collection;
+        }
+
+        $search =
+            trim(
+                $this->companyLinkSearch
+            );
+
+        if (
+            mb_strlen(
+                $search
+            ) < 2
+        ) {
+            return new Collection;
+        }
+
+        $normalized =
+            mb_strtolower(
+                $search
+            );
+
+        $cnpj =
+            preg_replace(
+                '/[^A-Z0-9]/i',
+                '',
+                mb_strtoupper(
+                    $search
+                )
+            )
+            ?? '';
+
+        return Company::query()
+            ->with(
+                'matrix'
+            )
+            ->where(
+                function ($query) use (
+                    $normalized,
+                    $cnpj
+                ): void {
+                    $query
+                        ->whereRaw(
+                            "LOWER(COALESCE(corporate_name, '')) LIKE ?",
+                            [
+                                '%'
+                                .$normalized
+                                .'%',
+                            ]
+                        );
+
+                    if ($cnpj !== '') {
+                        $query->orWhere(
+                            'cnpj_root',
+                            'like',
+                            '%'.$cnpj.'%'
+                        );
+                    }
+
+                    $query->orWhereHas(
+                        'establishments',
+                        function ($establishmentQuery) use (
+                            $normalized,
+                            $cnpj
+                        ): void {
+                            $establishmentQuery
+                                ->where(
+                                    function ($searchQuery) use (
+                                        $normalized,
+                                        $cnpj
+                                    ): void {
+                                        $searchQuery
+                                            ->whereRaw(
+                                                "LOWER(COALESCE(fantasy_name, '')) LIKE ?",
+                                                [
+                                                    '%'
+                                                    .$normalized
+                                                    .'%',
+                                                ]
+                                            );
+
+                                        if ($cnpj !== '') {
+                                            $searchQuery
+                                                ->orWhere(
+                                                    'cnpj',
+                                                    'like',
+                                                    '%'
+                                                    .$cnpj
+                                                    .'%'
+                                                );
+                                        }
+                                    }
+                                );
+                        }
+                    );
+                }
+            )
+            ->orderBy(
+                'corporate_name'
+            )
+            ->limit(
+                12
+            )
+            ->get();
+    }
+
+    public function lookupCompanyLinkReceita(
+        ReceitaLocalCnpjGroupProvider $provider,
+    ): void {
+        abort_unless(
+            $this->isCommercialManager(),
+            403
+        );
+
+        $this->companyLinkReceitaPreview = [];
+        $this->companyLinkReceitaError = '';
+
+        $cnpj =
+            Cnpj::normalize(
+                $this->companyLinkSearch
+            );
+
+        if (! Cnpj::isValid($cnpj)) {
+            $this->companyLinkReceitaError =
+                'Informe um CNPJ válido com 14 caracteres.';
+
+            return;
+        }
+
+        $root =
+            Cnpj::root(
+                $cnpj
+            );
+
+        $existing =
+            Company::query()
+                ->where(
+                    'cnpj_root',
+                    $root
+                )
+                ->first();
+
+        if ($existing !== null) {
+            $this->companyLinkReceitaError =
+                'Esta raiz de CNPJ já existe no Prospector. Use a empresa encontrada acima para fazer o vínculo.';
+
+            return;
+        }
+
+        try {
+            $data =
+                $provider->lookupRoot(
+                    $root
+                );
+
+            $companyData =
+                $data[
+                    'company'
+                ]
+                ?? [];
+
+            $establishments =
+                $data[
+                    'establishments'
+                ]
+                ?? [];
+
+            if (
+                ! is_array($companyData)
+                || ! is_array($establishments)
+            ) {
+                $this->companyLinkReceitaError =
+                    'A Receita retornou dados inválidos.';
+
+                return;
+            }
+
+            $selected = null;
+
+            foreach ($establishments as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                $establishment =
+                    $item[
+                        'establishment'
+                    ]
+                    ?? null;
+
+                if (! is_array($establishment)) {
+                    continue;
+                }
+
+                $candidateCnpj =
+                    Cnpj::normalize(
+                        (string) (
+                            $establishment[
+                                'cnpj'
+                            ]
+                            ?? ''
+                        )
+                    );
+
+                if ($candidateCnpj === $cnpj) {
+                    $selected =
+                        $establishment;
+
+                    break;
+                }
+            }
+
+            if ($selected === null) {
+                $this->companyLinkReceitaError =
+                    'O CNPJ informado não foi encontrado dentro da raiz retornada pela Receita.';
+
+                return;
+            }
+
+            $this->companyLinkReceitaPreview = [
+                'cnpj' => $cnpj,
+
+                'cnpj_formatted' => Cnpj::format(
+                    $cnpj
+                ),
+
+                'cnpj_root' => $root,
+
+                'corporate_name' => trim(
+                    (string) (
+                        $companyData[
+                            'corporate_name'
+                        ]
+                        ?? ''
+                    )
+                ),
+
+                'fantasy_name' => trim(
+                    (string) (
+                        $selected[
+                            'fantasy_name'
+                        ]
+                        ?? ''
+                    )
+                ),
+
+                'municipality_name' => trim(
+                    (string) (
+                        $selected[
+                            'municipality_name'
+                        ]
+                        ?? ''
+                    )
+                ),
+
+                'state' => trim(
+                    (string) (
+                        $selected[
+                            'state'
+                        ]
+                        ?? ''
+                    )
+                ),
+
+                'registration_status' => trim(
+                    (string) (
+                        $selected[
+                            'registration_status'
+                        ]
+                        ?? ''
+                    )
+                ),
+
+                'type' => trim(
+                    (string) (
+                        $selected[
+                            'type'
+                        ]
+                        ?? ''
+                    )
+                ),
+
+                'establishment_count' => count(
+                    $establishments
+                ),
+            ];
+        } catch (Throwable $exception) {
+            report(
+                $exception
+            );
+
+            $this->companyLinkReceitaError =
+                'Não foi possível consultar a Receita: '
+                .$exception->getMessage();
+        }
+    }
+
+    public function importAndLinkHubSpotCompany(
+        HubSpotCompanyLinkService $service,
+    ): void {
+        abort_unless(
+            $this->isCommercialManager(),
+            403
+        );
+
+        $this->commercialActionMessage = '';
+        $this->commercialActionError = '';
+
+        if (
+            $this->linkingHubSpotCompanyId
+            === null
+        ) {
+            $this->commercialActionError =
+                'Selecione primeiro uma empresa do HubSpot.';
+
+            return;
+        }
+
+        $cnpj =
+            Cnpj::normalize(
+                (string) (
+                    $this->companyLinkReceitaPreview[
+                        'cnpj'
+                    ]
+                    ?? ''
+                )
+            );
+
+        if (! Cnpj::isValid($cnpj)) {
+            $this->commercialActionError =
+                'Consulte e valide o CNPJ na Receita antes de importar.';
+
+            return;
+        }
+
+        $hubSpotCompany =
+            HubSpotCompany::query()
+                ->whereNull(
+                    'company_id'
+                )
+                ->find(
+                    $this->linkingHubSpotCompanyId
+                );
+
+        if ($hubSpotCompany === null) {
+            $this->commercialActionError =
+                'Este registro já foi vinculado ou não existe mais.';
+
+            $this->closeCompanyLink();
+
+            return;
+        }
+
+        $hubSpotName =
+            trim(
+                (string)
+                $hubSpotCompany->name
+            );
+
+        try {
+            $lead =
+                $service->importAndLink(
+                    hubSpotCompany: $hubSpotCompany,
+
+                    cnpj: $cnpj,
+                );
+
+            $company =
+                Company::query()
+                    ->findOrFail(
+                        $lead->company_id
+                    );
+
+            $this->commercialActionMessage =
+                'Empresa importada e vinculada: '
+                .(
+                    $hubSpotName !== ''
+                        ? $hubSpotName
+                        : 'Empresa HubSpot'
+                )
+                .' → '
+                .$company->corporate_name
+                .'.';
+
+            $this->closeCompanyLink();
+
+            $this->resetPage();
+
+            $this->resetPage(
+                'hubspotPage'
+            );
+        } catch (DomainException $exception) {
+            $this->commercialActionError =
+                $exception->getMessage();
+        } catch (Throwable $exception) {
+            report(
+                $exception
+            );
+
+            $this->commercialActionError =
+                'Não foi possível importar e vincular a empresa: '
+                .$exception->getMessage();
+        }
+    }
+
+    public function linkHubSpotCompany(
+        int $companyId,
+        HubSpotCompanyLinkService $service,
+    ): void {
+        abort_unless(
+            $this->isCommercialManager(),
+            403
+        );
+
+        $this->commercialActionMessage = '';
+        $this->commercialActionError = '';
+
+        if (
+            $this->linkingHubSpotCompanyId
+            === null
+        ) {
+            $this->commercialActionError =
+                'Selecione primeiro uma empresa do HubSpot.';
+
+            return;
+        }
+
+        $hubSpotCompany =
+            HubSpotCompany::query()
+                ->whereNull(
+                    'company_id'
+                )
+                ->find(
+                    $this->linkingHubSpotCompanyId
+                );
+
+        if ($hubSpotCompany === null) {
+            $this->commercialActionError =
+                'Este registro já foi vinculado ou não existe mais.';
+
+            $this->closeCompanyLink();
+
+            return;
+        }
+
+        $company =
+            Company::query()
+                ->findOrFail(
+                    $companyId
+                );
+
+        $hubSpotName =
+            trim(
+                (string)
+                $hubSpotCompany->name
+            );
+
+        try {
+            $service->link(
+                hubSpotCompany: $hubSpotCompany,
+
+                company: $company,
+            );
+
+            $this->commercialActionMessage =
+                'Vínculo confirmado: '
+                .(
+                    $hubSpotName !== ''
+                        ? $hubSpotName
+                        : 'Empresa HubSpot'
+                )
+                .' → '
+                .$company->corporate_name
+                .'.';
+
+            $this->closeCompanyLink();
+
+            $this->resetPage();
+
+            $this->resetPage(
+                'hubspotPage'
+            );
+        } catch (DomainException $exception) {
+            $this->commercialActionError =
+                $exception->getMessage();
+        } catch (Throwable $exception) {
+            report(
+                $exception
+            );
+
+            $this->commercialActionError =
+                'Não foi possível concluir o vínculo da empresa.';
+        }
+    }
+
     #[Computed]
     public function hubSpotOnlyOpenCount(): int
     {
@@ -1212,17 +1780,16 @@ new class extends Component
 
         return $query
             ->with([
-                'deals' =>
-                    fn ($dealQuery) => $dealQuery
-                        ->orderBy(
-                            'is_closed'
-                        )
-                        ->orderByDesc(
-                            'last_activity_at'
-                        )
-                        ->orderBy(
-                            'name'
-                        ),
+                'deals' => fn ($dealQuery) => $dealQuery
+                    ->orderBy(
+                        'is_closed'
+                    )
+                    ->orderByDesc(
+                        'last_activity_at'
+                    )
+                    ->orderBy(
+                        'name'
+                    ),
 
                 'contacts',
             ])
@@ -2434,11 +3001,9 @@ new class extends Component
             $this->leadRefreshFeedback[
                 $companyId
             ] = [
-                'status' =>
-                    'success',
+                'status' => 'success',
 
-                'message' =>
-                    $changes === []
+                'message' => $changes === []
                         ? 'HubSpot atualizado. Nenhuma alteração encontrada.'
                         : (
                             count(
@@ -2447,18 +3012,16 @@ new class extends Component
                             .' alteração(ões) encontrada(s).'
                         ),
 
-                'changes' =>
-                    array_slice(
-                        $changes,
-                        0,
-                        6
-                    ),
+                'changes' => array_slice(
+                    $changes,
+                    0,
+                    6
+                ),
 
-                'updated_at' =>
-                    now()
-                        ->format(
-                            'H:i:s'
-                        ),
+                'updated_at' => now()
+                    ->format(
+                        'H:i:s'
+                    ),
             ];
         } catch (Throwable $exception) {
             report(
@@ -2468,22 +3031,18 @@ new class extends Component
             $this->leadRefreshFeedback[
                 $companyId
             ] = [
-                'status' =>
-                    'error',
+                'status' => 'error',
 
-                'message' =>
-                    'Não foi possível atualizar esta empresa: '
+                'message' => 'Não foi possível atualizar esta empresa: '
                     .$exception
                         ->getMessage(),
 
-                'changes' =>
-                    [],
+                'changes' => [],
 
-                'updated_at' =>
-                    now()
-                        ->format(
-                            'H:i:s'
-                        ),
+                'updated_at' => now()
+                    ->format(
+                        'H:i:s'
+                    ),
             ];
         }
     }

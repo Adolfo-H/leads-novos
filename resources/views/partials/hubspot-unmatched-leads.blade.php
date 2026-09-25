@@ -6,6 +6,7 @@
 
 @if (
     $hubSpotOnly
+    || $linkingHubSpotCompanyId !== null
     || $hubSpotOnlyResults->total() > 0
 )
 
@@ -62,7 +63,7 @@
                 165px
                 minmax(260px, 1.3fr)
                 190px
-                120px;
+                155px;
             min-width: 1050px;
             gap: 15px;
             align-items: center;
@@ -190,6 +191,11 @@
             </div>
 
         </div>
+
+
+        @include(
+            'partials.hubspot-company-linker'
+        )
 
 
         <div class="rf-crm-only-scroll">
@@ -425,6 +431,35 @@
                             >
                                 HubSpot ↗
                             </a>
+
+                        @endif
+
+
+                        @if (
+                            $this->isCommercialManager()
+                        )
+
+                            <button
+                                type="button"
+                                wire:click="
+                                    openCompanyLink(
+                                        {{
+                                            $hubSpotCompany
+                                                ->id
+                                        }}
+                                    )
+                                "
+                                class="
+                                    rf-btn
+                                    rf-btn-warning
+                                "
+                                style="
+                                    margin-top:6px;
+                                    width:100%;
+                                "
+                            >
+                                Identificar empresa
+                            </button>
 
                         @endif
 

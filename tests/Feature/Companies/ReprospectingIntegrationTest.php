@@ -82,134 +82,181 @@ function reprospectingIntegrationCompany(
     return $company;
 }
 
-it('blocks recent prospected companies in SDR and export research', function () {
-    config([
-        'prospector.crm.reprospecting_after_days' => 180,
-    ]);
+it(
+    'keeps recent prospected companies in SDR while export research respects cooldown',
+    function (): void {
+        config([
+            'prospector.crm.reprospecting_after_days' => 180,
+        ]);
 
-    $company =
-        reprospectingIntegrationCompany(
-            30
+        /*
+         * Usamos 15 dias para ficar claramente
+         * dentro da faixa de contato recente,
+         * sem depender do limite exato de 30 dias.
+         */
+        $company =
+            reprospectingIntegrationCompany(
+                15
+            );
+
+        $score =
+            app(
+                SdrScoringService::class
+            )->recalculate(
+                $company
+            );
+
+        /*
+         * Regra atual:
+         *
+         * empresa prospectada não desaparece
+         * da fila SDR.
+         */
+        expect(
+            $score->is_eligible
+        )->toBeTrue();
+
+        expect(
+            $score->score
+        )->toBe(76);
+
+        expect(
+            $score->priority
+        )->toBe(
+            'high'
         );
 
-    $score = app(
-        SdrScoringService::class
-    )->recalculate(
-        $company
-    );
+        expect(
+            $score->blocked_reason
+        )->toBeNull();
 
-    expect(
-        $score->is_eligible
-    )->toBeFalse();
-
-    expect(
-        $score->priority
-    )->toBe(
-        'blocked'
-    );
-
-    expect(
-        data_get(
-            $score->metadata,
-            'reprospecting.reason'
-        )
-    )->toBe(
-        'cooldown_active'
-    );
-
-    $research = app(
-        ExportResearchEligibilityService::class
-    )->evaluate(
-        $company
-    );
-
-    expect(
-        $research['eligible']
-    )->toBeFalse();
-
-    expect(
-        $research['reason']
-    )->toBe(
-        'crm_prospected_cooldown_active'
-    );
-});
-
-it('returns old prospected companies to SDR and export research', function () {
-    config([
-        'prospector.crm.reprospecting_after_days' => 180,
-    ]);
-
-    $company =
-        reprospectingIntegrationCompany(
-            220
+        expect(
+            data_get(
+                $score->metadata,
+                'commercial_status'
+            )
+        )->toBe(
+            'known'
         );
 
-    $score = app(
-        SdrScoringService::class
-    )->recalculate(
-        $company
-    );
+        expect(
+            data_get(
+                $score->metadata,
+                'work_status'
+            )
+        )->toBe(
+            'contacting'
+        );
 
-    /*
-     * ICP A = 30 pontos.
-     *
-     * Como já foi prospectada,
-     * não recebe o bônus de empresa
-     * nova no CRM.
-     *
-     * Exportação ainda não pesquisada.
-     */
-    expect(
-        $score->score
-    )->toBe(30);
+        /*
+         * Pesquisa externa continua bloqueada
+         * enquanto estiver dentro do cooldown.
+         */
+        $research =
+            app(
+                ExportResearchEligibilityService::class
+            )->evaluate(
+                $company
+            );
 
-    expect(
-        $score->is_eligible
-    )->toBeTrue();
+        expect(
+            $research['eligible']
+        )->toBeFalse();
 
-    expect(
-        $score->priority
-    )->toBe(
-        'low'
-    );
+        expect(
+            $research['reason']
+        )->toBe(
+            'crm_prospected_cooldown_active'
+        );
+    }
+);
 
-    expect(
-        $score->is_provisional
-    )->toBeTrue();
+it(
+    'returns old prospected companies to reprospecting with the current scoring model',
+    function (): void {
+        config([
+            'prospector.crm.reprospecting_after_days' => 180,
+        ]);
 
-    expect(
-        data_get(
-            $score->metadata,
-            'reprospecting.reason'
-        )
-    )->toBe(
-        'cooldown_elapsed'
-    );
+        $company =
+            reprospectingIntegrationCompany(
+                220
+            );
 
-    $research = app(
-        ExportResearchEligibilityService::class
-    )->evaluate(
-        $company
-    );
+        $score =
+            app(
+                SdrScoringService::class
+            )->recalculate(
+                $company
+            );
 
-    expect(
-        $research['eligible']
-    )->toBeTrue();
+        /*
+         * Score atual:
+         *
+         * ICP 90 x 60% = 54
+         * Reprospecção comercial = 12
+         * Acompanhamento reprospecção = 10
+         *
+         * Total = 76.
+         */
+        expect(
+            $score->score
+        )->toBe(76);
 
-    expect(
-        $research['reason']
-    )->toBe(
-        'eligible'
-    );
-});
+        expect(
+            $score->is_eligible
+        )->toBeTrue();
 
-it('keeps clients and active opportunities blocked regardless of age', function () {
-    foreach (
-        [
-            'client',
-            'opportunity',
-        ] as $status
-    ) {
+        expect(
+            $score->priority
+        )->toBe(
+            'high'
+        );
+
+        expect(
+            $score->is_provisional
+        )->toBeTrue();
+
+        expect(
+            data_get(
+                $score->metadata,
+                'commercial_status'
+            )
+        )->toBe(
+            'reprospecting'
+        );
+
+        expect(
+            data_get(
+                $score->metadata,
+                'work_status'
+            )
+        )->toBe(
+            'reprospecting'
+        );
+
+        $research =
+            app(
+                ExportResearchEligibilityService::class
+            )->evaluate(
+                $company
+            );
+
+        expect(
+            $research['eligible']
+        )->toBeTrue();
+
+        expect(
+            $research['reason']
+        )->toBe(
+            'eligible'
+        );
+    }
+);
+
+it(
+    'keeps clients blocked in SDR and export research',
+    function (): void {
         $company =
             reprospectingIntegrationCompany(
                 500
@@ -218,18 +265,19 @@ it('keeps clients and active opportunities blocked regardless of age', function 
         $company
             ->crmCheck()
             ->update([
-                'status' => $status,
+                'status' => 'client',
             ]);
 
         $company->unsetRelation(
             'crmCheck'
         );
 
-        $score = app(
-            SdrScoringService::class
-        )->recalculate(
-            $company
-        );
+        $score =
+            app(
+                SdrScoringService::class
+            )->recalculate(
+                $company
+            );
 
         expect(
             $score->is_eligible
@@ -241,11 +289,12 @@ it('keeps clients and active opportunities blocked regardless of age', function 
             'blocked'
         );
 
-        $research = app(
-            ExportResearchEligibilityService::class
-        )->evaluate(
-            $company
-        );
+        $research =
+            app(
+                ExportResearchEligibilityService::class
+            )->evaluate(
+                $company
+            );
 
         expect(
             $research['eligible']
@@ -254,7 +303,69 @@ it('keeps clients and active opportunities blocked regardless of age', function 
         expect(
             $research['reason']
         )->toBe(
-            'crm_'.$status
+            'crm_client'
         );
     }
-});
+);
+
+it(
+    'keeps active opportunities in SDR but blocks export research',
+    function (): void {
+        $company =
+            reprospectingIntegrationCompany(
+                15
+            );
+
+        $company
+            ->crmCheck()
+            ->update([
+                'status' => 'opportunity',
+            ]);
+
+        $company->unsetRelation(
+            'crmCheck'
+        );
+
+        $score =
+            app(
+                SdrScoringService::class
+            )->recalculate(
+                $company
+            );
+
+        /*
+         * Oportunidade continua no Leads/SDR,
+         * pois ainda existe trabalho comercial.
+         */
+        expect(
+            $score->is_eligible
+        )->toBeTrue();
+
+        expect(
+            $score->priority
+        )->not->toBe(
+            'blocked'
+        );
+
+        /*
+         * Mas não gastamos pesquisa externa
+         * em uma oportunidade já ativa.
+         */
+        $research =
+            app(
+                ExportResearchEligibilityService::class
+            )->evaluate(
+                $company
+            );
+
+        expect(
+            $research['eligible']
+        )->toBeFalse();
+
+        expect(
+            $research['reason']
+        )->toBe(
+            'crm_opportunity'
+        );
+    }
+);

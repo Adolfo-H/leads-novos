@@ -4,11 +4,39 @@ namespace App\Services\Providers;
 
 use App\Contracts\CrmCompanyProvider;
 use App\Models\Company;
+use App\Models\HubSpotCompany;
 use App\Support\TextNormalizer;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
+/**
+ * @phpstan-type HubSpotCompanyResult array{
+ *     found: bool,
+ *     external_id: string|null,
+ *     name: string|null,
+ *     domain: string|null,
+ *     lifecycle_stage: string|null,
+ *     owner_id: string|null,
+ *     contacted_count: int,
+ *     associated_deals_count: int,
+ *     deals: list<array{
+ *         id: string,
+ *         name: string|null,
+ *         stage_id: string|null,
+ *         stage_label: string|null,
+ *         pipeline_id: string|null,
+ *         is_closed: bool,
+ *         is_closed_won: bool,
+ *         closed_at: string|null
+ *     }>,
+ *     last_contacted_at: string|null,
+ *     matched_by: string|null,
+ *     matched_value: string|null,
+ *     external_url: string|null,
+ *     metadata: array<string, mixed>
+ * }
+ */
 final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
 {
     /**
@@ -56,10 +84,40 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
         return 'hubspot';
     }
 
+    /**
+     * @return HubSpotCompanyResult
+     */
     public function findCompany(
         Company $company
     ): array {
         $this->assertConfigured();
+
+        /*
+         * Estratégia 0:
+         *
+         * se o Prospector já possui um vínculo
+         * explícito HubSpot -> Company, o ID do
+         * HubSpot é a fonte mais segura.
+         *
+         * Não tentamos redescobrir por nome ou
+         * domínio e correr o risco de transformar
+         * uma empresa já vinculada em not_found.
+         */
+        $linkedIds =
+            $this->linkedHubSpotIds(
+                $company
+            );
+
+        if ($linkedIds !== []) {
+            $linkedResult =
+                $this->linkedResult(
+                    $linkedIds
+                );
+
+            if ($linkedResult !== null) {
+                return $linkedResult;
+            }
+        }
 
         $domains =
             $this->candidateDomains(
@@ -176,6 +234,354 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
                 'candidate_domains' => $domains,
             ],
         ];
+    }
+
+    /**
+     * IDs do HubSpot cuja associação fiscal já
+     * foi confirmada no Prospector.
+     *
+     * @return list<string>
+     */
+    private function linkedHubSpotIds(
+        Company $company
+    ): array {
+        $ids = [];
+
+        $records =
+            HubSpotCompany::query()
+                ->where(
+                    'company_id',
+                    $company->id
+                )
+                ->orderBy(
+                    'id'
+                )
+                ->get([
+                    'hubspot_id',
+                ]);
+
+        foreach ($records as $record) {
+            $id =
+                trim(
+                    (string)
+                    $record->hubspot_id
+                );
+
+            if ($id !== '') {
+                $ids[] =
+                    $id;
+            }
+        }
+
+        return array_values(
+            array_unique(
+                $ids
+            )
+        );
+    }
+
+    /**
+     * @param  list<string>  $companyIds
+     * @return HubSpotCompanyResult|null
+     */
+    private function linkedResult(
+        array $companyIds
+    ): ?array {
+        $primaryRecord = null;
+        $primaryId = null;
+        $primaryDealCount = -1;
+
+        $dealsById = [];
+
+        $contactedCount = 0;
+
+        $lastContactedAt = null;
+
+        $validCompanyIds = [];
+
+        foreach ($companyIds as $companyId) {
+            $record =
+                $this->readCompanyById(
+                    $companyId
+                );
+
+            /*
+             * Caso um ID antigo tenha sido
+             * removido no HubSpot, continuamos
+             * avaliando os demais IDs vinculados.
+             */
+            if ($record === null) {
+                continue;
+            }
+
+            $validCompanyIds[] =
+                $companyId;
+
+            $properties =
+                data_get(
+                    $record,
+                    'properties',
+                    []
+                );
+
+            if (! is_array($properties)) {
+                $properties = [];
+            }
+
+            $contactedCount +=
+                max(
+                    0,
+                    (int) (
+                        $properties[
+                            'num_contacted_notes'
+                        ]
+                        ?? 0
+                    )
+                );
+
+            $lastContactedAt =
+                $this->latestDateString(
+                    $lastContactedAt,
+
+                    $properties[
+                        'notes_last_contacted'
+                    ]
+                    ?? null,
+                );
+
+            $deals =
+                $this->companyDeals(
+                    $companyId
+                );
+
+            foreach ($deals as $deal) {
+                $dealId =
+                trim(
+                    (string)
+                    $deal[
+                        'id'
+                    ]
+                );
+
+                if ($dealId === '') {
+                    continue;
+                }
+
+                $dealsById[
+                    $dealId
+                ] =
+                    $deal;
+            }
+
+            /*
+             * Para os campos escalares usamos
+             * como principal o registro com mais
+             * negócios associados.
+             */
+            if (
+                count($deals)
+                > $primaryDealCount
+            ) {
+                $primaryRecord =
+                    $record;
+
+                $primaryId =
+                    $companyId;
+
+                $primaryDealCount =
+                    count(
+                        $deals
+                    );
+            }
+        }
+
+        if (
+            $primaryRecord === null
+            || $primaryId === null
+        ) {
+            return null;
+        }
+
+        $properties =
+            data_get(
+                $primaryRecord,
+                'properties',
+                []
+            );
+
+        if (! is_array($properties)) {
+            $properties = [];
+        }
+
+        $deals =
+            array_values(
+                $dealsById
+            );
+
+        return [
+            'found' => true,
+
+            'external_id' => $primaryId,
+
+            'name' => $this->nullable(
+                $properties[
+                    'name'
+                ]
+                ?? null
+            ),
+
+            'domain' => $this->nullable(
+                $properties[
+                    'domain'
+                ]
+                ?? null
+            ),
+
+            'lifecycle_stage' => $this->nullable(
+                $properties[
+                    'lifecyclestage'
+                ]
+                ?? null
+            ),
+
+            'owner_id' => $this->nullable(
+                $properties[
+                    'hubspot_owner_id'
+                ]
+                ?? null
+            ),
+
+            'contacted_count' => $contactedCount,
+
+            'associated_deals_count' => count(
+                $deals
+            ),
+
+            'deals' => $deals,
+
+            'last_contacted_at' => $lastContactedAt,
+
+            'matched_by' => 'linked_hubspot_id',
+
+            'matched_value' => $primaryId,
+
+            'external_url' => $this->recordUrl(
+                $primaryId
+            ),
+
+            'metadata' => [
+                'search_strategy' => 'linked_hubspot_id',
+
+                'hubspot_company_ids' => $validCompanyIds,
+
+                'hubspot_result_count' => count(
+                    $validCompanyIds
+                ),
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function readCompanyById(
+        string $companyId
+    ): ?array {
+        try {
+            $response =
+                Http::withToken(
+                    $this->token()
+                )
+                    ->acceptJson()
+                    ->connectTimeout(5)
+                    ->timeout(30)
+                    ->get(
+                        $this->baseUrl()
+                        .'/crm/v3/objects/companies/'
+                        .rawurlencode(
+                            $companyId
+                        ),
+                        [
+                            'properties' => implode(
+                                ',',
+                                self::PROPERTIES
+                            ),
+                        ]
+                    );
+        } catch (
+            ConnectionException $exception
+        ) {
+            throw new RuntimeException(
+                'Não foi possível consultar a empresa vinculada no HubSpot.',
+                previous: $exception,
+            );
+        }
+
+        if (
+            $response->status()
+            === 404
+        ) {
+            return null;
+        }
+
+        $this->assertHubSpotResponse(
+            $response->status(),
+            $response->successful(),
+            'consultar empresa vinculada'
+        );
+
+        $data =
+            $response->json();
+
+        if (! is_array($data)) {
+            throw new RuntimeException(
+                'O HubSpot retornou uma resposta inválida para a empresa vinculada.'
+            );
+        }
+
+        return $data;
+    }
+
+    private function latestDateString(
+        ?string $current,
+        mixed $candidate,
+    ): ?string {
+        $candidate =
+            $this->nullable(
+                $candidate
+            );
+
+        if ($candidate === null) {
+            return $current;
+        }
+
+        if ($current === null) {
+            return $candidate;
+        }
+
+        $currentTimestamp =
+            strtotime(
+                $current
+            );
+
+        $candidateTimestamp =
+            strtotime(
+                $candidate
+            );
+
+        if ($currentTimestamp === false) {
+            return $candidate;
+        }
+
+        if ($candidateTimestamp === false) {
+            return $current;
+        }
+
+        return
+            $candidateTimestamp
+            > $currentTimestamp
+                ? $candidate
+                : $current;
     }
 
     /**
