@@ -43,6 +43,7 @@ final class HubSpotWebhookController extends Controller
         $accepted = 0;
         $duplicates = 0;
         $invalid = 0;
+        $blocked = 0;
 
         foreach (
             $payloads as $payload
@@ -234,6 +235,39 @@ final class HubSpotWebhookController extends Controller
                 continue;
             }
 
+            /*
+             * Email:
+             *
+             * O portal envia normalmente os
+             * webhooks, porém a API exige o scope
+             * crm.objects.emails.read, atualmente
+             * indisponível para este app.
+             *
+             * Guardamos o evento para reprocessar
+             * no futuro, sem gastar retries.
+             */
+            if (
+                $objectType === 'email'
+                && ! (bool) config(
+                    'services.hubspot.email_sync_enabled',
+                    false
+                )
+            ) {
+                $event->forceFill([
+                    'status' => 'blocked_scope',
+
+                    'error' => 'Aguardando HubSpot liberar '
+                        .'crm.objects.emails.read.',
+
+                    'processed_at' => null,
+                ])->save();
+
+                $accepted++;
+                $blocked++;
+
+                continue;
+            }
+
             ProcessHubSpotWebhookEvent::dispatch(
                 $event->id
             );
@@ -248,6 +282,8 @@ final class HubSpotWebhookController extends Controller
                 'duplicates' => $duplicates,
 
                 'invalid' => $invalid,
+
+                'blocked' => $blocked,
             ],
             202
         );

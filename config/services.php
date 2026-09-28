@@ -126,6 +126,18 @@ return [
             true
         ),
 
+        /*
+         * Emails estão temporariamente bloqueados
+         * até o HubSpot liberar
+         * crm.objects.emails.read para este app.
+         *
+         * Os webhooks continuam sendo persistidos.
+         */
+        'email_sync_enabled' => (bool) env(
+            'HUBSPOT_EMAIL_SYNC_ENABLED',
+            false
+        ),
+
         'lead_sync_enabled' => (bool) env(
             'HUBSPOT_LEAD_SYNC_ENABLED',
             false

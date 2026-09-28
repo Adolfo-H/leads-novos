@@ -214,3 +214,116 @@ it(
         Queue::assertNothingPushed();
     }
 );
+
+it(
+    'stores email webhooks without queueing them while email scope is unavailable',
+    function (): void {
+        Queue::fake();
+
+        $secret =
+            'hubspot-email-test-secret';
+
+        $url =
+            'http://localhost/webhooks/hubspot';
+
+        config([
+            'services.hubspot.webhook_secret' => $secret,
+
+            'services.hubspot.webhook_public_url' => $url,
+
+            'services.hubspot.webhook_verify_signature' => true,
+
+            'services.hubspot.email_sync_enabled' => false,
+        ]);
+
+        $timestamp =
+            (string)
+            now()
+                ->getTimestampMs();
+
+        $payload = [
+            [
+                'appId' => 100,
+
+                'eventId' => 999,
+
+                'subscriptionId' => 300,
+
+                'portalId' => 400,
+
+                'occurredAt' => (int) $timestamp,
+
+                'subscriptionType' => 'object.creation',
+
+                'objectTypeId' => '0-49',
+
+                'objectId' => 117503931190,
+            ],
+        ];
+
+        $body =
+            json_encode(
+                $payload,
+                JSON_UNESCAPED_SLASHES
+            );
+
+        expect(
+            $body
+        )->toBeString();
+
+        $signature =
+            hubSpotWebhookSignature(
+                body: $body,
+
+                timestamp: $timestamp,
+
+                url: $url,
+
+                secret: $secret,
+            );
+
+        $this
+            ->call(
+                'POST',
+                '/webhooks/hubspot',
+                [],
+                [],
+                [],
+                [
+                    'CONTENT_TYPE' => 'application/json',
+
+                    'HTTP_X_HUBSPOT_SIGNATURE_V3' => $signature,
+
+                    'HTTP_X_HUBSPOT_REQUEST_TIMESTAMP' => $timestamp,
+                ],
+                $body
+            )
+            ->assertStatus(
+                202
+            )
+            ->assertJson([
+                'accepted' => 1,
+
+                'blocked' => 1,
+
+                'duplicates' => 0,
+
+                'invalid' => 0,
+            ]);
+
+        $this->assertDatabaseHas(
+            'hubspot_webhook_events',
+            [
+                'object_type' => 'email',
+
+                'object_id' => '117503931190',
+
+                'status' => 'blocked_scope',
+            ]
+        );
+
+        Queue::assertNotPushed(
+            ProcessHubSpotWebhookEvent::class
+        );
+    }
+);

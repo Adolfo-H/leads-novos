@@ -91,6 +91,7 @@ class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
                 [
                     'processed',
                     'ignored',
+                    'blocked_scope',
                 ],
                 true
             )
