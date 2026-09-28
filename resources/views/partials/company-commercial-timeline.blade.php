@@ -7,6 +7,14 @@
             ->leadActivities
             ->take(40);
 
+    $commercialHiddenActivityCount =
+        max(
+            0,
+            $commercialActivities
+                ->count()
+            - 4
+        );
+
     $commercialStatus =
         $commercialLead?->work_status
         ?? 'new';
@@ -657,6 +665,16 @@
 
 
                     <div
+                        @if (
+                            $loop->index
+                            >= 4
+                        )
+                            x-show="
+                                expandedTimeline
+                            "
+                            x-cloak
+                        @endif
+
                         class="
                             grid
                             grid-cols-[20px_1fr]
@@ -782,6 +800,71 @@
                     </div>
 
                 @endforeach
+
+
+                @if (
+                    $commercialHiddenActivityCount
+                    > 0
+                )
+
+                    <div
+                        class="
+                            ec-show-more-bar
+                            !px-0
+                            !pb-0
+                        "
+                    >
+
+                        <button
+                            type="button"
+                            class="ec-show-more-button"
+                            @click="
+                                expandedTimeline =
+                                    ! expandedTimeline
+                            "
+                        >
+
+                            <span
+                                x-show="
+                                    ! expandedTimeline
+                                "
+                            >
+                                Mostrar mais
+                                {{
+                                    $commercialHiddenActivityCount
+                                }}
+                                evento(s)
+                            </span>
+
+                            <span
+                                x-show="
+                                    expandedTimeline
+                                "
+                                x-cloak
+                            >
+                                Mostrar menos
+                            </span>
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                :class="{
+                                    'is-expanded':
+                                        expandedTimeline
+                                }"
+                            >
+                                <path
+                                    d="m6 9 6 6 6-6"
+                                />
+                            </svg>
+
+                        </button>
+
+                    </div>
+
+                @endif
 
             </div>
 

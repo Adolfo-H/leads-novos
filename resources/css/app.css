@@ -1,5 +1,11 @@
+@import './final-workspaces.css';
+@import './imports-workspace.css';
+@import './company-list-workspace.css';
+@import './company-create-workspace.css';
+@import './dashboard-overview.css';
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
+@import './prospecting-workspace.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -1265,7 +1271,7 @@ select.ec-input option {
 
 .ec-intelligence-grid {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 
     gap: 10px;
 }
@@ -1377,7 +1383,9 @@ select.ec-input option {
     display: grid;
     grid-template-columns:
         minmax(0, 2fr)
-        minmax(280px, 1fr);
+        minmax(320px, 1fr);
+
+    align-items: start;
 
     gap: 18px;
 }
@@ -15842,4 +15850,932 @@ strong {
             255,
             .018
         );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Company dossier - navegacao dinamica
+|--------------------------------------------------------------------------
+*/
+
+[x-cloak] {
+    display: none !important;
+}
+
+.ec-dossier-tabs {
+    position: sticky;
+    top: calc(
+        var(--ec-topbar-height)
+        + 10px
+    );
+
+    z-index: 30;
+
+    width: fit-content;
+    max-width: 100%;
+
+    align-self: flex-start;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    overflow-x: auto;
+
+    padding: 7px;
+
+    border: 1px solid
+        rgba(255, 255, 255, 0.075);
+
+    border-radius: 10px;
+
+    background:
+        rgba(24, 26, 62, 0.92);
+
+    box-shadow:
+        0 12px 32px
+        rgba(5, 8, 28, 0.20);
+
+    backdrop-filter:
+        blur(18px);
+
+    scrollbar-width: none;
+}
+
+.ec-dossier-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.ec-dossier-tab {
+    min-height: 38px;
+
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    padding: 0 14px;
+
+    border: 1px solid transparent;
+    border-radius: 7px;
+
+    color: #8993b2;
+    background: transparent;
+
+    font-size: 12px;
+    font-weight: 650;
+
+    cursor: pointer;
+    white-space: nowrap;
+
+    transition:
+        color 150ms ease,
+        border-color 150ms ease,
+        background-color 150ms ease;
+}
+
+.ec-dossier-tab svg {
+    width: 16px;
+    height: 16px;
+
+    flex: 0 0 16px;
+}
+
+.ec-dossier-tab:hover {
+    color: #dce1f2;
+
+    background:
+        rgba(255, 255, 255, 0.035);
+}
+
+.ec-dossier-tab.is-active {
+    color: #dffff9;
+
+    border-color:
+        rgba(67, 185, 167, 0.22);
+
+    background:
+        rgba(67, 185, 167, 0.11);
+}
+
+.ec-dossier-tab.is-active svg {
+    color: var(--ec-primary);
+}
+
+.ec-dossier-tab-count {
+    min-width: 21px;
+    height: 21px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 6px;
+
+    border-radius: 999px;
+
+    color: #9ca6c6;
+
+    background:
+        rgba(255, 255, 255, 0.05);
+
+    font-size: 9px;
+    font-weight: 750;
+}
+
+.ec-dossier-tab.is-active
+.ec-dossier-tab-count {
+    color: var(--ec-primary);
+
+    background:
+        rgba(67, 185, 167, 0.10);
+}
+
+.ec-dossier-tab-panel {
+    min-width: 0;
+}
+
+.ec-show-more-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 13px 18px;
+
+    border-top:
+        1px solid
+        var(--ec-border-soft);
+
+    background:
+        rgba(255, 255, 255, 0.012);
+}
+
+.ec-show-more-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    min-height: 32px;
+
+    padding: 0 11px;
+
+    border: 0;
+    border-radius: 6px;
+
+    color: #8e98b9;
+    background: transparent;
+
+    font-size: 11px;
+    font-weight: 650;
+
+    cursor: pointer;
+
+    transition:
+        color 150ms ease,
+        background-color 150ms ease;
+}
+
+.ec-show-more-button:hover {
+    color: var(--ec-primary);
+
+    background:
+        rgba(67, 185, 167, 0.055);
+}
+
+.ec-show-more-button svg {
+    width: 14px;
+    height: 14px;
+
+    transition:
+        transform 160ms ease;
+}
+
+.ec-show-more-button svg.is-expanded {
+    transform:
+        rotate(180deg);
+}
+
+@media (max-width: 639px) {
+    .ec-dossier-tabs {
+        top: calc(
+            var(--ec-topbar-height)
+            + 6px
+        );
+
+        margin-inline: -4px;
+
+        border-radius: 8px;
+    }
+
+    .ec-dossier-tab {
+        min-height: 36px;
+
+        padding-inline: 11px;
+
+        font-size: 11px;
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Company dossier - refinamento V3
+|--------------------------------------------------------------------------
+*/
+
+/*
+ * Contatos individuais ficam secundários.
+ * Primeiro mostramos somente os contatos
+ * únicos do grupo.
+ */
+.ec-contact-units-toggle {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    padding: 12px 14px;
+
+    border:
+        1px solid
+        rgba(255, 255, 255, 0.06);
+
+    border-radius: 8px;
+
+    color: #c9cfe3;
+
+    background:
+        rgba(255, 255, 255, 0.018);
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+        border-color 150ms ease,
+        background-color 150ms ease;
+}
+
+.ec-contact-units-toggle:hover {
+    border-color:
+        rgba(67, 185, 167, 0.18);
+
+    background:
+        rgba(67, 185, 167, 0.035);
+}
+
+.ec-contact-units-toggle strong {
+    display: block;
+
+    color: #dfe3f1;
+
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.ec-contact-units-toggle small {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #737d9e;
+
+    font-size: 9px;
+}
+
+.ec-contact-toggle-action {
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    color: var(--ec-primary);
+
+    font-size: 10px;
+    font-weight: 650;
+}
+
+.ec-contact-toggle-action svg {
+    width: 13px;
+    height: 13px;
+
+    transition:
+        transform 160ms ease;
+}
+
+.ec-contact-toggle-action svg.is-expanded {
+    transform:
+        rotate(180deg);
+}
+
+
+/*
+ * A lista manual da matriz é operacional.
+ * Mantemos compacta para não virar
+ * uma segunda listagem gigante.
+ */
+.ec-cnae-row {
+    min-height: 56px;
+
+    padding:
+        10px 14px;
+}
+
+
+/*
+ * A barra de navegação não precisa
+ * preencher toda a largura do dossiê.
+ */
+.ec-dossier-tabs {
+    box-shadow:
+        0 10px 28px
+        rgba(5, 8, 28, 0.16);
+}
+
+
+/*
+ * Em telas menores voltamos a preencher
+ * a largura disponível.
+ */
+@media (max-width: 767px) {
+    .ec-dossier-tabs {
+        width: 100%;
+    }
+
+    .ec-dossier-tab {
+        flex: 1 0 auto;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Dashboard - UX Refresh v2
+|--------------------------------------------------------------------------
+*/
+
+html {
+    scroll-behavior: smooth;
+}
+
+#qualidade,
+#estrutura {
+    scroll-margin-top: 95px;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| HERO
+|--------------------------------------------------------------------------
+*/
+
+.ec-dashboard-hero-clean {
+    min-height: 166px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 28px;
+
+    padding:
+        24px
+        26px;
+
+    background:
+        radial-gradient(
+            circle at 76% 0%,
+            rgba(36, 219, 200, .08),
+            transparent 23rem
+        ),
+        radial-gradient(
+            circle at 95% 100%,
+            rgba(28, 116, 225, .12),
+            transparent 28rem
+        ),
+        linear-gradient(
+            110deg,
+            rgba(7, 29, 55, .97),
+            rgba(7, 37, 68, .81)
+        );
+}
+
+.ec-dashboard-hero-clean
+.ec-dashboard-hero-copy {
+    width:
+        min(
+            510px,
+            44%
+        );
+
+    padding: 0;
+}
+
+.ec-dashboard-hero-clean
+.ec-dashboard-subtitle {
+    max-width: 490px;
+
+    line-height: 1.55;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| STATUS
+|--------------------------------------------------------------------------
+*/
+
+.ec-dashboard-system-row {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 7px;
+
+    margin-top: 17px;
+}
+
+.ec-dashboard-system-badge {
+    min-height: 27px;
+
+    display: inline-flex;
+    align-items: center;
+
+    gap: 7px;
+
+    padding:
+        5px
+        9px;
+
+    border:
+        1px solid
+        rgba(
+            95,
+            155,
+            220,
+            .13
+        );
+
+    border-radius: 999px;
+
+    background:
+        rgba(
+            9,
+            28,
+            52,
+            .55
+        );
+
+    color: #91a7c1;
+
+    font-size: 9px;
+    font-weight: 650;
+}
+
+.ec-dashboard-system-badge i {
+    width: 6px;
+    height: 6px;
+
+    flex:
+        0
+        0
+        6px;
+
+    border-radius: 50%;
+
+    background: #617792;
+}
+
+.ec-dashboard-system-badge.is-online {
+    color: #67ddc7;
+
+    border-color:
+        rgba(
+            43,
+            224,
+            205,
+            .18
+        );
+
+    background:
+        rgba(
+            21,
+            104,
+            99,
+            .13
+        );
+}
+
+.ec-dashboard-system-badge.is-online i {
+    background: #27ddbd;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(
+            39,
+            221,
+            189,
+            .08
+        ),
+        0 0 10px
+        rgba(
+            39,
+            221,
+            189,
+            .35
+        );
+}
+
+.ec-dashboard-system-badge.is-offline {
+    color: #cb9884;
+
+    border-color:
+        rgba(
+            218,
+            125,
+            88,
+            .18
+        );
+}
+
+.ec-dashboard-system-badge.is-offline i {
+    background: #d88968;
+}
+
+.ec-dashboard-system-badge.is-neutral {
+    color: #8fa6c1;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| HERO ACTIONS
+|--------------------------------------------------------------------------
+*/
+
+.ec-dashboard-hero-actions {
+    position: relative;
+    z-index: 3;
+
+    width:
+        min(
+            620px,
+            54%
+        );
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(
+                0,
+                1fr
+            )
+        );
+
+    gap: 9px;
+}
+
+.ec-dashboard-action {
+    min-height: 61px;
+
+    display: grid;
+
+    grid-template-columns:
+        36px
+        minmax(
+            0,
+            1fr
+        )
+        auto;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding:
+        10px
+        12px;
+
+    border:
+        1px solid
+        rgba(
+            73,
+            140,
+            208,
+            .20
+        );
+
+    border-radius: 11px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(
+                13,
+                49,
+                85,
+                .76
+            ),
+            rgba(
+                8,
+                33,
+                63,
+                .82
+            )
+        );
+
+    color: inherit;
+
+    text-decoration: none;
+
+    transition:
+        transform 150ms ease,
+        border-color 150ms ease,
+        background 150ms ease,
+        box-shadow 150ms ease;
+}
+
+.ec-dashboard-action:hover {
+    transform:
+        translateY(
+            -2px
+        );
+
+    border-color:
+        rgba(
+            46,
+            216,
+            200,
+            .36
+        );
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(
+                13,
+                61,
+                97,
+                .94
+            ),
+            rgba(
+                8,
+                39,
+                73,
+                .95
+            )
+        );
+
+    box-shadow:
+        0 10px 26px
+        rgba(
+            0,
+            0,
+            0,
+            .18
+        );
+}
+
+.ec-dashboard-action-primary {
+    border-color:
+        rgba(
+            46,
+            224,
+            205,
+            .31
+        );
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(
+                13,
+                89,
+                99,
+                .52
+            ),
+            rgba(
+                9,
+                53,
+                80,
+                .89
+            )
+        );
+}
+
+.ec-dashboard-action-icon {
+    width: 36px;
+    height: 36px;
+
+    display: grid;
+
+    place-items: center;
+
+    border:
+        1px solid
+        rgba(
+            46,
+            224,
+            205,
+            .17
+        );
+
+    border-radius: 9px;
+
+    color: #2ee0ce;
+
+    background:
+        rgba(
+            34,
+            178,
+            194,
+            .10
+        );
+}
+
+.ec-dashboard-action-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.ec-dashboard-action small {
+    display: block;
+
+    color: #577b9d;
+
+    font-size: 7px;
+    font-weight: 800;
+
+    letter-spacing: .11em;
+}
+
+.ec-dashboard-action strong {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #e9f3ff;
+
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.ec-dashboard-action > b {
+    color: #35dfca;
+
+    font-size: 16px;
+    font-weight: 500;
+
+    transition:
+        transform 150ms ease;
+}
+
+.ec-dashboard-action:hover > b {
+    transform:
+        translateX(
+            3px
+        );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| KPI CLICAVEL
+|--------------------------------------------------------------------------
+*/
+
+.ec-dashboard-card-link {
+    display: block;
+
+    padding-bottom: 39px;
+
+    color: inherit;
+
+    text-decoration: none;
+
+    cursor: pointer;
+}
+
+.ec-dashboard-card-link:focus-visible,
+.ec-dashboard-action:focus-visible {
+    outline:
+        2px solid
+        rgba(
+            43,
+            224,
+            205,
+            .85
+        );
+
+    outline-offset: 3px;
+}
+
+.ec-dashboard-card-footer {
+    position: absolute;
+
+    left: 16px;
+    right: 16px;
+    bottom: 12px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    color: #617d9c;
+
+    font-size: 8px;
+}
+
+.ec-dashboard-card-footer b {
+    color: #35dcca;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    transition:
+        transform 150ms ease;
+}
+
+.ec-dashboard-card-link:hover
+.ec-dashboard-card-footer {
+    color: #8ba7c3;
+}
+
+.ec-dashboard-card-link:hover
+.ec-dashboard-card-footer b {
+    transform:
+        translateX(
+            3px
+        );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| RESPONSIVO
+|--------------------------------------------------------------------------
+*/
+
+@media (
+    max-width: 1120px
+) {
+
+    .ec-dashboard-hero-clean {
+        align-items: flex-start;
+    }
+
+    .ec-dashboard-hero-clean
+    .ec-dashboard-hero-copy {
+        width: 43%;
+    }
+
+    .ec-dashboard-hero-actions {
+        width: 57%;
+    }
+
+}
+
+
+@media (
+    max-width: 900px
+) {
+
+    .ec-dashboard-hero-clean {
+        flex-direction: column;
+    }
+
+    .ec-dashboard-hero-clean
+    .ec-dashboard-hero-copy,
+    .ec-dashboard-hero-actions {
+        width: 100%;
+        max-width: none;
+    }
+
+}
+
+
+@media (
+    max-width: 620px
+) {
+
+    .ec-dashboard-hero-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .ec-dashboard-system-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
 }

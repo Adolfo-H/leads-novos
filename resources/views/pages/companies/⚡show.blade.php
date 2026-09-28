@@ -1,8 +1,9 @@
 <?php
 
+use App\Contracts\ExportResearchProvider;
 use App\Models\Company;
-use App\Services\EstablishmentService;
 use App\Services\CrmReprospectingPolicyService;
+use App\Services\EstablishmentService;
 use App\Services\ExportResearchEligibilityService;
 use App\Services\ExportResearchQueueService;
 use App\Services\SdrScoringService;
@@ -18,11 +19,11 @@ new class extends Component
 
     public string $newCnaeCode = '';
 
-public string $newCnaeDescription = '';
+    public string $newCnaeDescription = '';
 
-public bool $newCnaePrimary = false;
+    public bool $newCnaePrimary = false;
 
-public bool $showCnaeForm = false;
+    public bool $showCnaeForm = false;
 
     public function mount(Company $company): void
     {
@@ -65,10 +66,9 @@ public bool $showCnaeForm = false;
         return $this->company
             ->establishments
             ->filter(
-                fn ($establishment): bool =>
-                    trim(
-                        (string) $establishment->email
-                    ) !== ''
+                fn ($establishment): bool => trim(
+                    (string) $establishment->email
+                ) !== ''
                     || trim(
                         (string) $establishment->phone_1
                     ) !== ''
@@ -114,20 +114,19 @@ public bool $showCnaeForm = false;
 
         try {
             if (
-                $value instanceof
-                \DateTimeInterface
+                $value instanceof DateTimeInterface
             ) {
                 return $value->format(
                     'd/m/Y'
                 );
             }
 
-            return \Carbon\CarbonImmutable::parse(
+            return CarbonImmutable::parse(
                 (string) $value
             )->format(
                 'd/m/Y'
             );
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return '—';
         }
     }
@@ -148,8 +147,7 @@ public bool $showCnaeForm = false;
                             ->street
                 ),
             ],
-            fn ($value): bool =>
-                $value !== ''
+            fn ($value): bool => $value !== ''
         );
 
         $street =
@@ -438,8 +436,7 @@ public bool $showCnaeForm = false;
 
         foreach (
             $this->company
-                ->establishments
-            as $establishment
+                ->establishments as $establishment
         ) {
             $type =
                 $establishment->type
@@ -509,11 +506,9 @@ public bool $showCnaeForm = false;
                     $emailMap[
                         $email
                     ] = [
-                        'value' =>
-                            $email,
+                        'value' => $email,
 
-                        'establishments' =>
-                            [],
+                        'establishments' => [],
                     ];
                 }
 
@@ -534,8 +529,7 @@ public bool $showCnaeForm = false;
                 [
                     $establishment->phone_1,
                     $establishment->phone_2,
-                ]
-                as $phone
+                ] as $phone
             ) {
                 $digits =
                     preg_replace(
@@ -561,21 +555,17 @@ public bool $showCnaeForm = false;
                     $phoneMap[
                         $digits
                     ] = [
-                        'value' =>
-                            $this
-                                ->formatPhone(
-                                    $digits
-                                ),
+                        'value' => $this
+                            ->formatPhone(
+                                $digits
+                            ),
 
-                        'raw' =>
-                            $digits,
+                        'raw' => $digits,
 
-                        'href' =>
-                            'tel:+55'
+                        'href' => 'tel:+55'
                             .$digits,
 
-                        'establishments' =>
-                            [],
+                        'establishments' => [],
                     ];
                 }
 
@@ -602,16 +592,13 @@ public bool $showCnaeForm = false;
                 );
 
             $emails[] = [
-                'value' =>
-                    $item['value'],
+                'value' => $item['value'],
 
-                'count' =>
-                    count(
-                        $locations
-                    ),
+                'count' => count(
+                    $locations
+                ),
 
-                'locations' =>
-                    $locations,
+                'locations' => $locations,
             ];
         }
 
@@ -628,22 +615,17 @@ public bool $showCnaeForm = false;
                 );
 
             $phones[] = [
-                'value' =>
-                    $item['value'],
+                'value' => $item['value'],
 
-                'raw' =>
-                    $item['raw'],
+                'raw' => $item['raw'],
 
-                'href' =>
-                    $item['href'],
+                'href' => $item['href'],
 
-                'count' =>
-                    count(
-                        $locations
-                    ),
+                'count' => count(
+                    $locations
+                ),
 
-                'locations' =>
-                    $locations,
+                'locations' => $locations,
             ];
         }
 
@@ -678,16 +660,13 @@ public bool $showCnaeForm = false;
         );
 
         return [
-            'units_with_contact' =>
-                $this
-                    ->contactEstablishments
-                    ->count(),
+            'units_with_contact' => $this
+                ->contactEstablishments
+                ->count(),
 
-            'emails' =>
-                $emails,
+            'emails' => $emails,
 
-            'phones' =>
-                $phones,
+            'phones' => $phones,
         ];
     }
 
@@ -728,8 +707,7 @@ public bool $showCnaeForm = false;
 
         foreach (
             $this->company
-                ->establishments
-            as $establishment
+                ->establishments as $establishment
         ) {
             $total++;
 
@@ -860,61 +838,47 @@ public bool $showCnaeForm = false;
         $states = [];
 
         foreach (
-            $stateCounts
-            as $state => $count
+            $stateCounts as $state => $count
         ) {
             $states[] = [
-                'state' =>
-                    $state,
+                'state' => $state,
 
-                'count' =>
-                    $count,
+                'count' => $count,
             ];
         }
 
         $statuses = [];
 
         foreach (
-            $statusCounts
-            as $status => $count
+            $statusCounts as $status => $count
         ) {
             $statuses[] = [
-                'status' =>
-                    $status,
+                'status' => $status,
 
-                'count' =>
-                    $count,
+                'count' => $count,
             ];
         }
 
         return [
-            'total' =>
-                $total,
+            'total' => $total,
 
-            'active' =>
-                $active,
+            'active' => $active,
 
-            'inactive' =>
-                $inactive,
+            'inactive' => $inactive,
 
-            'unknown' =>
-                $unknown,
+            'unknown' => $unknown,
 
-            'active_states_count' =>
-                count(
-                    $stateCounts
-                ),
+            'active_states_count' => count(
+                $stateCounts
+            ),
 
-            'active_municipalities_count' =>
-                count(
-                    $municipalities
-                ),
+            'active_municipalities_count' => count(
+                $municipalities
+            ),
 
-            'states' =>
-                $states,
+            'states' => $states,
 
-            'statuses' =>
-                $statuses,
+            'statuses' => $statuses,
         ];
     }
 
@@ -925,12 +889,10 @@ public bool $showCnaeForm = false;
 
         foreach (
             $this->company
-                ->establishments
-            as $establishment
+                ->establishments as $establishment
         ) {
             foreach (
-                $establishment->cnaes
-                as $cnae
+                $establishment->cnaes as $cnae
             ) {
                 $code =
                     trim(
@@ -947,20 +909,15 @@ public bool $showCnaeForm = false;
                     )
                 ) {
                     $grouped[$code] = [
-                        'code' =>
-                            $code,
+                        'code' => $code,
 
-                        'description' =>
-                            $cnae->description,
+                        'description' => $cnae->description,
 
-                        'units' =>
-                            [],
+                        'units' => [],
 
-                        'primary_units' =>
-                            [],
+                        'primary_units' => [],
 
-                        'active_units' =>
-                            [],
+                        'active_units' => [],
                     ];
                 }
 
@@ -1086,37 +1043,31 @@ public bool $showCnaeForm = false;
                         );
 
                     return [
-                        'code' =>
-                            $item['code'],
+                        'code' => $item['code'],
 
-                        'description' =>
-                            $item[
+                        'description' => $item[
                                 'description'
                             ],
 
-                        'units_count' =>
-                            count(
-                                $item[
-                                    'units'
-                                ]
-                            ),
+                        'units_count' => count(
+                            $item[
+                                'units'
+                            ]
+                        ),
 
-                        'active_units_count' =>
-                            count(
-                                $item[
-                                    'active_units'
-                                ]
-                            ),
+                        'active_units_count' => count(
+                            $item[
+                                'active_units'
+                            ]
+                        ),
 
-                        'primary_units_count' =>
-                            count(
-                                $item[
-                                    'primary_units'
-                                ]
-                            ),
+                        'primary_units_count' => count(
+                            $item[
+                                'primary_units'
+                            ]
+                        ),
 
-                        'locations' =>
-                            $locations,
+                        'locations' => $locations,
                     ];
                 }
             )
@@ -1166,10 +1117,9 @@ public bool $showCnaeForm = false;
         return $this->matrix
             ?->cnaes
             ->first(
-                fn ($cnae) =>
-                    (bool) $cnae
-                        ->pivot
-                        ->is_primary
+                fn ($cnae) => (bool) $cnae
+                    ->pivot
+                    ->is_primary
             );
     }
 
@@ -1183,10 +1133,9 @@ public bool $showCnaeForm = false;
         return $this->matrix
             ->cnaes
             ->filter(
-                fn ($cnae) =>
-                    ! (bool) $cnae
-                        ->pivot
-                        ->is_primary
+                fn ($cnae) => ! (bool) $cnae
+                    ->pivot
+                    ->is_primary
             )
             ->values();
     }
@@ -1239,200 +1188,197 @@ public bool $showCnaeForm = false;
             )->format(
                 'd/m/Y'
             );
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return '—';
         }
     }
 
-public function toggleCnaeForm(): void
-{
-    $this->showCnaeForm =
-        ! $this->showCnaeForm;
+    public function toggleCnaeForm(): void
+    {
+        $this->showCnaeForm =
+            ! $this->showCnaeForm;
 
-    if (! $this->showCnaeForm) {
+        if (! $this->showCnaeForm) {
+            $this->resetCnaeForm();
+        }
+    }
+
+    public function addCnae(
+        EstablishmentService $service
+    ): void {
+        $validated = $this->validate([
+            'newCnaeCode' => [
+                'required',
+                'string',
+                'max:20',
+            ],
+
+            'newCnaeDescription' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'newCnaePrimary' => [
+                'boolean',
+            ],
+        ]);
+
+        if (! $this->matrix) {
+            $this->addError(
+                'newCnaeCode',
+                'A empresa não possui matriz cadastrada.'
+            );
+
+            return;
+        }
+
+        try {
+            $service->addCnae(
+                $this->matrix,
+                [
+                    'code' => $validated[
+                            'newCnaeCode'
+                        ],
+
+                    'description' => $validated[
+                            'newCnaeDescription'
+                        ] ?: null,
+
+                    'is_primary' => $validated[
+                            'newCnaePrimary'
+                        ],
+                ]
+            );
+        } catch (InvalidArgumentException $exception) {
+            $this->addError(
+                'newCnaeCode',
+                $exception->getMessage()
+            );
+
+            return;
+        }
+
+        $this->reloadCompany();
+
         $this->resetCnaeForm();
-    }
-}
 
-public function addCnae(
-    EstablishmentService $service
-): void {
-    $validated = $this->validate([
-        'newCnaeCode' => [
-            'required',
-            'string',
-            'max:20',
-        ],
+        $this->showCnaeForm = false;
 
-        'newCnaeDescription' => [
-            'nullable',
-            'string',
-            'max:255',
-        ],
-
-        'newCnaePrimary' => [
-            'boolean',
-        ],
-    ]);
-
-    if (! $this->matrix) {
-        $this->addError(
-            'newCnaeCode',
-            'A empresa não possui matriz cadastrada.'
+        session()->flash(
+            'success',
+            'CNAE adicionado com sucesso.'
         );
-
-        return;
     }
 
-    try {
-        $service->addCnae(
-            $this->matrix,
-            [
-                'code' =>
-                    $validated[
-                        'newCnaeCode'
-                    ],
+    public function makeCnaePrimary(
+        int $cnaeId,
+        EstablishmentService $service
+    ): void {
+        if (! $this->matrix) {
+            return;
+        }
 
-                'description' =>
-                    $validated[
-                        'newCnaeDescription'
-                    ] ?: null,
+        $cnae = $this->matrix
+            ->cnaes
+            ->firstWhere(
+                'id',
+                $cnaeId
+            );
 
-                'is_primary' =>
-                    $validated[
-                        'newCnaePrimary'
-                    ],
-            ]
+        if (! $cnae) {
+            return;
+        }
+
+        try {
+            $service->setPrimaryCnae(
+                $this->matrix,
+                $cnae
+            );
+        } catch (InvalidArgumentException) {
+            return;
+        }
+
+        $this->reloadCompany();
+
+        session()->flash(
+            'success',
+            'CNAE principal atualizado.'
         );
-    } catch (\InvalidArgumentException $exception) {
-        $this->addError(
-            'newCnaeCode',
-            $exception->getMessage()
-        );
-
-        return;
     }
 
-    $this->reloadCompany();
+    public function removeCnae(
+        int $cnaeId,
+        EstablishmentService $service
+    ): void {
+        if (! $this->matrix) {
+            return;
+        }
 
-    $this->resetCnaeForm();
+        $cnae = $this->matrix
+            ->cnaes
+            ->firstWhere(
+                'id',
+                $cnaeId
+            );
 
-    $this->showCnaeForm = false;
+        if (! $cnae) {
+            return;
+        }
 
-    session()->flash(
-        'success',
-        'CNAE adicionado com sucesso.'
-    );
-}
-
-public function makeCnaePrimary(
-    int $cnaeId,
-    EstablishmentService $service
-): void {
-    if (! $this->matrix) {
-        return;
-    }
-
-    $cnae = $this->matrix
-        ->cnaes
-        ->firstWhere(
-            'id',
-            $cnaeId
-        );
-
-    if (! $cnae) {
-        return;
-    }
-
-    try {
-        $service->setPrimaryCnae(
+        $service->removeCnae(
             $this->matrix,
             $cnae
         );
-    } catch (\InvalidArgumentException) {
-        return;
-    }
 
-    $this->reloadCompany();
+        $this->reloadCompany();
 
-    session()->flash(
-        'success',
-        'CNAE principal atualizado.'
-    );
-}
-
-public function removeCnae(
-    int $cnaeId,
-    EstablishmentService $service
-): void {
-    if (! $this->matrix) {
-        return;
-    }
-
-    $cnae = $this->matrix
-        ->cnaes
-        ->firstWhere(
-            'id',
-            $cnaeId
+        session()->flash(
+            'success',
+            'CNAE removido.'
         );
-
-    if (! $cnae) {
-        return;
     }
 
-    $service->removeCnae(
-        $this->matrix,
-        $cnae
-    );
+    private function resetCnaeForm(): void
+    {
+        $this->newCnaeCode = '';
 
-    $this->reloadCompany();
+        $this->newCnaeDescription = '';
 
-    session()->flash(
-        'success',
-        'CNAE removido.'
-    );
-}
+        $this->newCnaePrimary = false;
 
-private function resetCnaeForm(): void
-{
-    $this->newCnaeCode = '';
-
-    $this->newCnaeDescription = '';
-
-    $this->newCnaePrimary = false;
-
-    $this->resetValidation([
-        'newCnaeCode',
-        'newCnaeDescription',
-        'newCnaePrimary',
-    ]);
-}
-
-private function reloadCompany(): void
-{
-    $this->company = $this->company
-        ->fresh()
-        ->load([
-            'establishments.cnaes',
-            'icpScore',
-            'crmCheck',
-            'exportIntelligence',
-            'exportEvidence',
-            'sdrScore',
+        $this->resetValidation([
+            'newCnaeCode',
+            'newCnaeDescription',
+            'newCnaePrimary',
         ]);
+    }
 
-    unset(
-        $this->matrix,
-        $this->primaryCnae,
-        $this->secondaryCnaes,
-        $this->groupCnaes,
-        $this->groupOperationalSummary,
-        $this->contactEstablishments,
-        $this->groupContactSummary,
-        $this->crmReprospecting,
-        $this->exportResearchSummary,
-    );
-}
+    private function reloadCompany(): void
+    {
+        $this->company = $this->company
+            ->fresh()
+            ->load([
+                'establishments.cnaes',
+                'icpScore',
+                'crmCheck',
+                'exportIntelligence',
+                'exportEvidence',
+                'sdrScore',
+            ]);
+
+        unset(
+            $this->matrix,
+            $this->primaryCnae,
+            $this->secondaryCnaes,
+            $this->groupCnaes,
+            $this->groupOperationalSummary,
+            $this->contactEstablishments,
+            $this->groupContactSummary,
+            $this->crmReprospecting,
+            $this->exportResearchSummary,
+        );
+    }
 
     /**
      * @return array{
@@ -1464,23 +1410,20 @@ private function reloadCompany(): void
 
         $provider =
             app(
-                \App\Contracts\ExportResearchProvider::class
+                ExportResearchProvider::class
             )->name();
 
         $apiKey =
             match ($provider) {
-                'tavily' =>
-                    config(
-                        'services.tavily.api_key'
-                    ),
+                'tavily' => config(
+                    'services.tavily.api_key'
+                ),
 
-                'openai-web-search' =>
-                    config(
-                        'services.openai.api_key'
-                    ),
+                'openai-web-search' => config(
+                    'services.openai.api_key'
+                ),
 
-                default =>
-                    null,
+                default => null,
             };
 
         return is_string($apiKey)
@@ -1500,25 +1443,22 @@ private function reloadCompany(): void
         ) {
             $provider =
                 app(
-                    \App\Contracts\ExportResearchProvider::class
+                    ExportResearchProvider::class
                 )->name();
         }
 
         return match ($provider) {
-            'tavily' =>
-                'Tavily',
+            'tavily' => 'Tavily',
 
-            'openai-web-search' =>
-                'OpenAI Web',
+            'openai-web-search' => 'OpenAI Web',
 
-            default =>
-                ucfirst(
-                    str_replace(
-                        '-',
-                        ' ',
-                        $provider
-                    )
-                ),
+            default => ucfirst(
+                str_replace(
+                    '-',
+                    ' ',
+                    $provider
+                )
+            ),
         };
     }
 
@@ -1646,11 +1586,9 @@ private function reloadCompany(): void
          */
         $result =
             $queue->dispatch(
-                company:
-                    $this->company,
+                company: $this->company,
 
-                force:
-                    true,
+                force: true,
             );
 
         $this->reloadCompany();
@@ -1684,17 +1622,13 @@ private function reloadCompany(): void
         ?string $status
     ): string {
         return match ($status) {
-            'yes' =>
-                'Sim',
+            'yes' => 'Sim',
 
-            'no' =>
-                'Não',
+            'no' => 'Não',
 
-            'uncertain' =>
-                'Incerto',
+            'uncertain' => 'Incerto',
 
-            default =>
-                'Não pesquisada',
+            default => 'Não pesquisada',
         };
     }
 
@@ -1702,20 +1636,16 @@ private function reloadCompany(): void
         ?string $status
     ): string {
         return match ($status) {
-            'yes' =>
-                'bg-emerald-500/15 '
+            'yes' => 'bg-emerald-500/15 '
                 .'text-emerald-300',
 
-            'no' =>
-                'bg-rose-500/15 '
+            'no' => 'bg-rose-500/15 '
                 .'text-rose-300',
 
-            'uncertain' =>
-                'bg-amber-500/15 '
+            'uncertain' => 'bg-amber-500/15 '
                 .'text-amber-300',
 
-            default =>
-                'bg-white/5 '
+            default => 'bg-white/5 '
                 .'text-[#7f87a7]',
         };
     }
@@ -1724,17 +1654,13 @@ private function reloadCompany(): void
         string $dimension
     ): string {
         return match ($dimension) {
-            'direct' =>
-                'Exportação direta',
+            'direct' => 'Exportação direta',
 
-            'indirect' =>
-                'Exportação indireta',
+            'indirect' => 'Exportação indireta',
 
-            'trading' =>
-                'Trading',
+            'trading' => 'Trading',
 
-            default =>
-                ucfirst($dimension),
+            default => ucfirst($dimension),
         };
     }
 
@@ -1755,7 +1681,56 @@ private function reloadCompany(): void
 };
 ?>
 
-<div class="ec-page-shell">
+<div
+    class="ec-page-shell"
+    x-data="{
+        dossierTab:
+            new URLSearchParams(
+                window.location.search
+            ).get('tab')
+            || 'commercial',
+
+        expandedTimeline: false,
+        expandedEstablishments: false,
+        expandedGroupCnaes: false,
+        expandedMatrixCnaes: false,
+        showUnitContacts: false,
+
+        setDossierTab(tab) {
+            this.dossierTab = tab;
+
+            const url =
+                new URL(
+                    window.location.href
+                );
+
+            url.searchParams.set(
+                'tab',
+                tab
+            );
+
+            window.history.replaceState(
+                {},
+                '',
+                url
+            );
+        }
+    }"
+    x-init="
+        if (
+            ! [
+                'commercial',
+                'company',
+                'cnaes'
+            ].includes(
+                dossierTab
+            )
+        ) {
+            dossierTab =
+                'commercial';
+        }
+    "
+>
 
     @php
         /*
@@ -1932,8 +1907,127 @@ private function reloadCompany(): void
     @endif
 
 
+    {{-- NAVEGACAO DO DOSSIE --}}
+    <nav
+        id="dossier-tabs"
+        class="ec-dossier-tabs"
+        aria-label="Seções do dossiê"
+    >
+
+        <button
+            type="button"
+            class="ec-dossier-tab"
+            :class="{
+                'is-active':
+                    dossierTab === 'commercial'
+            }"
+            @click="
+                setDossierTab(
+                    'commercial'
+                )
+            "
+        >
+            <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+            >
+                <path d="M3 3v18h18" />
+                <path d="m7 15 4-4 3 3 5-6" />
+            </svg>
+
+            Comercial
+        </button>
+
+
+        <button
+            type="button"
+            class="ec-dossier-tab"
+            :class="{
+                'is-active':
+                    dossierTab === 'company'
+            }"
+            @click="
+                setDossierTab(
+                    'company'
+                )
+            "
+        >
+            <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+            >
+                <path d="M3 21h18" />
+                <path d="M6 21V7l6-4 6 4v14" />
+                <path d="M9 10h1" />
+                <path d="M14 10h1" />
+                <path d="M9 14h1" />
+                <path d="M14 14h1" />
+            </svg>
+
+            Empresa & grupo
+
+            <span class="ec-dossier-tab-count">
+                {{
+                    $company
+                        ->establishments
+                        ->count()
+                }}
+            </span>
+        </button>
+
+
+        <button
+            type="button"
+            class="ec-dossier-tab"
+            :class="{
+                'is-active':
+                    dossierTab === 'cnaes'
+            }"
+            @click="
+                setDossierTab(
+                    'cnaes'
+                )
+            "
+        >
+            <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+            >
+                <path d="M4 6h16" />
+                <path d="M4 12h16" />
+                <path d="M4 18h10" />
+            </svg>
+
+            CNAEs
+
+            <span class="ec-dossier-tab-count">
+                {{
+                    $this
+                        ->groupCnaes
+                        ->count()
+                }}
+            </span>
+        </button>
+
+    </nav>
+
+
     {{-- INTELIGÊNCIA COMERCIAL --}}
-    <section>
+    <section
+        x-show="
+            dossierTab
+            === 'commercial'
+        "
+        x-cloak
+        x-transition.opacity.duration.120ms
+        class="ec-dossier-tab-panel"
+    >
 
         <div class="ec-section-heading">
 
@@ -2237,7 +2331,20 @@ private function reloadCompany(): void
                                     text-[#eef1ff]
                                 "
                             >
-                                Pesquisa automática bloqueada
+                                {{
+                                    in_array(
+                                        $researchEligibility[
+                                            'reason'
+                                        ],
+                                        [
+                                            'crm_client',
+                                            'crm_opportunity',
+                                        ],
+                                        true
+                                    )
+                                        ? 'Pesquisa de exportação disponível'
+                                        : 'Pesquisa automática indisponível'
+                                }}
                             </div>
 
                             <div
@@ -2247,9 +2354,20 @@ private function reloadCompany(): void
                                 "
                             >
                                 {{
-                                    $researchEligibility[
-                                        'message'
-                                    ]
+                                    in_array(
+                                        $researchEligibility[
+                                            'reason'
+                                        ],
+                                        [
+                                            'crm_client',
+                                            'crm_opportunity',
+                                        ],
+                                        true
+                                    )
+                                        ? 'Não necessária nesta etapa porque a empresa já está sendo trabalhada no CRM.'
+                                        : $researchEligibility[
+                                            'message'
+                                        ]
                                 }}
                             </div>
 
@@ -4406,7 +4524,18 @@ private function reloadCompany(): void
                 ->groupOperationalSummary;
     @endphp
 
-    <section class="ec-detail-panel">
+    <section
+        x-show="
+            dossierTab
+            === 'company'
+        "
+        x-cloak
+        x-transition.opacity.duration.120ms
+        class="
+            ec-detail-panel
+            ec-dossier-tab-panel
+        "
+    >
 
         <div class="ec-detail-header">
 
@@ -4720,7 +4849,18 @@ private function reloadCompany(): void
 
 
     {{-- DADOS + CONTATO --}}
-    <div class="ec-dossier-main-grid">
+    <div
+        x-show="
+            dossierTab
+            === 'company'
+        "
+        x-cloak
+        x-transition.opacity.duration.120ms
+        class="
+            ec-dossier-main-grid
+            ec-dossier-tab-panel
+        "
+    >
 
         {{-- DADOS CADASTRAIS --}}
         <section class="ec-detail-panel ec-dossier-data-panel">
@@ -5371,6 +5511,91 @@ private function reloadCompany(): void
 
                 <div
                     class="
+                        mx-4 mb-4
+                    "
+                >
+
+                    <button
+                        type="button"
+                        class="
+                            ec-contact-units-toggle
+                        "
+                        @click="
+                            showUnitContacts =
+                                ! showUnitContacts
+                        "
+                    >
+
+                        <span>
+
+                            <strong>
+                                Contatos por unidade
+                            </strong>
+
+                            <small>
+                                {{
+                                    $this
+                                        ->contactEstablishments
+                                        ->count()
+                                }}
+                                unidade(s) com contato cadastrado
+                            </small>
+
+                        </span>
+
+                        <span
+                            class="
+                                ec-contact-toggle-action
+                            "
+                        >
+
+                            <span
+                                x-show="
+                                    ! showUnitContacts
+                                "
+                            >
+                                Ver unidades
+                            </span>
+
+                            <span
+                                x-show="
+                                    showUnitContacts
+                                "
+                                x-cloak
+                            >
+                                Ocultar
+                            </span>
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                :class="{
+                                    'is-expanded':
+                                        showUnitContacts
+                                }"
+                            >
+                                <path
+                                    d="m6 9 6 6 6-6"
+                                />
+                            </svg>
+
+                        </span>
+
+                    </button>
+
+                </div>
+
+
+                <div
+                    x-show="
+                        showUnitContacts
+                    "
+                    x-cloak
+                    x-transition.opacity.duration.120ms
+                    class="
+                        mx-4 mb-4
                         max-h-[430px]
                         space-y-3
                         overflow-y-auto
@@ -5704,7 +5929,18 @@ private function reloadCompany(): void
 
 
     {{-- ESTABELECIMENTOS --}}
-    <section class="ec-table-panel">
+    <section
+        x-show="
+            dossierTab
+            === 'company'
+        "
+        x-cloak
+        x-transition.opacity.duration.120ms
+        class="
+            ec-table-panel
+            ec-dossier-tab-panel
+        "
+    >
 
         <div class="ec-table-toolbar">
 
@@ -5800,6 +6036,16 @@ private function reloadCompany(): void
                     )
 
                         <tr
+                            @if (
+                                $loop->index
+                                >= 8
+                            )
+                                x-show="
+                                    expandedEstablishments
+                                "
+                                x-cloak
+                            @endif
+
                             wire:key="establishment-{{ $establishment->id }}"
                         >
 
@@ -6269,11 +6515,85 @@ private function reloadCompany(): void
 
         </div>
 
+
+        @if (
+            $company
+                ->establishments
+                ->count()
+            > 8
+        )
+
+            <div class="ec-show-more-bar">
+
+                <button
+                    type="button"
+                    class="ec-show-more-button"
+                    @click="
+                        expandedEstablishments =
+                            ! expandedEstablishments
+                    "
+                >
+
+                    <span
+                        x-show="
+                            ! expandedEstablishments
+                        "
+                    >
+                        Ver todas as
+                        {{
+                            $company
+                                ->establishments
+                                ->count()
+                        }}
+                        unidades
+                    </span>
+
+                    <span
+                        x-show="
+                            expandedEstablishments
+                        "
+                        x-cloak
+                    >
+                        Mostrar menos
+                    </span>
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        :class="{
+                            'is-expanded':
+                                expandedEstablishments
+                        }"
+                    >
+                        <path
+                            d="m6 9 6 6 6-6"
+                        />
+                    </svg>
+
+                </button>
+
+            </div>
+
+        @endif
+
     </section>
 
 
     {{-- CNAES DO GRUPO --}}
-    <section class="ec-detail-panel">
+    <section
+        x-show="
+            dossierTab
+            === 'cnaes'
+        "
+        x-cloak
+        x-transition.opacity.duration.120ms
+        class="
+            ec-detail-panel
+            ec-dossier-tab-panel
+        "
+    >
 
         <div class="ec-detail-header">
 
@@ -6330,6 +6650,16 @@ private function reloadCompany(): void
                 )
 
                     <div
+                        @if (
+                            $loop->index
+                            >= 6
+                        )
+                            x-show="
+                                expandedGroupCnaes
+                            "
+                            x-cloak
+                        @endif
+
                         wire:key="group-cnae-{{
                             $groupCnae['code']
                         }}"
@@ -6510,6 +6840,69 @@ private function reloadCompany(): void
 
             </div>
 
+
+            @if (
+                $this
+                    ->groupCnaes
+                    ->count()
+                > 6
+            )
+
+                <div class="ec-show-more-bar">
+
+                    <button
+                        type="button"
+                        class="ec-show-more-button"
+                        @click="
+                            expandedGroupCnaes =
+                                ! expandedGroupCnaes
+                        "
+                    >
+
+                        <span
+                            x-show="
+                                ! expandedGroupCnaes
+                            "
+                        >
+                            Ver todos os
+                            {{
+                                $this
+                                    ->groupCnaes
+                                    ->count()
+                            }}
+                            CNAEs
+                        </span>
+
+                        <span
+                            x-show="
+                                expandedGroupCnaes
+                            "
+                            x-cloak
+                        >
+                            Mostrar menos
+                        </span>
+
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            :class="{
+                                'is-expanded':
+                                    expandedGroupCnaes
+                            }"
+                        >
+                            <path
+                                d="m6 9 6 6 6-6"
+                            />
+                        </svg>
+
+                    </button>
+
+                </div>
+
+            @endif
+
         @else
 
             <div
@@ -6539,7 +6932,19 @@ private function reloadCompany(): void
 
 
     {{-- CNAES --}}
-    <section class="ec-detail-panel ec-cnae-panel">
+    <section
+        x-show="
+            dossierTab
+            === 'cnaes'
+        "
+        x-cloak
+        x-transition.opacity.duration.120ms
+        class="
+            ec-detail-panel
+            ec-cnae-panel
+            ec-dossier-tab-panel
+        "
+    >
 
         <div class="ec-detail-header ec-cnae-header">
 
@@ -6797,6 +7202,16 @@ private function reloadCompany(): void
                         @foreach ($this->secondaryCnaes as $cnae)
 
                             <div
+                                @if (
+                                    $loop->index
+                                    >= 6
+                                )
+                                    x-show="
+                                        expandedMatrixCnaes
+                                    "
+                                    x-cloak
+                                @endif
+
                                 wire:key="cnae-secondary-{{ $cnae->id }}"
                                 class="ec-cnae-row"
                             >
@@ -6843,6 +7258,75 @@ private function reloadCompany(): void
                         @endforeach
 
                     </div>
+
+
+                    @if (
+                        $this
+                            ->secondaryCnaes
+                            ->count()
+                        > 6
+                    )
+
+                        <div
+                            class="
+                                ec-show-more-bar
+                            "
+                        >
+
+                            <button
+                                type="button"
+                                class="
+                                    ec-show-more-button
+                                "
+                                @click="
+                                    expandedMatrixCnaes =
+                                        ! expandedMatrixCnaes
+                                "
+                            >
+
+                                <span
+                                    x-show="
+                                        ! expandedMatrixCnaes
+                                    "
+                                >
+                                    Ver todos os
+                                    {{
+                                        $this
+                                            ->secondaryCnaes
+                                            ->count()
+                                    }}
+                                    CNAEs secundários
+                                </span>
+
+                                <span
+                                    x-show="
+                                        expandedMatrixCnaes
+                                    "
+                                    x-cloak
+                                >
+                                    Mostrar menos
+                                </span>
+
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    :class="{
+                                        'is-expanded':
+                                            expandedMatrixCnaes
+                                    }"
+                                >
+                                    <path
+                                        d="m6 9 6 6 6-6"
+                                    />
+                                </svg>
+
+                            </button>
+
+                        </div>
+
+                    @endif
 
                 </div>
 

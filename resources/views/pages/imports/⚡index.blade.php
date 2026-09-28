@@ -702,2173 +702,719 @@ new class extends Component
 };
 ?>
 
-<div class="ec-page-shell ec-imports-page">
+<div class="ecim-page" x-data="{}">
 
-    <section class="ec-imports-hero">
+    @php
+        $batch = $this->currentBatch;
+        $recentBatches = $this->recentBatches;
+        $items = $this->currentItems;
+        $counts = $this->currentStatusCounts;
 
-        <div class="ec-imports-hero-copy">
+        $ready = (int) ($counts['ready'] ?? 0);
+        $queued = (int) ($counts['queued'] ?? 0);
+        $processing = (int) ($counts['processing'] ?? 0);
+        $completed = (int) ($counts['completed'] ?? 0);
+        $failed = (int) ($counts['failed'] ?? 0);
+        $pending = (int) ($counts['pending'] ?? 0);
 
-            <div class="ec-page-kicker">
-                Entrada de dados
-            </div>
+        $busy = $queued + $processing > 0;
 
-            <h1 class="ec-imports-title">
-                Importações
-            </h1>
+        $enrichmentTotal =
+            $ready + $queued + $processing + $completed + $failed;
 
-            <p class="ec-imports-subtitle">
-                Insira CNPJs para validação,
-                deduplicação e processamento
-                pelo Prospector.
-            </p>
+        $finished = $completed + $failed;
 
+        $progress = $enrichmentTotal > 0
+            ? min(100, (int) round($finished / $enrichmentTotal * 100))
+            : 0;
+
+        $format = static fn ($value): string =>
+            number_format((int) $value, 0, ',', '.');
+
+        $batchLabel = match (true) {
+            $busy => 'Enriquecendo',
+            $ready > 0 => 'Aguardando enriquecimento',
+            $pending > 0 => 'Aguardando validação',
+            $failed > 0 => 'Finalizado com falhas',
+            $completed > 0 => 'Enriquecimento concluído',
+            $batch !== null && (int) $batch->total_rows > 0 => 'Validação concluída',
+            default => 'Lote sem itens',
+        };
+
+        $batchTone = match (true) {
+            $busy => 'info',
+            $ready > 0 || $pending > 0 || $failed > 0 => 'warning',
+            $completed > 0 => 'success',
+            default => 'neutral',
+        };
+    @endphp
+
+    <header class="ecim-header">
+        <div>
+            <span class="ecim-eyebrow">ENTRADA DE DADOS</span>
+            <h1>Importações</h1>
+            <p>Valide os CNPJs, enriqueça os cadastros e acompanhe os resultados.</p>
         </div>
 
+        <div class="ecim-header-actions">
+            <a class="ecim-button ecim-secondary" href="#ecim-history">
+                Histórico
+            </a>
 
-        <div
-            class="ec-imports-hero-visual"
-            aria-hidden="true"
-        >
-
-            <svg
-                viewBox="0 0 760 300"
-                role="presentation"
+            <button
+                type="button"
+                class="ecim-button ecim-primary"
+                x-on:click="$refs.composer.open = true; $nextTick(() => { $refs.cnpjs.focus(); })"
             >
-
-                <defs>
-
-                    <radialGradient
-                        id="importsGlobeHalo"
-                        cx="50%"
-                        cy="50%"
-                        r="50%"
-                    >
-                        <stop
-                            offset="0%"
-                            stop-color="#148fff"
-                            stop-opacity=".28"
-                        />
-
-                        <stop
-                            offset="60%"
-                            stop-color="#148fff"
-                            stop-opacity=".10"
-                        />
-
-                        <stop
-                            offset="100%"
-                            stop-color="#148fff"
-                            stop-opacity="0"
-                        />
-                    </radialGradient>
-
-
-                    <linearGradient
-                        id="importsOrbit"
-                        x1="0"
-                        y1="0"
-                        x2="1"
-                        y2="1"
-                    >
-                        <stop
-                            offset="0%"
-                            stop-color="#2be0d1"
-                            stop-opacity="0"
-                        />
-
-                        <stop
-                            offset="42%"
-                            stop-color="#2a9fff"
-                            stop-opacity=".70"
-                        />
-
-                        <stop
-                            offset="74%"
-                            stop-color="#39dfd1"
-                            stop-opacity=".58"
-                        />
-
-                        <stop
-                            offset="100%"
-                            stop-color="#39dfd1"
-                            stop-opacity="0"
-                        />
-                    </linearGradient>
-
-
-                    <pattern
-                        id="importsBgDots"
-                        width="15"
-                        height="15"
-                        patternUnits="userSpaceOnUse"
-                    >
-                        <circle
-                            cx="2"
-                            cy="2"
-                            r="1.1"
-                            fill="#1482db"
-                            opacity=".28"
-                        />
-                    </pattern>
-
-
-                    <pattern
-                        id="importsWorldDots"
-                        width="7"
-                        height="7"
-                        patternUnits="userSpaceOnUse"
-                    >
-                        <circle
-                            cx="2"
-                            cy="2"
-                            r="1.25"
-                            fill="#39afff"
-                        />
-                    </pattern>
-
-
-                    <clipPath id="importsGlobeClip">
-                        <circle
-                            cx="525"
-                            cy="145"
-                            r="112"
-                        />
-                    </clipPath>
-
-                </defs>
-
-
-                <rect
-                    x="250"
-                    y="5"
-                    width="450"
-                    height="270"
-                    fill="url(#importsBgDots)"
-                    opacity=".68"
-                />
-
-
-                <circle
-                    cx="525"
-                    cy="145"
-                    r="180"
-                    fill="url(#importsGlobeHalo)"
-                />
-
-
-                <circle
-                    cx="525"
-                    cy="145"
-                    r="112"
-                    fill="none"
-                    stroke="#269cff"
-                    stroke-opacity=".33"
-                />
-
-
-                <g
-                    fill="none"
-                    stroke="#2d8de5"
-                    stroke-opacity=".21"
-                    clip-path="url(#importsGlobeClip)"
-                >
-
-                    <ellipse
-                        cx="525"
-                        cy="145"
-                        rx="112"
-                        ry="38"
-                    />
-
-                    <ellipse
-                        cx="525"
-                        cy="145"
-                        rx="112"
-                        ry="70"
-                    />
-
-                    <ellipse
-                        cx="525"
-                        cy="145"
-                        rx="42"
-                        ry="112"
-                    />
-
-                    <ellipse
-                        cx="525"
-                        cy="145"
-                        rx="79"
-                        ry="112"
-                    />
-
-                </g>
-
-
-                <g
-                    fill="url(#importsWorldDots)"
-                    clip-path="url(#importsGlobeClip)"
-                >
-
-                    <path
-                        d="
-                            M447 82
-                            C466 67
-                            495 67
-                            517 79
-                            L529 91
-                            L519 103
-                            L498 108
-                            L485 122
-                            L464 126
-                            L449 115
-                            L440 99
-                            Z
-                        "
-                    />
-
-                    <path
-                        d="
-                            M479 126
-                            C500 130
-                            514 143
-                            515 160
-                            L507 181
-                            L496 205
-                            L482 211
-                            L471 193
-                            L468 171
-                            L473 145
-                            Z
-                        "
-                    />
-
-                    <path
-                        d="
-                            M537 87
-                            C555 77
-                            578 79
-                            596 92
-                            L605 106
-                            L597 117
-                            L579 120
-                            L568 131
-                            L551 126
-                            L541 113
-                            Z
-                        "
-                    />
-
-                    <path
-                        d="
-                            M551 129
-                            C570 134
-                            582 146
-                            584 163
-                            L578 181
-                            L566 199
-                            L552 195
-                            L545 178
-                            L543 154
-                            Z
-                        "
-                    />
-
-                </g>
-
-
-                <g
-                    fill="none"
-                    stroke="url(#importsOrbit)"
-                    stroke-width="1.5"
-                >
-
-                    <ellipse
-                        cx="525"
-                        cy="145"
-                        rx="184"
-                        ry="57"
-                        transform="
-                            rotate(
-                                13
-                                525
-                                145
-                            )
-                        "
-                    />
-
-                    <ellipse
-                        cx="525"
-                        cy="145"
-                        rx="170"
-                        ry="48"
-                        transform="
-                            rotate(
-                                -17
-                                525
-                                145
-                            )
-                        "
-                    />
-
-                </g>
-
-
-                <g fill="#38e1d4">
-
-                    <circle cx="447" cy="108" r="3.8" />
-                    <circle cx="494" cy="87" r="3.2" />
-                    <circle cx="575" cy="97" r="3.7" />
-                    <circle cx="598" cy="144" r="4" />
-                    <circle cx="522" cy="193" r="3.7" />
-
-                </g>
-
-            </svg>
-
+                <span aria-hidden="true">+</span>
+                Nova importação
+            </button>
         </div>
-
-
-        <div class="ec-imports-hero-message">
-
-            <span>
-                Entrada confiável
-            </span>
-
-            <strong>
-                dados limpos para decisões comerciais
-            </strong>
-
-        </div>
-
-    </section>
-
+    </header>
 
     @if (session('success'))
-
-        <div class="ec-alert-success ec-import-queue-alert">
-            <span class="ec-alert-dot"></span>
+        <div class="ecim-notice" data-tone="success" role="status">
             {{ session('success') }}
         </div>
-
     @endif
 
-    @error('queue')
+    <div class="ecim-layout">
 
-        <div class="ec-import-queue-error">
-            {{ $message }}
-        </div>
+        <div class="ecim-main">
 
-    @enderror
+            <details
+                class="ecim-panel ecim-composer"
+                x-ref="composer"
+                wire:ignore.self
+                wire:key="ecim-composer-{{ $batchId ?? 'new' }}"
+                @if (! $batch) open @endif
+            >
+                <summary class="ecim-composer-toggle">
+                    <span>
+                        <strong>Nova importação</strong>
+                        <small>Cole uma lista para validar e criar um lote.</small>
+                    </span>
 
+                    <span class="ecim-chevron" aria-hidden="true">⌄</span>
+                </summary>
 
-    <div class="ec-import-grid">
+                <form wire:submit="process" class="ecim-form" novalidate>
+                    <label for="ecim-input">Lista de CNPJs</label>
 
-        {{-- NOVA IMPORTAÇÃO --}}
-        <section
-            class="
-                ec-detail-panel
-                ec-imports-input-panel
-            "
-        >
-
-            <div class="ec-detail-header">
-
-                <div>
-
-                    <h2 class="ec-detail-title">
-                        Nova importação
-                    </h2>
-
-                    <p class="ec-detail-description">
-                        Cole um ou vários CNPJs separados por linha, vírgula ou ponto e vírgula.
+                    <p class="ecim-help" id="ecim-input-help">
+                        Separe por linha, vírgula ou ponto e vírgula.
+                        Com ou sem pontuação.
                     </p>
 
-                </div>
-
-            </div>
-
-
-            <form
-                wire:submit="process"
-                class="ec-import-form"
-            >
-
-                <div>
-
-                    <label
-                        for="input"
-                        class="ec-field-label"
-                    >
-                        Lista de CNPJs
-                    </label>
-
                     <textarea
-                        id="input"
+                        id="ecim-input"
+                        x-ref="cnpjs"
                         wire:model="input"
-                        rows="12"
-                        placeholder="11.222.333/0001-81&#10;22.333.444/0001-00&#10;33.444.555/0001-00"
-                        class="ec-input ec-import-textarea"
+                        rows="6"
+                        maxlength="1000000"
+                        spellcheck="false"
+                        autocapitalize="off"
+                        autocomplete="off"
+                        aria-describedby="ecim-input-help{{ $errors->has('input') ? ' ecim-input-error' : '' }}"
+                        aria-invalid="{{ $errors->has('input') ? 'true' : 'false' }}"
+                        wire:loading.attr="disabled"
+                        wire:target="process"
+                        placeholder="11.222.333/0001-81"
                     ></textarea>
 
                     @error('input')
-
-                        <p class="ec-field-error">
+                        <p id="ecim-input-error" class="ecim-error" role="alert">
                             {{ $message }}
                         </p>
-
                     @enderror
 
-                </div>
+                    <div class="ecim-form-actions">
+                        <span>
+                            Esta etapa valida a lista.
+                            O enriquecimento é iniciado separadamente.
+                        </span>
 
+                        <button
+                            type="submit"
+                            class="ecim-button ecim-primary"
+                            wire:loading.attr="disabled"
+                            wire:target="process,openBatch,queueCurrentBatch,refreshCurrentBatch"
+                        >
+                            <span wire:loading.remove wire:target="process">
+                                Processar CNPJs
+                            </span>
+                            <span wire:loading wire:target="process">
+                                Validando...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </details>
 
-                <div class="ec-import-actions">
+            @if ($batch)
 
-                    <span>
-                        O sistema valida e remove duplicidades antes do enriquecimento.
-                    </span>
+                <section
+                    class="ecim-panel"
+                    wire:key="ecim-result-{{ $batch->id }}"
+                    aria-labelledby="ecim-result-title"
+                >
+                    <header class="ecim-panel-head">
+                        <div>
+                            <span class="ecim-eyebrow">LOTE SELECIONADO</span>
 
-                    <button
-                        type="submit"
-                        wire:loading.attr="disabled"
-                        wire:target="process"
-                        class="ec-button-primary"
+                            <h2 id="ecim-result-title">
+                                Resultado do lote #{{ $batch->id }}
+                            </h2>
+
+                            <p>
+                                {{ $batch->created_at?->format('d/m/Y H:i') ?? 'Data não informada' }}
+                                ·
+                                {{
+                                    $batch->source_type === 'prospecting'
+                                        ? 'Motor de prospecção'
+                                        : (
+                                            $batch->source_type === 'manual'
+                                                ? 'Importação manual'
+                                                : $batch->source_type
+                                        )
+                                }}
+                            </p>
+                        </div>
+
+                        <span class="ecim-badge" data-tone="{{ $batchTone }}">
+                            {{ $batchLabel }}
+                        </span>
+                    </header>
+
+                    <dl class="ecim-totals">
+                        @foreach ([
+                            ['Total', $batch->total_rows, 'neutral'],
+                            ['Válidos', $batch->valid_rows, 'success'],
+                            ['Já cadastrados', $batch->existing_rows, 'info'],
+                            ['Duplicados', $batch->duplicate_rows, 'warning'],
+                            ['Inválidos', $batch->invalid_rows, 'danger'],
+                        ] as [$label, $value, $tone])
+                            <div data-tone="{{ $tone }}">
+                                <dt>{{ $label }}</dt>
+                                <dd>{{ $format($value) }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+
+                    <div
+                        class="ecim-processing"
+                        @if ($busy) wire:poll.2s="refreshCurrentBatch" @endif
                     >
+                        <div class="ecim-processing-head">
+                            <div>
+                                <h3>Enriquecimento cadastral</h3>
+                                <p>
+                                    Consulta dos dados empresariais,
+                                    perfil ICP e verificação no CRM.
+                                </p>
+                            </div>
+
+                            <div class="ecim-inline-actions">
+                                <button
+                                    type="button"
+                                    class="ecim-button ecim-secondary"
+                                    wire:click="refreshCurrentBatch"
+                                    wire:loading.attr="disabled"
+                                    wire:target="process,openBatch,queueCurrentBatch,refreshCurrentBatch"
+                                >
+                                    Atualizar
+                                </button>
+
+                                @if ($ready > 0)
+                                    <button
+                                        type="button"
+                                        class="ecim-button ecim-primary"
+                                        wire:click="queueCurrentBatch"
+                                        wire:loading.attr="disabled"
+                                        wire:target="process,openBatch,queueCurrentBatch,refreshCurrentBatch"
+                                    >
+                                        <span
+                                            wire:loading.remove
+                                            wire:target="queueCurrentBatch"
+                                        >
+                                            Iniciar enriquecimento ({{ $format($ready) }})
+                                        </span>
+                                        <span
+                                            wire:loading
+                                            wire:target="queueCurrentBatch"
+                                        >
+                                            Enfileirando...
+                                        </span>
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+
+                        @if ($enrichmentTotal > 0)
+                            <div class="ecim-progress-text">
+                                <span>
+                                    {{ $format($finished) }}
+                                    de
+                                    {{ $format($enrichmentTotal) }}
+                                    finalizados
+                                </span>
+                                <strong>{{ $progress }}%</strong>
+                            </div>
+
+                            <div
+                                class="ecim-progress"
+                                role="progressbar"
+                                aria-label="Progresso do enriquecimento cadastral"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-valuenow="{{ $progress }}"
+                            >
+                                <span style="width: {{ $progress }}%"></span>
+                            </div>
+
+                            <dl class="ecim-processing-counts">
+                                <div>
+                                    <dt>Aguardando início</dt>
+                                    <dd>{{ $format($ready) }}</dd>
+                                </div>
+                                <div>
+                                    <dt>Na fila</dt>
+                                    <dd>{{ $format($queued) }}</dd>
+                                </div>
+                                <div>
+                                    <dt>Processando</dt>
+                                    <dd>{{ $format($processing) }}</dd>
+                                </div>
+                                <div>
+                                    <dt>Concluídos</dt>
+                                    <dd>{{ $format($completed) }}</dd>
+                                </div>
+                                <div>
+                                    <dt>Falhas</dt>
+                                    <dd class="{{ $failed > 0 ? 'ecim-error' : '' }}">
+                                        {{ $format($failed) }}
+                                    </dd>
+                                </div>
+                            </dl>
+
+                            @if ($failed > 0)
+                                <p class="ecim-warning">
+                                    O progresso inclui {{ $format($failed) }}
+                                    registro(s) finalizado(s) com falha.
+                                    Confira os alertas abaixo.
+                                </p>
+                            @endif
+                        @else
+                            <p class="ecim-help">
+                                Nenhum registro disponível para enriquecimento neste lote.
+                            </p>
+                        @endif
+
+                        @if ($pending > 0)
+                            <p class="ecim-warning">
+                                {{ $format($pending) }}
+                                registro(s) ainda com status pendente.
+                            </p>
+                        @endif
+                    </div>
+                </section>
+
+                @php
+                    $intelligence = $this->currentIntelligenceCounts;
+                @endphp
+
+                <section
+                    class="ecim-panel"
+                    aria-labelledby="ecim-intelligence-title"
+                >
+                    <header class="ecim-panel-head">
+                        <div>
+                            <h2 id="ecim-intelligence-title">
+                                Inteligência comercial do lote
+                            </h2>
+                            <p>
+                                {{
+                                    $busy || $ready > 0 || $pending > 0
+                                        ? 'Resultados parciais, conforme o processamento avança.'
+                                        : 'Classificações disponíveis nos registros vinculados às empresas.'
+                                }}
+                            </p>
+                        </div>
+                    </header>
+
+                    <div class="ecim-intelligence-grid">
+                        <section aria-label="Situação no CRM">
+                            <h3>Situação no CRM</h3>
+
+                            <dl class="ecim-breakdown">
+                                @foreach ([
+                                    'clients' => 'Clientes',
+                                    'opportunities' => 'Oportunidades',
+                                    'prospected' => 'Prospectados',
+                                    'known' => 'Conhecidos',
+                                    'new' => 'Novos',
+                                ] as $key => $label)
+                                    <div>
+                                        <dt>{{ $label }}</dt>
+                                        <dd>{{ $format($intelligence[$key] ?? 0) }}</dd>
+                                    </div>
+                                @endforeach
+                            </dl>
+                        </section>
+
+                        <section aria-label="Perfil ICP">
+                            <h3>Perfil ICP</h3>
+
+                            <dl class="ecim-breakdown">
+                                @foreach ([
+                                    'icp_a' => 'ICP A',
+                                    'icp_b' => 'ICP B',
+                                    'icp_c' => 'ICP C',
+                                    'icp_d' => 'ICP D',
+                                ] as $key => $label)
+                                    <div>
+                                        <dt>{{ $label }}</dt>
+                                        <dd>{{ $format($intelligence[$key] ?? 0) }}</dd>
+                                    </div>
+                                @endforeach
+                            </dl>
+                        </section>
+                    </div>
+
+                    <p class="ecim-footnote">
+                        Contagem por registro do lote.
+                        Elegibilidade para pesquisa não significa exportação
+                        comprovada nem pesquisa concluída.
+                    </p>
+                </section>
+
+                <section
+                    class="ecim-panel"
+                    aria-labelledby="ecim-items-title"
+                    wire:key="ecim-items-{{ $batch->id }}"
+                >
+                    <header class="ecim-panel-head">
+                        <div>
+                            <h2 id="ecim-items-title">CNPJs do lote</h2>
+                            <p>
+                                Exibindo {{ $format($items->count()) }}
+                                de {{ $format($batch->total_rows) }} registros.
+                                Limite atual: 100 registros.
+                            </p>
+                        </div>
 
                         <span
-                            wire:loading.remove
-                            wire:target="process"
+                            class="ecim-live-status"
+                            wire:loading.delay
+                            wire:target="openBatch,queueCurrentBatch"
                         >
-                            Processar CNPJs
+                            Atualizando...
                         </span>
+                    </header>
 
-                        <span
-                            wire:loading
-                            wire:target="process"
-                        >
-                            Processando...
-                        </span>
+                    @if ((int) $batch->total_rows > 100)
+                        <p class="ecim-limit-note">
+                            A lista exibe os primeiros 100 registros.
+                            Os indicadores acima consideram o lote inteiro.
+                        </p>
+                    @endif
 
-                    </button>
+                    <div class="ecim-table-scroll">
+                        <table class="ecim-table">
+                            <caption class="ecim-sr">
+                                Empresas, classificação comercial e alertas do lote selecionado
+                            </caption>
 
-                </div>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Empresa / CNPJ</th>
+                                    <th scope="col">Unidades</th>
+                                    <th scope="col">ICP</th>
+                                    <th scope="col">CRM</th>
+                                    <th scope="col">Processamento</th>
+                                    <th scope="col">Alertas</th>
+                                </tr>
+                            </thead>
 
-            </form>
+                            <tbody>
+                                @forelse ($items as $item)
+                                    @php
+                                        $company = $item->company;
+                                        $icp = $company?->icpScore;
+                                        $crm = $company?->crmCheck;
+                                        $alerts = $this->itemAlerts($item);
+                                        $cnpj = $item->normalized_cnpj;
 
-        </section>
+                                        $displayCnpj =
+                                            $cnpj && \App\Support\Cnpj::isWellFormed($cnpj)
+                                                ? \App\Support\Cnpj::format($cnpj)
+                                                : (string) $item->raw_cnpj;
 
+                                        $itemTone = match ((string) $item->status) {
+                                            'completed' => 'success',
+                                            'processing', 'queued' => 'info',
+                                            'failed', 'invalid' => 'danger',
+                                            'ready', 'pending', 'duplicate' => 'warning',
+                                            default => 'neutral',
+                                        };
 
-        {{-- HISTÓRICO --}}
-        <section
-            class="
-                ec-detail-panel
-                ec-imports-recent-panel
-            "
-        >
+                                        $crmTone = match ($crm?->status) {
+                                            'client' => 'success',
+                                            'opportunity' => 'warning',
+                                            'prospected' => 'info',
+                                            default => 'neutral',
+                                        };
 
-            <div class="ec-detail-header">
+                                        $icpTone = match ($icp?->grade) {
+                                            'A' => 'success',
+                                            'B' => 'info',
+                                            'C' => 'warning',
+                                            'D' => 'danger',
+                                            default => 'neutral',
+                                        };
+                                    @endphp
 
-                <div>
+                                    <tr wire:key="ecim-item-{{ $item->id }}">
+                                        <td class="ecim-company-cell">
+                                            <span class="ecim-row-number">
+                                                Linha {{ $item->row_number }}
+                                            </span>
 
-                    <h2 class="ec-detail-title">
-                        Importações recentes
+                                            @if ($company)
+                                                <a
+                                                    class="ecim-company-name"
+                                                    href="{{ route('companies.show', $company) }}"
+                                                    wire:navigate
+                                                >
+                                                    {{ $company->corporate_name }}
+                                                </a>
+
+                                                <span class="ecim-cnpj">
+                                                    {{ $displayCnpj }}
+                                                </span>
+                                            @else
+                                                <strong class="ecim-cnpj">
+                                                    {{ $displayCnpj }}
+                                                </strong>
+
+                                                <span class="ecim-muted">
+                                                    Sem cadastro vinculado
+                                                </span>
+                                            @endif
+                                        </td>
+
+                                        <td data-label="Unidades">
+                                            <strong>
+                                                {{
+                                                    $company
+                                                        ? $format($company->establishments->count())
+                                                        : '—'
+                                                }}
+                                            </strong>
+                                        </td>
+
+                                        <td data-label="ICP">
+                                            @if ($icp)
+                                                <span
+                                                    class="ecim-badge"
+                                                    data-tone="{{ $icpTone }}"
+                                                >
+                                                    {{ $icp->grade }}
+                                                    · {{ $icp->score }}/100
+                                                </span>
+                                            @else
+                                                <span class="ecim-muted">
+                                                    Não calculado
+                                                </span>
+                                            @endif
+                                        </td>
+
+                                        <td data-label="CRM">
+                                            <span
+                                                class="ecim-badge"
+                                                data-tone="{{ $crmTone }}"
+                                            >
+                                                {{ $this->crmStatusLabel($crm?->status) }}
+                                            </span>
+
+                                            @if ((bool) data_get($crm?->metadata, 'crm_conflict', false))
+                                                <span class="ecim-warning">
+                                                    Divergência CRM
+                                                </span>
+                                            @endif
+                                        </td>
+
+                                        <td data-label="Processamento">
+                                            <span
+                                                class="ecim-badge"
+                                                data-tone="{{ $itemTone }}"
+                                            >
+                                                {{ $this->statusLabel((string) $item->status) }}
+                                            </span>
+
+                                            @if ($company)
+                                                <a
+                                                    class="ecim-dossier"
+                                                    href="{{ route('companies.show', $company) }}"
+                                                    wire:navigate
+                                                    aria-label="Abrir dossiê de {{ $company->corporate_name }}"
+                                                >
+                                                    Abrir dossiê ↗
+                                                </a>
+                                            @endif
+                                        </td>
+
+                                        <td class="ecim-alerts-cell" data-label="Alertas">
+                                            @forelse ($alerts as $alert)
+                                                <details
+                                                    wire:ignore.self
+                                                    class="ecim-item-alert"
+                                                    data-tone="{{ $alert['type'] }}"
+                                                    wire:key="ecim-alert-{{ $item->id }}-{{ md5($alert['type'] . '|' . $alert['label']) }}"
+                                                    @if (in_array($alert['type'], ['danger', 'warning'], true)) open @endif
+                                                >
+                                                    <summary>{{ $alert['label'] }}</summary>
+                                                    <p>
+                                                        {{ $alert['detail'] ?: 'Sem detalhes adicionais.' }}
+                                                    </p>
+                                                </details>
+                                            @empty
+                                                <span class="ecim-muted">
+                                                    Sem alertas
+                                                </span>
+                                            @endforelse
+                                        </td>
+                                    </tr>
+
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="ecim-empty">
+                                            <strong>Nenhum registro neste lote.</strong>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <footer class="ecim-table-footer">
+                        Os nomes das empresas abrem seus dossiês.
+                        Clique em um alerta para ver os detalhes.
+                    </footer>
+                </section>
+
+            @else
+
+                <section class="ecim-panel ecim-welcome">
+                    <span class="ecim-welcome-icon" aria-hidden="true">↓</span>
+
+                    <h2>
+                        {{ $batchId ? 'Lote não encontrado' : 'Tudo começa com uma lista de CNPJs' }}
                     </h2>
 
-                    <p class="ec-detail-description">
-                        Últimos lotes processados.
+                    <p>
+                        {{
+                            $batchId
+                                ? 'Selecione outro lote no histórico ou crie uma nova importação.'
+                                : 'Cole a lista acima para validar os registros. Depois, inicie o enriquecimento dos CNPJs disponíveis.'
+                        }}
                     </p>
 
+                    <ol class="ecim-steps">
+                        <li>
+                            <span>01</span>
+                            <strong>Validar lista</strong>
+                            <small>
+                                Identificar registros válidos, duplicados e inválidos.
+                            </small>
+                        </li>
+                        <li>
+                            <span>02</span>
+                            <strong>Enriquecer dados</strong>
+                            <small>
+                                Iniciar o processamento dos registros prontos.
+                            </small>
+                        </li>
+                        <li>
+                            <span>03</span>
+                            <strong>Conferir resultados</strong>
+                            <small>
+                                Abrir os dossiês e revisar os alertas.
+                            </small>
+                        </li>
+                    </ol>
+                </section>
+
+            @endif
+        </div>
+
+        <aside
+            class="ecim-history ecim-panel"
+            id="ecim-history"
+            aria-labelledby="ecim-history-title"
+        >
+            <header class="ecim-panel-head">
+                <div>
+                    <h2 id="ecim-history-title">Importações recentes</h2>
+                    <p>Últimos {{ $recentBatches->count() }} lotes da base.</p>
                 </div>
+            </header>
 
-            </div>
-
-
-            <div class="ec-import-history">
-
-                @forelse ($this->recentBatches as $batch)
+            <div class="ecim-history-list">
+                @forelse ($recentBatches as $recent)
+                    @php
+                        $recentTone = match ((string) $recent->status) {
+                            'completed' => 'success',
+                            'processing', 'queued' => 'info',
+                            'failed' => 'danger',
+                            default => 'neutral',
+                        };
+                    @endphp
 
                     <button
                         type="button"
-                        wire:click="openBatch({{ $batch->id }})"
-                        class="ec-import-history-item {{
-                            $batchId === $batch->id
-                                ? 'is-active'
-                                : ''
-                        }}"
+                        wire:click="openBatch({{ $recent->id }})"
+                        wire:loading.attr="disabled"
+                        wire:target="process,openBatch,queueCurrentBatch,refreshCurrentBatch"
+                        wire:key="ecim-history-{{ $recent->id }}"
+                        class="ecim-history-item"
+                        aria-current="{{ (int) $batchId === (int) $recent->id ? 'true' : 'false' }}"
                     >
-
-                        <div>
-
-                            <strong>
-                                Lote #{{ $batch->id }}
-                            </strong>
-
-                            <span>
-                                {{ $batch->created_at->format('d/m/Y H:i') }}
-                            </span>
-
-                        </div>
-
-                        <span>
-                            {{ $batch->total_rows }}
+                        <span class="ecim-history-top">
+                            <strong>Lote #{{ $recent->id }}</strong>
+                            <span>{{ $format($recent->total_rows) }} CNPJs</span>
                         </span>
 
+                        <time datetime="{{ $recent->created_at?->toIso8601String() }}">
+                            {{ $recent->created_at?->format('d/m/Y H:i') ?? 'Data não informada' }}
+                        </time>
+
+                        <span class="ecim-history-bottom">
+                            <span class="ecim-badge" data-tone="{{ $recentTone }}">
+                                {{ $this->statusLabel((string) $recent->status) }}
+                            </span>
+
+                            <span>
+                                {{
+                                    $recent->source_type === 'prospecting'
+                                        ? 'Prospecção'
+                                        : (
+                                            $recent->source_type === 'manual'
+                                                ? 'Manual'
+                                                : $recent->source_type
+                                        )
+                                }}
+                            </span>
+                        </span>
                     </button>
 
                 @empty
-
-                    <div class="ec-import-empty">
+                    <p class="ecim-history-empty">
                         Nenhuma importação realizada.
-                    </div>
-
+                    </p>
                 @endforelse
-
             </div>
-
-        </section>
+        </aside>
 
     </div>
-
-
-    @if ($this->currentBatch)
-
-        {{-- RESUMO --}}
-        <section class="ec-imports-batch-section">
-
-            <div class="ec-section-heading">
-
-                <div>
-
-                    <h2 class="ec-section-title">
-                        Resultado do lote #{{ $this->currentBatch->id }}
-                    </h2>
-
-                    <p class="ec-section-description">
-                        Classificação dos CNPJs recebidos.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-                        @php
-                $readyCount =
-                    $this->statusCount('ready');
-
-                $queuedCount =
-                    $this->statusCount('queued');
-
-                $processingCount =
-                    $this->statusCount('processing');
-
-                $completedCount =
-                    $this->statusCount('completed');
-
-                $failedCount =
-                    $this->statusCount('failed');
-
-                $enrichmentTotal =
-                    $readyCount
-                    + $queuedCount
-                    + $processingCount
-                    + $completedCount
-                    + $failedCount;
-
-                $finishedCount =
-                    $completedCount
-                    + $failedCount;
-
-                $isEnriching =
-                    $queuedCount > 0
-                    || $processingCount > 0;
-
-                $hasPendingEnrichment =
-                    $readyCount > 0;
-
-                $enrichmentProgress =
-                    $enrichmentTotal > 0
-                        ? min(
-                            100,
-                            (int) round(
-                                (
-                                    $finishedCount
-                                    / $enrichmentTotal
-                                ) * 100
-                            )
-                        )
-                        : 0;
-
-                $showCommercialIntelligence =
-                    ! $hasPendingEnrichment
-                    && ! $isEnriching;
-            @endphp
-
-
-            {{-- AGUARDANDO ENRIQUECIMENTO --}}
-            @if ($hasPendingEnrichment)
-
-                <div
-                    class="
-                        mb-6 overflow-hidden
-                        rounded-2xl
-                        border border-cyan-400/20
-                        bg-gradient-to-r
-                        from-cyan-400/[0.10]
-                        via-sky-400/[0.05]
-                        to-transparent
-                    "
-                >
-
-                    <div
-                        class="
-                            flex flex-col gap-5
-                            px-5 py-5
-                            lg:flex-row
-                            lg:items-center
-                            lg:justify-between
-                        "
-                    >
-
-                        <div
-                            class="
-                                flex min-w-0
-                                items-start gap-4
-                            "
-                        >
-
-                            <div
-                                class="
-                                    flex size-12
-                                    shrink-0
-                                    items-center
-                                    justify-center
-                                    rounded-2xl
-                                    border
-                                    border-cyan-300/15
-                                    bg-cyan-300/10
-                                    text-cyan-300
-                                "
-                            >
-
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                    class="size-6"
-                                >
-                                    <path
-                                        d="
-                                            M12 3v12
-                                            m0 0 4-4
-                                            m-4 4-4-4
-                                        "
-                                    />
-
-                                    <path
-                                        d="
-                                            M5 17v2
-                                            a2 2 0 0 0
-                                            2 2h10
-                                            a2 2 0 0 0
-                                            2-2v-2
-                                        "
-                                    />
-                                </svg>
-
-                            </div>
-
-
-                            <div class="min-w-0">
-
-                                <div
-                                    class="
-                                        text-[11px]
-                                        font-semibold
-                                        uppercase
-                                        tracking-[0.18em]
-                                        text-cyan-300/80
-                                    "
-                                >
-                                    Pronto para processar
-                                </div>
-
-                                <h3
-                                    class="
-                                        mt-1 text-base
-                                        font-semibold
-                                        text-[#f3f5ff]
-                                    "
-                                >
-                                    {{ $readyCount }}
-                                    CNPJ(s) aguardando
-                                    enriquecimento
-                                </h3>
-
-                                <p
-                                    class="
-                                        mt-1 max-w-2xl
-                                        text-sm
-                                        text-[#929bbb]
-                                    "
-                                >
-                                    O Prospector vai consultar
-                                    a Receita Federal, montar o
-                                    grupo empresarial, calcular
-                                    o ICP e verificar o CRM.
-                                </p>
-
-
-                                <div
-                                    class="
-                                        mt-3 flex
-                                        flex-wrap gap-2
-                                    "
-                                >
-
-                                    <span
-                                        class="
-                                            inline-flex
-                                            items-center gap-1.5
-                                            rounded-full
-                                            border
-                                            border-white/10
-                                            bg-white/[0.04]
-                                            px-2.5 py-1
-                                            text-[11px]
-                                            font-medium
-                                            text-[#aeb6d1]
-                                        "
-                                    >
-                                        <span
-                                            class="
-                                                size-1.5
-                                                rounded-full
-                                                bg-emerald-300
-                                            "
-                                        ></span>
-
-                                        Receita local
-                                    </span>
-
-
-                                    <span
-                                        class="
-                                            inline-flex
-                                            items-center gap-1.5
-                                            rounded-full
-                                            border
-                                            border-white/10
-                                            bg-white/[0.04]
-                                            px-2.5 py-1
-                                            text-[11px]
-                                            font-medium
-                                            text-[#aeb6d1]
-                                        "
-                                    >
-                                        <span
-                                            class="
-                                                size-1.5
-                                                rounded-full
-                                                bg-orange-300
-                                            "
-                                        ></span>
-
-                                        HubSpot
-                                    </span>
-
-
-                                    <span
-                                        class="
-                                            inline-flex
-                                            items-center gap-1.5
-                                            rounded-full
-                                            border
-                                            border-white/10
-                                            bg-white/[0.04]
-                                            px-2.5 py-1
-                                            text-[11px]
-                                            font-medium
-                                            text-[#aeb6d1]
-                                        "
-                                    >
-                                        BrasilAPI fallback
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        <button
-                            type="button"
-                            wire:click="queueCurrentBatch"
-                            wire:loading.attr="disabled"
-                            wire:target="queueCurrentBatch"
-                            class="
-                                inline-flex
-                                min-h-11
-                                shrink-0
-                                items-center
-                                justify-center
-                                gap-2
-                                rounded-xl
-                                bg-[#45c5b8]
-                                px-5 py-2.5
-                                text-sm
-                                font-semibold
-                                text-[#081b1f]
-                                shadow-lg
-                                shadow-cyan-950/20
-                                transition
-                                hover:bg-[#59d4c7]
-                                disabled:cursor-wait
-                                disabled:opacity-70
-                            "
-                        >
-
-                            <span
-                                wire:loading.remove
-                                wire:target="queueCurrentBatch"
-                                class="
-                                    inline-flex
-                                    items-center gap-2
-                                "
-                            >
-                                Iniciar enriquecimento
-
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    class="size-4"
-                                >
-                                    <path
-                                        d="m9 18 6-6-6-6"
-                                    />
-                                </svg>
-                            </span>
-
-
-                            <span
-                                wire:loading
-                                wire:target="queueCurrentBatch"
-                                class="
-                                    inline-flex
-                                    items-center gap-2
-                                "
-                            >
-
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    class="
-                                        size-4
-                                        animate-spin
-                                    "
-                                >
-                                    <circle
-                                        cx="12"
-                                        cy="12"
-                                        r="9"
-                                        stroke="currentColor"
-                                        stroke-opacity=".25"
-                                        stroke-width="3"
-                                    />
-
-                                    <path
-                                        d="
-                                            M21 12
-                                            a9 9 0 0 0-9-9
-                                        "
-                                        stroke="currentColor"
-                                        stroke-width="3"
-                                        stroke-linecap="round"
-                                    />
-                                </svg>
-
-                                Enfileirando...
-
-                            </span>
-
-                        </button>
-
-                    </div>
-
-                </div>
-
-            @endif
-
-
-            {{-- PROCESSANDO --}}
-            @if ($isEnriching)
-
-                <div
-                    wire:poll.2s="refreshCurrentBatch"
-                    class="
-                        mb-6 overflow-hidden
-                        rounded-2xl
-                        border border-cyan-400/20
-                        bg-gradient-to-br
-                        from-[#17334d]
-                        via-[#182747]
-                        to-[#171d3e]
-                    "
-                >
-
-                    <div class="px-5 py-5">
-
-                        <div
-                            class="
-                                flex flex-col gap-5
-                                lg:flex-row
-                                lg:items-center
-                                lg:justify-between
-                            "
-                        >
-
-                            <div
-                                class="
-                                    flex items-center
-                                    gap-4
-                                "
-                            >
-
-                                <div
-                                    class="
-                                        flex size-12
-                                        shrink-0
-                                        items-center
-                                        justify-center
-                                        rounded-2xl
-                                        border
-                                        border-cyan-300/15
-                                        bg-cyan-300/10
-                                    "
-                                >
-
-                                    <svg
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        class="
-                                            size-6
-                                            animate-spin
-                                            text-cyan-300
-                                        "
-                                    >
-                                        <circle
-                                            cx="12"
-                                            cy="12"
-                                            r="9"
-                                            stroke="currentColor"
-                                            stroke-opacity=".20"
-                                            stroke-width="3"
-                                        />
-
-                                        <path
-                                            d="
-                                                M21 12
-                                                a9 9 0 0 0-9-9
-                                            "
-                                            stroke="currentColor"
-                                            stroke-width="3"
-                                            stroke-linecap="round"
-                                        />
-                                    </svg>
-
-                                </div>
-
-
-                                <div>
-
-                                    <div
-                                        class="
-                                            text-[11px]
-                                            font-semibold
-                                            uppercase
-                                            tracking-[0.18em]
-                                            text-cyan-300/80
-                                        "
-                                    >
-                                        Processamento automático
-                                    </div>
-
-                                    <h3
-                                        class="
-                                            mt-1 text-base
-                                            font-semibold
-                                            text-[#f3f5ff]
-                                        "
-                                    >
-                                        Enriquecendo empresas...
-                                    </h3>
-
-                                    <p
-                                        class="
-                                            mt-1 text-sm
-                                            text-[#929bbb]
-                                        "
-                                    >
-                                        Consultando Receita,
-                                        calculando ICP e
-                                        verificando o CRM.
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-
-                            <div
-                                class="
-                                    text-left
-                                    lg:text-right
-                                "
-                            >
-
-                                <div
-                                    class="
-                                        text-2xl
-                                        font-bold
-                                        text-[#f3f5ff]
-                                    "
-                                >
-                                    {{ $enrichmentProgress }}%
-                                </div>
-
-                                <div
-                                    class="
-                                        mt-0.5 text-xs
-                                        text-[#8993b3]
-                                    "
-                                >
-                                    {{ $finishedCount }}
-                                    de
-                                    {{ $enrichmentTotal }}
-                                    finalizados
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="mt-5">
-
-                            <div
-                                class="
-                                    h-2 overflow-hidden
-                                    rounded-full
-                                    bg-white/[0.08]
-                                "
-                            >
-
-                                <div
-                                    class="
-                                        h-full
-                                        rounded-full
-                                        bg-gradient-to-r
-                                        from-[#45c5b8]
-                                        via-cyan-300
-                                        to-emerald-300
-                                        transition-all
-                                        duration-700
-                                        ease-out
-                                    "
-                                    style="
-                                        width:
-                                        {{ $enrichmentProgress }}%;
-                                    "
-                                ></div>
-
-                            </div>
-
-                        </div>
-
-
-                        <div
-                            class="
-                                mt-4 grid
-                                grid-cols-3
-                                gap-2
-                            "
-                        >
-
-                            <div
-                                class="
-                                    rounded-xl
-                                    border
-                                    border-white/[0.06]
-                                    bg-black/10
-                                    px-3 py-2.5
-                                "
-                            >
-
-                                <div
-                                    class="
-                                        text-[10px]
-                                        font-semibold
-                                        uppercase
-                                        tracking-wide
-                                        text-[#737e9f]
-                                    "
-                                >
-                                    Na fila
-                                </div>
-
-                                <div
-                                    class="
-                                        mt-1 text-lg
-                                        font-bold
-                                        text-[#f0f2ff]
-                                    "
-                                >
-                                    {{ $queuedCount }}
-                                </div>
-
-                            </div>
-
-
-                            <div
-                                class="
-                                    rounded-xl
-                                    border
-                                    border-cyan-300/10
-                                    bg-cyan-300/[0.05]
-                                    px-3 py-2.5
-                                "
-                            >
-
-                                <div
-                                    class="
-                                        text-[10px]
-                                        font-semibold
-                                        uppercase
-                                        tracking-wide
-                                        text-cyan-300/70
-                                    "
-                                >
-                                    Processando
-                                </div>
-
-                                <div
-                                    class="
-                                        mt-1 text-lg
-                                        font-bold
-                                        text-cyan-300
-                                    "
-                                >
-                                    {{ $processingCount }}
-                                </div>
-
-                            </div>
-
-
-                            <div
-                                class="
-                                    rounded-xl
-                                    border
-                                    border-emerald-300/10
-                                    bg-emerald-300/[0.05]
-                                    px-3 py-2.5
-                                "
-                            >
-
-                                <div
-                                    class="
-                                        text-[10px]
-                                        font-semibold
-                                        uppercase
-                                        tracking-wide
-                                        text-emerald-300/70
-                                    "
-                                >
-                                    Finalizados
-                                </div>
-
-                                <div
-                                    class="
-                                        mt-1 text-lg
-                                        font-bold
-                                        text-emerald-300
-                                    "
-                                >
-                                    {{ $finishedCount }}
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        @if ($failedCount > 0)
-
-                            <div
-                                class="
-                                    mt-3 text-xs
-                                    font-medium
-                                    text-rose-300
-                                "
-                            >
-                                {{ $failedCount }}
-                                processamento(s)
-                                finalizaram com erro.
-                            </div>
-
-                        @endif
-
-                    </div>
-
-                </div>
-
-            @endif
-
-
-            <div class="ec-import-summary">
-
-                <div class="ec-import-stat">
-
-                    <span>
-                        Total
-                    </span>
-
-                    <strong>
-                        {{ $this->currentBatch->total_rows }}
-                    </strong>
-
-                </div>
-
-
-                <div class="ec-import-stat is-ready">
-
-                    <span>
-                        Válidos
-                    </span>
-
-                    <strong>
-                        {{ $this->currentBatch->valid_rows }}
-                    </strong>
-
-                </div>
-
-
-                <div class="ec-import-stat is-existing">
-
-                    <span>
-                        Já cadastrados
-                    </span>
-
-                    <strong>
-                        {{ $this->currentBatch->existing_rows }}
-                    </strong>
-
-                </div>
-
-
-                <div class="ec-import-stat is-duplicate">
-
-                    <span>
-                        Duplicados
-                    </span>
-
-                    <strong>
-                        {{ $this->currentBatch->duplicate_rows }}
-                    </strong>
-
-                </div>
-
-
-                <div class="ec-import-stat is-invalid">
-
-                    <span>
-                        Inválidos
-                    </span>
-
-                    <strong>
-                        {{ $this->currentBatch->invalid_rows }}
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-                        {{-- INTELIGÊNCIA DO LOTE --}}
-            @if ($showCommercialIntelligence)
-
-                <div class="ec-imports-intelligence">
-
-                    <div
-                        class="
-                            flex flex-col gap-2
-                            sm:flex-row
-                            sm:items-end
-                            sm:justify-between
-                        "
-                    >
-
-                        <div>
-
-                            <div
-                                class="
-                                    text-[11px]
-                                    font-semibold
-                                    uppercase
-                                    tracking-[0.18em]
-                                    text-[#697598]
-                                "
-                            >
-                                Resultado comercial
-                            </div>
-
-                            <h3
-                                class="
-                                    mt-1 text-base
-                                    font-semibold
-                                    text-[#eef1ff]
-                                "
-                            >
-                                Inteligência comercial do lote
-                            </h3>
-
-                            <p
-                                class="
-                                    mt-1 text-xs
-                                    text-[#8089a9]
-                                "
-                            >
-                                Classificação das empresas
-                                processadas no CRM e no ICP.
-                            </p>
-
-                        </div>
-
-
-                        <div
-                            class="
-                                inline-flex
-                                w-fit
-                                items-center gap-2
-                                rounded-full
-                                border
-                                border-emerald-400/15
-                                bg-emerald-400/[0.06]
-                                px-3 py-1.5
-                                text-xs
-                                font-medium
-                                text-emerald-300
-                            "
-                        >
-                            <span
-                                class="
-                                    size-1.5
-                                    rounded-full
-                                    bg-emerald-300
-                                "
-                            ></span>
-
-                            Processamento concluído
-                        </div>
-
-                    </div>
-
-
-                    {{-- CRM --}}
-                    <div class="mt-5">
-
-                        <div
-                            class="
-                                mb-2.5 flex
-                                items-center gap-2
-                            "
-                        >
-
-                            <span
-                                class="
-                                    flex size-7
-                                    items-center
-                                    justify-center
-                                    rounded-lg
-                                    bg-[#ff7a59]/10
-                                    text-[#ff9d83]
-                                "
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                    class="size-4"
-                                >
-                                    <circle
-                                        cx="12"
-                                        cy="12"
-                                        r="3"
-                                    />
-
-                                    <path
-                                        d="
-                                            M19 12
-                                            a7 7 0 0 1-7 7
-                                            M12 5
-                                            a7 7 0 0 1 7 7
-                                        "
-                                    />
-                                </svg>
-                            </span>
-
-                            <span
-                                class="
-                                    text-xs
-                                    font-semibold
-                                    text-[#c8cee2]
-                                "
-                            >
-                                Situação no CRM
-                            </span>
-
-                        </div>
-
-
-                        <div
-                            class="
-                                grid grid-cols-2
-                                gap-2.5
-                                md:grid-cols-5
-                            "
-                        >
-
-                            @foreach ([
-                                [
-                                    'key' => 'clients',
-                                    'label' => 'Clientes',
-                                    'class' =>
-                                        'text-emerald-300',
-                                ],
-                                [
-                                    'key' => 'opportunities',
-                                    'label' => 'Oportunidades',
-                                    'class' =>
-                                        'text-amber-300',
-                                ],
-                                [
-                                    'key' => 'prospected',
-                                    'label' => 'Prospectados',
-                                    'class' =>
-                                        'text-sky-300',
-                                ],
-                                [
-                                    'key' => 'known',
-                                    'label' => 'Conhecidos',
-                                    'class' =>
-                                        'text-violet-300',
-                                ],
-                                [
-                                    'key' => 'new',
-                                    'label' => 'Novos',
-                                    'class' =>
-                                        'text-[#d8dced]',
-                                ],
-                            ] as $crmItem)
-
-                                <div
-                                    class="
-                                        rounded-xl
-                                        border
-                                        border-white/[0.06]
-                                        bg-[#171d3c]/65
-                                        px-4 py-3.5
-                                    "
-                                >
-
-                                    <div
-                                        class="
-                                            text-[10px]
-                                            font-semibold
-                                            uppercase
-                                            tracking-wide
-                                            text-[#737e9f]
-                                        "
-                                    >
-                                        {{ $crmItem['label'] }}
-                                    </div>
-
-                                    <div
-                                        class="
-                                            mt-1.5 text-2xl
-                                            font-bold
-                                            {{
-                                                $crmItem[
-                                                    'class'
-                                                ]
-                                            }}
-                                        "
-                                    >
-                                        {{
-                                            $this
-                                                ->currentIntelligenceCounts[
-                                                    $crmItem[
-                                                        'key'
-                                                    ]
-                                                ]
-                                        }}
-                                    </div>
-
-                                </div>
-
-                            @endforeach
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- ICP --}}
-                    <div
-                        class="
-                            mt-5 border-t
-                            border-white/[0.06]
-                            pt-5
-                        "
-                    >
-
-                        <div
-                            class="
-                                mb-2.5 flex
-                                items-center gap-2
-                            "
-                        >
-
-                            <span
-                                class="
-                                    flex size-7
-                                    items-center
-                                    justify-center
-                                    rounded-lg
-                                    bg-cyan-300/10
-                                    text-cyan-300
-                                "
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.8"
-                                    class="size-4"
-                                >
-                                    <path
-                                        d="
-                                            M4 19V9
-                                            m5 10V5
-                                            m5 14v-7
-                                            m5 7V3
-                                        "
-                                    />
-                                </svg>
-                            </span>
-
-                            <span
-                                class="
-                                    text-xs
-                                    font-semibold
-                                    text-[#c8cee2]
-                                "
-                            >
-                                Perfil ICP
-                            </span>
-
-                        </div>
-
-
-                        <div
-                            class="
-                                grid grid-cols-2
-                                gap-2.5
-                                md:grid-cols-4
-                            "
-                        >
-
-                            @foreach ([
-                                [
-                                    'key' => 'icp_a',
-                                    'label' => 'ICP A',
-                                    'class' =>
-                                        'text-emerald-300',
-                                ],
-                                [
-                                    'key' => 'icp_b',
-                                    'label' => 'ICP B',
-                                    'class' =>
-                                        'text-sky-300',
-                                ],
-                                [
-                                    'key' => 'icp_c',
-                                    'label' => 'ICP C',
-                                    'class' =>
-                                        'text-amber-300',
-                                ],
-                                [
-                                    'key' => 'icp_d',
-                                    'label' => 'ICP D',
-                                    'class' =>
-                                        'text-rose-300',
-                                ],
-                            ] as $icpItem)
-
-                                <div
-                                    class="
-                                        rounded-xl
-                                        border
-                                        border-white/[0.06]
-                                        bg-[#171d3c]/65
-                                        px-4 py-3.5
-                                    "
-                                >
-
-                                    <div
-                                        class="
-                                            text-[10px]
-                                            font-semibold
-                                            uppercase
-                                            tracking-wide
-                                            text-[#737e9f]
-                                        "
-                                    >
-                                        {{ $icpItem['label'] }}
-                                    </div>
-
-                                    <div
-                                        class="
-                                            mt-1.5 text-2xl
-                                            font-bold
-                                            {{
-                                                $icpItem[
-                                                    'class'
-                                                ]
-                                            }}
-                                        "
-                                    >
-                                        {{
-                                            $this
-                                                ->currentIntelligenceCounts[
-                                                    $icpItem[
-                                                        'key'
-                                                    ]
-                                                ]
-                                        }}
-                                    </div>
-
-                                </div>
-
-                            @endforeach
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            @endif
-
-
-        </section>
-
-
-        {{-- ITENS --}}
-        <section
-            class="
-                ec-table-panel
-                ec-imports-items-panel
-            "
-        >
-
-            <div class="ec-table-toolbar">
-
-                <div>
-
-                    <h2 class="ec-table-title">
-                        CNPJs do lote
-                    </h2>
-
-                    <p class="ec-table-description">
-                        Exibindo até 100 registros.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div class="overflow-x-auto">
-
-                <table class="ec-table">
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Linha
-                            </th>
-
-                            <th>
-                                Empresa
-                            </th>
-
-                            <th>
-                                Unidades
-                            </th>
-
-                            <th>
-                                ICP
-                            </th>
-
-                            <th>
-                                CRM
-                            </th>
-
-                            <th>
-                                Processamento
-                            </th>
-
-                            <th>
-                                Alertas
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        @foreach ($this->currentItems as $item)
-
-                            @php
-                                $company =
-                                    $item->company;
-
-                                $icp =
-                                    $company?->icpScore;
-
-                                $crm =
-                                    $company?->crmCheck;
-
-                                $crmConflict =
-                                    (bool) data_get(
-                                        $crm?->metadata,
-                                        'crm_conflict',
-                                        false
-                                    );
-                            @endphp
-
-                            <tr
-                                wire:key="import-item-{{ $item->id }}"
-                            >
-
-                                <td>
-                                    {{ $item->row_number }}
-                                </td>
-
-
-                                <td>
-
-                                    @if ($company)
-
-                                        <a
-                                            href="{{
-                                                route(
-                                                    'companies.show',
-                                                    $company
-                                                )
-                                            }}"
-                                            wire:navigate
-                                            class="
-                                                font-semibold
-                                                text-[#eef1ff]
-                                                transition
-                                                hover:text-white
-                                            "
-                                        >
-                                            {{
-                                                $company
-                                                    ->corporate_name
-                                            }}
-                                        </a>
-
-                                        <div
-                                            class="
-                                                mt-1 font-mono
-                                                text-xs
-                                                text-[#7f87a7]
-                                            "
-                                        >
-                                            @if (
-                                                $item
-                                                    ->normalized_cnpj
-                                                && Cnpj::isWellFormed(
-                                                    $item
-                                                        ->normalized_cnpj
-                                                )
-                                            )
-                                                {{
-                                                    Cnpj::format(
-                                                        $item
-                                                            ->normalized_cnpj
-                                                    )
-                                                }}
-                                            @else
-                                                {{
-                                                    $item->raw_cnpj
-                                                }}
-                                            @endif
-                                        </div>
-
-                                    @else
-
-                                        <div
-                                            class="
-                                                font-mono
-                                                text-sm
-                                                text-[#d9ddef]
-                                            "
-                                        >
-                                            {{
-                                                $item->raw_cnpj
-                                            }}
-                                        </div>
-
-                                    @endif
-
-                                </td>
-
-
-                                <td>
-
-                                    @if ($company)
-
-                                        <span
-                                            class="
-                                                font-semibold
-                                                text-[#eef1ff]
-                                            "
-                                        >
-                                            {{
-                                                $company
-                                                    ->establishments
-                                                    ->count()
-                                            }}
-                                        </span>
-
-                                    @else
-                                        —
-                                    @endif
-
-                                </td>
-
-
-                                <td>
-
-                                    @if ($icp)
-
-                                        <span
-                                            class="
-                                                inline-flex
-                                                rounded-full
-                                                px-2.5 py-1
-                                                text-xs
-                                                font-semibold
-                                                {{
-                                                    $this
-                                                        ->icpGradeClasses(
-                                                            $icp->grade
-                                                        )
-                                                }}
-                                            "
-                                        >
-                                            {{ $icp->grade }}
-                                            ·
-                                            {{ $icp->score }}/100
-                                        </span>
-
-                                    @else
-                                        —
-                                    @endif
-
-                                </td>
-
-
-                                <td>
-
-                                    @if ($crm)
-
-                                        <div
-                                            class="
-                                                flex
-                                                flex-wrap
-                                                items-center
-                                                gap-2
-                                            "
-                                        >
-
-                                            <span
-                                                class="
-                                                    inline-flex
-                                                    rounded-full
-                                                    px-2.5 py-1
-                                                    text-xs
-                                                    font-semibold
-                                                    {{
-                                                        $this
-                                                            ->crmStatusClasses(
-                                                                $crm->status
-                                                            )
-                                                    }}
-                                                "
-                                            >
-                                                {{
-                                                    $this
-                                                        ->crmStatusLabel(
-                                                            $crm->status
-                                                        )
-                                                }}
-                                            </span>
-
-                                            @if ($crmConflict)
-
-                                                <span
-                                                    title="
-                                                        Divergência entre
-                                                        a base ExportControl
-                                                        e o HubSpot
-                                                    "
-                                                    class="
-                                                        text-xs
-                                                        font-semibold
-                                                        text-amber-300
-                                                    "
-                                                >
-                                                    ⚠
-                                                </span>
-
-                                            @endif
-
-                                        </div>
-
-                                    @else
-
-                                        <span
-                                            class="
-                                                text-xs
-                                                text-[#7f87a7]
-                                            "
-                                        >
-                                            Não verificado
-                                        </span>
-
-                                    @endif
-
-                                </td>
-
-
-                                <td>
-
-                                    <span
-                                        class="
-                                            ec-import-status
-                                            ec-import-status-{{ $item->status }}
-                                        "
-                                    >
-                                        {{
-                                            $this->statusLabel(
-                                                $item->status
-                                            )
-                                        }}
-                                    </span>
-
-                                </td>
-
-
-                                                                <td>
-
-                                    @php
-                                        $alerts =
-                                            $this
-                                                ->itemAlerts(
-                                                    $item
-                                                );
-                                    @endphp
-
-
-                                    @if ($alerts === [])
-
-                                        <span
-                                            class="
-                                                inline-flex
-                                                items-center
-                                                gap-1.5
-                                                text-xs
-                                                font-medium
-                                                text-[#7883a5]
-                                            "
-                                        >
-
-                                            <svg
-                                                xmlns="
-                                                    http://www.w3.org/2000/svg
-                                                "
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                class="
-                                                    size-3.5
-                                                    text-emerald-300/70
-                                                "
-                                            >
-                                                <path
-                                                    d="
-                                                        m5 12
-                                                        4 4
-                                                        L19 6
-                                                    "
-                                                />
-                                            </svg>
-
-                                            Sem alertas
-
-                                        </span>
-
-                                    @else
-
-                                        <div
-                                            class="
-                                                flex
-                                                min-w-[190px]
-                                                max-w-[280px]
-                                                flex-col
-                                                gap-1.5
-                                            "
-                                        >
-
-                                            @foreach (
-                                                $alerts
-                                                as $alert
-                                            )
-
-                                                <div
-                                                    class="
-                                                        rounded-lg
-                                                        border
-                                                        px-2.5
-                                                        py-2
-                                                        {{
-                                                            $this
-                                                                ->alertClasses(
-                                                                    $alert[
-                                                                        'type'
-                                                                    ]
-                                                                )
-                                                        }}
-                                                    "
-                                                >
-
-                                                    <div
-                                                        class="
-                                                            flex
-                                                            items-start
-                                                            gap-2
-                                                        "
-                                                    >
-
-                                                        <span
-                                                            class="
-                                                                mt-[5px]
-                                                                size-1.5
-                                                                shrink-0
-                                                                rounded-full
-                                                                bg-current
-                                                            "
-                                                        ></span>
-
-
-                                                        <div
-                                                            class="
-                                                                min-w-0
-                                                            "
-                                                        >
-
-                                                            <div
-                                                                class="
-                                                                    text-xs
-                                                                    font-semibold
-                                                                    leading-4
-                                                                "
-                                                            >
-                                                                {{
-                                                                    $alert[
-                                                                        'label'
-                                                                    ]
-                                                                }}
-                                                            </div>
-
-
-                                                            @if (
-                                                                $alert[
-                                                                    'detail'
-                                                                ]
-                                                            )
-
-                                                                <div
-                                                                    class="
-                                                                        mt-0.5
-                                                                        break-words
-                                                                        text-[11px]
-                                                                        leading-4
-                                                                        text-[#a9b1ca]
-                                                                    "
-                                                                >
-                                                                    {{
-                                                                        $alert[
-                                                                            'detail'
-                                                                        ]
-                                                                    }}
-                                                                </div>
-
-                                                            @endif
-
-                                                        </div>
-
-                                                    </div>
-
-                                                </div>
-
-                                            @endforeach
-
-                                        </div>
-
-                                    @endif
-
-                                </td>
-
-                            </tr>
-
-                        @endforeach
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </section>
-
-    @endif
-
 </div>

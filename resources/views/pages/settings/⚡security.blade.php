@@ -170,7 +170,7 @@ new #[Title('Security settings')] class extends Component
 }; ?>
 
 
-<section class="ec-settings-screen">
+<section class="ec-settings-screen ecui-settings">
 
     @include('partials.settings-heading')
 

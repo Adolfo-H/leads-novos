@@ -9,136 +9,78 @@ new #[Title('Aparência')] class extends Component
 };
 ?>
 
-
-<section class="ec-settings-screen">
+<section class="ec-settings-screen ecui-settings">
 
     @include('partials.settings-heading')
 
-
     <x-pages::settings.layout
         heading="Aparência"
-        subheading="Escolha como o Prospector deve ser exibido."
+        subheading="Escolha a preferência visual deste navegador."
     >
+        <section class="ecui-card ecui-appearance" x-data>
+            <header class="ecui-card-head">
+                <h3>Tema da interface</h3>
+                <p>
+                    A escolha é aplicada automaticamente,
+                    sem precisar salvar.
+                </p>
+            </header>
 
-        <div class="ec-settings-card">
+            <fieldset class="ecui-theme-grid">
+                <legend class="ecui-sr">
+                    Escolha o tema
+                </legend>
 
-            <div class="ec-settings-card-title">
-
-                <div class="ec-settings-card-icon">
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.7"
+                @foreach ([
+                    ['light', 'Claro', 'Superfícies claras e texto escuro.'],
+                    ['dark', 'Escuro', 'Superfícies escuras e contraste suave.'],
+                    ['system', 'Sistema', 'Acompanha a preferência do dispositivo.'],
+                ] as [$value, $label, $description])
+                    <label
+                        class="ecui-theme-option"
+                        x-bind:class="{ 'is-selected': $flux.appearance === '{{ $value }}' }"
                     >
-                        <circle
-                            cx="12"
-                            cy="12"
-                            r="4"
-                        />
+                        <input
+                            type="radio"
+                            name="ecui-theme"
+                            value="{{ $value }}"
+                            x-model="$flux.appearance"
+                        >
 
-                        <path
-                            d="M12 2v2"
-                        />
+                        <span
+                            class="ecui-theme-preview"
+                            data-theme="{{ $value }}"
+                            aria-hidden="true"
+                        >
+                            <span class="ecui-mini-sidebar"></span>
 
-                        <path
-                            d="M12 20v2"
-                        />
+                            <span class="ecui-mini-content">
+                                <i></i>
+                                <span><b></b><b></b><b></b></span>
+                                <em></em>
+                                <em></em>
+                            </span>
+                        </span>
 
-                        <path
-                            d="M2 12h2"
-                        />
+                        <strong>{{ $label }}</strong>
+                        <small>{{ $description }}</small>
+                    </label>
+                @endforeach
+            </fieldset>
 
-                        <path
-                            d="M20 12h2"
-                        />
-                    </svg>
+            <footer class="ecui-appearance-footer">
+                <span
+                    role="status"
+                    x-text="'Preferência: ' + ({ light: 'Claro', dark: 'Escuro', system: 'Sistema' }[$flux.appearance] || 'Sistema')"
+                ></span>
 
-                </div>
-
-                <div>
-
-                    <h3>
-                        Tema da interface
-                    </h3>
-
-                    <p>
-                        Você pode usar tema claro,
-                        escuro ou acompanhar o sistema.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div class="ec-settings-appearance">
-
-                <flux:radio.group
-                    x-data
-                    variant="segmented"
-                    x-model="$flux.appearance"
-                >
-
-                    <flux:radio
-                        value="light"
-                        icon="sun"
-                    >
-                        Claro
-                    </flux:radio>
-
-                    <flux:radio
-                        value="dark"
-                        icon="moon"
-                    >
-                        Escuro
-                    </flux:radio>
-
-                    <flux:radio
-                        value="system"
-                        icon="computer-desktop"
-                    >
-                        Sistema
-                    </flux:radio>
-
-                </flux:radio.group>
-
-            </div>
-
-
-            <div class="ec-settings-info">
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                >
-                    <circle
-                        cx="12"
-                        cy="12"
-                        r="9"
-                    />
-
-                    <path
-                        d="M12 11v6"
-                    />
-
-                    <path
-                        d="M12 7h.01"
-                    />
-                </svg>
-
-                <span>
-                    A opção Sistema acompanha automaticamente
-                    o tema configurado no dispositivo.
-                </span>
-
-            </div>
-
-        </div>
-
+                <p>
+                    A preferência fica salva neste navegador.
+                    Telas antigas com cores fixas podem manter
+                    seu próprio estilo.
+                </p>
+            </footer>
+        </section>
     </x-pages::settings.layout>
 
 </section>

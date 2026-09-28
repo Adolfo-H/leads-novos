@@ -394,955 +394,338 @@ new class extends Component
     }
 };
 ?>
+<div class="ecnc-page" x-data="{ section: 'identificacao' }">
 
-
-<div class="ec-company-create-page">
-
-    {{-- =====================================================
-         HERO
-    ====================================================== --}}
-    <section class="ec-company-create-hero">
-
-        <div class="ec-company-create-hero-copy">
-
-            <div class="ec-page-kicker">
-                Inteligência de Leads
+    <header class="ecnc-header">
+        <div>
+            <div class="ecnc-breadcrumb">
+                <a href="{{ route('companies.index') }}" wire:navigate>
+                    Empresas
+                </a>
+                <span aria-hidden="true">/</span>
+                <span>Novo cadastro</span>
             </div>
 
-            <h1 class="ec-company-create-title">
-                Nova empresa
-            </h1>
-
-            <p class="ec-company-create-subtitle">
-                Cadastre uma empresa manualmente
-                para iniciar a análise comercial.
-            </p>
-
+            <h1>Nova empresa</h1>
+            <p>Cadastre os dados da empresa e do estabelecimento.</p>
         </div>
-
-
-        {{-- GLOBO DIGITAL --}}
-        <div
-            class="ec-company-create-hero-visual"
-            aria-hidden="true"
-        >
-
-            <svg
-                viewBox="0 0 760 320"
-                role="presentation"
-            >
-
-                <defs>
-
-                    <radialGradient
-                        id="createGlobeHalo"
-                        cx="50%"
-                        cy="50%"
-                        r="50%"
-                    >
-                        <stop
-                            offset="0%"
-                            stop-color="#1497ff"
-                            stop-opacity=".27"
-                        />
-
-                        <stop
-                            offset="55%"
-                            stop-color="#1497ff"
-                            stop-opacity=".10"
-                        />
-
-                        <stop
-                            offset="100%"
-                            stop-color="#1497ff"
-                            stop-opacity="0"
-                        />
-
-                    </radialGradient>
-
-
-                    <linearGradient
-                        id="createOrbit"
-                        x1="0"
-                        y1="0"
-                        x2="1"
-                        y2="1"
-                    >
-                        <stop
-                            offset="0%"
-                            stop-color="#2de0d1"
-                            stop-opacity="0"
-                        />
-
-                        <stop
-                            offset="45%"
-                            stop-color="#2f9dff"
-                            stop-opacity=".70"
-                        />
-
-                        <stop
-                            offset="75%"
-                            stop-color="#39e0d3"
-                            stop-opacity=".55"
-                        />
-
-                        <stop
-                            offset="100%"
-                            stop-color="#39e0d3"
-                            stop-opacity="0"
-                        />
-
-                    </linearGradient>
-
-
-                    <pattern
-                        id="createBackgroundDots"
-                        width="16"
-                        height="16"
-                        patternUnits="userSpaceOnUse"
-                    >
-                        <circle
-                            cx="2"
-                            cy="2"
-                            r="1.05"
-                            fill="#1685e0"
-                            opacity=".25"
-                        />
-                    </pattern>
-
-
-                    <pattern
-                        id="createWorldDots"
-                        width="7"
-                        height="7"
-                        patternUnits="userSpaceOnUse"
-                    >
-                        <circle
-                            cx="2"
-                            cy="2"
-                            r="1.2"
-                            fill="#42b7ff"
-                        />
-                    </pattern>
-
-
-                    <clipPath id="createGlobeClip">
-
-                        <circle
-                            cx="535"
-                            cy="150"
-                            r="118"
-                        />
-
-                    </clipPath>
-
-                </defs>
-
-
-                <rect
-                    x="250"
-                    y="12"
-                    width="460"
-                    height="276"
-                    fill="url(#createBackgroundDots)"
-                    opacity=".72"
-                />
-
-
-                <circle
-                    cx="535"
-                    cy="150"
-                    r="172"
-                    fill="url(#createGlobeHalo)"
-                />
-
-
-                <circle
-                    cx="535"
-                    cy="150"
-                    r="118"
-                    fill="none"
-                    stroke="#269cff"
-                    stroke-opacity=".35"
-                />
-
-
-                <g
-                    fill="none"
-                    stroke="#2d8de5"
-                    stroke-opacity=".22"
-                    clip-path="url(#createGlobeClip)"
-                >
-
-                    <ellipse
-                        cx="535"
-                        cy="150"
-                        rx="118"
-                        ry="40"
-                    />
-
-                    <ellipse
-                        cx="535"
-                        cy="150"
-                        rx="118"
-                        ry="74"
-                    />
-
-                    <ellipse
-                        cx="535"
-                        cy="150"
-                        rx="45"
-                        ry="118"
-                    />
-
-                    <ellipse
-                        cx="535"
-                        cy="150"
-                        rx="83"
-                        ry="118"
-                    />
-
-                    <path
-                        d="M417 150H653"
-                    />
-
-                </g>
-
-
-                <g
-                    fill="url(#createWorldDots)"
-                    clip-path="url(#createGlobeClip)"
-                >
-
-                    <path
-                        d="
-                            M460 86
-                            C480 72
-                            512 70
-                            534 82
-                            L546 94
-                            L536 105
-                            L514 111
-                            L500 126
-                            L477 129
-                            L462 118
-                            L453 103
-                            Z
-                        "
-                    />
-
-                    <path
-                        d="
-                            M493 128
-                            C515 132
-                            528 146
-                            529 165
-                            L522 187
-                            L510 210
-                            L494 218
-                            L484 200
-                            L481 177
-                            L486 149
-                            Z
-                        "
-                    />
-
-                    <path
-                        d="
-                            M548 91
-                            C566 81
-                            589 83
-                            607 96
-                            L616 110
-                            L608 121
-                            L590 123
-                            L580 134
-                            L563 129
-                            L552 116
-                            Z
-                        "
-                    />
-
-                    <path
-                        d="
-                            M563 133
-                            C582 137
-                            593 149
-                            596 165
-                            L589 184
-                            L577 204
-                            L564 199
-                            L556 181
-                            L554 157
-                            Z
-                        "
-                    />
-
-                </g>
-
-
-                <g
-                    fill="none"
-                    stroke="url(#createOrbit)"
-                    stroke-width="1.6"
-                >
-
-                    <ellipse
-                        cx="535"
-                        cy="150"
-                        rx="192"
-                        ry="58"
-                        transform="
-                            rotate(
-                                14
-                                535
-                                150
-                            )
-                        "
-                    />
-
-                    <ellipse
-                        cx="535"
-                        cy="150"
-                        rx="176"
-                        ry="48"
-                        transform="
-                            rotate(
-                                -17
-                                535
-                                150
-                            )
-                        "
-                    />
-
-                </g>
-
-
-                <g fill="#39e1d4">
-
-                    <circle
-                        cx="456"
-                        cy="112"
-                        r="4.2"
-                    />
-
-                    <circle
-                        cx="505"
-                        cy="91"
-                        r="3.4"
-                    />
-
-                    <circle
-                        cx="588"
-                        cy="101"
-                        r="4"
-                    />
-
-                    <circle
-                        cx="607"
-                        cy="149"
-                        r="4.3"
-                    />
-
-                    <circle
-                        cx="534"
-                        cy="201"
-                        r="4.2"
-                    />
-
-                </g>
-
-            </svg>
-
-        </div>
-
 
         <a
+            class="ecnc-button ecnc-secondary"
             href="{{ route('companies.index') }}"
             wire:navigate
-            class="ec-company-create-back"
         >
-            <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-            >
-                <path d="M19 12H5" />
-                <path d="m10 17-5-5 5-5" />
-            </svg>
+            ← Voltar
+        </a>
+    </header>
 
-            Voltar
+
+    <nav class="ecnc-sections" aria-label="Seções do cadastro">
+
+        <a
+            href="#ecnc-identificacao"
+            x-on:click="section = 'identificacao'"
+            x-bind:aria-current="section === 'identificacao' ? 'step' : null"
+        >
+            <span>01</span>
+            Identificação
         </a>
 
-    </section>
-
-
-    {{-- =====================================================
-         ERROS
-    ====================================================== --}}
-    @if ($errors->any())
-
-        <div class="ec-company-create-alert">
-
-            <div class="ec-company-create-alert-icon">
-                !
-            </div>
-
-            <div>
-
-                <strong>
-                    Verifique os campos destacados.
-                </strong>
-
-                <span>
-                    Existem informações obrigatórias ou inválidas.
-                </span>
-
-            </div>
-
-        </div>
-
-    @endif
-
-
-    {{-- =====================================================
-         FORMULARIO
-    ====================================================== --}}
-    <form
-        wire:submit="save"
-        class="ec-company-create-form"
-    >
-
-        {{-- IDENTIFICAÇÃO --}}
-        <section class="ec-company-create-card">
-
-            <div class="ec-company-create-card-header">
-
-                <div class="ec-company-create-card-icon">
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.7"
-                    >
-                        <path
-                            d="
-                                M5 21
-                                V7
-                                l7-3
-                                v17
-                            "
-                        />
-
-                        <path
-                            d="
-                                M12 9
-                                h7
-                                v12
-                            "
-                        />
-                    </svg>
-
-                </div>
-
-                <div>
-
-                    <h2>
-                        Identificação
-                    </h2>
-
-                    <p>
-                        Dados principais do grupo empresarial
-                        e do estabelecimento.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div class="ec-company-create-grid ec-company-create-grid-2">
-
-                {{-- CNPJ --}}
-                <div class="ec-company-create-field">
-
-                    <label for="cnpj">
-                        CNPJ
-                    </label>
-
-                    <input
-                        id="cnpj"
-                        type="text"
-                        wire:model.blur="cnpj"
-                        placeholder="00.000.000/0000-00"
-                        autocomplete="off"
-                    >
-
-                    @error('cnpj')
-
-                        <span class="ec-company-create-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-
-                {{-- TIPO --}}
-                <div class="ec-company-create-field">
-
-                    <label for="type">
-                        Tipo do estabelecimento
-                    </label>
-
-                    <select
-                        id="type"
-                        wire:model="type"
-                    >
-
-                        <option value="matrix">
-                            Matriz
-                        </option>
-
-                        <option value="branch">
-                            Filial
-                        </option>
-
-                    </select>
-
-                    @error('type')
-
-                        <span class="ec-company-create-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-
-                {{-- RAZAO SOCIAL --}}
-                <div
-                    class="
-                        ec-company-create-field
-                        ec-company-create-field-full
-                    "
-                >
-
-                    <label for="corporateName">
-                        Razão social
-                    </label>
-
-                    <input
-                        id="corporateName"
-                        type="text"
-                        wire:model.blur="corporateName"
-                        placeholder="Razão social completa"
-                    >
-
-                    @error('corporateName')
-
-                        <span class="ec-company-create-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-
-                {{-- FANTASIA --}}
-                <div
-                    class="
-                        ec-company-create-field
-                        ec-company-create-field-full
-                    "
-                >
-
-                    <label for="fantasyName">
-                        Nome fantasia
-                    </label>
-
-                    <input
-                        id="fantasyName"
-                        type="text"
-                        wire:model.blur="fantasyName"
-                        placeholder="Opcional"
-                    >
-
-                    @error('fantasyName')
-
-                        <span class="ec-company-create-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        {{-- CADASTRO E PORTE --}}
-        <section class="ec-company-create-card">
-
-            <div class="ec-company-create-card-header">
-
-                <div class="ec-company-create-card-icon">
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.7"
-                    >
-                        <path d="M4 7h16" />
-                        <path d="M4 12h16" />
-                        <path d="M4 17h10" />
-                    </svg>
-
-                </div>
-
-                <div>
-
-                    <h2>
-                        Cadastro e porte
-                    </h2>
-
-                    <p>
-                        Situação cadastral, porte
-                        e informações societárias.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div class="ec-company-create-grid ec-company-create-grid-3">
-
-                {{-- SITUAÇÃO --}}
-                <div class="ec-company-create-field">
-
-                    <label for="registrationStatus">
-                        Situação cadastral
-                    </label>
-
-                    <select
-                        id="registrationStatus"
-                        wire:model="registrationStatus"
-                    >
-
-                        <option value="ATIVA">
-                            Ativa
-                        </option>
-
-                        <option value="SUSPENSA">
-                            Suspensa
-                        </option>
-
-                        <option value="INAPTA">
-                            Inapta
-                        </option>
-
-                        <option value="BAIXADA">
-                            Baixada
-                        </option>
-
-                        <option value="NULA">
-                            Nula
-                        </option>
-
-                    </select>
-
-                    @error('registrationStatus')
-
-                        <span class="ec-company-create-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-
-                {{-- CAPITAL --}}
-                <div class="ec-company-create-field">
-
-                    <label for="shareCapital">
-                        Capital social
-                    </label>
-
-                    <input
-                        id="shareCapital"
-                        type="text"
-                        wire:model.blur="shareCapital"
-                        placeholder="Ex.: 2.500.000,00"
-                    >
-
-                    @error('shareCapital')
-
-                        <span class="ec-company-create-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-
-                {{-- PORTE --}}
-                <div class="ec-company-create-field">
-
-                    <label for="sizeCode">
-                        Código de porte
-                    </label>
-
-                    <input
-                        id="sizeCode"
-                        type="text"
-                        wire:model.blur="sizeCode"
-                        placeholder="Ex.: 05"
-                    >
-
-                    @error('sizeCode')
-
-                        <span class="ec-company-create-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-
-                {{-- NATUREZA --}}
-                <div class="ec-company-create-field">
-
-                    <label for="legalNatureCode">
-                        Natureza jurídica
-                    </label>
-
-                    <input
-                        id="legalNatureCode"
-                        type="text"
-                        wire:model.blur="legalNatureCode"
-                        placeholder="Código"
-                    >
-
-                    @error('legalNatureCode')
-
-                        <span class="ec-company-create-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        {{-- LOCALIZACAO --}}
-        <section class="ec-company-create-card">
-
-            <div class="ec-company-create-card-header">
-
-                <div class="ec-company-create-card-icon">
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.7"
-                    >
-                        <path
-                            d="
-                                M12 21
-                                s6-5.5
-                                6-11
-                                a6 6 0 1 0-12 0
-                                c0 5.5 6 11 6 11Z
-                            "
-                        />
-
-                        <circle
-                            cx="12"
-                            cy="10"
-                            r="2"
-                        />
-                    </svg>
-
-                </div>
-
-                <div>
-
-                    <h2>
-                        Localização e contato cadastral
-                    </h2>
-
-                    <p>
-                        Dados geográficos e principais
-                        canais de contato da empresa.
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div class="ec-company-create-grid ec-company-create-grid-2">
-
-                {{-- UF --}}
-                <div class="ec-company-create-field">
-
-                    <label for="state">
-                        UF
-                    </label>
-
-                    <input
-                        id="state"
-                        type="text"
-                        maxlength="2"
-                        wire:model.blur="state"
-                        placeholder="PR"
-                        class="uppercase"
-                    >
-
-                    @error('state')
-
-                        <span class="ec-company-create-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-
-                {{-- MUNICIPIO --}}
-                <div class="ec-company-create-field">
-
-                    <label for="municipalityName">
-                        Município
-                    </label>
-
-                    <input
-                        id="municipalityName"
-                        type="text"
-                        wire:model.blur="municipalityName"
-                        placeholder="Toledo"
-                    >
-
-                    @error('municipalityName')
-
-                        <span class="ec-company-create-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-
-                {{-- EMAIL --}}
-                <div class="ec-company-create-field">
-
-                    <label for="email">
-                        E-mail cadastral
-                    </label>
-
-                    <input
-                        id="email"
-                        type="email"
-                        wire:model.blur="email"
-                        placeholder="contato@empresa.com.br"
-                    >
-
-                    @error('email')
-
-                        <span class="ec-company-create-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-
-                {{-- TELEFONE --}}
-                <div class="ec-company-create-field">
-
-                    <label for="phone1">
-                        Telefone cadastral
-                    </label>
-
-                    <input
-                        id="phone1"
-                        type="text"
-                        wire:model.blur="phone1"
-                        placeholder="(00) 0000-0000"
-                    >
-
-                    @error('phone1')
-
-                        <span class="ec-company-create-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        {{-- AÇÕES --}}
-        <div class="ec-company-create-actions">
-
-            <a
-                href="{{ route('companies.index') }}"
-                wire:navigate
-                class="ec-company-create-cancel"
+        <a
+            href="#ecnc-cadastro"
+            x-on:click="section = 'cadastro'"
+            x-bind:aria-current="section === 'cadastro' ? 'step' : null"
+        >
+            <span>02</span>
+            Cadastro e porte
+        </a>
+
+        <a
+            href="#ecnc-contato"
+            x-on:click="section = 'contato'"
+            x-bind:aria-current="section === 'contato' ? 'step' : null"
+        >
+            <span>03</span>
+            Localização e contato
+        </a>
+
+    </nav>
+
+
+    <form wire:submit="save" novalidate class="ecnc-form">
+
+        @if ($errors->any())
+            <div
+                class="ecnc-alert"
+                role="alert"
+                tabindex="-1"
+                x-init="$nextTick(() => $el.focus())"
             >
-                Cancelar
-            </a>
+                <strong>Confira os dados antes de salvar.</strong>
+
+                @foreach ($errors->all() as $message)
+                    <p>{{ $message }}</p>
+                @endforeach
+            </div>
+        @endif
 
 
-            <button
-                type="submit"
+        <div class="ecnc-layout">
+
+            <fieldset
+                class="ecnc-main"
                 wire:loading.attr="disabled"
                 wire:target="save"
-                class="ec-company-create-submit"
             >
+                <legend class="ecnc-sr">
+                    Dados da nova empresa
+                </legend>
 
-                <span
-                    wire:loading.remove
-                    wire:target="save"
+
+                <section
+                    class="ecnc-card"
+                    id="ecnc-identificacao"
+                    x-on:focusin="section = 'identificacao'"
                 >
-                    Salvar empresa
-                </span>
+                    <header class="ecnc-card-head">
+                        <span class="ecnc-number">01</span>
+
+                        <div>
+                            <h2>Identificação</h2>
+                            <p>Os campos com * são obrigatórios.</p>
+                        </div>
+                    </header>
+
+                    <div class="ecnc-grid">
+                        <div class="ecnc-field"><label for="ecnc-cnpj">CNPJ <span class="ecnc-required" aria-hidden="true">*</span></label>
+<input type="text" id="ecnc-cnpj" wire:model="cnpj" aria-invalid="{{ $errors->has('cnpj') ? 'true' : 'false' }}" @if ($errors->has('cnpj')) aria-describedby="ecnc-cnpj-error" @endif required maxlength="30" placeholder="00.000.000/0000-00">
+@error('cnpj')
+<span class="ecnc-error" id="ecnc-cnpj-error">{{ $message }}</span>
+@enderror
+</div>
+<div class="ecnc-field"><label for="ecnc-type">Tipo do estabelecimento <span class="ecnc-required" aria-hidden="true">*</span></label>
+<select id="ecnc-type" wire:model="type" aria-invalid="{{ $errors->has('type') ? 'true' : 'false' }}" @if ($errors->has('type')) aria-describedby="ecnc-type-error" @endif required><option value="matrix">Matriz</option><option value="branch">Filial</option></select>
+@error('type')
+<span class="ecnc-error" id="ecnc-type-error">{{ $message }}</span>
+@enderror
+</div>
+<div class="ecnc-field"><label for="ecnc-corporateName">Razão social <span class="ecnc-required" aria-hidden="true">*</span></label>
+<input type="text" id="ecnc-corporateName" wire:model="corporateName" aria-invalid="{{ $errors->has('corporateName') ? 'true' : 'false' }}" @if ($errors->has('corporateName')) aria-describedby="ecnc-corporateName-error" @endif required maxlength="255" placeholder="Razão social completa">
+@error('corporateName')
+<span class="ecnc-error" id="ecnc-corporateName-error">{{ $message }}</span>
+@enderror
+</div>
+<div class="ecnc-field"><label for="ecnc-fantasyName">Nome fantasia</label>
+<input type="text" id="ecnc-fantasyName" wire:model="fantasyName" aria-invalid="{{ $errors->has('fantasyName') ? 'true' : 'false' }}" @if ($errors->has('fantasyName')) aria-describedby="ecnc-fantasyName-error" @endif maxlength="255" placeholder="Opcional">
+@error('fantasyName')
+<span class="ecnc-error" id="ecnc-fantasyName-error">{{ $message }}</span>
+@enderror
+</div>
+                    </div>
+
+                    <p class="ecnc-help">
+                        CNPJ com ou sem pontuação.
+                        A validação acontece ao salvar.
+                    </p>
+                </section>
 
 
-                <span
-                    wire:loading
-                    wire:target="save"
+                <section
+                    class="ecnc-card"
+                    id="ecnc-cadastro"
+                    x-on:focusin="section = 'cadastro'"
                 >
-                    Salvando...
-                </span>
+                    <header class="ecnc-card-head">
+                        <span class="ecnc-number">02</span>
 
-            </button>
+                        <div>
+                            <h2>Cadastro e porte</h2>
+                            <p>Informações cadastrais e societárias.</p>
+                        </div>
+                    </header>
+
+                    <div class="ecnc-grid">
+                        <div class="ecnc-field"><label for="ecnc-registrationStatus">Situação cadastral</label>
+<select id="ecnc-registrationStatus" wire:model="registrationStatus" aria-invalid="{{ $errors->has('registrationStatus') ? 'true' : 'false' }}" @if ($errors->has('registrationStatus')) aria-describedby="ecnc-registrationStatus-error" @endif><option value="ATIVA">Ativa</option><option value="SUSPENSA">Suspensa</option><option value="INAPTA">Inapta</option><option value="BAIXADA">Baixada</option><option value="NULA">Nula</option><option value="">Não informada</option></select>
+@error('registrationStatus')
+<span class="ecnc-error" id="ecnc-registrationStatus-error">{{ $message }}</span>
+@enderror
+</div>
+<div class="ecnc-field"><label for="ecnc-shareCapital">Capital social (R$)</label>
+<input type="text" id="ecnc-shareCapital" wire:model="shareCapital" aria-invalid="{{ $errors->has('shareCapital') ? 'true' : 'false' }}" @if ($errors->has('shareCapital')) aria-describedby="ecnc-shareCapital-error" @endif maxlength="40" placeholder="Ex.: 2.500.000,00">
+@error('shareCapital')
+<span class="ecnc-error" id="ecnc-shareCapital-error">{{ $message }}</span>
+@enderror
+</div>
+<div class="ecnc-field"><label for="ecnc-sizeCode">Código de porte</label>
+<input type="text" id="ecnc-sizeCode" wire:model="sizeCode" aria-invalid="{{ $errors->has('sizeCode') ? 'true' : 'false' }}" @if ($errors->has('sizeCode')) aria-describedby="ecnc-sizeCode-error" @endif maxlength="10" placeholder="Ex.: 05">
+@error('sizeCode')
+<span class="ecnc-error" id="ecnc-sizeCode-error">{{ $message }}</span>
+@enderror
+</div>
+<div class="ecnc-field"><label for="ecnc-legalNatureCode">Código de natureza jurídica</label>
+<input type="text" id="ecnc-legalNatureCode" wire:model="legalNatureCode" aria-invalid="{{ $errors->has('legalNatureCode') ? 'true' : 'false' }}" @if ($errors->has('legalNatureCode')) aria-describedby="ecnc-legalNatureCode-error" @endif maxlength="10" placeholder="Código cadastral">
+@error('legalNatureCode')
+<span class="ecnc-error" id="ecnc-legalNatureCode-error">{{ $message }}</span>
+@enderror
+</div>
+                    </div>
+                </section>
+
+
+                <section
+                    class="ecnc-card"
+                    id="ecnc-contato"
+                    x-on:focusin="section = 'contato'"
+                >
+                    <header class="ecnc-card-head">
+                        <span class="ecnc-number">03</span>
+
+                        <div>
+                            <h2>Localização e contato</h2>
+                            <p>Informe os canais disponíveis para contato.</p>
+                        </div>
+                    </header>
+
+                    <div class="ecnc-grid">
+                        <div class="ecnc-field"><label for="ecnc-state">UF</label>
+<input type="text" id="ecnc-state" wire:model="state" aria-invalid="{{ $errors->has('state') ? 'true' : 'false' }}" @if ($errors->has('state')) aria-describedby="ecnc-state-error" @endif maxlength="2" placeholder="Ex.: PR">
+@error('state')
+<span class="ecnc-error" id="ecnc-state-error">{{ $message }}</span>
+@enderror
+</div>
+<div class="ecnc-field"><label for="ecnc-municipalityName">Município</label>
+<input type="text" id="ecnc-municipalityName" wire:model="municipalityName" aria-invalid="{{ $errors->has('municipalityName') ? 'true' : 'false' }}" @if ($errors->has('municipalityName')) aria-describedby="ecnc-municipalityName-error" @endif maxlength="150" placeholder="Nome do município">
+@error('municipalityName')
+<span class="ecnc-error" id="ecnc-municipalityName-error">{{ $message }}</span>
+@enderror
+</div>
+<div class="ecnc-field"><label for="ecnc-email">E-mail cadastral</label>
+<input type="email" id="ecnc-email" wire:model="email" aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}" @if ($errors->has('email')) aria-describedby="ecnc-email-error" @endif maxlength="255" placeholder="contato@empresa.com.br">
+@error('email')
+<span class="ecnc-error" id="ecnc-email-error">{{ $message }}</span>
+@enderror
+</div>
+<div class="ecnc-field"><label for="ecnc-phone1">Telefone cadastral</label>
+<input type="tel" id="ecnc-phone1" wire:model="phone1" aria-invalid="{{ $errors->has('phone1') ? 'true' : 'false' }}" @if ($errors->has('phone1')) aria-describedby="ecnc-phone1-error" @endif maxlength="50" placeholder="(00) 00000-0000">
+@error('phone1')
+<span class="ecnc-error" id="ecnc-phone1-error">{{ $message }}</span>
+@enderror
+</div>
+                    </div>
+                </section>
+
+            </fieldset>
+
+
+            <aside class="ecnc-aside" aria-label="Resumo do cadastro">
+
+                <section class="ecnc-summary">
+                    <span class="ecnc-tag">CADASTRO MANUAL</span>
+
+                    <h2>Resumo do cadastro</h2>
+                    <p>Confira as informações enquanto preenche.</p>
+
+                    <dl>
+                        <div>
+                            <dt>Razão social</dt>
+                            <dd x-text="$wire.corporateName || 'Não informada'">
+                                {{ $corporateName ?: 'Não informada' }}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt>CNPJ</dt>
+                            <dd x-text="$wire.cnpj || 'Não informado'">
+                                {{ $cnpj ?: 'Não informado' }}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt>Estabelecimento</dt>
+                            <dd x-text="$wire.type === 'matrix' ? 'Matriz' : 'Filial'">
+                                {{ $type === 'matrix' ? 'Matriz' : 'Filial' }}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt>Situação cadastral</dt>
+                            <dd x-text="$wire.registrationStatus || 'Não informada'">
+                                {{ $registrationStatus ?: 'Não informada' }}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt>Localização</dt>
+                            <dd x-text="[$wire.municipalityName, $wire.state].filter(Boolean).join(' / ') || 'Não informada'">
+                                {{ trim($municipalityName.' '.$state) ?: 'Não informada' }}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt>E-mail</dt>
+                            <dd x-text="$wire.email || 'Não informado'">
+                                {{ $email ?: 'Não informado' }}
+                            </dd>
+                        </div>
+
+                        <div>
+                            <dt>Telefone</dt>
+                            <dd x-text="$wire.phone1 || 'Não informado'">
+                                {{ $phone1 ?: 'Não informado' }}
+                            </dd>
+                        </div>
+                    </dl>
+                </section>
+
+
+                <section class="ecnc-note">
+                    <h3>Antes de salvar</h3>
+
+                    <p>
+                        Confira a razão social e o tipo do estabelecimento.
+                        O sistema verifica o CNPJ e evita cadastrar novamente
+                        um estabelecimento existente.
+                    </p>
+                </section>
+
+            </aside>
 
         </div>
+
+
+        <footer class="ecnc-actions">
+
+            <span class="ecnc-action-note">
+                Revise os dados antes de concluir.
+            </span>
+
+            <div>
+                <a
+                    class="ecnc-button ecnc-secondary"
+                    href="{{ route('companies.index') }}"
+                    wire:navigate
+                >
+                    Cancelar
+                </a>
+
+                <button
+                    type="submit"
+                    class="ecnc-button ecnc-primary"
+                    wire:loading.attr="disabled"
+                    wire:target="save"
+                >
+                    <span wire:loading.remove wire:target="save">
+                        Salvar empresa
+                    </span>
+
+                    <span wire:loading wire:target="save" role="status">
+                        Salvando...
+                    </span>
+                </button>
+            </div>
+
+        </footer>
 
     </form>
 

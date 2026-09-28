@@ -111,176 +111,180 @@ new #[Title('Configurações do perfil')] class extends Component
 };
 ?>
 
-
-<section class="ec-settings-screen">
+<section class="ec-settings-screen ecui-settings">
 
     @include('partials.settings-heading')
 
-
     <x-pages::settings.layout
         heading="Perfil"
-        subheading="Atualize seu nome e endereço de e-mail."
+        subheading="Mantenha seus dados de identificação atualizados."
     >
+        <div class="ecui-profile-grid">
 
-        <div class="ec-settings-card">
-
-            <div class="ec-settings-card-title">
-
-                <div class="ec-settings-card-icon">
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.7"
-                    >
-                        <circle
-                            cx="12"
-                            cy="8"
-                            r="3"
-                        />
-
-                        <path
-                            d="
-                                M5 21
-                                c0-4.5
-                                2.8-7
-                                7-7
-                                s7 2.5
-                                7 7
-                            "
-                        />
-                    </svg>
-
-                </div>
-
-                <div>
-
-                    <h3>
-                        Dados do perfil
-                    </h3>
-
+            <section class="ecui-card">
+                <header class="ecui-card-head">
+                    <h3>Dados do perfil</h3>
                     <p>
-                        Informações utilizadas
-                        para identificação no sistema.
+                        Informe o nome e o e-mail
+                        que serão utilizados no sistema.
                     </p>
+                </header>
 
-                </div>
-
-            </div>
-
-
-            <form
-                wire:submit="updateProfileInformation"
-                class="ec-settings-form"
-            >
-
-                <div class="ec-settings-field">
-
-                    <label for="settings-name">
-                        Nome
-                    </label>
-
-                    <input
-                        id="settings-name"
-                        type="text"
-                        wire:model="name"
-                        required
-                        autofocus
-                        autocomplete="name"
+                <form
+                    wire:submit="updateProfileInformation"
+                    class="ecui-profile-form"
+                    novalidate
+                >
+                    <fieldset
+                        wire:loading.attr="disabled"
+                        wire:target="updateProfileInformation,resendVerificationNotification"
                     >
+                        <legend class="ecui-sr">
+                            Dados do perfil
+                        </legend>
 
-                    @error('name')
+                        <div class="ecui-field">
+                            <label for="ecui-name">Nome</label>
 
-                        <span class="ec-settings-error">
-                            {{ $message }}
+                            <input
+                                id="ecui-name"
+                                type="text"
+                                wire:model="name"
+                                required
+                                autocomplete="name"
+                                aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}"
+                                @if ($errors->has('name'))
+                                    aria-describedby="ecui-name-error"
+                                @endif
+                            >
+
+                            @error('name')
+                                <p
+                                    id="ecui-name-error"
+                                    class="ecui-error"
+                                    role="alert"
+                                >
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+
+                        <div class="ecui-field">
+                            <label for="ecui-email">E-mail</label>
+
+                            <input
+                                id="ecui-email"
+                                type="email"
+                                wire:model="email"
+                                required
+                                autocomplete="email"
+                                aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}"
+                                @if ($errors->has('email'))
+                                    aria-describedby="ecui-email-error"
+                                @endif
+                            >
+
+                            @error('email')
+                                <p
+                                    id="ecui-email-error"
+                                    class="ecui-error"
+                                    role="alert"
+                                >
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+                    </fieldset>
+
+                    @if ($this->hasUnverifiedEmail)
+                        <div class="ecui-verification" role="status">
+                            <strong>E-mail ainda não verificado.</strong>
+
+                            <button
+                                type="button"
+                                wire:click="resendVerificationNotification"
+                                wire:loading.attr="disabled"
+                            >
+                                Reenviar e-mail de verificação
+                            </button>
+
+                            @if (session('status') === 'verification-link-sent')
+                                <p>
+                                    Um novo link de verificação foi enviado.
+                                </p>
+                            @endif
+                        </div>
+                    @endif
+
+                    <footer class="ecui-form-footer">
+                        <span class="ecui-muted">
+                            Revise seus dados antes de salvar.
                         </span>
-
-                    @enderror
-
-                </div>
-
-
-                <div class="ec-settings-field">
-
-                    <label for="settings-email">
-                        E-mail
-                    </label>
-
-                    <input
-                        id="settings-email"
-                        type="email"
-                        wire:model="email"
-                        required
-                        autocomplete="email"
-                    >
-
-                    @error('email')
-
-                        <span class="ec-settings-error">
-                            {{ $message }}
-                        </span>
-
-                    @enderror
-
-                </div>
-
-
-                @if ($this->hasUnverifiedEmail)
-
-                    <div class="ec-settings-warning">
-
-                        <strong>
-                            E-mail ainda não verificado.
-                        </strong>
 
                         <button
-                            type="button"
-                            wire:click.prevent="
-                                resendVerificationNotification
-                            "
+                            type="submit"
+                            class="ecui-button ecui-primary"
+                            data-test="update-profile-button"
+                            wire:loading.attr="disabled"
+                            wire:target="updateProfileInformation,resendVerificationNotification"
                         >
-                            Reenviar e-mail de verificação
-                        </button>
-
-                        @if (
-                            session('status')
-                            === 'verification-link-sent'
-                        )
-
-                            <span>
-                                Um novo link de verificação
-                                foi enviado.
+                            <span
+                                wire:loading.remove
+                                wire:target="updateProfileInformation"
+                            >
+                                Salvar alterações
                             </span>
 
-                        @endif
+                            <span
+                                wire:loading
+                                wire:target="updateProfileInformation"
+                            >
+                                Salvando...
+                            </span>
+                        </button>
+                    </footer>
+                </form>
+            </section>
 
-                    </div>
+            <aside
+                class="ecui-card ecui-account"
+                aria-label="Conta atual"
+            >
+                <span class="ecui-avatar" aria-hidden="true">
+                    {{ auth()->user()->initials() }}
+                </span>
 
-                @endif
+                <strong>{{ auth()->user()->name }}</strong>
+                <p>{{ auth()->user()->email }}</p>
 
+                <span class="ecui-account-status">
+                    {{
+                        $this->hasUnverifiedEmail
+                            ? 'Verificação pendente'
+                            : 'E-mail verificado'
+                    }}
+                </span>
 
-                <div class="ec-settings-actions">
+                <p class="ecui-account-note">
+                    Para alterar a senha ou gerenciar a autenticação,
+                    acesse Segurança.
+                </p>
 
-                    <button
-                        type="submit"
-                        class="ec-settings-primary-button"
-                        data-test="update-profile-button"
-                    >
-                        Salvar alterações
-                    </button>
-
-                </div>
-
-            </form>
+                <a
+                    href="{{ route('security.edit') }}"
+                    wire:navigate
+                    class="ecui-button ecui-secondary"
+                >
+                    Acessar segurança →
+                </a>
+            </aside>
 
         </div>
 
-
         @if ($this->showDeleteUser)
-
-            <livewire:pages::settings.delete-user-form />
-
+            <div class="ecui-delete-section">
+                <livewire:pages::settings.delete-user-form />
+            </div>
         @endif
 
     </x-pages::settings.layout>
