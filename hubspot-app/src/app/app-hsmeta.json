@@ -12,7 +12,11 @@
         "crm.objects.contacts.read",
         "crm.objects.deals.read",
         "oauth",
-        "sales-email-read"
+        "sales-email-read",
+        "crm.objects.companies.write",
+        "crm.objects.contacts.write",
+        "crm.objects.deals.write",
+        "crm.objects.owners.read"
       ],
       "optionalScopes": [],
       "conditionallyRequiredScopes": []

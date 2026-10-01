@@ -7,6 +7,95 @@ use App\Models\Company;
 final class HubSpotLeadEligibilityService
 {
     /**
+     * Avaliação para criação MANUAL no HubSpot.
+     *
+     * Diferente da automação:
+     *
+     * - não exige score mínimo;
+     * - não exige SDR elegível;
+     * - não exige pesquisa de exportação;
+     *
+     * A decisão comercial foi tomada
+     * explicitamente pelo usuário.
+     *
+     * Ainda protegemos:
+     *
+     * - sincronização já concluída;
+     * - empresa já existente no CRM;
+     * - CRM ainda não verificado.
+     *
+     * @return array{
+     *     eligible: bool,
+     *     reason: string
+     * }
+     */
+    public function evaluateManual(
+        Company $company
+    ): array {
+        $company->loadMissing([
+            'crmCheck',
+            'hubSpotLead',
+        ]);
+
+        $hubSpotLead =
+            $company->hubSpotLead;
+
+        if (
+            $hubSpotLead !== null
+            && $hubSpotLead->synced_at !== null
+        ) {
+            return [
+                'eligible' => false,
+
+                'reason' => 'Empresa já sincronizada com o HubSpot.',
+            ];
+        }
+
+        /*
+         * Se existe uma sincronização parcial,
+         * permitimos retomar.
+         *
+         * A camada de sincronização fará nova
+         * validação dos IDs remotos antes de
+         * continuar.
+         */
+        if ($hubSpotLead !== null) {
+            return [
+                'eligible' => true,
+
+                'reason' => 'Sincronização parcial pronta para retomada.',
+            ];
+        }
+
+        $crm =
+            $company->crmCheck;
+
+        if ($crm === null) {
+            return [
+                'eligible' => false,
+
+                'reason' => 'CRM ainda não foi verificado.',
+            ];
+        }
+
+        if (
+            $crm->status !== 'not_found'
+        ) {
+            return [
+                'eligible' => false,
+
+                'reason' => 'A empresa já possui registro ou histórico no HubSpot.',
+            ];
+        }
+
+        return [
+            'eligible' => true,
+
+            'reason' => 'Empresa disponível para criação manual no HubSpot.',
+        ];
+    }
+
+    /**
      * @return array{
      *     eligible: bool,
      *     reason: string

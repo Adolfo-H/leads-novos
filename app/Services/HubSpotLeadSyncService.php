@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Contracts\CrmCompanyProvider;
 use App\Models\Company;
 use App\Models\CompanyHubSpotLead;
+use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
@@ -33,10 +35,51 @@ final class HubSpotLeadSyncService
         private readonly HubSpotLeadEligibilityService $eligibility,
         private readonly CrmCompanyProvider $crmProvider,
         private readonly CommercialActivityRecorder $activityRecorder,
+        private readonly HubSpotOwnerResolverService $ownerResolver,
     ) {}
 
+    /**
+     * Fluxo automático atual.
+     *
+     * Continua respeitando:
+     *
+     * - SDR;
+     * - score mínimo;
+     * - estado do CRM;
+     * - demais regras automáticas.
+     */
     public function sync(
         Company $company
+    ): CompanyHubSpotLead {
+        return $this->syncWithMode(
+            company: $company,
+            actor: null,
+            manual: false,
+        );
+    }
+
+    /**
+     * Fluxo iniciado manualmente no dossiê.
+     *
+     * A decisão comercial foi tomada pelo
+     * usuário, portanto não aplicamos os
+     * bloqueios de score SDR da automação.
+     */
+    public function syncManual(
+        Company $company,
+        User $actor,
+    ): CompanyHubSpotLead {
+        return $this->syncWithMode(
+            company: $company,
+            actor: $actor,
+            manual: true,
+        );
+    }
+
+    private function syncWithMode(
+        Company $company,
+        ?User $actor,
+        bool $manual,
     ): CompanyHubSpotLead {
         $lock =
             Cache::lock(
@@ -47,13 +90,16 @@ final class HubSpotLeadSyncService
 
         if (! $lock->get()) {
             throw new RuntimeException(
-                'Sincronização HubSpot desta empresa já está em andamento.'
+                'Sincronização HubSpot desta empresa '
+                .'já está em andamento.'
             );
         }
 
         try {
             return $this->syncWithoutLock(
-                $company
+                company: $company,
+                actor: $actor,
+                manual: $manual,
             );
         } finally {
             $lock->release();
@@ -61,7 +107,9 @@ final class HubSpotLeadSyncService
     }
 
     private function syncWithoutLock(
-        Company $company
+        Company $company,
+        ?User $actor,
+        bool $manual,
     ): CompanyHubSpotLead {
         $company->loadMissing([
             'establishments',
@@ -72,14 +120,37 @@ final class HubSpotLeadSyncService
         ]);
 
         $eligibility =
-            $this->eligibility->evaluate(
-                $company
-            );
+            $manual
+                ? $this->eligibility
+                    ->evaluateManual(
+                        $company
+                    )
+                : $this->eligibility
+                    ->evaluate(
+                        $company
+                    );
 
         if (! $eligibility['eligible']) {
             throw new RuntimeException(
                 $eligibility['reason']
             );
+        }
+
+        $ownerId = null;
+
+        if ($manual) {
+            if ($actor === null) {
+                throw new RuntimeException(
+                    'Usuário responsável não informado '
+                    .'para a criação manual.'
+                );
+            }
+
+            $ownerId =
+                $this->ownerResolver
+                    ->resolve(
+                        $actor
+                    );
         }
 
         $existingSync =
@@ -90,15 +161,14 @@ final class HubSpotLeadSyncService
             !== null;
 
         /*
-         * Na PRIMEIRA tentativa continuamos
-         * conservadores.
+         * Antes da PRIMEIRA criação fazemos
+         * uma nova consulta ao HubSpot.
          *
-         * Se a empresa apareceu no HubSpot
-         * antes de criarmos qualquer estado
-         * local de sincronização, cancelamos.
+         * Isso protege a janela:
          *
-         * Isso evita assumir como nosso um
-         * registro criado manualmente.
+         * 10:00 - Prospector diz "não existe"
+         * 10:05 - alguém cria manualmente
+         * 10:10 - usuário clica no Prospector
          */
         if ($existingSync === null) {
             $freshCrm =
@@ -110,7 +180,7 @@ final class HubSpotLeadSyncService
             if ($freshCrm['found']) {
                 throw new RuntimeException(
                     'A empresa passou a existir no HubSpot. '
-                    .'Sincronização automática cancelada.'
+                    .'Criação cancelada para evitar duplicidade.'
                 );
             }
         }
@@ -132,14 +202,11 @@ final class HubSpotLeadSyncService
 
         try {
             /*
-             * Se já existe uma linha local mas a
-             * sincronização não terminou, esta é
-             * uma retomada.
+             * Retomada depois de falha parcial.
              *
-             * Consultamos novamente o HubSpot
-             * para recuperar IDs que possam ter
-             * sido criados remotamente antes de
-             * uma queda de conexão/processo.
+             * Se a empresa ou negócio foram
+             * criados remotamente antes da queda,
+             * recuperamos os IDs.
              */
             if ($existingSync !== null) {
                 $freshCrm =
@@ -157,60 +224,190 @@ final class HubSpotLeadSyncService
                 }
             }
 
+            /*
+             * EMPRESA
+             */
             if (
                 $sync->hubspot_company_id
                 === null
             ) {
                 $sync->hubspot_company_id =
                     $this->createCompany(
-                        $company
+                        company: $company,
+                        ownerId: $ownerId,
                     );
 
                 $sync->save();
+
+            } elseif (
+                $manual
+            ) {
+                /*
+                 * Se uma tentativa anterior criou
+                 * a empresa, garantimos o owner
+                 * na retomada.
+                 */
+                $this->updateObject(
+                    type: 'companies',
+                    id: $sync->hubspot_company_id,
+                    properties: [
+                        'hubspot_owner_id' => $ownerId,
+                    ],
+                );
             }
 
-            $contact =
-                $this->contactData(
-                    $company
+            /*
+             * CONTATOS
+             */
+            $contacts = [];
+
+            if ($manual) {
+                foreach (
+                    $this->contactCandidates(
+                        $company
+                    ) as $contact
+                ) {
+                    $contactId =
+                        $this->resolveContact(
+                            company: $company,
+                            email: $contact['email'],
+                            phone: $contact['phone'],
+                            ownerId: $ownerId,
+                        );
+
+                    $contacts[] = [
+                        'id' => $contactId,
+
+                        'email' => $contact['email'],
+
+                        'phone' => $contact['phone'],
+                    ];
+
+                    if (
+                        $sync->hubspot_contact_id
+                        === null
+                    ) {
+                        $sync->hubspot_contact_id =
+                            $contactId;
+
+                        $sync->save();
+                    }
+                }
+            } else {
+                $contact =
+                    $this->contactData(
+                        $company
+                    );
+
+                if (
+                    $sync->hubspot_contact_id
+                    === null
+                    && $contact !== null
+                ) {
+                    $sync->hubspot_contact_id =
+                        $this->resolveContact(
+                            company: $company,
+                            email: $contact['email'],
+                            phone: $contact['phone'],
+                            ownerId: null,
+                        );
+
+                    $sync->save();
+                }
+
+                if (
+                    $sync->hubspot_contact_id
+                    !== null
+                ) {
+                    $contacts[] = [
+                        'id' => $sync->hubspot_contact_id,
+
+                        'email' => $contact['email']
+                            ?? null,
+
+                        'phone' => $contact['phone']
+                            ?? null,
+                    ];
+                }
+            }
+
+            /*
+             * Em retomadas podemos já ter um
+             * contato principal salvo mesmo que
+             * ele não apareça mais nos dados
+             * cadastrais locais.
+             */
+            $contactIds =
+                array_values(
+                    array_unique(
+                        array_filter(
+                            array_map(
+                                static fn (
+                                    array $contact
+                                ): string => trim(
+                                    (string) (
+                                        $contact['id']
+                                    )
+                                ),
+                                $contacts
+                            ),
+                            static fn (
+                                string $id
+                            ): bool => $id !== ''
+                        )
+                    )
                 );
 
             if (
                 $sync->hubspot_contact_id
-                    === null
-                && $contact !== null
+                !== null
+                && ! in_array(
+                    $sync->hubspot_contact_id,
+                    $contactIds,
+                    true
+                )
             ) {
-                $sync->hubspot_contact_id =
-                    $this->resolveContact(
-                        company: $company,
-                        email: $contact['email'],
-                        phone: $contact['phone'],
-                    );
-
-                $sync->save();
+                $contactIds[] =
+                    $sync->hubspot_contact_id;
             }
 
-            if (
-                $sync->hubspot_contact_id
-                !== null
+            foreach (
+                $contactIds as $contactId
             ) {
                 $this->associate(
                     fromType: 'companies',
                     fromId: $sync->hubspot_company_id,
                     toType: 'contacts',
-                    toId: $sync->hubspot_contact_id,
+                    toId: $contactId,
                 );
             }
 
+            /*
+             * NEGÓCIO
+             */
             if (
                 $sync->hubspot_deal_id
                 === null
             ) {
                 $sync->hubspot_deal_id =
                     $this->createDeal(
-                        $company
+                        company: $company,
+                        ownerId: $ownerId,
+                        manual: $manual,
                     );
 
                 $sync->save();
+
+            } elseif (
+                $manual
+            ) {
+                $this->updateObject(
+                    type: 'deals',
+                    id: $sync->hubspot_deal_id,
+                    properties: [
+                        'hubspot_owner_id' => $ownerId,
+                    ],
+                );
             }
 
             $this->associate(
@@ -220,18 +417,90 @@ final class HubSpotLeadSyncService
                 toId: $sync->hubspot_deal_id,
             );
 
-            if (
-                $sync->hubspot_contact_id
-                !== null
+            foreach (
+                $contactIds as $contactId
             ) {
                 $this->associate(
                     fromType: 'contacts',
-                    fromId: $sync->hubspot_contact_id,
+                    fromId: $contactId,
                     toType: 'deals',
                     toId: $sync->hubspot_deal_id,
                 );
             }
 
+            /*
+             * TAREFA INICIAL
+             *
+             * Criada somente no fluxo manual.
+             */
+            $taskDueAt = null;
+
+            if (
+                $manual
+                && (bool) config(
+                    'services.hubspot.lead_task_enabled',
+                    true
+                )
+            ) {
+                $taskDueAt =
+                    $this->initialTaskDueAt();
+
+                if (
+                    $sync->hubspot_task_id
+                    === null
+                ) {
+                    /*
+                     * Primeiro procuramos uma
+                     * tarefa equivalente.
+                     *
+                     * Isso cobre inclusive uma
+                     * resposta perdida depois de
+                     * o HubSpot já ter criado a
+                     * tarefa.
+                     */
+                    $sync->hubspot_task_id =
+                        $this->findInitialTask(
+                            company: $company,
+                            ownerId: $ownerId,
+                        )
+                        ?? $this->createInitialTask(
+                            company: $company,
+                            ownerId: $ownerId,
+                            dueAt: $taskDueAt,
+                        );
+
+                    $sync->save();
+                }
+
+                $this->associate(
+                    fromType: 'tasks',
+                    fromId: $sync->hubspot_task_id,
+                    toType: 'companies',
+                    toId: $sync->hubspot_company_id,
+                );
+
+                $this->associate(
+                    fromType: 'tasks',
+                    fromId: $sync->hubspot_task_id,
+                    toType: 'deals',
+                    toId: $sync->hubspot_deal_id,
+                );
+
+                foreach (
+                    $contactIds as $contactId
+                ) {
+                    $this->associate(
+                        fromType: 'tasks',
+                        fromId: $sync->hubspot_task_id,
+                        toType: 'contacts',
+                        toId: $contactId,
+                    );
+                }
+            }
+
+            /*
+             * METADATA
+             */
             $rawMetadata =
                 $sync->getAttribute(
                     'metadata'
@@ -248,7 +517,7 @@ final class HubSpotLeadSyncService
             $metadata[
                 'contact_email'
             ] =
-                $contact['email']
+                $contacts[0]['email']
                 ?? null;
 
             $metadata[
@@ -257,18 +526,32 @@ final class HubSpotLeadSyncService
                 $sync->hubspot_contact_id
                 !== null;
 
+            if ($manual) {
+                $metadata[
+                    'manual_sync'
+                ] = [
+                    'initiated_by_user_id' => $actor->id,
+
+                    'initiated_by_email' => $actor->email,
+
+                    'hubspot_owner_id' => $ownerId,
+
+                    'contacts' => $contacts,
+
+                    'contact_ids' => $contactIds,
+
+                    'task_id' => $sync->hubspot_task_id,
+
+                    'task_due_at' => $taskDueAt
+                        ?->toIso8601String(),
+
+                    'completed_at' => now()
+                        ->toIso8601String(),
+                ];
+            }
+
             /*
-             * Preserva o contexto que qualificou
-             * o lead antes de ele virar uma
-             * oportunidade no HubSpot.
-             *
-             * Depois da criação do negócio o CRM
-             * passa a reportar "opportunity" e o
-             * SDR pode ficar bloqueado/zerado.
-             *
-             * Isso é correto para impedir nova
-             * prospecção, mas não deve apagar a
-             * qualificação comercial original.
+             * Preserva a qualificação original.
              */
             $scoreSnapshot =
                 $company->sdrScore;
@@ -283,15 +566,21 @@ final class HubSpotLeadSyncService
                 $metadata[
                     'qualification_snapshot'
                 ] = [
-                    'score' => (int) $scoreSnapshot->score,
+                    'score' => (int)
+                            $scoreSnapshot
+                                ->score,
 
-                    'priority' => $scoreSnapshot->priority,
+                    'priority' => $scoreSnapshot
+                        ->priority,
 
-                    'label' => $scoreSnapshot->label,
+                    'label' => $scoreSnapshot
+                        ->label,
 
-                    'crm_status' => $crmSnapshot->status,
+                    'crm_status' => $crmSnapshot
+                        ->status,
 
-                    'captured_at' => now()->toIso8601String(),
+                    'captured_at' => now()
+                        ->toIso8601String(),
                 ];
             }
 
@@ -319,10 +608,12 @@ final class HubSpotLeadSyncService
             }
 
             return $sync;
+
         } catch (Throwable $exception) {
             $sync->forceFill([
                 'sync_error' => mb_substr(
-                    $exception->getMessage(),
+                    $exception
+                        ->getMessage(),
                     0,
                     2000
                 ),
@@ -355,7 +646,8 @@ final class HubSpotLeadSyncService
             ) === ''
         ) {
             throw new RuntimeException(
-                'HubSpot encontrou a empresa, mas não retornou um ID válido.'
+                'O HubSpot encontrou a empresa, '
+                .'mas não retornou um ID válido.'
             );
         }
 
@@ -364,19 +656,16 @@ final class HubSpotLeadSyncService
                 (string) $externalId
             );
 
-        /*
-         * Se já salvamos um company ID local,
-         * nunca aceitamos silenciosamente um
-         * registro remoto diferente.
-         */
         if (
-            $sync->hubspot_company_id !== null
+            $sync->hubspot_company_id
+                !== null
             && $sync->hubspot_company_id
                 !== $externalId
         ) {
             throw new RuntimeException(
-                'A empresa encontrada no HubSpot não corresponde '
-                .'ao registro da sincronização em andamento.'
+                'A empresa encontrada no HubSpot '
+                .'não corresponde ao registro da '
+                .'sincronização em andamento.'
             );
         }
 
@@ -388,13 +677,6 @@ final class HubSpotLeadSyncService
                 $externalId;
         }
 
-        /*
-         * O contato já possui recuperação por
-         * e-mail dentro de resolveContact().
-         *
-         * Aqui recuperamos especialmente o Deal
-         * criado antes de uma resposta perdida.
-         */
         if (
             $sync->hubspot_deal_id
             === null
@@ -414,15 +696,11 @@ final class HubSpotLeadSyncService
                     }
 
                     $id =
-                        $deal[
-                            'id'
-                        ]
+                        $deal['id']
                         ?? null;
 
                     $name =
-                        $deal[
-                            'name'
-                        ]
+                        $deal['name']
                         ?? null;
 
                     $pipeline =
@@ -450,14 +728,17 @@ final class HubSpotLeadSyncService
                         continue;
                     }
 
-                    $matches[] = $deal;
+                    $matches[] =
+                        $deal;
                 }
             }
 
             if (count($matches) > 1) {
                 throw new RuntimeException(
-                    'Mais de um negócio compatível foi encontrado no HubSpot. '
-                    .'Sincronização automática interrompida para evitar duplicidade.'
+                    'Mais de um negócio compatível '
+                    .'foi encontrado no HubSpot. '
+                    .'Sincronização interrompida '
+                    .'para evitar duplicidade.'
                 );
             }
 
@@ -466,9 +747,8 @@ final class HubSpotLeadSyncService
                     $matches[0];
 
                 $sync->hubspot_deal_id =
-                    (string) $match[
-                        'id'
-                    ];
+                    (string)
+                        $match['id'];
 
                 $stageId =
                     $match[
@@ -499,7 +779,8 @@ final class HubSpotLeadSyncService
     }
 
     private function createCompany(
-        Company $company
+        Company $company,
+        ?string $ownerId,
     ): string {
         $matrix =
             $company->matrix
@@ -517,6 +798,36 @@ final class HubSpotLeadSyncService
 
             'country' => 'Brasil',
         ];
+
+        if ($ownerId !== null) {
+            $properties[
+                'hubspot_owner_id'
+            ] = $ownerId;
+        }
+
+        $cnpjProperty =
+            trim(
+                (string) config(
+                    'services.hubspot.company_cnpj_property'
+                )
+            );
+
+        $cnpj =
+            trim(
+                (string) (
+                    $matrix->cnpj
+                    ?? ''
+                )
+            );
+
+        if (
+            $cnpjProperty !== ''
+            && $cnpj !== ''
+        ) {
+            $properties[
+                $cnpjProperty
+            ] = $cnpj;
+        }
 
         $domain =
             $contact !== null
@@ -576,8 +887,25 @@ final class HubSpotLeadSyncService
     }
 
     private function createDeal(
-        Company $company
+        Company $company,
+        ?string $ownerId,
+        bool $manual,
     ): string {
+        $description =
+            $manual
+                ? 'Oportunidade criada manualmente pelo '
+                    .'ExportControl Prospector.'
+                : 'Lead criado automaticamente pelo '
+                    .'ExportControl Prospector.';
+
+        $description .=
+            ' Score SDR: '
+            .(
+                $company->sdrScore->score
+                ?? 0
+            )
+            .'/100.';
+
         $properties = [
             'dealname' => $this->dealName(
                 $company
@@ -587,17 +915,14 @@ final class HubSpotLeadSyncService
 
             'dealstage' => $this->initialStageId(),
 
-            'description' => 'Lead criado automaticamente pelo '
-                .'ExportControl Prospector. '
-                .'Score SDR: '
-                .(
-                    $company
-                        ->sdrScore
-                        ->score
-                    ?? 0
-                )
-                .'/100.',
+            'description' => $description,
         ];
+
+        if ($ownerId !== null) {
+            $properties[
+                'hubspot_owner_id'
+            ] = $ownerId;
+        }
 
         return $this->createObject(
             type: 'deals',
@@ -609,12 +934,21 @@ final class HubSpotLeadSyncService
         Company $company,
         string $email,
         ?string $phone,
+        ?string $ownerId,
     ): string {
         $existing =
             $this->findContactByEmail(
                 $email
             );
 
+        /*
+         * Contato já existente mantém seu
+         * owner atual.
+         *
+         * Não queremos transferir silenciosamente
+         * um contato que já pertença a outro
+         * vendedor.
+         */
         if ($existing !== null) {
             return $existing;
         }
@@ -622,7 +956,8 @@ final class HubSpotLeadSyncService
         $properties = [
             'email' => $email,
 
-            'company' => $company->corporate_name,
+            'company' => $company
+                ->corporate_name,
         ];
 
         if (
@@ -631,6 +966,12 @@ final class HubSpotLeadSyncService
         ) {
             $properties['phone'] =
                 $phone;
+        }
+
+        if ($ownerId !== null) {
+            $properties[
+                'hubspot_owner_id'
+            ] = $ownerId;
         }
 
         return $this->createObject(
@@ -710,6 +1051,233 @@ final class HubSpotLeadSyncService
             : null;
     }
 
+    private function findInitialTask(
+        Company $company,
+        string $ownerId,
+    ): ?string {
+        $response =
+            $this->client()
+                ->post(
+                    $this->baseUrl()
+                    .'/crm/v3/objects/tasks/search',
+                    [
+                        'filterGroups' => [
+                            [
+                                'filters' => [
+                                    [
+                                        'propertyName' => 'hs_task_subject',
+
+                                        'operator' => 'EQ',
+
+                                        'value' => $this
+                                            ->initialTaskSubject(
+                                                $company
+                                            ),
+                                    ],
+
+                                    [
+                                        'propertyName' => 'hubspot_owner_id',
+
+                                        'operator' => 'EQ',
+
+                                        'value' => $ownerId,
+                                    ],
+                                ],
+                            ],
+                        ],
+
+                        'properties' => [
+                            'hs_task_subject',
+                            'hubspot_owner_id',
+                            'hs_task_status',
+                            'hs_timestamp',
+                        ],
+
+                        'limit' => 10,
+                    ]
+                );
+
+        $this->ensureSuccess(
+            $response,
+            'consultar tarefa inicial'
+        );
+
+        $data =
+            $response->json();
+
+        if (! is_array($data)) {
+            return null;
+        }
+
+        $results =
+            $data['results']
+            ?? [];
+
+        if (! is_array($results)) {
+            return null;
+        }
+
+        $matches = [];
+
+        foreach ($results as $result) {
+            if (! is_array($result)) {
+                continue;
+            }
+
+            $id =
+                $result['id']
+                ?? null;
+
+            if (
+                ! is_scalar($id)
+                || trim(
+                    (string) $id
+                ) === ''
+            ) {
+                continue;
+            }
+
+            $matches[] =
+                trim(
+                    (string) $id
+                );
+        }
+
+        $matches =
+            array_values(
+                array_unique(
+                    $matches
+                )
+            );
+
+        if (count($matches) > 1) {
+            throw new RuntimeException(
+                'Mais de uma tarefa inicial '
+                .'compatível foi encontrada no '
+                .'HubSpot. A sincronização foi '
+                .'interrompida para evitar vínculo '
+                .'ambíguo.'
+            );
+        }
+
+        return $matches[0]
+            ?? null;
+    }
+
+    private function createInitialTask(
+        Company $company,
+        string $ownerId,
+        CarbonImmutable $dueAt,
+    ): string {
+        return $this->createObject(
+            type: 'tasks',
+            properties: [
+                'hs_timestamp' => (string) (
+                    $dueAt
+                        ->getTimestamp()
+                    * 1000
+                ),
+
+                'hs_task_subject' => $this->initialTaskSubject(
+                    $company
+                ),
+
+                'hs_task_body' => 'Primeiro contato comercial criado '
+                    .'pelo ExportControl Prospector. '
+                    .'Empresa: '
+                    .$company->corporate_name
+                    .'. CNPJ raiz: '
+                    .$company->cnpj_root
+                    .'.',
+
+                'hs_task_status' => 'NOT_STARTED',
+
+                'hs_task_priority' => $this->taskPriority(),
+
+                'hs_task_type' => $this->taskType(),
+
+                'hubspot_owner_id' => $ownerId,
+            ],
+        );
+    }
+
+    private function initialTaskSubject(
+        Company $company
+    ): string {
+        return mb_substr(
+            'Entrar em contato - '
+            .$company->corporate_name
+            .' - '
+            .$company->cnpj_root,
+            0,
+            240
+        );
+    }
+
+    private function initialTaskDueAt(): CarbonImmutable
+    {
+        $timezone =
+            trim(
+                (string) config(
+                    'app.timezone',
+                    'UTC'
+                )
+            );
+
+        if ($timezone === '') {
+            $timezone =
+                'UTC';
+        }
+
+        $configuredHour =
+            trim(
+                (string) config(
+                    'services.hubspot.lead_task_hour',
+                    '09:00'
+                )
+            );
+
+        if (
+            preg_match(
+                '/^([01]\d|2[0-3]):([0-5]\d)$/',
+                $configuredHour,
+                $matches
+            ) !== 1
+        ) {
+            $hour = 9;
+            $minute = 0;
+        } else {
+            $hour =
+                (int) $matches[1];
+
+            $minute =
+                (int) $matches[2];
+        }
+
+        $dueAt =
+            CarbonImmutable::now(
+                $timezone
+            )
+                ->addDay()
+                ->setTime(
+                    $hour,
+                    $minute
+                );
+
+        /*
+         * Próximo dia útil simples.
+         *
+         * Feriados poderão ser integrados
+         * futuramente se necessário.
+         */
+        while ($dueAt->isWeekend()) {
+            $dueAt =
+                $dueAt->addDay();
+        }
+
+        return $dueAt;
+    }
+
     /**
      * @param  array<string, string>  $properties
      */
@@ -738,7 +1306,8 @@ final class HubSpotLeadSyncService
 
         if (! is_array($data)) {
             throw new RuntimeException(
-                'O HubSpot retornou resposta inválida ao criar '
+                'O HubSpot retornou resposta inválida '
+                .'ao criar '
                 .$type
                 .'.'
             );
@@ -759,6 +1328,35 @@ final class HubSpotLeadSyncService
         return (string) $id;
     }
 
+    /**
+     * @param  array<string, string>  $properties
+     */
+    private function updateObject(
+        string $type,
+        string $id,
+        array $properties,
+    ): void {
+        $response =
+            $this->client()
+                ->patch(
+                    $this->baseUrl()
+                    .'/crm/v3/objects/'
+                    .$type
+                    .'/'
+                    .rawurlencode(
+                        $id
+                    ),
+                    [
+                        'properties' => $properties,
+                    ]
+                );
+
+        $this->ensureSuccess(
+            $response,
+            'atualizar '.$type
+        );
+    }
+
     private function associate(
         string $fromType,
         string $fromId,
@@ -772,11 +1370,15 @@ final class HubSpotLeadSyncService
                     .'/crm/v4/objects/'
                     .$fromType
                     .'/'
-                    .rawurlencode($fromId)
+                    .rawurlencode(
+                        $fromId
+                    )
                     .'/associations/default/'
                     .$toType
                     .'/'
-                    .rawurlencode($toId)
+                    .rawurlencode(
+                        $toId
+                    )
                 );
 
         $this->ensureSuccess(
@@ -789,19 +1391,21 @@ final class HubSpotLeadSyncService
     }
 
     /**
-     * @return array{
+     * @return list<array{
      *     email: string,
      *     phone: string|null
-     * }|null
+     * }>
      */
-    private function contactData(
+    private function contactCandidates(
         Company $company
-    ): ?array {
+    ): array {
         $establishments =
             $company
                 ->establishments
                 ->sortByDesc(
-                    function ($establishment): int {
+                    function (
+                        $establishment
+                    ): int {
                         $score = 0;
 
                         if (
@@ -822,6 +1426,8 @@ final class HubSpotLeadSyncService
                         return $score;
                     }
                 );
+
+        $contacts = [];
 
         foreach (
             $establishments as $establishment
@@ -845,6 +1451,19 @@ final class HubSpotLeadSyncService
                 continue;
             }
 
+            /*
+             * Deduplicação por e-mail.
+             */
+            if (
+                isset(
+                    $contacts[
+                        $email
+                    ]
+                )
+            ) {
+                continue;
+            }
+
             $phone =
                 trim(
                     (string)
@@ -852,7 +1471,18 @@ final class HubSpotLeadSyncService
                             ->phone_1
                 );
 
-            return [
+            if ($phone === '') {
+                $phone =
+                    trim(
+                        (string)
+                            $establishment
+                                ->phone_2
+                    );
+            }
+
+            $contacts[
+                $email
+            ] = [
                 'email' => $email,
 
                 'phone' => $phone !== ''
@@ -861,7 +1491,27 @@ final class HubSpotLeadSyncService
             ];
         }
 
-        return null;
+        return array_values(
+            $contacts
+        );
+    }
+
+    /**
+     * @return array{
+     *     email: string,
+     *     phone: string|null
+     * }|null
+     */
+    private function contactData(
+        Company $company
+    ): ?array {
+        $contacts =
+            $this->contactCandidates(
+                $company
+            );
+
+        return $contacts[0]
+            ?? null;
     }
 
     private function domainFromEmail(
@@ -871,7 +1521,9 @@ final class HubSpotLeadSyncService
             explode(
                 '@',
                 mb_strtolower(
-                    trim($email)
+                    trim(
+                        $email
+                    )
                 )
             );
 
@@ -918,6 +1570,56 @@ final class HubSpotLeadSyncService
                 'appointmentscheduled'
             )
         );
+    }
+
+    private function taskPriority(): string
+    {
+        $priority =
+            mb_strtoupper(
+                trim(
+                    (string) config(
+                        'services.hubspot.lead_task_priority',
+                        'HIGH'
+                    )
+                )
+            );
+
+        return in_array(
+            $priority,
+            [
+                'LOW',
+                'MEDIUM',
+                'HIGH',
+            ],
+            true
+        )
+            ? $priority
+            : 'HIGH';
+    }
+
+    private function taskType(): string
+    {
+        $type =
+            mb_strtoupper(
+                trim(
+                    (string) config(
+                        'services.hubspot.lead_task_type',
+                        'CALL'
+                    )
+                )
+            );
+
+        return in_array(
+            $type,
+            [
+                'CALL',
+                'EMAIL',
+                'TODO',
+            ],
+            true
+        )
+            ? $type
+            : 'CALL';
     }
 
     private function baseUrl(): string

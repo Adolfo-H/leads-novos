@@ -158,6 +158,37 @@ return [
             'appointmentscheduled'
         ),
 
+        'lead_task_enabled' => (bool) env(
+            'HUBSPOT_LEAD_TASK_ENABLED',
+            true
+        ),
+
+        'lead_task_hour' => env(
+            'HUBSPOT_LEAD_TASK_HOUR',
+            '09:00'
+        ),
+
+        'lead_task_priority' => env(
+            'HUBSPOT_LEAD_TASK_PRIORITY',
+            'HIGH'
+        ),
+
+        'lead_task_type' => env(
+            'HUBSPOT_LEAD_TASK_TYPE',
+            'CALL'
+        ),
+
+        /*
+         * Propriedade customizada de CNPJ
+         * no HubSpot.
+         *
+         * Deixe vazio caso o portal ainda
+         * não possua essa propriedade.
+         */
+        'company_cnpj_property' => env(
+            'HUBSPOT_COMPANY_CNPJ_PROPERTY'
+        ),
+
         'lead_discarded_stages' => array_values(
             array_filter(
                 array_map(

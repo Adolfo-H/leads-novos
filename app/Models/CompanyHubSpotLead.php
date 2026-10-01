@@ -15,6 +15,7 @@ class CompanyHubSpotLead extends Model
         'hubspot_company_id',
         'hubspot_contact_id',
         'hubspot_deal_id',
+        'hubspot_task_id',
         'pipeline_id',
         'deal_stage_id',
         'work_status',
