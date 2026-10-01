@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Company;
 use App\Models\Establishment;
+use App\Support\Cnpj;
 use App\Support\TextNormalizer;
 
 final class ExportResearchEntityMatcher
@@ -119,6 +120,14 @@ final class ExportResearchEntityMatcher
 
         /*
          * CNPJ é a identificação mais forte.
+         *
+         * Nunca concatenamos todos os números
+         * existentes em uma página.
+         *
+         * Primeiro extraímos candidatos de
+         * CNPJ completo, validamos o dígito
+         * verificador e só depois comparamos
+         * com a empresa pesquisada.
          */
         $rawText =
             ($title ?? '')
@@ -127,67 +136,76 @@ final class ExportResearchEntityMatcher
             .' '
             .($url ?? '');
 
-        $digits =
-            preg_replace(
-                '/\D+/',
-                '',
-                $rawText
-            )
-            ?? '';
-
-        $root =
-            preg_replace(
-                '/\D+/',
-                '',
+        $companyRoot =
+            Cnpj::normalize(
                 (string)
                     $company->cnpj_root
-            )
-            ?? '';
-
-        if (
-            strlen($root) === 8
-            && str_contains(
-                $digits,
-                $root
-            )
-        ) {
-            return true;
-        }
+            );
 
         $matrixRelation =
             $company->relationLoaded(
                 'matrix'
             )
-                ? $company->getRelation(
-                    'matrix'
-                )
+                ? $company
+                    ->getRelation(
+                        'matrix'
+                    )
                 : null;
 
         $matrix =
-            $matrixRelation instanceof Establishment
-                ? $matrixRelation
-                : null;
+            $matrixRelation
+                instanceof Establishment
+                    ? $matrixRelation
+                    : null;
 
         $matrixCnpj =
             $matrix === null
                 ? ''
-                : (
-                    preg_replace(
-                        '/\D+/',
-                        '',
-                        (string) $matrix->cnpj
-                    )
-                    ?? ''
+                : Cnpj::normalize(
+                    (string)
+                        $matrix->cnpj
                 );
 
-        if (
-            strlen($matrixCnpj) === 14
-            && str_contains(
-                $digits,
-                $matrixCnpj
-            )
+        foreach (
+            $this
+                ->extractValidCnpjs(
+                    $rawText
+                ) as $candidate
         ) {
-            return true;
+            /*
+             * Qualquer estabelecimento válido
+             * pertencente à mesma raiz identifica
+             * o grupo empresarial.
+             */
+            if (
+                strlen(
+                    $companyRoot
+                ) === 8
+                && hash_equals(
+                    $companyRoot,
+                    Cnpj::root(
+                        $candidate
+                    )
+                )
+            ) {
+                return true;
+            }
+
+            /*
+             * Também aceitamos correspondência
+             * exata da matriz.
+             */
+            if (
+                strlen(
+                    $matrixCnpj
+                ) === 14
+                && hash_equals(
+                    $matrixCnpj,
+                    $candidate
+                )
+            ) {
+                return true;
+            }
         }
 
         /*
@@ -305,6 +323,86 @@ final class ExportResearchEntityMatcher
         }
 
         return $matched >= 2;
+    }
+
+    /**
+     * Extrai somente CNPJs completos e válidos.
+     *
+     * Compatível com:
+     *
+     * - CNPJ numérico;
+     * - CNPJ formatado;
+     * - CNPJ alfanumérico.
+     *
+     * @return list<string>
+     */
+    private function extractValidCnpjs(
+        string $text,
+    ): array {
+        $text =
+            mb_strtoupper(
+                $text
+            );
+
+        $matches =
+            [];
+
+        /*
+         * Exemplos aceitos:
+         *
+         * 12.345.678/0001-XX
+         * 123456780001XX
+         *
+         * As 12 primeiras posições podem ser
+         * alfanuméricas; os dois DVs permanecem
+         * numéricos.
+         */
+        preg_match_all(
+            '/(?<![A-Z0-9])(?:[A-Z0-9]{2}[.\s]?[A-Z0-9]{3}[.\s]?[A-Z0-9]{3}[\/\s-]?[A-Z0-9]{4}[-\s]?[0-9]{2}|[A-Z0-9]{12}[0-9]{2})(?![A-Z0-9])/',
+            $text,
+            $matches,
+        );
+
+        /** @var list<string> $rawCandidates */
+        $rawCandidates =
+            $matches[0];
+
+        $valid =
+            [];
+
+        foreach (
+            $rawCandidates as $rawCandidate
+        ) {
+            $candidate =
+                Cnpj::normalize(
+                    $rawCandidate
+                );
+
+            if (
+                strlen(
+                    $candidate
+                ) !== 14
+            ) {
+                continue;
+            }
+
+            if (
+                ! Cnpj::isValid(
+                    $candidate
+                )
+            ) {
+                continue;
+            }
+
+            $valid[] =
+                $candidate;
+        }
+
+        return array_values(
+            array_unique(
+                $valid
+            )
+        );
     }
 
     private function baseCompanyName(

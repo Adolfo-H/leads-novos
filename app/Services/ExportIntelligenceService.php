@@ -189,22 +189,28 @@ final class ExportIntelligenceService
         );
 
         $fingerprint =
-            $this->evidenceFingerprint(
-                company: $company,
-                dimension: $dimension,
-                sourceType: $sourceType,
-                sourceUrl: $sourceUrl,
-                title: $title,
-                evidenceText: $evidenceText,
-            );
+            $this
+                ->evidenceFingerprint(
+                    company: $company,
+
+                    dimension: $dimension,
+
+                    sourceType: $sourceType,
+
+                    sourceUrl: $sourceUrl,
+
+                    title: $title,
+
+                    evidenceText: $evidenceText,
+                );
 
         /*
          * A identidade da evidência é o
          * fingerprint.
          *
          * A mesma evidência encontrada em uma
-         * nova pesquisa deve atualizar o mesmo
-         * registro, nunca criar outra linha.
+         * nova pesquisa atualiza o mesmo
+         * registro, evitando duplicidade.
          */
         $evidence =
             CompanyExportEvidence::query()
@@ -220,12 +226,163 @@ final class ExportIntelligenceService
         }
 
         /*
+         * REGRA DE PROTEÇÃO HUMANA
+         * ------------------------
+         *
+         * Se uma pessoa já confirmou essa
+         * evidência, uma coleta automática
+         * posterior NÃO pode:
+         *
+         * - remover a confirmação;
+         * - inverter positivo/negativo;
+         * - diminuir confiança;
+         * - trocar o snapshot textual que
+         *   justificou a confirmação.
+         *
+         * A observação automática nova fica
+         * guardada separadamente no metadata.
+         *
+         * Uma chamada confirmed=true continua
+         * podendo representar uma nova revisão
+         * humana consciente.
+         */
+        $preserveConfirmedReview =
+            $evidence->exists
+            && (bool)
+                $evidence
+                    ->is_confirmed
+            && ! $confirmed;
+
+        /**
+         * O model possui cast "array" para metadata.
+         *
+         * getAttribute() executa esse cast em runtime.
+         * A anotação explicita ao PHPStan o tipo já
+         * convertido pelo Eloquent.
+         *
+         * @var array<string, mixed>|null $existingMetadata
+         */
+        $existingMetadata =
+            $evidence->getAttribute(
+                'metadata'
+            );
+
+        $existingMetadataArray =
+            $existingMetadata
+            ?? [];
+
+        if (
+            $preserveConfirmedReview
+        ) {
+            /*
+             * Não misturamos metadata automático
+             * no nível principal para não
+             * sobrescrever informações de uma
+             * eventual revisão humana.
+             */
+            $storedMetadata =
+                $existingMetadataArray;
+
+            $automaticObservedAt =
+                $observedAt
+                ?? now();
+
+            $storedMetadata[
+                'latest_automatic_observation'
+            ] = [
+                'signal' => $signal,
+
+                'confidence' => $confidence,
+
+                'source_type' => $sourceType,
+
+                'source_name' => $sourceName,
+
+                'source_url' => $sourceUrl,
+
+                'title' => $title,
+
+                'evidence_text' => $evidenceText,
+
+                'observed_at' => $automaticObservedAt
+                    ->format(
+                        DATE_ATOM
+                    ),
+
+                'metadata' => $metadata,
+            ];
+        } else {
+            /*
+             * Evidência ainda não confirmada:
+             * atualização automática normal.
+             */
+            $storedMetadata =
+                array_merge(
+                    $existingMetadataArray,
+                    $metadata,
+                );
+        }
+
+        $signalToStore =
+            $preserveConfirmedReview
+                ? (string)
+                    $evidence
+                        ->signal
+                : $signal;
+
+        $confidenceToStore =
+            $preserveConfirmedReview
+                ? (int)
+                    $evidence
+                        ->confidence
+                : $confidence;
+
+        $confirmedToStore =
+            $preserveConfirmedReview
+                ? true
+                : $confirmed;
+
+        /*
+         * Preservamos também o snapshot da
+         * fonte que havia sido confirmado.
+         */
+        $sourceNameToStore =
+            $preserveConfirmedReview
+                ? $evidence
+                    ->source_name
+                : $sourceName;
+
+        $sourceUrlToStore =
+            $preserveConfirmedReview
+                ? $evidence
+                    ->source_url
+                : $sourceUrl;
+
+        $titleToStore =
+            $preserveConfirmedReview
+                ? $evidence
+                    ->title
+                : $title;
+
+        $evidenceTextToStore =
+            $preserveConfirmedReview
+                ? (string)
+                    $evidence
+                        ->evidence_text
+                : $evidenceText;
+
+        $observedAtToStore =
+            $preserveConfirmedReview
+                ? $evidence
+                    ->observed_at
+                : $observedAt;
+
+        /*
          * forceFill é proposital.
          *
          * Não dependemos de $fillable para
          * campos internos calculados pelo
-         * próprio Prospector, especialmente
-         * fingerprint.
+         * próprio Prospector.
          */
         $evidence->forceFill([
             'company_id' => $company->id,
@@ -234,25 +391,25 @@ final class ExportIntelligenceService
 
             'dimension' => $dimension,
 
-            'signal' => $signal,
+            'signal' => $signalToStore,
 
             'source_type' => $sourceType,
 
-            'source_name' => $sourceName,
+            'source_name' => $sourceNameToStore,
 
-            'source_url' => $sourceUrl,
+            'source_url' => $sourceUrlToStore,
 
-            'title' => $title,
+            'title' => $titleToStore,
 
-            'evidence_text' => $evidenceText,
+            'evidence_text' => $evidenceTextToStore,
 
-            'confidence' => $confidence,
+            'confidence' => $confidenceToStore,
 
-            'is_confirmed' => $confirmed,
+            'is_confirmed' => $confirmedToStore,
 
-            'observed_at' => $observedAt,
+            'observed_at' => $observedAtToStore,
 
-            'metadata' => $metadata,
+            'metadata' => $storedMetadata,
         ]);
 
         $evidence->save();
@@ -265,23 +422,27 @@ final class ExportIntelligenceService
         $this->scoring
             ->recalculateDimension(
                 company: $company,
+
                 dimension: $dimension,
             );
 
         /*
          * A evidência recalculou uma dimensão
          * de exportação; propagamos a mudança
-         * para o Score SDR imediatamente.
+         * para o Score SDR.
          */
-        $company->unsetRelation(
-            'exportIntelligence'
-        );
+        $company
+            ->unsetRelation(
+                'exportIntelligence'
+            );
 
-        $this->sdr->recalculate(
-            $company
-        );
+        $this->sdr
+            ->recalculate(
+                $company
+            );
 
-        return $evidence->refresh();
+        return $evidence
+            ->refresh();
     }
 
     private function evidenceFingerprint(

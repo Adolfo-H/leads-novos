@@ -14,15 +14,6 @@ final class CommercialRoleService
         string $role,
     ): User {
         if (
-            ! $actor
-                ->isCommercialManager()
-        ) {
-            throw new DomainException(
-                'Somente gestores podem alterar perfis comerciais.'
-            );
-        }
-
-        if (
             ! in_array(
                 $role,
                 [
@@ -37,28 +28,84 @@ final class CommercialRoleService
             );
         }
 
-        if (
-            $target->email_verified_at
-            === null
-        ) {
-            throw new DomainException(
-                'Somente usuários verificados podem receber perfil comercial.'
-            );
-        }
-
         return DB::transaction(
             function () use (
                 $actor,
                 $target,
                 $role,
             ): User {
-                $lockedTarget =
+                /*
+                 * Actor e target são bloqueados
+                 * sempre na mesma ordem.
+                 *
+                 * Isso evita trabalhar com um
+                 * papel comercial que tenha sido
+                 * alterado enquanto a operação
+                 * estava sendo iniciada.
+                 */
+                $ids =
+                    collect([
+                        (int) $actor->id,
+                        (int) $target->id,
+                    ])
+                        ->unique()
+                        ->sort()
+                        ->values()
+                        ->all();
+
+                $lockedUsers =
                     User::query()
                         ->whereKey(
-                            $target->id
+                            $ids
+                        )
+                        ->orderBy(
+                            'id'
                         )
                         ->lockForUpdate()
-                        ->firstOrFail();
+                        ->get()
+                        ->keyBy(
+                            'id'
+                        );
+
+                /** @var User|null $lockedActor */
+                $lockedActor =
+                    $lockedUsers->get(
+                        $actor->id
+                    );
+
+                /** @var User|null $lockedTarget */
+                $lockedTarget =
+                    $lockedUsers->get(
+                        $target->id
+                    );
+
+                if (
+                    ! $lockedActor
+                    || ! $lockedTarget
+                ) {
+                    throw new DomainException(
+                        'Usuário comercial não encontrado.'
+                    );
+                }
+
+                if (
+                    ! $lockedActor
+                        ->isCommercialManager()
+                ) {
+                    throw new DomainException(
+                        'Somente gestores podem alterar perfis comerciais.'
+                    );
+                }
+
+                if (
+                    $lockedTarget
+                        ->email_verified_at
+                    === null
+                ) {
+                    throw new DomainException(
+                        'Somente usuários verificados podem receber perfil comercial.'
+                    );
+                }
 
                 if (
                     $lockedTarget
@@ -73,37 +120,26 @@ final class CommercialRoleService
                         ->isCommercialManager()
                     && $role
                         === User::ROLE_SELLER
-                ) {
-                    /*
-                     * Evita que o gestor logado
-                     * remova o próprio acesso
-                     * no meio da sessão.
-                     */
-                    if (
-                        $actor->id
+                    && $lockedActor->id
                         === $lockedTarget->id
-                    ) {
-                        throw new DomainException(
-                            'Você não pode remover seu próprio perfil de gestor.'
-                        );
-                    }
-
-                    $managerCount =
-                        User::query()
-                            ->where(
-                                'commercial_role',
-                                User::ROLE_MANAGER
-                            )
-                            ->lockForUpdate()
-                            ->count();
-
-                    if ($managerCount <= 1) {
-                        throw new DomainException(
-                            'O sistema precisa manter pelo menos um gestor.'
-                        );
-                    }
+                ) {
+                    throw new DomainException(
+                        'Você não pode remover seu próprio perfil de gestor.'
+                    );
                 }
 
+                /*
+                 * Se o alvo é outro gestor,
+                 * o actor bloqueado continua
+                 * sendo gestor.
+                 *
+                 * Portanto sempre permanece
+                 * pelo menos um gestor após
+                 * a alteração.
+                 *
+                 * Não usamos COUNT(*) FOR UPDATE,
+                 * combinação inválida no PostgreSQL.
+                 */
                 $lockedTarget
                     ->forceFill([
                         'commercial_role' => $role,

@@ -1,0 +1,2602 @@
+/*
+|--------------------------------------------------------------------------
+| Leads Workspace
+|--------------------------------------------------------------------------
+|
+| Estilos retirados das views Blade.
+|
+| Nesta fase eles foram apenas realocados.
+| A conversão completa para os tokens globais
+| será feita na próxima etapa.
+|
+*/
+
+
+/*
+=============================================
+ LEADS - WORKSPACE PRINCIPAL
+=============================================
+*/
+
+.leads-rf {
+        --rf-bg: #071b31;
+        --rf-panel: #0b2845;
+        --rf-panel-2: #0d3152;
+        --rf-border: rgba(111, 181, 226, .16);
+        --rf-border-strong: rgba(63, 213, 210, .32);
+        --rf-text: #f2f7ff;
+        --rf-muted: #7896b5;
+        --rf-muted-2: #9cb3ca;
+        --rf-cyan: #2eddd2;
+        --rf-blue: #4aa8ff;
+        --rf-green: #42dfac;
+        --rf-yellow: #f5c54b;
+        --rf-red: #ff6e7b;
+        --rf-violet: #b18cff;
+        color: var(--rf-text);
+    }
+
+    .leads-rf * {
+        box-sizing: border-box;
+    }
+
+    .rf-shell {
+        display: grid;
+        gap: 12px;
+    }
+
+    .rf-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 24px;
+        padding: 4px 2px 8px;
+    }
+
+    .rf-kicker {
+        color: var(--rf-cyan);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+    }
+
+    .rf-title-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 4px;
+    }
+
+    .rf-title {
+        margin: 0;
+        color: white;
+        font-size: clamp(30px, 3vw, 46px);
+        line-height: 1;
+        letter-spacing: -.035em;
+        font-weight: 800;
+    }
+
+    .rf-count-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border: 1px solid rgba(46,221,210,.3);
+        border-radius: 999px;
+        background: rgba(46,221,210,.07);
+        color: var(--rf-cyan);
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .rf-subtitle {
+        max-width: 680px;
+        margin: 10px 0 0;
+        color: var(--rf-muted-2);
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .rf-header-guide {
+        max-width: 310px;
+        padding: 10px 12px;
+        border: 1px solid var(--rf-border);
+        border-radius: 14px;
+        background: linear-gradient(
+            135deg,
+            rgba(46,221,210,.06),
+            rgba(74,168,255,.025)
+        );
+    }
+
+    .rf-header-guide strong {
+        display: block;
+        color: var(--rf-text);
+        font-size: 12px;
+    }
+
+    .rf-header-guide span {
+        display: block;
+        margin-top: 3px;
+        color: var(--rf-muted);
+        font-size: 11px;
+        line-height: 1.45;
+    }
+
+    .rf-alert {
+        padding: 12px 15px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .rf-alert-ok {
+        border: 1px solid rgba(66,223,172,.24);
+        background: rgba(66,223,172,.07);
+        color: var(--rf-green);
+    }
+
+    .rf-alert-error {
+        border: 1px solid rgba(255,110,123,.24);
+        background: rgba(255,110,123,.07);
+        color: var(--rf-red);
+    }
+
+    .rf-kpis {
+        display: grid;
+        grid-template-columns:
+            repeat(6, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .rf-kpi {
+        position: relative;
+        min-height: 92px;
+        padding: 14px 15px;
+        overflow: hidden;
+        border: 1px solid var(--rf-border);
+        border-radius: 15px;
+        background:
+            linear-gradient(
+                145deg,
+                rgba(18, 60, 96, .72),
+                rgba(7, 32, 57, .94)
+            );
+    }
+
+    .rf-kpi-clickable {
+        width: 100%;
+        appearance: none;
+        text-align: left;
+        font: inherit;
+        cursor: pointer;
+        transition:
+            transform .16s ease,
+            border-color .16s ease,
+            background .16s ease,
+            box-shadow .16s ease;
+    }
+
+    .rf-kpi-clickable:hover {
+        transform: translateY(-1px);
+        border-color: rgba(46,221,210,.32);
+        box-shadow:
+            0 8px 22px rgba(0,0,0,.14);
+    }
+
+    .rf-kpi-clickable.is-active {
+        border-color: rgba(46,221,210,.58);
+        box-shadow:
+            inset 0 0 0 1px rgba(46,221,210,.14),
+            0 8px 24px rgba(0,0,0,.16);
+    }
+
+    .rf-stage-summary {
+        padding: 13px 15px;
+        border: 1px solid var(--rf-border);
+        border-radius: 15px;
+        background: rgba(7, 30, 52, .65);
+    }
+
+    .rf-stage-summary-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 10px;
+    }
+
+    .rf-stage-summary-head strong {
+        display: block;
+        color: var(--rf-text);
+        font-size: 12px;
+    }
+
+    .rf-stage-summary-head span {
+        display: block;
+        margin-top: 3px;
+        color: var(--rf-muted);
+        font-size: 10px;
+    }
+
+    .rf-stage-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+    }
+
+    .rf-stage-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 30px;
+        padding: 0 10px;
+        border: 1px solid rgba(74,168,255,.16);
+        border-radius: 9px;
+        background: rgba(74,168,255,.045);
+        color: #9fb9d4;
+        font: inherit;
+        font-size: 10px;
+        cursor: pointer;
+        transition:
+            border-color .16s ease,
+            background .16s ease,
+            color .16s ease;
+    }
+
+    .rf-stage-chip strong {
+        min-width: 22px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: rgba(255,255,255,.05);
+        color: #e2efff;
+        font-size: 9px;
+        text-align: center;
+    }
+
+    .rf-stage-chip:hover,
+    .rf-stage-chip.is-active {
+        border-color: rgba(46,221,210,.42);
+        background: rgba(46,221,210,.08);
+        color: var(--rf-cyan);
+    }
+
+    .rf-stage-clear {
+        min-height: 28px;
+        padding: 0 9px;
+        border: 1px solid rgba(46,221,210,.18);
+        border-radius: 8px;
+        background: rgba(46,221,210,.05);
+        color: var(--rf-cyan);
+        font-size: 9px;
+        font-weight: 750;
+        cursor: pointer;
+    }
+
+    .rf-stage-empty {
+        color: var(--rf-muted);
+        font-size: 10px;
+    }
+
+    .rf-kpi::after {
+        content: "";
+        position: absolute;
+        width: 70px;
+        height: 70px;
+        top: -25px;
+        right: -22px;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: .04;
+    }
+
+    .rf-kpi-label {
+        color: var(--rf-muted);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+    }
+
+    .rf-kpi-value {
+        margin-top: 8px;
+        color: white;
+        font-size: 26px;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -.03em;
+    }
+
+    .rf-kpi-caption {
+        margin-top: 8px;
+        color: var(--rf-muted-2);
+        font-size: 10px;
+        line-height: 1.35;
+    }
+
+    .rf-kpi-total {
+        color: var(--rf-cyan);
+    }
+
+    .rf-kpi-high {
+        color: var(--rf-red);
+    }
+
+    .rf-kpi-new {
+        color: var(--rf-blue);
+    }
+
+    .rf-kpi-contacting {
+        color: var(--rf-green);
+    }
+
+    .rf-kpi-waiting {
+        color: var(--rf-yellow);
+    }
+
+    .rf-kpi-future {
+        color: var(--rf-violet);
+    }
+
+    .rf-status-guide {
+        display: grid;
+        grid-template-columns:
+            175px repeat(5, minmax(0, 1fr));
+        border: 1px solid var(--rf-border);
+        border-radius: 15px;
+        overflow: hidden;
+        background: rgba(7, 30, 52, .65);
+    }
+
+    .rf-guide-title,
+    .rf-guide-item {
+        min-height: 62px;
+        padding: 11px 14px;
+    }
+
+    .rf-guide-title {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        border-right: 1px solid var(--rf-border);
+    }
+
+    .rf-guide-title strong {
+        font-size: 12px;
+    }
+
+    .rf-guide-title span {
+        margin-top: 3px;
+        color: var(--rf-muted);
+        font-size: 10px;
+        line-height: 1.35;
+    }
+
+    .rf-guide-item {
+        border-right: 1px solid rgba(111,181,226,.09);
+    }
+
+    .rf-guide-item:last-child {
+        border-right: 0;
+    }
+
+    .rf-guide-item strong {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+    }
+
+    .rf-guide-dot {
+        width: 7px;
+        height: 7px;
+        flex: 0 0 7px;
+        border-radius: 50%;
+    }
+
+    .rf-guide-item span {
+        display: block;
+        margin-top: 6px;
+        color: var(--rf-muted);
+        font-size: 10px;
+        line-height: 1.35;
+    }
+
+    .rf-panel {
+        border: 1px solid var(--rf-border);
+        border-radius: 16px;
+        background:
+            linear-gradient(
+                180deg,
+                rgba(10, 39, 66, .9),
+                rgba(6, 28, 50, .9)
+            );
+    }
+
+    .rf-filters {
+        padding: 14px;
+    }
+
+    .rf-filter-main {
+        display: grid;
+        grid-template-columns:
+            minmax(220px, 1.7fr)
+            repeat(4, minmax(145px, .85fr));
+        gap: 9px;
+    }
+
+    .rf-filter-secondary {
+        display: grid;
+        grid-template-columns:
+            repeat(2, minmax(150px, 1fr))
+            auto auto auto;
+        align-items: center;
+        gap: 9px;
+        margin-top: 9px;
+    }
+
+    .rf-input,
+    .rf-select {
+        width: 100%;
+        height: 40px;
+        border: 1px solid rgba(128,184,222,.16);
+        border-radius: 10px;
+        outline: none;
+        background: #081f37;
+        color: #dcecff;
+        font-size: 11px;
+        transition: border-color .18s ease,
+                    background .18s ease;
+    }
+
+    .rf-input {
+        padding: 0 12px;
+    }
+
+    .rf-select {
+        padding: 0 10px;
+    }
+
+    .rf-input:focus,
+    .rf-select:focus {
+        border-color: rgba(46,221,210,.55);
+        background: #092742;
+    }
+
+    .rf-filter-action {
+        height: 40px;
+        padding: 0 13px;
+        border: 1px solid var(--rf-border);
+        border-radius: 10px;
+        background: rgba(255,255,255,.025);
+        color: var(--rf-muted-2);
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .rf-filter-action:hover {
+        border-color: var(--rf-border-strong);
+        color: var(--rf-cyan);
+    }
+
+    .rf-filter-action.is-active {
+        border-color: rgba(46,221,210,.34);
+        background: rgba(46,221,210,.08);
+        color: var(--rf-cyan);
+    }
+
+    .rf-list-panel {
+        overflow: hidden;
+    }
+
+    .rf-list-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 14px 17px;
+        border-bottom: 1px solid var(--rf-border);
+    }
+
+    .rf-list-toolbar strong {
+        display: block;
+        font-size: 12px;
+    }
+
+    .rf-list-toolbar span {
+        display: block;
+        margin-top: 2px;
+        color: var(--rf-muted);
+        font-size: 10px;
+    }
+
+    .rf-list-legend {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--rf-muted);
+        font-size: 10px;
+    }
+
+    .rf-list-scroll {
+        overflow-x: auto;
+    }
+
+    .rf-list-head,
+    .rf-lead-row {
+        display: grid;
+        grid-template-columns:
+            minmax(255px, 1.45fr)
+            135px
+            135px
+            minmax(165px, .92fr)
+            minmax(205px, 1.12fr)
+            150px
+            170px;
+        min-width: 1250px;
+        gap: 14px;
+        align-items: center;
+    }
+
+    .rf-list-head {
+        padding: 10px 17px;
+        border-bottom: 1px solid rgba(111,181,226,.09);
+        background: rgba(26, 77, 113, .16);
+        color: #6e91b2;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    .rf-lead-row {
+        position: relative;
+        min-height: 106px;
+        padding: 13px 17px 13px 19px;
+        border-bottom: 1px solid rgba(111,181,226,.09);
+        border-left: 3px solid transparent;
+        transition:
+            background .16s ease,
+            border-color .16s ease;
+    }
+
+    .rf-row-high {
+        border-left-color: rgba(255,110,123,.72);
+    }
+
+    .rf-row-medium {
+        border-left-color: rgba(245,197,75,.42);
+    }
+
+    .rf-row-low {
+        border-left-color: rgba(74,168,255,.18);
+    }
+
+    .rf-row-overdue {
+        background:
+            linear-gradient(
+                90deg,
+                rgba(255,80,92,.045),
+                transparent 38%
+            );
+    }
+
+    .rf-lead-row:last-child {
+        border-bottom: 0;
+    }
+
+    .rf-lead-row:hover {
+        background: rgba(58, 151, 211, .035);
+    }
+
+    .rf-company-name {
+        display: -webkit-box;
+        overflow: hidden;
+        min-height: 34px;
+        color: #f5f9ff;
+        font-size: 14px;
+        font-weight: 800;
+        line-height: 1.28;
+        letter-spacing: -.01em;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .rf-location {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 5px;
+        color: #91abc3;
+        font-size: 10px;
+        font-weight: 600;
+    }
+
+    .rf-company-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 9px;
+    }
+
+    .rf-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 21px;
+        padding: 0 7px;
+        border: 1px solid rgba(134,190,228,.14);
+        border-radius: 999px;
+        background: rgba(255,255,255,.025);
+        color: #a8bdd1;
+        font-size: 9px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .rf-chip-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .rf-commercial-new {
+        color: #78bfff;
+        border-color: rgba(74,168,255,.2);
+        background: rgba(74,168,255,.07);
+    }
+
+    .rf-commercial-known {
+        color: #70d4ff;
+        border-color: rgba(112,212,255,.2);
+        background: rgba(112,212,255,.06);
+    }
+
+    .rf-commercial-client {
+        color: #55e0aa;
+        border-color: rgba(85,224,170,.2);
+        background: rgba(85,224,170,.06);
+    }
+
+    .rf-commercial-reprospecting {
+        color: #ff8090;
+        border-color: rgba(255,128,144,.2);
+        background: rgba(255,128,144,.06);
+    }
+
+    .rf-score-top {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+    }
+
+    .rf-score-number {
+        color: #ffffff;
+        font-size: 27px;
+        line-height: 1;
+        font-weight: 850;
+        letter-spacing: -.045em;
+    }
+
+    .rf-score-max {
+        color: var(--rf-muted);
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .rf-score-bar {
+        width: 90px;
+        height: 4px;
+        margin-top: 7px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255,255,255,.07);
+    }
+
+    .rf-score-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(
+            90deg,
+            #2fd8ce,
+            #59e3b2
+        );
+    }
+
+    .rf-score-low .rf-score-fill {
+        background: linear-gradient(
+            90deg,
+            #f3b94f,
+            #f06c62
+        );
+    }
+
+    .rf-score-info {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 8px;
+    }
+
+    .rf-score-quality {
+        color: #7896b5;
+        font-size: 9px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .rf-priority {
+        display: inline-flex;
+        align-items: center;
+        min-height: 22px;
+        padding: 0 8px;
+        border-radius: 999px;
+        font-size: 9px;
+        font-weight: 800;
+    }
+
+    .rf-priority-high {
+        border: 1px solid rgba(255,110,123,.24);
+        background: rgba(255,110,123,.08);
+        color: #ff8490;
+    }
+
+    .rf-priority-medium {
+        border: 1px solid rgba(245,197,75,.24);
+        background: rgba(245,197,75,.08);
+        color: #ffd467;
+    }
+
+    .rf-priority-low {
+        border: 1px solid rgba(74,168,255,.2);
+        background: rgba(74,168,255,.07);
+        color: #72baff;
+    }
+
+    .rf-icp {
+        color: var(--rf-muted-2);
+        font-size: 9px;
+        font-weight: 800;
+    }
+
+    .rf-section-label {
+        color: #6f97b9;
+        font-size: 9px;
+        font-weight: 850;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+    }
+
+    .rf-deals {
+        display: grid;
+        gap: 5px;
+        margin-top: 6px;
+    }
+
+    .rf-deal {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        min-width: 0;
+    }
+
+    .rf-deal-stage {
+        max-width: 150px;
+        overflow: hidden;
+        color: #5fe0d1;
+        font-size: 9px;
+        font-weight: 800;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .rf-deal-name {
+        overflow: hidden;
+        color: var(--rf-muted);
+        font-size: 9px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .rf-more-stages {
+        display: inline-flex;
+        align-items: center;
+        min-height: 21px;
+        margin-top: 1px;
+        padding: 0 7px;
+        border: 1px dashed rgba(126,168,201,.22);
+        border-radius: 6px;
+        background: rgba(126,168,201,.045);
+        color: #8da7c0;
+        font-size: 9px;
+        font-weight: 750;
+        cursor: help;
+    }
+
+    .rf-empty {
+        margin-top: 6px;
+        color: #617f9b;
+        font-size: 10px;
+    }
+
+    .rf-work-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 27px;
+        margin-top: 5px;
+        padding: 0 9px;
+        border: 1px solid rgba(124,184,222,.13);
+        border-radius: 8px;
+        background: rgba(255,255,255,.025);
+        font-size: 10px;
+        font-weight: 800;
+    }
+
+    .rf-work-new {
+        color: #8ab5da;
+    }
+
+    .rf-work-contacting {
+        color: #52e0c6;
+    }
+
+    .rf-work-waiting {
+        color: #ffd25f;
+    }
+
+    .rf-work-future {
+        color: #9eabff;
+    }
+
+    .rf-work-reprospecting {
+        color: #ff8290;
+    }
+
+    .rf-work-context {
+        display: -webkit-box;
+        overflow: hidden;
+        max-width: 230px;
+        margin-top: 7px;
+        color: #adc2d6;
+        font-size: 10px;
+        line-height: 1.45;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .rf-work-date {
+        margin-top: 5px;
+        color: #6787a4;
+        font-size: 9px;
+    }
+
+    .rf-sync-state {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 6px;
+        color: #6889a7;
+        font-size: 8px;
+        line-height: 1.35;
+    }
+
+    .rf-sync-dot {
+        flex: 0 0 auto;
+        width: 5px;
+        height: 5px;
+        border-radius: 999px;
+        background: #42dfac;
+        box-shadow:
+            0 0 0 2px rgba(66,223,172,.08);
+    }
+
+    .rf-sync-state.is-aging {
+        color: #9b8c64;
+    }
+
+    .rf-sync-state.is-aging .rf-sync-dot {
+        background: #f5c54b;
+        box-shadow:
+            0 0 0 2px rgba(245,197,75,.08);
+    }
+
+    .rf-sync-state.is-old {
+        color: #ba7680;
+    }
+
+    .rf-sync-state.is-old .rf-sync-dot {
+        background: #ff6e7b;
+        box-shadow:
+            0 0 0 2px rgba(255,110,123,.08);
+    }
+
+    .rf-owner-select {
+        width: 100%;
+        height: 34px;
+        margin-top: 6px;
+        padding: 0 8px;
+        border: 1px solid rgba(128,184,222,.15);
+        border-radius: 8px;
+        outline: none;
+        background: #081f37;
+        color: #dcecff;
+        font-size: 10px;
+    }
+
+    .rf-owner-name {
+        margin-top: 6px;
+        color: #dbe9f7;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .rf-owner-helper {
+        margin-top: 5px;
+        color: #6686a4;
+        font-size: 9px;
+    }
+
+    .rf-claim {
+        margin-top: 6px;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--rf-cyan);
+        font-size: 9px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .rf-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .rf-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 31px;
+        padding: 0 10px;
+        border: 1px solid rgba(128,184,222,.16);
+        border-radius: 8px;
+        background: rgba(255,255,255,.025);
+        color: #b9cce0;
+        font-size: 9px;
+        font-weight: 800;
+        text-decoration: none;
+        cursor: pointer;
+        transition: border-color .15s ease,
+                    color .15s ease,
+                    background .15s ease;
+    }
+
+    .rf-btn:hover {
+        border-color: rgba(46,221,210,.35);
+        color: var(--rf-cyan);
+        background: rgba(46,221,210,.04);
+    }
+
+    .rf-btn-secondary {
+        border-color: rgba(128,184,222,.10);
+        background: transparent;
+        color: #829db7;
+    }
+
+    .rf-btn-secondary:hover {
+        border-color: rgba(46,221,210,.25);
+        background: rgba(46,221,210,.035);
+        color: #b9e7e3;
+    }
+
+    .rf-btn-primary {
+        border-color: rgba(46,221,210,.28);
+        background: rgba(46,221,210,.07);
+        color: var(--rf-cyan);
+    }
+
+    .rf-btn-warning {
+        border-color: rgba(245,197,75,.24);
+        background: rgba(245,197,75,.06);
+        color: #ffd469;
+    }
+
+    .rf-btn-reprospect {
+        border-color: rgba(255,110,123,.24);
+        background: rgba(255,110,123,.06);
+        color: #ff8490;
+    }
+
+    .rf-refresh-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 31px;
+        height: 31px;
+        padding: 0;
+        border: 1px solid rgba(128,184,222,.12);
+        border-radius: 8px;
+        background: transparent;
+        color: #7896b5;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        transition:
+            color .15s ease,
+            border-color .15s ease,
+            background .15s ease;
+    }
+
+    .rf-refresh-btn:hover {
+        border-color: rgba(46,221,210,.28);
+        background: rgba(46,221,210,.045);
+        color: #5ee2d7;
+    }
+
+    .rf-refresh-btn:disabled {
+        cursor: wait;
+        opacity: .45;
+    }
+
+    .rf-mini-note {
+        margin-top: 6px;
+        color: #6586a3;
+        font-size: 9px;
+        line-height: 1.4;
+    }
+
+    .rf-empty-state {
+        padding: 50px 20px;
+        text-align: center;
+    }
+
+    .rf-empty-state strong {
+        display: block;
+        font-size: 14px;
+    }
+
+    .rf-empty-state span {
+        display: block;
+        margin-top: 5px;
+        color: var(--rf-muted);
+        font-size: 11px;
+    }
+
+    .rf-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        padding: 13px 17px;
+        border-top: 1px solid var(--rf-border);
+    }
+
+    .rf-pagination-info {
+        color: var(--rf-muted);
+        font-size: 10px;
+    }
+
+    .rf-pagination-info strong {
+        color: var(--rf-text);
+    }
+
+    .rf-pagination-buttons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .rf-page-btn {
+        min-width: 30px;
+        height: 30px;
+        padding: 0 8px;
+        border: 1px solid var(--rf-border);
+        border-radius: 8px;
+        background: rgba(255,255,255,.025);
+        color: #91abc4;
+        font-size: 10px;
+        font-weight: 800;
+        cursor: pointer;
+    }
+
+    .rf-page-btn:hover:not(:disabled),
+    .rf-page-btn.is-active {
+        border-color: rgba(46,221,210,.35);
+        background: rgba(46,221,210,.09);
+        color: var(--rf-cyan);
+    }
+
+    .rf-page-btn:disabled {
+        cursor: not-allowed;
+        opacity: .3;
+    }
+
+    .rf-export-state {
+        margin-top: 8px;
+        color: #718da8;
+        font-size: 9px;
+        line-height: 1.35;
+    }
+
+    .rf-export-state strong {
+        color: #91abc3;
+        font-weight: 700;
+    }
+
+    .rf-crm-status {
+        margin-top: 6px;
+        color: #7996b1;
+        font-size: 9px;
+        line-height: 1.35;
+    }
+
+    .rf-stages {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 7px;
+    }
+
+    .rf-stage {
+        display: inline-flex;
+        align-items: center;
+        min-height: 21px;
+        max-width: 155px;
+        padding: 0 7px;
+        overflow: hidden;
+        border: 1px solid rgba(46,221,210,.15);
+        border-radius: 6px;
+        background: rgba(46,221,210,.05);
+        color: #58ddce;
+        font-size: 9px;
+        font-weight: 750;
+        text-decoration: none;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .rf-overdue-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 20px;
+        margin-left: 5px;
+        padding: 0 6px;
+        border: 1px solid rgba(255,110,123,.24);
+        border-radius: 999px;
+        background: rgba(255,110,123,.07);
+        color: #ff7f8b;
+        font-size: 8px;
+        font-weight: 850;
+        text-transform: uppercase;
+    }
+
+    .rf-commercial-box {
+        margin-top: 6px;
+    }
+
+    .rf-commercial-explain {
+        margin-top: 7px;
+        color: #718eaa;
+        font-size: 9px;
+        line-height: 1.4;
+    }
+
+    .rf-next-action {
+        margin-top: 6px;
+        color: #ecf5ff;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.35;
+    }
+
+    .rf-next-action.is-overdue {
+        color: #ff7e8a;
+    }
+
+    .rf-deal-stage {
+        display: inline-flex;
+        align-items: center;
+        max-width: 165px;
+        min-height: 22px;
+        padding: 0 7px;
+        border: 1px solid rgba(46,221,210,.13);
+        border-radius: 6px;
+        background: rgba(46,221,210,.045);
+        text-decoration: none;
+    }
+
+    .rf-deal-name {
+        display: none;
+    }
+
+    .rf-deals {
+        gap: 6px;
+    }
+
+    .rf-owner-select {
+        font-size: 11px;
+    }
+
+    .rf-btn {
+        font-size: 10px;
+    }
+
+    @media (max-width: 1350px) {
+        .rf-kpis {
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+        }
+
+        .rf-status-guide {
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+        }
+
+        .rf-guide-title {
+            grid-column: 1 / -1;
+            min-height: auto;
+            border-right: 0;
+            border-bottom: 1px solid var(--rf-border);
+        }
+    }
+
+    @media (max-width: 900px) {
+        .rf-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .rf-header-guide {
+            width: 100%;
+            max-width: none;
+        }
+
+        .rf-kpis {
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+        }
+
+        .rf-status-guide {
+            grid-template-columns:
+                1fr;
+        }
+
+        .rf-guide-item {
+            min-height: auto;
+            border-right: 0;
+            border-bottom: 1px solid var(--rf-border);
+        }
+
+        .rf-filter-main,
+        .rf-filter-secondary {
+            grid-template-columns: 1fr;
+        }
+
+        .rf-pagination {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+
+
+
+
+
+
+    /* LEADS_WIDTH_ONLY_START */
+
+    /*
+     * A tela padrão possui:
+     *
+     * .ec-page-shell {
+     *     max-width: 1380px;
+     * }
+     *
+     * Para Leads queremos aproveitar toda a largura
+     * disponível da área principal, mantendo os
+     * mesmos tamanhos de fonte/componentes.
+     */
+    .ec-page-shell.leads-rf {
+        width: 100% !important;
+        max-width: none !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .leads-rf .rf-shell {
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    .leads-rf .rf-header,
+    .leads-rf .rf-kpis,
+    .leads-rf .rf-status-guide,
+    .leads-rf .rf-filters,
+    .leads-rf .rf-list-panel {
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    /* LEADS_WIDTH_ONLY_END */
+
+
+    .rf-header-sync {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        width: min(390px, 100%);
+        padding: 11px 12px;
+        border: 1px solid rgba(111, 181, 226, .16);
+        border-radius: 14px;
+        background:
+            linear-gradient(
+                135deg,
+                rgba(46,221,210,.055),
+                rgba(74,168,255,.025)
+            );
+    }
+
+    .rf-header-sync-copy {
+        min-width: 0;
+    }
+
+    .rf-header-sync-copy strong {
+        display: block;
+        color: #eef7ff;
+        font-size: 11px;
+        font-weight: 800;
+    }
+
+    .rf-header-sync-copy span {
+        display: block;
+        margin-top: 3px;
+        color: #7896b5;
+        font-size: 9px;
+        line-height: 1.35;
+    }
+
+    .rf-sync-btn {
+        flex: 0 0 auto;
+        min-height: 36px;
+        padding: 0 12px;
+        border: 1px solid rgba(46,221,210,.30);
+        border-radius: 9px;
+        background: rgba(46,221,210,.08);
+        color: #4de1d6;
+        font-size: 10px;
+        font-weight: 800;
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+            background .15s ease,
+            border-color .15s ease,
+            color .15s ease;
+    }
+
+    .rf-sync-btn:hover {
+        border-color: rgba(46,221,210,.52);
+        background: rgba(46,221,210,.13);
+        color: #7cf0e7;
+    }
+
+    .rf-sync-btn:disabled {
+        cursor: wait;
+        opacity: .55;
+    }
+
+
+
+    /* HUBSPOT_REFRESH_PROGRESS_START */
+
+    .rf-sync-progress {
+        padding: 14px 16px;
+        border: 1px solid rgba(46,221,210,.18);
+        border-radius: 14px;
+        background:
+            linear-gradient(
+                135deg,
+                rgba(46,221,210,.055),
+                rgba(74,168,255,.025)
+            );
+    }
+
+    .rf-sync-progress-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .rf-sync-progress-title {
+        color: #ecf7ff;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .rf-sync-progress-subtitle {
+        margin-top: 3px;
+        color: #7896b5;
+        font-size: 10px;
+    }
+
+    .rf-sync-percent {
+        color: #4de1d6;
+        font-size: 18px;
+        font-weight: 850;
+    }
+
+    .rf-progress-track {
+        height: 7px;
+        margin-top: 11px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255,255,255,.065);
+    }
+
+    .rf-progress-fill {
+        height: 100%;
+        border-radius: inherit;
+        background:
+            linear-gradient(
+                90deg,
+                #2eddd2,
+                #59e3b2
+            );
+        transition: width .35s ease;
+    }
+
+    .rf-sync-stats {
+        display: grid;
+        grid-template-columns:
+            repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .rf-sync-stat {
+        padding: 8px 10px;
+        border: 1px solid rgba(111,181,226,.10);
+        border-radius: 9px;
+        background: rgba(255,255,255,.018);
+    }
+
+    .rf-sync-stat span {
+        display: block;
+        color: #6f91b1;
+        font-size: 8px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .rf-sync-stat strong {
+        display: block;
+        margin-top: 3px;
+        color: #edf6ff;
+        font-size: 14px;
+    }
+
+    .rf-sync-summary {
+        display: grid;
+        grid-template-columns:
+            minmax(220px,.7fr)
+            minmax(0,1.3fr);
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .rf-sync-summary-box {
+        padding: 10px 12px;
+        border: 1px solid rgba(111,181,226,.10);
+        border-radius: 10px;
+        background: rgba(255,255,255,.018);
+    }
+
+    .rf-sync-summary-box > strong {
+        color: #dceafa;
+        font-size: 10px;
+    }
+
+    .rf-sync-categories {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 8px;
+    }
+
+    .rf-sync-category {
+        display: inline-flex;
+        gap: 5px;
+        padding: 4px 7px;
+        border-radius: 999px;
+        background: rgba(46,221,210,.06);
+        color: #8eb5c9;
+        font-size: 9px;
+    }
+
+    .rf-sync-category b {
+        color: #52e0d5;
+    }
+
+    .rf-sync-company {
+        padding: 7px 0;
+        border-bottom: 1px solid rgba(111,181,226,.08);
+    }
+
+    .rf-sync-company:last-child {
+        border-bottom: 0;
+    }
+
+    .rf-sync-company-name {
+        color: #dbe9f7;
+        font-size: 9px;
+        font-weight: 800;
+    }
+
+    .rf-sync-change {
+        margin-top: 3px;
+        color: #7896b5;
+        font-size: 8px;
+        line-height: 1.4;
+    }
+
+    .rf-row-sync-result {
+        margin-top: 7px;
+        padding: 7px 8px;
+        border: 1px solid rgba(46,221,210,.14);
+        border-radius: 8px;
+        background: rgba(46,221,210,.035);
+    }
+
+    .rf-row-sync-result.is-error {
+        border-color: rgba(255,110,123,.18);
+        background: rgba(255,110,123,.04);
+    }
+
+    .rf-row-sync-result strong {
+        display: block;
+        color: #60e2d8;
+        font-size: 9px;
+    }
+
+    .rf-row-sync-result.is-error strong {
+        color: #ff8994;
+    }
+
+    .rf-row-sync-result span {
+        display: block;
+        margin-top: 3px;
+        color: #7896b5;
+        font-size: 8px;
+        line-height: 1.35;
+    }
+
+    @media (max-width: 1000px) {
+        .rf-sync-stats {
+            grid-template-columns:
+                repeat(2, minmax(0,1fr));
+        }
+
+        .rf-sync-summary {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* HUBSPOT_REFRESH_PROGRESS_END */
+
+
+/*
+=============================================
+ LEADS - HUBSPOT SEM VINCULO FISCAL
+=============================================
+*/
+
+.rf-crm-only-panel {
+            overflow: hidden;
+            border-color: rgba(245, 197, 75, .20);
+        }
+
+        .rf-crm-only-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 14px 17px;
+            border-bottom: 1px solid rgba(245, 197, 75, .14);
+            background: rgba(245, 197, 75, .025);
+        }
+
+        .rf-crm-only-toolbar strong {
+            display: block;
+            color: #f4f8ff;
+            font-size: 12px;
+        }
+
+        .rf-crm-only-toolbar span {
+            display: block;
+            margin-top: 3px;
+            color: #8ca5bd;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .rf-crm-only-count {
+            flex: 0 0 auto;
+            padding: 6px 9px;
+            border: 1px solid rgba(245, 197, 75, .20);
+            border-radius: 999px;
+            background: rgba(245, 197, 75, .06);
+            color: #ffd467;
+            font-size: 9px;
+            font-weight: 800;
+        }
+
+        .rf-crm-only-scroll {
+            overflow-x: auto;
+        }
+
+        .rf-crm-only-head,
+        .rf-crm-only-row {
+            display: grid;
+            grid-template-columns:
+                minmax(260px, 1.5fr)
+                165px
+                minmax(260px, 1.3fr)
+                190px
+                155px;
+            min-width: 1050px;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .rf-crm-only-head {
+            padding: 10px 17px;
+            border-bottom: 1px solid rgba(111, 181, 226, .09);
+            background: rgba(26, 77, 113, .12);
+            color: #6e91b2;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .rf-crm-only-row {
+            min-height: 100px;
+            padding: 13px 17px;
+            border-bottom: 1px solid rgba(111, 181, 226, .09);
+            border-left: 3px solid rgba(245, 197, 75, .45);
+        }
+
+        .rf-crm-only-row:last-child {
+            border-bottom: 0;
+        }
+
+        .rf-crm-only-tag {
+            display: inline-flex;
+            margin-top: 7px;
+            padding: 4px 7px;
+            border: 1px solid rgba(245, 197, 75, .20);
+            border-radius: 999px;
+            background: rgba(245, 197, 75, .055);
+            color: #ffd467;
+            font-size: 8px;
+            font-weight: 800;
+        }
+
+        .rf-crm-only-name {
+            color: #f5f9ff;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .rf-crm-only-meta {
+            margin-top: 5px;
+            color: #829db7;
+            font-size: 9px;
+            line-height: 1.4;
+        }
+
+        .rf-crm-only-warning {
+            color: #ffd467;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .rf-crm-only-helper {
+            margin-top: 5px;
+            color: #738eaa;
+            font-size: 9px;
+            line-height: 1.4;
+        }
+
+        .rf-crm-only-stages {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 6px;
+        }
+
+        .rf-crm-only-stage {
+            display: inline-flex;
+            max-width: 180px;
+            padding: 4px 7px;
+            overflow: hidden;
+            border: 1px solid rgba(46,221,210,.14);
+            border-radius: 6px;
+            background: rgba(46,221,210,.045);
+            color: #5fe0d1;
+            font-size: 9px;
+            font-weight: 750;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+
+/*
+=============================================
+ LEADS - IDENTIFICADOR DE EMPRESA HUBSPOT
+=============================================
+*/
+
+.rf-company-linker {
+            padding: 15px 17px;
+            border-bottom:
+                1px solid rgba(46,221,210,.16);
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(46,221,210,.055),
+                    rgba(74,168,255,.025)
+                );
+        }
+
+        .rf-linker-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+        }
+
+        .rf-linker-head strong {
+            color: #f0f8ff;
+            font-size: 12px;
+        }
+
+        .rf-linker-head span {
+            display: block;
+            margin-top: 4px;
+            color: #819cb7;
+            font-size: 9px;
+            line-height: 1.4;
+        }
+
+        .rf-linker-source {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border: 1px solid rgba(245,197,75,.16);
+            border-radius: 9px;
+            background: rgba(245,197,75,.04);
+        }
+
+        .rf-linker-source small {
+            display: block;
+            color: #819cb7;
+            font-size: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .rf-linker-source b {
+            display: block;
+            margin-top: 4px;
+            color: #ffd467;
+            font-size: 12px;
+        }
+
+        .rf-linker-search {
+            width: 100%;
+            height: 40px;
+            margin-top: 12px;
+            padding: 0 12px;
+            border:
+                1px solid rgba(128,184,222,.18);
+            border-radius: 9px;
+            outline: none;
+            background: #081f37;
+            color: #e8f4ff;
+            font-size: 11px;
+        }
+
+        .rf-linker-search:focus {
+            border-color: rgba(46,221,210,.5);
+        }
+
+        .rf-linker-results {
+            display: grid;
+            gap: 7px;
+            margin-top: 10px;
+        }
+
+        .rf-linker-result {
+            display: grid;
+            grid-template-columns:
+                minmax(250px,1.4fr)
+                minmax(200px,.8fr)
+                auto;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border:
+                1px solid rgba(111,181,226,.12);
+            border-radius: 9px;
+            background: rgba(255,255,255,.018);
+        }
+
+        .rf-linker-company {
+            color: #edf6ff;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .rf-linker-meta {
+            margin-top: 4px;
+            color: #7896b5;
+            font-size: 9px;
+            line-height: 1.4;
+        }
+
+        .rf-linker-receita {
+            margin-top: 10px;
+            padding: 12px;
+            border: 1px solid rgba(66,223,172,.20);
+            border-radius: 10px;
+            background: rgba(66,223,172,.045);
+        }
+
+        .rf-linker-receita-label {
+            color: #5ce2b1;
+            font-size: 8px;
+            font-weight: 850;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .rf-linker-receita-name {
+            margin-top: 5px;
+            color: #eef8ff;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .rf-linker-receita-meta {
+            margin-top: 5px;
+            color: #8ba6bd;
+            font-size: 9px;
+            line-height: 1.5;
+        }
+
+        .rf-linker-error {
+            margin-top: 10px;
+            padding: 9px 11px;
+            border: 1px solid rgba(255,110,123,.18);
+            border-radius: 8px;
+            background: rgba(255,110,123,.04);
+            color: #ff8994;
+            font-size: 9px;
+        }
+
+        .rf-linker-warning {
+            margin-top: 10px;
+            color: #8aa4bd;
+            font-size: 9px;
+            line-height: 1.45;
+        }
+
+        .rf-linker-empty {
+            margin-top: 10px;
+            padding: 12px;
+            border:
+                1px dashed rgba(128,184,222,.14);
+            border-radius: 9px;
+            color: #7896b5;
+            font-size: 9px;
+        }
+
+        @media (max-width: 900px) {
+            .rf-linker-result {
+                grid-template-columns: 1fr;
+            }
+        }
+
+/* EC_LEADS_THEME_START */
+
+/*
+|--------------------------------------------------------------------------
+| Leads — integração com o tema global
+|--------------------------------------------------------------------------
+|
+| O CSS original do workspace continua definindo:
+|
+| - dimensões;
+| - grids;
+| - estados comerciais;
+| - animações;
+| - identidade visual.
+|
+| Esta camada cuida somente das superfícies
+| neutras e textos que precisam acompanhar
+| Claro / Escuro.
+|
+*/
+
+
+/*
+|--------------------------------------------------------------------------
+| TOKENS DO WORKSPACE
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf {
+    --rf-bg:
+        var(--ec-bg);
+
+    --rf-panel:
+        var(--ec-surface);
+
+    --rf-panel-2:
+        var(--ec-surface-soft);
+
+    --rf-border:
+        var(--ec-border-soft);
+
+    --rf-border-strong:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 35%,
+            transparent
+        );
+
+    --rf-text:
+        var(--ec-text);
+
+    --rf-muted:
+        var(--ec-text-muted);
+
+    --rf-muted-2:
+        var(--ec-text-soft);
+
+    --rf-cyan:
+        var(--ec-primary);
+
+    --rf-green:
+        var(--ec-success);
+
+    --rf-yellow:
+        var(--ec-warning);
+
+    --rf-red:
+        var(--ec-danger);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| TIPOGRAFIA NEUTRA
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf
+:is(
+    .rf-title,
+    .rf-kpi-value,
+    .rf-company-name,
+    .rf-score-number,
+    .rf-owner-name,
+    .rf-header-guide strong,
+    .rf-stage-summary-head strong,
+    .rf-guide-title strong,
+    .rf-guide-item strong,
+    .rf-list-toolbar strong,
+    .rf-header-sync-copy strong,
+    .rf-sync-progress-title,
+    .rf-sync-stat strong,
+    .rf-sync-summary-box > strong,
+    .rf-sync-company-name,
+    .rf-crm-only-toolbar strong,
+    .rf-crm-only-name,
+    .rf-linker-head strong,
+    .rf-linker-company,
+    .rf-linker-receita-name
+) {
+    color:
+        var(--ec-text);
+}
+
+
+.leads-rf
+:is(
+    .rf-subtitle,
+    .rf-kpi-caption,
+    .rf-work-context,
+    .rf-chip,
+    .rf-btn,
+    .rf-crm-only-meta,
+    .rf-linker-meta,
+    .rf-linker-warning,
+    .rf-linker-receita-meta
+) {
+    color:
+        var(--ec-text-soft);
+}
+
+
+.leads-rf
+:is(
+    .rf-kpi-label,
+    .rf-header-guide span,
+    .rf-stage-summary-head span,
+    .rf-guide-title span,
+    .rf-guide-item span,
+    .rf-list-toolbar span,
+    .rf-list-legend,
+    .rf-score-max,
+    .rf-score-quality,
+    .rf-work-date,
+    .rf-owner-helper,
+    .rf-sync-state,
+    .rf-crm-only-toolbar span,
+    .rf-crm-only-helper,
+    .rf-linker-head span,
+    .rf-linker-empty
+) {
+    color:
+        var(--ec-text-muted);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| PAINÉIS
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf
+:is(
+    .rf-header-guide,
+    .rf-kpi,
+    .rf-stage-summary,
+    .rf-status-guide,
+    .rf-panel,
+    .rf-header-sync,
+    .rf-sync-progress
+) {
+    border-color:
+        var(--ec-border);
+
+    background:
+        var(--ec-surface);
+}
+
+
+.leads-rf
+.rf-kpi {
+    background:
+        linear-gradient(
+            145deg,
+            color-mix(
+                in srgb,
+                var(--ec-surface-soft) 94%,
+                var(--ec-primary) 6%
+            ),
+            var(--ec-surface)
+        );
+}
+
+
+.leads-rf
+:is(
+    .rf-stage-summary,
+    .rf-status-guide
+) {
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-surface) 96%,
+            var(--ec-primary) 4%
+        );
+}
+
+
+.leads-rf
+.rf-panel {
+    background:
+        linear-gradient(
+            180deg,
+            var(--ec-surface),
+            color-mix(
+                in srgb,
+                var(--ec-surface) 96%,
+                var(--ec-primary) 4%
+            )
+        );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| FILTROS / INPUTS
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf
+:is(
+    .rf-input,
+    .rf-select,
+    .rf-owner-select,
+    .rf-linker-search
+) {
+    border-color:
+        var(--ec-border);
+
+    color:
+        var(--ec-text);
+
+    background:
+        var(--ec-surface);
+}
+
+
+.leads-rf
+:is(
+    .rf-input,
+    .rf-linker-search
+)::placeholder {
+    color:
+        var(--ec-text-muted);
+}
+
+
+.leads-rf
+:is(
+    .rf-input,
+    .rf-select,
+    .rf-owner-select,
+    .rf-linker-search
+):focus {
+    border-color:
+        var(--ec-primary);
+
+    background:
+        var(--ec-surface);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CONTROLES NEUTROS
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf
+:is(
+    .rf-filter-action,
+    .rf-chip,
+    .rf-work-badge,
+    .rf-btn,
+    .rf-refresh-btn,
+    .rf-page-btn,
+    .rf-sync-stat,
+    .rf-sync-summary-box
+) {
+    border-color:
+        var(--ec-border);
+
+    background:
+        var(--ec-surface-soft);
+}
+
+
+.leads-rf
+:is(
+    .rf-filter-action,
+    .rf-btn,
+    .rf-refresh-btn,
+    .rf-page-btn
+):hover {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 45%,
+            var(--ec-border)
+        );
+
+    color:
+        var(--ec-primary);
+
+    background:
+        var(--ec-primary-soft);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| TABELA / LISTA DE LEADS
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf
+.rf-list-head {
+    border-color:
+        var(--ec-border-soft);
+
+    color:
+        var(--ec-text-muted);
+
+    background:
+        var(--ec-surface-soft);
+}
+
+
+.leads-rf
+.rf-lead-row {
+    border-bottom-color:
+        var(--ec-border-soft);
+}
+
+
+.leads-rf
+.rf-lead-row:hover {
+    background:
+        var(--ec-surface-hover);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| SCORE
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf
+:is(
+    .rf-score-bar,
+    .rf-progress-track
+) {
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-text-muted) 18%,
+            var(--ec-surface)
+        );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| STAGES
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf
+.rf-stage-chip {
+    border-color:
+        var(--ec-border);
+
+    color:
+        var(--ec-text-soft);
+
+    background:
+        var(--ec-surface-soft);
+}
+
+
+.leads-rf
+.rf-stage-chip strong {
+    color:
+        var(--ec-text);
+
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-text-muted) 9%,
+            transparent
+        );
+}
+
+
+.leads-rf
+.rf-stage-chip:hover,
+.leads-rf
+.rf-stage-chip.is-active {
+    border-color:
+        var(--ec-primary);
+
+    color:
+        var(--ec-primary);
+
+    background:
+        var(--ec-primary-soft);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CRM SEM VÍNCULO
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf
+.rf-crm-only-panel {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-warning) 28%,
+            var(--ec-border)
+        );
+}
+
+
+.leads-rf
+.rf-crm-only-toolbar {
+    border-bottom-color:
+        color-mix(
+            in srgb,
+            var(--ec-warning) 18%,
+            var(--ec-border)
+        );
+
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-warning) 5%,
+            var(--ec-surface)
+        );
+}
+
+
+.leads-rf
+.rf-crm-only-head {
+    border-color:
+        var(--ec-border-soft);
+
+    color:
+        var(--ec-text-muted);
+
+    background:
+        var(--ec-surface-soft);
+}
+
+
+.leads-rf
+.rf-crm-only-row {
+    border-bottom-color:
+        var(--ec-border-soft);
+}
+
+
+.leads-rf
+:is(
+    .rf-crm-only-count,
+    .rf-crm-only-tag,
+    .rf-crm-only-warning
+) {
+    color:
+        var(--ec-warning);
+}
+
+
+.leads-rf
+:is(
+    .rf-crm-only-count,
+    .rf-crm-only-tag
+) {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-warning) 28%,
+            transparent
+        );
+
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-warning) 8%,
+            transparent
+        );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LINKER HUBSPOT
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf
+.rf-company-linker {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 24%,
+            var(--ec-border)
+        );
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--ec-primary-soft),
+            color-mix(
+                in srgb,
+                var(--ec-surface-soft) 96%,
+                var(--ec-primary) 4%
+            )
+        );
+}
+
+
+.leads-rf
+.rf-linker-source {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-warning) 22%,
+            var(--ec-border)
+        );
+
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-warning) 5%,
+            var(--ec-surface)
+        );
+}
+
+
+.leads-rf
+.rf-linker-source small {
+    color:
+        var(--ec-text-muted);
+}
+
+
+.leads-rf
+.rf-linker-source b {
+    color:
+        var(--ec-warning);
+}
+
+
+.leads-rf
+.rf-linker-result {
+    border-color:
+        var(--ec-border);
+
+    background:
+        var(--ec-surface-soft);
+}
+
+
+.leads-rf
+.rf-linker-receita {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-success) 28%,
+            var(--ec-border)
+        );
+
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-success) 7%,
+            var(--ec-surface)
+        );
+}
+
+
+.leads-rf
+.rf-linker-receita-label {
+    color:
+        var(--ec-success);
+}
+
+
+.leads-rf
+.rf-linker-error {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-danger) 25%,
+            var(--ec-border)
+        );
+
+    color:
+        var(--ec-danger);
+
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-danger) 6%,
+            var(--ec-surface)
+        );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| MODO CLARO — CORREÇÕES DE SUPERFÍCIE
+|--------------------------------------------------------------------------
+|
+| Alguns elementos do redesign original possuem
+| gradientes escuros escritos diretamente.
+|
+| Estas regras ficam no próprio workspace de
+| Leads, e não mais no app.css global.
+|
+*/
+
+html:not(.dark)
+.leads-rf
+:is(
+    .rf-kpi,
+    .rf-stage-summary,
+    .rf-status-guide,
+    .rf-panel,
+    .rf-header-guide,
+    .rf-header-sync,
+    .rf-sync-progress
+) {
+    box-shadow:
+        0 8px 24px
+        rgba(
+            29,
+            66,
+            91,
+            .05
+        );
+}
+
+
+html:not(.dark)
+.leads-rf
+.rf-row-overdue {
+    background:
+        linear-gradient(
+            90deg,
+            color-mix(
+                in srgb,
+                var(--ec-danger) 6%,
+                transparent
+            ),
+            transparent 38%
+        );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| MODO ESCURO
+|--------------------------------------------------------------------------
+|
+| O modo escuro já possui sua identidade visual
+| histórica.
+|
+| Apenas garantimos que os neutros vêm do mesmo
+| sistema global.
+|
+*/
+
+html.dark
+.leads-rf {
+    color:
+        var(--ec-text);
+}
+
+/* EC_LEADS_THEME_END */

@@ -398,14 +398,13 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
             );
 
         /*
-         * Normaliza pontuação antes de testar
-         * frases fortes.
+         * Remove acentos e pontuação para que:
          *
-         * Ex.:
-         * "We produce, market, and export"
+         * "não exporta"
          *
-         * vira:
-         * "we produce market and export"
+         * seja comparável a:
+         *
+         * "nao exporta"
          */
         $normalized =
             preg_replace(
@@ -425,6 +424,10 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
                 ?? $normalized
             );
 
+        /*
+         * Frases que realmente representam
+         * evidência positiva forte.
+         */
         $strongRules =
             match ($dimension) {
                 'direct' => [
@@ -457,8 +460,11 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
                     'trading company',
                     'venda para trading',
                     'operacao com trading',
-                    'comercial exportadora',
 
+                    /*
+                     * Mantemos os sinais internacionais
+                     * já utilizados pelo provider.
+                     */
                     'strong trading',
                     'trading capabilities',
                     'commodity trading',
@@ -468,8 +474,70 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
                 default => [],
             };
 
+        /*
+         * Negação explícita.
+         *
+         * Uma fonte dizendo que a empresa NÃO
+         * exporta é evidência negativa, e não
+         * uma evidência positiva por conter a
+         * palavra "exporta".
+         */
+        $negativeRules =
+            match ($dimension) {
+                'direct' => [
+                    'nao exporta',
+                    'nao exportou',
+                    'nao realiza exportacao',
+                    'nao realiza exportacoes',
+                    'nao possui exportacao',
+                    'sem exportacao direta',
+                    'nao vende ao exterior',
+                    'nao vende para o exterior',
+
+                    'does not export',
+                    'do not export',
+                    'did not export',
+                    'not an exporter',
+                    'no export activity',
+                ],
+
+                'indirect' => [
+                    'nao realiza exportacao indireta',
+                    'sem exportacao indireta',
+
+                    'nao realiza venda com fim especifico',
+                    'nao utiliza venda com fim especifico',
+
+                    'nao realiza remessa com fim especifico',
+                    'sem venda com fim especifico',
+                ],
+
+                'trading' => [
+                    'nao opera com trading',
+                    'nao realiza operacao com trading',
+                    'nao vende para trading',
+                    'nao utiliza trading',
+                    'sem operacao com trading',
+
+                    'does not use a trading company',
+                    'does not work with trading companies',
+                ],
+
+                default => [],
+            };
+
+        $matchedPositive =
+            null;
+
+        $matchedNegative =
+            null;
+
+        /*
+         * Primeiro detectamos negativas
+         * explícitas.
+         */
         foreach (
-            $strongRules as $rule
+            $negativeRules as $rule
         ) {
             if (
                 str_contains(
@@ -477,44 +545,58 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
                     $rule
                 )
             ) {
-                $normalizedScore =
-                    max(
-                        0.0,
-                        min(
-                            1.0,
-                            $score
-                        )
-                    );
+                $matchedNegative =
+                    $rule;
 
-                return [
-                    'positive',
-
-                    min(
-                        90,
-                        max(
-                            65,
-                            (int) round(
-                                70
-                                + (
-                                    $normalizedScore
-                                    * 20
-                                )
-                            )
-                        )
-                    ),
-
-                    $rule,
-                ];
+                break;
             }
         }
 
         /*
-         * Encontramos uma página relacionada,
-         * mas não existe sinal forte suficiente.
+         * Depois analisamos cada frase positiva.
          *
-         * Ausência de evidência NÃO vira
-         * evidência negativa.
+         * Não basta encontrar:
+         *
+         * "exporta para"
+         *
+         * porque ela pode fazer parte de:
+         *
+         * "não exporta para".
          */
+        foreach (
+            $strongRules as $rule
+        ) {
+            [
+                $hasPositiveOccurrence,
+                $hasNegatedOccurrence,
+            ] =
+                $this
+                    ->rulePolarity(
+                        text: $normalized,
+
+                        rule: $rule,
+                    );
+
+            if (
+                $hasNegatedOccurrence
+                && $matchedNegative
+                    === null
+            ) {
+                $matchedNegative =
+                    'negated:'
+                    .$rule;
+            }
+
+            if (
+                $hasPositiveOccurrence
+                && $matchedPositive
+                    === null
+            ) {
+                $matchedPositive =
+                    $rule;
+            }
+        }
+
         $normalizedScore =
             max(
                 0.0,
@@ -524,6 +606,97 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
                 )
             );
 
+        /*
+         * O score do Tavily ajuda a medir
+         * relevância da página.
+         *
+         * Ele não é tratado como probabilidade
+         * estatística da conclusão.
+         */
+        $strongConfidence =
+            min(
+                90,
+                max(
+                    65,
+                    (int) round(
+                        70
+                        + (
+                            $normalizedScore
+                            * 20
+                        )
+                    )
+                )
+            );
+
+        /*
+         * Exemplo:
+         *
+         * "A empresa não exporta atualmente.
+         *  No passado exportou para a Europa."
+         *
+         * Existem sinais opostos.
+         *
+         * O sistema NÃO escolhe sozinho:
+         * fica neutro/incerto.
+         */
+        if (
+            $matchedPositive
+                !== null
+            && $matchedNegative
+                !== null
+        ) {
+            return [
+                'neutral',
+
+                min(
+                    55,
+                    max(
+                        40,
+                        $strongConfidence
+                        - 25
+                    )
+                ),
+
+                'conflict:'
+                .$matchedNegative
+                .'|'
+                .$matchedPositive,
+            ];
+        }
+
+        if (
+            $matchedNegative
+                !== null
+        ) {
+            return [
+                'negative',
+
+                $strongConfidence,
+
+                $matchedNegative,
+            ];
+        }
+
+        if (
+            $matchedPositive
+                !== null
+        ) {
+            return [
+                'positive',
+
+                $strongConfidence,
+
+                $matchedPositive,
+            ];
+        }
+
+        /*
+         * Encontramos uma página relacionada,
+         * mas não existe sinal forte.
+         *
+         * Ausência de evidência NÃO significa
+         * evidência negativa.
+         */
         return [
             'neutral',
 
@@ -542,6 +715,130 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
             ),
 
             null,
+        ];
+    }
+
+    /**
+     * Analisa todas as ocorrências de uma regra.
+     *
+     * Retorno:
+     *
+     * [0] existe ocorrência positiva
+     * [1] existe ocorrência negada
+     *
+     * @return array{0: bool, 1: bool}
+     */
+    private function rulePolarity(
+        string $text,
+        string $rule,
+    ): array {
+        $positive =
+            false;
+
+        $negative =
+            false;
+
+        $offset =
+            0;
+
+        while (
+            (
+                $position =
+                    strpos(
+                        $text,
+                        $rule,
+                        $offset
+                    )
+            )
+            !== false
+        ) {
+            /*
+             * Pegamos apenas uma janela local
+             * antes da frase.
+             *
+             * Isso evita que uma negação muito
+             * distante contamine outra sentença.
+             */
+            $before =
+                substr(
+                    $text,
+                    max(
+                        0,
+                        $position - 80
+                    ),
+                    min(
+                        80,
+                        $position
+                    )
+                );
+
+            $tokens =
+                preg_split(
+                    '/\s+/',
+                    trim(
+                        $before
+                    )
+                )
+                ?: [];
+
+            /*
+             * Cinco palavras é suficiente para:
+             *
+             * "não realiza qualquer exportação direta"
+             *
+             * sem carregar facilmente a negação
+             * de outra frase anterior.
+             */
+            $window =
+                implode(
+                    ' ',
+                    array_slice(
+                        $tokens,
+                        -5
+                    )
+                );
+
+            /*
+             * Exceção:
+             *
+             * "não só exporta para..."
+             *
+             * é uma afirmação positiva.
+             */
+            $notOnly =
+                preg_match(
+                    '/(?:^| )(?:nao so|not only)(?: |$)/',
+                    $window
+                ) === 1;
+
+            $isNegated =
+                ! $notOnly
+                && preg_match(
+                    '/(?:^| )(?:nao|nunca|jamais|sem|not|never|no)(?: |$)/',
+                    $window
+                ) === 1;
+
+            if ($isNegated) {
+                $negative =
+                    true;
+            } else {
+                $positive =
+                    true;
+            }
+
+            $offset =
+                $position
+                + max(
+                    1,
+                    strlen(
+                        $rule
+                    )
+                );
+        }
+
+        return [
+            $positive,
+            $negative,
         ];
     }
 

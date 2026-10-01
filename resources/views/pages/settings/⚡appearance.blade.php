@@ -75,9 +75,8 @@ new #[Title('Aparência')] class extends Component
                 ></span>
 
                 <p>
-                    A preferência fica salva neste navegador.
-                    Telas antigas com cores fixas podem manter
-                    seu próprio estilo.
+                    A preferência fica salva neste navegador
+                    e é aplicada em toda a interface.
                 </p>
             </footer>
         </section>

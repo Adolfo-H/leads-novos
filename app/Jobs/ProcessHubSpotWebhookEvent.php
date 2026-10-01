@@ -7,13 +7,13 @@ use App\Services\HubSpotActivitySyncService;
 use App\Services\HubSpotWebhookAssociationResolver;
 use App\Services\HubSpotWebhookMirrorSyncService;
 use App\Services\HubSpotWebhookObjectTypeService;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
-class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
+class ProcessHubSpotWebhookEvent implements ShouldQueue
 {
     use Queueable;
 
@@ -21,20 +21,12 @@ class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
 
     public int $timeout = 120;
 
-    public int $uniqueFor = 600;
-
     public function __construct(
         public int $eventId,
     ) {
         $this->onConnection(
             'redis'
         );
-    }
-
-    public function uniqueId(): string
-    {
-        return (string)
-            $this->eventId;
     }
 
     /**
@@ -75,38 +67,79 @@ class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
         HubSpotActivitySyncService $activities,
         HubSpotWebhookMirrorSyncService $mirror,
     ): void {
+        /*
+         * CLAIM ATÔMICO
+         * -------------
+         *
+         * Mesmo se dois jobs do mesmo evento
+         * chegarem ao worker, somente um pode
+         * mudar queued -> processing.
+         *
+         * WithoutOverlapping
+         * continuam como camadas adicionais.
+         */
         $event =
-            HubSpotWebhookEvent::query()
-                ->find(
-                    $this->eventId
-                );
+            DB::transaction(
+                function (): ?HubSpotWebhookEvent {
+                    $event =
+                        HubSpotWebhookEvent::query()
+                            ->whereKey(
+                                $this->eventId
+                            )
+                            ->lockForUpdate()
+                            ->first();
+
+                    if ($event === null) {
+                        return null;
+                    }
+
+                    if (
+                        in_array(
+                            $event->status,
+                            [
+                                'processed',
+                                'ignored',
+                                'blocked_scope',
+                                'processing',
+                            ],
+                            true
+                        )
+                    ) {
+                        return null;
+                    }
+
+                    if (
+                        ! in_array(
+                            $event->status,
+                            [
+                                'queued',
+                                'received',
+                                'failed',
+                            ],
+                            true
+                        )
+                    ) {
+                        return null;
+                    }
+
+                    $event->forceFill([
+                        'status' => 'processing',
+
+                        'attempts' => $event->attempts
+                            + 1,
+
+                        'error' => null,
+
+                        'processed_at' => null,
+                    ])->save();
+
+                    return $event;
+                }
+            );
 
         if ($event === null) {
             return;
         }
-
-        if (
-            in_array(
-                $event->status,
-                [
-                    'processed',
-                    'ignored',
-                    'blocked_scope',
-                ],
-                true
-            )
-        ) {
-            return;
-        }
-
-        $event->forceFill([
-            'status' => 'processing',
-
-            'attempts' => $event->attempts
-                + 1,
-
-            'error' => null,
-        ])->save();
 
         if (
             $event->object_type
@@ -145,8 +178,9 @@ class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
 
         /*
          * O mirror pode ter acabado de criar ou
-         * corrigir associações. Resolvemos outra
-         * vez e agregamos os resultados.
+         * corrigir associações.
+         *
+         * Resolvemos novamente e agregamos.
          */
         $companyIds =
             array_values(
@@ -164,12 +198,12 @@ class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
             );
 
         /*
-         * Para atividades:
+         * Atividades:
          *
          * - busca conteúdo completo no HubSpot;
-         * - cria ou atualiza o histórico local;
-         * - em exclusão, encontra também a
-         *   associação já salva localmente.
+         * - cria/atualiza histórico local;
+         * - em exclusão, usa também associação
+         *   previamente salva.
          */
         $activityHandled =
             false;
@@ -190,13 +224,12 @@ class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
                 true;
         }
 
-        if ($companyIds === []) {
+        if (
+            $companyIds === []
+        ) {
             /*
-             * Se o mirror foi atualizado, o
-             * webhook foi útil mesmo sem CNPJ.
-             *
-             * Ele já ficará refletido na área
-             * "CRM sem CNPJ".
+             * Se o mirror foi atualizado,
+             * o evento foi útil mesmo sem CNPJ.
              */
             $event->forceFill([
                 'status' => (
@@ -213,15 +246,8 @@ class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
         }
 
         /*
-         * Depois da atividade local, atualizamos
-         * o estado comercial completo da empresa:
-         *
-         * - tarefas;
-         * - acompanhamento;
-         * - negócios;
-         * - etapa;
-         * - score;
-         * - prioridade.
+         * Atualiza o estado comercial completo
+         * das empresas relacionadas.
          */
         foreach (
             $companyIds as $companyId
@@ -254,6 +280,8 @@ class ProcessHubSpotWebhookEvent implements ShouldBeUnique, ShouldQueue
                     0,
                     4000
                 ),
+
+                'processed_at' => null,
             ]);
     }
 }

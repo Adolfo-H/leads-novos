@@ -1,0 +1,226 @@
+/*
+|--------------------------------------------------------------------------
+| Company Dossier
+|--------------------------------------------------------------------------
+|
+| Estilos específicos da interface do dossiê.
+|
+| Este arquivo começa somente com seletores
+| exclusivos da navegação do dossiê.
+|
+| Componentes visuais compartilhados continuam
+| em app.css até serem separados com segurança.
+|
+*/
+
+.ec-dossier-tabs {
+    position: sticky;
+    top: calc(
+        var(--ec-topbar-height)
+        + 10px
+    );
+
+    z-index: 30;
+
+    width: fit-content;
+    max-width: 100%;
+
+    align-self: flex-start;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    overflow-x: auto;
+
+    padding: 7px;
+
+    border: 1px solid var(--ec-border);
+
+    border-radius: 10px;
+
+    background: color-mix(in srgb, var(--ec-surface) 94%, transparent);
+
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--ec-text) 10%, transparent);
+
+    backdrop-filter:
+        blur(18px);
+
+    scrollbar-width: none;
+}
+
+.ec-dossier-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.ec-dossier-tab {
+    min-height: 38px;
+
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    padding: 0 14px;
+
+    border: 1px solid transparent;
+    border-radius: 7px;
+
+    color: var(--ec-text-muted);
+    background: transparent;
+
+    font-size: 12px;
+    font-weight: 650;
+
+    cursor: pointer;
+    white-space: nowrap;
+
+    transition:
+        color 150ms ease,
+        border-color 150ms ease,
+        background-color 150ms ease;
+}
+
+.ec-dossier-tab svg {
+    width: 16px;
+    height: 16px;
+
+    flex: 0 0 16px;
+}
+
+.ec-dossier-tab:hover {
+    color: var(--ec-text);
+
+    background: var(--ec-surface-soft);
+}
+
+.ec-dossier-tab.is-active {
+    color: var(--ec-primary);
+
+    border-color: color-mix(in srgb, var(--ec-primary) 35%, var(--ec-border));
+
+    background: var(--ec-primary-soft);
+}
+
+.ec-dossier-tab.is-active svg {
+    color: var(--ec-primary);
+}
+
+.ec-dossier-tab-count {
+    min-width: 21px;
+    height: 21px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 6px;
+
+    border-radius: 999px;
+
+    color: var(--ec-text-muted);
+
+    background: var(--ec-surface-soft);
+
+    font-size: 9px;
+    font-weight: 750;
+}
+
+.ec-dossier-tab.is-active
+.ec-dossier-tab-count {
+    color: var(--ec-primary);
+
+    background:
+        rgba(67, 185, 167, 0.10);
+}
+
+.ec-dossier-tab-panel {
+    min-width: 0;
+}
+
+.ec-show-more-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 13px 18px;
+
+    border-top:
+        1px solid
+        var(--ec-border-soft);
+
+    background: var(--ec-surface-soft);
+}
+
+.ec-show-more-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    min-height: 32px;
+
+    padding: 0 11px;
+
+    border: 0;
+    border-radius: 6px;
+
+    color: var(--ec-text-muted);
+    background: transparent;
+
+    font-size: 11px;
+    font-weight: 650;
+
+    cursor: pointer;
+
+    transition:
+        color 150ms ease,
+        background-color 150ms ease;
+}
+
+.ec-show-more-button:hover {
+    color: var(--ec-primary);
+
+    background: var(--ec-primary-soft);
+}
+
+.ec-show-more-button svg {
+    width: 14px;
+    height: 14px;
+
+    transition:
+        transform 160ms ease;
+}
+
+.ec-show-more-button svg.is-expanded {
+    transform:
+        rotate(180deg);
+}
+
+@media (max-width: 639px) {
+    .ec-dossier-tabs {
+        top: calc(
+            var(--ec-topbar-height)
+            + 6px
+        );
+
+        margin-inline: -4px;
+
+        border-radius: 8px;
+    }
+
+    .ec-dossier-tab {
+        min-height: 36px;
+
+        padding-inline: 11px;
+
+        font-size: 11px;
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+|

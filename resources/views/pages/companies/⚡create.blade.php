@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Company;
 use App\Models\Establishment;
 use App\Services\CompanyService;
 use App\Support\Cnpj;
@@ -170,6 +171,34 @@ new class extends Component
             $this->addError(
                 'cnpj',
                 'Este estabelecimento já está cadastrado.'
+            );
+
+            return;
+        }
+
+        /*
+         * A tela Nova empresa cria um novo grupo.
+         *
+         * Se a raiz já existe, o usuário precisa
+         * utilizar o fluxo específico de filial.
+         *
+         * Isso impede uma filial manual de
+         * sobrescrever os dados do grupo.
+         */
+        $existingCompany =
+            Company::query()
+                ->where(
+                    'cnpj_root',
+                    Cnpj::root(
+                        $normalizedCnpj
+                    )
+                )
+                ->first();
+
+        if ($existingCompany) {
+            $this->addError(
+                'cnpj',
+                'Esta raiz de CNPJ já pertence a uma empresa cadastrada. Abra o dossiê da empresa e use a opção de adicionar filial.'
             );
 
             return;

@@ -170,15 +170,15 @@
     class="
         mt-5 overflow-hidden
         rounded-2xl
-        border border-white/[0.06]
-        bg-white/[0.025]
+        border border-[var(--ec-border-soft)]
+        bg-[var(--ec-surface-soft)]
     "
 >
 
     <div
         class="
             flex flex-col gap-4
-            border-b border-white/[0.06]
+            border-b border-[var(--ec-border-soft)]
             px-5 py-5
             lg:flex-row
             lg:items-center
@@ -202,7 +202,7 @@
                 class="
                     mt-1 text-base
                     font-semibold
-                    text-[#eef1ff]
+                    text-[var(--ec-text)]
                 "
             >
                 Histórico comercial
@@ -211,7 +211,7 @@
             <p
                 class="
                     mt-1 text-xs
-                    text-[#7f89aa]
+                    text-[var(--ec-text-muted)]
                 "
             >
                 Linha do tempo da prospecção,
@@ -259,7 +259,7 @@
     <div
         class="
             grid gap-3
-            border-b border-white/[0.06]
+            border-b border-[var(--ec-border-soft)]
             px-5 py-4
             sm:grid-cols-2
             xl:grid-cols-4
@@ -275,7 +275,7 @@
                 class="
                     mt-1 text-sm
                     font-semibold
-                    text-[#eef1ff]
+                    text-[var(--ec-text)]
                 "
             >
                 {{ $commercialStatusLabel }}
@@ -292,7 +292,7 @@
                 class="
                     mt-1 text-sm
                     font-semibold
-                    text-[#d9ddef]
+                    text-[var(--ec-text-soft)]
                 "
             >
                 {{ $stageLabel }}
@@ -316,7 +316,7 @@
                             ?? 0
                         ) > 0
                             ? 'text-amber-300'
-                            : 'text-[#d9ddef]'
+                            : 'text-[var(--ec-text-soft)]'
                     }}
                 "
             >
@@ -344,7 +344,7 @@
                             ?->last_task_due_at
                             ?->isPast()
                             ? 'text-red-300'
-                            : 'text-[#d9ddef]'
+                            : 'text-[var(--ec-text-soft)]'
                     }}
                 "
             >
@@ -369,13 +369,13 @@
 
         <div
             class="
-                border-b border-white/[0.06]
+                border-b border-[var(--ec-border-soft)]
                 px-5 py-3
-                text-xs text-[#8993b2]
+                text-xs text-[var(--ec-text-muted)]
             "
         >
             Última atividade identificada no HubSpot:
-            <strong class="text-[#cbd1e7]">
+            <strong class="text-[var(--ec-text-soft)]">
                 {{
                     $commercialLead
                         ->last_activity_at
@@ -412,7 +412,7 @@
 
         <div
             class="
-                border-b border-white/[0.06]
+                border-b border-[var(--ec-border-soft)]
                 px-5 py-4
             "
         >
@@ -422,7 +422,7 @@
                     text-[10px]
                     font-semibold uppercase
                     tracking-[0.12em]
-                    text-[#737e9f]
+                    text-[var(--ec-text-muted)]
                 "
             >
                 Follow-ups pendentes
@@ -466,8 +466,8 @@
                     <div
                         class="
                             rounded-xl
-                            border border-white/[0.06]
-                            bg-white/[0.025]
+                            border border-[var(--ec-border-soft)]
+                            bg-[var(--ec-surface-soft)]
                             px-4 py-3
                         "
                     >
@@ -475,7 +475,7 @@
                         <div
                             class="
                                 text-sm font-semibold
-                                text-[#e8ebf7]
+                                text-[var(--ec-text)]
                             "
                         >
                             {{
@@ -488,7 +488,7 @@
                         <div
                             class="
                                 mt-1 text-[11px]
-                                text-[#7f89aa]
+                                text-[var(--ec-text-muted)]
                             "
                         >
                             {{
@@ -519,7 +519,7 @@
                 text-[10px]
                 font-semibold uppercase
                 tracking-[0.12em]
-                text-[#737e9f]
+                text-[var(--ec-text-muted)]
             "
         >
             Linha do tempo
@@ -535,7 +535,7 @@
                 class="
                     mt-4 rounded-xl
                     border border-dashed
-                    border-white/[0.08]
+                    border-[var(--ec-border-soft)]
                     px-4 py-7
                     text-center
                 "
@@ -543,7 +543,7 @@
                 <div
                     class="
                         text-sm font-semibold
-                        text-[#aab2cc]
+                        text-[var(--ec-text-soft)]
                     "
                 >
                     Nenhum evento comercial registrado
@@ -552,7 +552,7 @@
                 <div
                     class="
                         mt-1 text-xs
-                        text-[#697394]
+                        text-[var(--ec-text-muted)]
                     "
                 >
                     As próximas movimentações serão
@@ -659,7 +659,7 @@
                                     'bg-emerald-300',
 
                                 default =>
-                                    'bg-[#697394]',
+                                    'bg-[var(--ec-text-muted)]',
                             };
                     @endphp
 
@@ -693,7 +693,7 @@
                                 class="
                                     absolute bottom-0
                                     top-4 w-px
-                                    bg-white/[0.06]
+                                    bg-[var(--ec-surface-soft)]
                                 "
                             ></div>
 
@@ -712,7 +712,7 @@
                         <div
                             class="
                                 border-b
-                                border-white/[0.05]
+                                border-[var(--ec-border-soft)]
                                 pb-4
                             "
                         >
@@ -728,7 +728,7 @@
                                     class="
                                         text-sm
                                         font-semibold
-                                        text-[#e8ebf7]
+                                        text-[var(--ec-text)]
                                     "
                                 >
                                     {{ $activity->title }}
@@ -737,13 +737,13 @@
                                 <span
                                     class="
                                         rounded-full
-                                        bg-white/[0.04]
+                                        bg-[var(--ec-surface-soft)]
                                         px-2 py-0.5
                                         text-[9px]
                                         font-semibold
                                         uppercase
                                         tracking-wide
-                                        text-[#8791b2]
+                                        text-[var(--ec-text-muted)]
                                     "
                                 >
                                     {{ $activityLabel }}
@@ -761,7 +761,7 @@
                                         mt-1
                                         text-xs
                                         leading-5
-                                        text-[#929bb8]
+                                        text-[var(--ec-text-muted)]
                                     "
                                 >
                                     {{ $activity->description }}
@@ -773,7 +773,7 @@
                             <div
                                 class="
                                     mt-1.5 text-[10px]
-                                    text-[#646e91]
+                                    text-[var(--ec-text-muted)]
                                 "
                             >
                                 {{

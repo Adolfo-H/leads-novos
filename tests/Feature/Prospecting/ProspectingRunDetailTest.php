@@ -779,3 +779,107 @@ it('segments prospecting companies by crm commercial status', function () {
             'Empresa Cliente'
         );
 });
+
+it('gives crm opportunity priority over a stale eligible sdr score', function () {
+    $batch =
+        ImportBatch::query()->create([
+            'source_type' => 'prospecting',
+
+            'status' => 'completed',
+
+            'total_rows' => 1,
+
+            'processed_rows' => 1,
+        ]);
+
+    $company =
+        Company::query()->create([
+            'cnpj_root' => '71717171',
+
+            'corporate_name' => 'Empresa Oportunidade com SDR Antigo',
+        ]);
+
+    $company
+        ->crmCheck()
+        ->create([
+            'provider' => 'hubspot',
+
+            'status' => 'opportunity',
+
+            'contacted_count' => 1,
+
+            'associated_deals_count' => 1,
+
+            'metadata' => [],
+
+            'checked_at' => now(),
+        ]);
+
+    /*
+     * Simula uma janela transitória:
+     *
+     * CRM já mudou para oportunidade,
+     * porém o score SDR ainda não foi
+     * recalculado.
+     */
+    $company
+        ->sdrScore()
+        ->create([
+            'score' => 95,
+
+            'priority' => 'very_high',
+
+            'label' => 'Prioridade muito alta',
+
+            'is_eligible' => true,
+
+            'is_provisional' => false,
+
+            'factors' => [],
+
+            'version' => 'test',
+
+            'metadata' => [],
+
+            'calculated_at' => now(),
+        ]);
+
+    $batch
+        ->items()
+        ->create([
+            'row_number' => 1,
+
+            'raw_cnpj' => '71717171000100',
+
+            'normalized_cnpj' => '71717171000100',
+
+            'status' => 'completed',
+
+            'company_id' => $company->id,
+        ]);
+
+    $detail =
+        app(
+            ProspectingRunDetailService::class
+        )->build(
+            $batch
+        );
+
+    expect(
+        $detail[
+            'commercial_state_scope'
+        ]
+    )->toBe(
+        'current'
+    );
+
+    expect(
+        $detail[
+            'items'
+        ][0][
+            'outcome'
+        ]
+    )->toBe(
+        'Oportunidade'
+    );
+});

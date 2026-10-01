@@ -12,6 +12,11 @@ new class extends Component
 {
     public function mount(): void
     {
+        $this->assertCommercialManager();
+    }
+
+    private function assertCommercialManager(): User
+    {
         $user =
             auth()->user();
 
@@ -21,6 +26,8 @@ new class extends Component
                 ->isCommercialManager(),
             403
         );
+
+        return $user;
     }
 
     /**
@@ -44,6 +51,8 @@ new class extends Component
     #[Computed]
     public function commercialUsers(): Collection
     {
+        $this->assertCommercialManager();
+
         return User::query()
             ->whereNotNull(
                 'email_verified_at'
@@ -65,6 +74,8 @@ new class extends Component
     #[Computed]
     public function distributionUsers(): Collection
     {
+        $this->assertCommercialManager();
+
         return User::query()
             ->whereNotNull(
                 'email_verified_at'
@@ -82,6 +93,8 @@ new class extends Component
     #[Computed]
     public function distributionCandidatesCount(): int
     {
+        $this->assertCommercialManager();
+
         return app(
             LeadAutoDistributionService::class
         )->candidatesCount();
@@ -89,6 +102,8 @@ new class extends Component
 
     public function selectAllDistributionSellers(): void
     {
+        $this->assertCommercialManager();
+
         $this->distributionSellerIds =
             $this
                 ->distributionUsers
@@ -104,12 +119,16 @@ new class extends Component
 
     public function clearDistributionSellers(): void
     {
+        $this->assertCommercialManager();
+
         $this->distributionSellerIds = [];
     }
 
     public function autoDistribute(
         LeadAutoDistributionService $service,
     ): void {
+        $this->assertCommercialManager();
+
         $this->distributionMessage = '';
         $this->distributionError = '';
 
@@ -146,16 +165,11 @@ new class extends Component
         string $role,
         CommercialRoleService $service,
     ): void {
+        $actor =
+            $this->assertCommercialManager();
+
         $this->roleMessage = '';
         $this->roleError = '';
-
-        $actor =
-            auth()->user();
-
-        abort_unless(
-            $actor instanceof User,
-            403
-        );
 
         $target =
             User::query()
@@ -204,6 +218,8 @@ new class extends Component
     #[Computed]
     public function dashboard(): array
     {
+        $this->assertCommercialManager();
+
         return app(
             CommercialManagementMetricsService::class
         )->dashboard();

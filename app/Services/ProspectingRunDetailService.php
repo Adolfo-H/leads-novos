@@ -285,6 +285,19 @@ final class ProspectingRunDetailService
 
             'failed_count' => $failedCount,
 
+            /*
+             * ICP, CRM, pesquisa de exportação
+             * e SDR são relações vivas.
+             *
+             * Uma rodada antiga, portanto,
+             * mostra a situação comercial atual
+             * da empresa, não um snapshot histórico.
+             */
+            'commercial_state_scope' => 'current',
+
+            'commercial_state_note' => 'ICP, CRM, exportação e SDR refletem '
+                .'o estado atual da empresa.',
+
             'filters' => $filters,
 
             'items' => $items,
@@ -449,16 +462,24 @@ final class ProspectingRunDetailService
             return 'Pendente';
         }
 
-        if ($sdrEligible === true) {
-            return 'Lead';
-        }
-
+        /*
+         * CRM representa um estado comercial
+         * mais forte do que a elegibilidade SDR.
+         *
+         * Isso também protege a interface caso
+         * exista um score SDR antigo aguardando
+         * recálculo.
+         */
         if ($crmStatus === 'client') {
             return 'Cliente';
         }
 
         if ($crmStatus === 'opportunity') {
             return 'Oportunidade';
+        }
+
+        if ($sdrEligible === true) {
+            return 'Lead';
         }
 
         if ($sdrEligible === false) {

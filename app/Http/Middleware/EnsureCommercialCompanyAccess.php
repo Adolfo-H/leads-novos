@@ -6,6 +6,7 @@ use App\Models\Company;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 
 final class EnsureCommercialCompanyAccess
@@ -25,15 +26,6 @@ final class EnsureCommercialCompanyAccess
             403
         );
 
-        if (
-            $user
-                ->isCommercialManager()
-        ) {
-            return $next(
-                $request
-            );
-        }
-
         $company =
             $request->route(
                 'company'
@@ -44,18 +36,11 @@ final class EnsureCommercialCompanyAccess
             404
         );
 
-        $allowed =
-            $company
-                ->leadWorkState()
-                ->where(
-                    'assigned_user_id',
-                    $user->id
-                )
-                ->exists();
-
-        abort_unless(
-            $allowed,
-            403
+        Gate::forUser(
+            $user
+        )->authorize(
+            'view',
+            $company,
         );
 
         return $next(

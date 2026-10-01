@@ -60,23 +60,13 @@ new class extends Component
             );
 
         return Company::query()
-            ->with([
-                'establishments' =>
-                    function ($query): void {
-                        $query
-                            ->orderByRaw(
-                                "CASE
-                                    WHEN type = 'matrix'
-                                    THEN 0
-                                    ELSE 1
-                                END"
-                            )
-                            ->orderBy(
-                                'id'
-                            );
-                    },
+            ->withCount(
+                'establishments'
+            )
 
-                'establishments.cnaes',
+            ->with([
+                'matrix.cnaes',
+                'oldestEstablishment.cnaes',
             ])
 
             ->when(
@@ -163,51 +153,45 @@ new class extends Component
             )
 
             ->when(
-                $this->state !== '',
-                fn ($query) =>
+                $this->state !== ''
+                || $this->type !== ''
+                || $this->status !== '',
+                function ($query): void {
                     $query->whereHas(
                         'establishments',
-                        fn (
+                        function (
                             $establishmentQuery
-                        ) =>
+                        ): void {
                             $establishmentQuery
-                                ->where(
-                                    'state',
-                                    $this->state
+                                ->when(
+                                    $this->state !== '',
+                                    fn ($query) =>
+                                        $query->where(
+                                            'state',
+                                            $this->state
+                                        )
                                 )
-                    )
-            )
 
-            ->when(
-                $this->type !== '',
-                fn ($query) =>
-                    $query->whereHas(
-                        'establishments',
-                        fn (
-                            $establishmentQuery
-                        ) =>
-                            $establishmentQuery
-                                ->where(
-                                    'type',
-                                    $this->type
+                                ->when(
+                                    $this->type !== '',
+                                    fn ($query) =>
+                                        $query->where(
+                                            'type',
+                                            $this->type
+                                        )
                                 )
-                    )
-            )
 
-            ->when(
-                $this->status !== '',
-                fn ($query) =>
-                    $query->whereHas(
-                        'establishments',
-                        fn (
-                            $establishmentQuery
-                        ) =>
-                            $establishmentQuery
-                                ->where(
-                                    'registration_status',
-                                    $this->status
-                                )
-                    )
+                                ->when(
+                                    $this->status !== '',
+                                    fn ($query) =>
+                                        $query->where(
+                                            'registration_status',
+                                            $this->status
+                                        )
+                                );
+                        }
+                    );
+                }
             )
 
             ->orderBy(
@@ -391,9 +375,23 @@ new class extends Component
                 <tbody>
                     @forelse ($records as $company)
                         @php
-                            $establishment = $company->establishments->first();
-                            $primaryCnae = $establishment?->cnaes->firstWhere('pivot.is_primary', true);
-                            $units = $company->establishments->count();
+                            $establishment =
+                                $company->matrix
+                                ?? $company->oldestEstablishment;
+
+                            $primaryCnae =
+                                $establishment
+                                    ?->cnaes
+                                    ->firstWhere(
+                                        'pivot.is_primary',
+                                        true
+                                    );
+
+                            $units =
+                                (int) (
+                                    $company->establishments_count
+                                    ?? 0
+                                );
                             $registration = (string) ($establishment?->registration_status ?? '');
                             $tone = match ($registration) {
                                 'ATIVA' => 'active',

@@ -124,6 +124,23 @@ class Company extends Model
     }
 
     /**
+     * Primeiro estabelecimento cadastrado.
+     *
+     * Usado como referência somente quando
+     * a empresa não possui matriz conhecida.
+     *
+     * @return HasOne<Establishment, $this>
+     */
+    public function oldestEstablishment(): HasOne
+    {
+        return $this
+            ->hasOne(
+                Establishment::class
+            )
+            ->oldestOfMany();
+    }
+
+    /**
      * @return HasOne<CompanySdrScore, $this>
      */
     public function sdrScore(): HasOne

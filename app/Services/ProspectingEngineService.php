@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\Company;
 use App\Models\ImportBatch;
 use App\Models\ImportItem;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Facades\Cache;
+use RuntimeException;
 
 final class ProspectingEngineService
 {
@@ -385,21 +388,188 @@ final class ProspectingEngineService
         ?array $sizeCodes = null,
         int $offset = 0,
     ): array {
+        $lockSeconds =
+            max(
+                30,
+                (int) config(
+                    'prospector.prospecting.execution_lock_seconds',
+                    300
+                )
+            );
+
+        $waitSeconds =
+            max(
+                1,
+                min(
+                    $lockSeconds - 1,
+                    (int) config(
+                        'prospector.prospecting.execution_lock_wait_seconds',
+                        30
+                    )
+                )
+            );
+
         /*
-         * Refazemos o preview no momento da
-         * execução.
+         * Lock global proposital.
          *
-         * Assim uma empresa que entrou em
-         * outro lote segundos antes não será
-         * duplicada.
+         * Locks diferentes por filtro não
+         * resolveriam a concorrência porque
+         * duas buscas diferentes podem encontrar
+         * a mesma raiz empresarial.
+         *
+         * O lock cobre somente a região crítica:
+         *
+         * preview definitivo
+         * +
+         * persistência do ImportBatch/ImportItems.
+         */
+        $lock =
+            Cache::lock(
+                'prospecting:engine:execute',
+                $lockSeconds,
+            );
+
+        try {
+            /**
+             * @var array{
+             *     batch: ImportBatch|null,
+             *     preview: array{
+             *         items: list<array<string, mixed>>,
+             *         discovered_count: int,
+             *         known_count: int,
+             *         new_count: int,
+             *         filters: array<string, mixed>
+             *     }
+             * } $reservation
+             */
+            $reservation =
+                $lock->block(
+                    $waitSeconds,
+                    fn (): array => $this
+                        ->reserveProspectingBatch(
+                            limit: $limit,
+
+                            states: $states,
+
+                            cnaes: $cnaes,
+
+                            userId: $userId,
+
+                            minCapital: $minCapital,
+
+                            sizeCodes: $sizeCodes,
+
+                            offset: $offset,
+                        )
+                );
+        } catch (
+            LockTimeoutException $exception
+        ) {
+            throw new RuntimeException(
+                'Já existe uma execução do Motor de Prospecção reservando empresas. Aguarde alguns segundos e tente novamente.',
+                previous: $exception,
+            );
+        }
+
+        $batch =
+            $reservation[
+                'batch'
+            ];
+
+        $preview =
+            $reservation[
+                'preview'
+            ];
+
+        if (
+            $batch === null
+        ) {
+            return [
+                'batch' => null,
+
+                'dispatched' => 0,
+
+                'preview' => $preview,
+            ];
+        }
+
+        /*
+         * Neste ponto o lock já foi liberado.
+         *
+         * As raízes já estão persistidas no
+         * banco, portanto outra execução passa
+         * a enxergá-las em knownRoots().
+         */
+        $dispatched =
+            $this->queue
+                ->dispatchReady(
+                    $batch
+                );
+
+        $this->queue
+            ->refreshBatch(
+                $batch->id
+            );
+
+        return [
+            'batch' => $batch
+                ->refresh(),
+
+            'dispatched' => $dispatched,
+
+            'preview' => $preview,
+        ];
+    }
+
+    /**
+     * Executa somente a região crítica da
+     * reserva de prospects.
+     *
+     * O preview definitivo precisa ocorrer
+     * dentro do mesmo lock usado para gravar
+     * os ImportItems.
+     *
+     * @param  list<string>  $states
+     * @param  list<string>  $cnaes
+     * @param  list<string>|null  $sizeCodes
+     * @return array{
+     *     batch: ImportBatch|null,
+     *     preview: array{
+     *         items: list<array<string, mixed>>,
+     *         discovered_count: int,
+     *         known_count: int,
+     *         new_count: int,
+     *         filters: array<string, mixed>
+     *     }
+     * }
+     */
+    private function reserveProspectingBatch(
+        int $limit,
+        array $states,
+        array $cnaes,
+        ?int $userId = null,
+        ?float $minCapital = null,
+        ?array $sizeCodes = null,
+        int $offset = 0,
+    ): array {
+        /*
+         * Este é o preview decisivo.
+         *
+         * Ele acontece somente depois que
+         * obtivemos o lock.
          */
         $preview =
             $this->preview(
                 limit: $limit,
+
                 states: $states,
+
                 cnaes: $cnaes,
+
                 minCapital: $minCapital,
+
                 sizeCodes: $sizeCodes,
+
                 offset: $offset,
             );
 
@@ -410,7 +580,7 @@ final class ProspectingEngineService
         ) {
             return [
                 'batch' => null,
-                'dispatched' => 0,
+
                 'preview' => $preview,
             ];
         }
@@ -419,21 +589,34 @@ final class ProspectingEngineService
             array_map(
                 static fn (
                     array $item
-                ): string => (string) $item[
-                        'cnpj'
-                    ],
+                ): string => (string)
+                        $item[
+                            'cnpj'
+                        ],
                 $preview[
                     'items'
                 ]
             );
 
+        /*
+         * CnpjImportService persiste o batch
+         * e os items em transação.
+         *
+         * Quando import() retorna, as raízes
+         * já estão visíveis para a próxima
+         * execução do motor.
+         */
         $batch =
-            $this->import->import(
-                values: $cnpjs,
-                userId: $userId,
-                sourceType: 'prospecting',
-                filename: null,
-            );
+            $this->import
+                ->import(
+                    values: $cnpjs,
+
+                    userId: $userId,
+
+                    sourceType: 'prospecting',
+
+                    filename: null,
+                );
 
         $batch->update([
             'metadata' => [
@@ -464,19 +647,8 @@ final class ProspectingEngineService
             ],
         ]);
 
-        $dispatched =
-            $this->queue->dispatchReady(
-                $batch
-            );
-
-        $this->queue->refreshBatch(
-            $batch->id
-        );
-
         return [
-            'batch' => $batch->refresh(),
-
-            'dispatched' => $dispatched,
+            'batch' => $batch,
 
             'preview' => $preview,
         ];

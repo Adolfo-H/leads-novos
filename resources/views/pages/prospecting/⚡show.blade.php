@@ -173,7 +173,7 @@ new class extends Component
                 'text-cyan-300',
 
             default =>
-                'text-[#cbd1e7]',
+                'text-[var(--ec-text-soft)]',
         };
     }
 };
@@ -218,10 +218,10 @@ new class extends Component
             ['label' => 'Descobertos', 'value' => $detail['discovered_count'] ?? 0, 'help' => 'Candidatos examinados', 'tone' => '', 'filter' => null],
             ['label' => 'Enviados', 'value' => $total, 'help' => 'Empresas nesta rodada', 'tone' => '', 'filter' => 'all'],
             ['label' => 'Processados', 'value' => $processed, 'help' => 'Processamento cadastral', 'tone' => '', 'filter' => null],
-            ['label' => 'Leads', 'value' => $detail['lead_count'] ?? 0, 'help' => 'Elegíveis pelo score SDR', 'tone' => 'success', 'filter' => 'leads'],
-            ['label' => 'Bloqueados', 'value' => $detail['blocked_count'] ?? 0, 'help' => 'Não elegíveis pelo SDR', 'tone' => 'warning', 'filter' => 'blocked'],
-            ['label' => 'Pesquisados', 'value' => $detail['researched_count'] ?? 0, 'help' => 'Pesquisa web concluída', 'tone' => '', 'filter' => null],
-            ['label' => 'Exportadores', 'value' => $detail['export_identified_count'] ?? 0, 'help' => 'Sinais classificados pelo motor', 'tone' => 'info', 'filter' => 'exporters'],
+            ['label' => 'Leads', 'value' => $detail['lead_count'] ?? 0, 'help' => 'Elegíveis pelo score SDR no estado atual', 'tone' => 'success', 'filter' => 'leads'],
+            ['label' => 'Bloqueados', 'value' => $detail['blocked_count'] ?? 0, 'help' => 'Não elegíveis pelo SDR no estado atual', 'tone' => 'warning', 'filter' => 'blocked'],
+            ['label' => 'Pesquisados', 'value' => $detail['researched_count'] ?? 0, 'help' => 'Pesquisa pública atualmente concluída', 'tone' => '', 'filter' => null],
+            ['label' => 'Exportadores', 'value' => $detail['export_identified_count'] ?? 0, 'help' => 'Sinais atualmente classificados pelo motor', 'tone' => 'info', 'filter' => 'exporters'],
             ['label' => 'Falhas', 'value' => $detail['failed_count'] ?? 0, 'help' => 'Falhas de processamento', 'tone' => 'danger', 'filter' => 'failed'],
         ];
     @endphp
@@ -320,6 +320,12 @@ new class extends Component
                 @else
                     Excel disponível para Todos, Leads, Bloqueados, Exportadores e Falhas. O filtro atual não é suportado pelo exportador.
                 @endif
+            </span>
+            <span>
+                ICP, CRM, exportação e SDR refletem
+                o estado atual da empresa; descobertos,
+                enviados e processados pertencem à execução
+                original da rodada.
             </span>
             <span>Os grupos podem se sobrepor; não some suas contagens.</span>
         </div>

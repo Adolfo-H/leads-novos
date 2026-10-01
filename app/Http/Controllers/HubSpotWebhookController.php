@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ProcessHubSpotWebhookEvent;
 use App\Models\HubSpotWebhookEvent;
 use App\Services\HubSpotWebhookObjectTypeService;
+use App\Services\HubSpotWebhookQueueService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,6 +15,7 @@ final class HubSpotWebhookController extends Controller
     public function __invoke(
         Request $request,
         HubSpotWebhookObjectTypeService $types,
+        HubSpotWebhookQueueService $queue,
     ): JsonResponse {
         $decoded =
             json_decode(
@@ -44,6 +45,9 @@ final class HubSpotWebhookController extends Controller
         $duplicates = 0;
         $invalid = 0;
         $blocked = 0;
+        $queued = 0;
+        $requeued = 0;
+        $pending = 0;
 
         foreach (
             $payloads as $payload
@@ -232,6 +236,27 @@ final class HubSpotWebhookController extends Controller
             ) {
                 $duplicates++;
 
+                /*
+                 * Uma duplicata não é apenas
+                 * descartada.
+                 *
+                 * Se o evento anterior ficou
+                 * em received/failed, o próprio
+                 * reenvio do HubSpot recupera
+                 * o processamento.
+                 *
+                 * queued/processing/terminal
+                 * continuam sem job duplicado.
+                 */
+                if (
+                    $queue->dispatch(
+                        $event
+                    )
+                ) {
+                    $accepted++;
+                    $requeued++;
+                }
+
                 continue;
             }
 
@@ -268,11 +293,24 @@ final class HubSpotWebhookController extends Controller
                 continue;
             }
 
-            ProcessHubSpotWebhookEvent::dispatch(
-                $event->id
-            );
-
+            /*
+             * O evento já está salvo.
+             *
+             * Se Redis estiver indisponível,
+             * ele permanece em received e será
+             * recuperado posteriormente.
+             */
             $accepted++;
+
+            if (
+                $queue->dispatch(
+                    $event
+                )
+            ) {
+                $queued++;
+            } else {
+                $pending++;
+            }
         }
 
         return response()->json(
@@ -284,6 +322,12 @@ final class HubSpotWebhookController extends Controller
                 'invalid' => $invalid,
 
                 'blocked' => $blocked,
+
+                'queued' => $queued,
+
+                'requeued' => $requeued,
+
+                'pending' => $pending,
             ],
             202
         );

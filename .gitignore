@@ -36,3 +36,12 @@ __pycache__/
 .DS_Store
 
 /testing
+
+# HubSpot App - arquivos locais/gerados
+/hubspot-app/AGENTS.md
+/hubspot-app/CLAUDE.md
+/hubspot-app/HUBSPOT_PROJECTS.md
+/hubspot-app/**/*.backup*
+/hubspot-app/**/local.json
+/hubspot-app/hsprofile.*.json
+/hubspot-app/.hubspot/

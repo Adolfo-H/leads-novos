@@ -101,12 +101,47 @@ final class CnpjImportService
                     }
                 }
 
+                /*
+                 * raw_cnpj possui limite de 50 caracteres.
+                 *
+                 * Uma linha inválida e muito longa não
+                 * pode derrubar a transação inteira.
+                 */
+                $rawLength =
+                    mb_strlen(
+                        $raw
+                    );
+
+                $rawForStorage =
+                    mb_substr(
+                        $raw,
+                        0,
+                        50
+                    );
+
+                $metadata =
+                    $rawLength > 50
+                        ? [
+                            'input' => [
+                                'raw_truncated' => true,
+
+                                'raw_length' => $rawLength,
+                            ],
+                        ]
+                        : null;
+
                 $batch->items()->create([
                     'row_number' => $index + 1,
 
-                    'raw_cnpj' => $raw,
+                    'raw_cnpj' => $rawForStorage,
 
-                    'normalized_cnpj' => $normalized !== ''
+                    /*
+                     * normalized_cnpj possui 14 caracteres.
+                     *
+                     * Só gravamos quando o valor
+                     * efetivamente for um CNPJ válido.
+                     */
+                    'normalized_cnpj' => $isValid
                             ? $normalized
                             : null,
 
@@ -117,6 +152,8 @@ final class CnpjImportService
                     'company_id' => $companyId,
 
                     'error_message' => $error,
+
+                    'metadata' => $metadata,
                 ]);
             }
 

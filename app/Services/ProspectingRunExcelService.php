@@ -8,6 +8,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -192,12 +193,11 @@ final class ProspectingRunExcelService
             'Lote'
         );
 
-        $sheet->setCellValue(
+        $this->setTextCell(
+            $sheet,
             'B3',
-            (string) (
-                $detail['uuid']
+            $detail['uuid']
                 ?? ''
-            )
         );
 
         $sheet->setCellValue(
@@ -205,12 +205,11 @@ final class ProspectingRunExcelService
             'Data'
         );
 
-        $sheet->setCellValue(
+        $this->setTextCell(
+            $sheet,
             'B4',
-            (string) (
-                $detail['created_label']
+            $detail['created_label']
                 ?? ''
-            )
         );
 
         $sheet->setCellValue(
@@ -218,12 +217,11 @@ final class ProspectingRunExcelService
             'Status'
         );
 
-        $sheet->setCellValue(
+        $this->setTextCell(
+            $sheet,
             'E3',
-            (string) (
-                $detail['status_label']
+            $detail['status_label']
                 ?? ''
-            )
         );
 
         $sheet->setCellValue(
@@ -231,7 +229,8 @@ final class ProspectingRunExcelService
             'Filtro exportado'
         );
 
-        $sheet->setCellValue(
+        $this->setTextCell(
+            $sheet,
             'E4',
             $this->filterLabel(
                 $filter
@@ -252,10 +251,10 @@ final class ProspectingRunExcelService
             'Descobertos',
             'Enviados',
             'Processados',
-            'Leads',
-            'Bloqueados',
-            'Pesquisados',
-            'Exportadores',
+            'Leads atuais',
+            'Bloqueados atuais',
+            'Pesquisados atuais',
+            'Exportadores atuais',
             'Falhas',
         ];
 
@@ -385,13 +384,12 @@ final class ProspectingRunExcelService
             'UFs'
         );
 
-        $sheet->setCellValue(
+        $this->setTextCell(
+            $sheet,
             'B11',
             $this->joinValues(
-                $filters[
-                    'states'
-                ]
-                ?? []
+                $filters['states']
+                    ?? []
             )
         );
 
@@ -400,13 +398,12 @@ final class ProspectingRunExcelService
             'CNAEs'
         );
 
-        $sheet->setCellValue(
+        $this->setTextCell(
+            $sheet,
             'B12',
             $this->joinValues(
-                $filters[
-                    'cnaes'
-                ]
-                ?? []
+                $filters['cnaes']
+                    ?? []
             )
         );
 
@@ -570,7 +567,8 @@ final class ProspectingRunExcelService
                     )
                     : '';
 
-            $sheet->setCellValue(
+            $this->setTextCell(
+                $sheet,
                 'A'.$row,
                 $companyName
             );
@@ -589,14 +587,11 @@ final class ProspectingRunExcelService
                     DataType::TYPE_STRING
                 );
 
-            $sheet->setCellValue(
+            $this->setTextCell(
+                $sheet,
                 'C'.$row,
-                $this->text(
-                    $item[
-                        'icp_grade'
-                    ]
+                $item['icp_grade']
                     ?? null
-                )
             );
 
             $sheet->setCellValue(
@@ -609,24 +604,18 @@ final class ProspectingRunExcelService
                 )
             );
 
-            $sheet->setCellValue(
+            $this->setTextCell(
+                $sheet,
                 'E'.$row,
-                $this->text(
-                    $item[
-                        'crm_label'
-                    ]
+                $item['crm_label']
                     ?? null
-                )
             );
 
-            $sheet->setCellValue(
+            $this->setTextCell(
+                $sheet,
                 'F'.$row,
-                $this->text(
-                    $item[
-                        'export_label'
-                    ]
+                $item['export_label']
                     ?? null
-                )
             );
 
             $sheet->setCellValue(
@@ -639,37 +628,31 @@ final class ProspectingRunExcelService
                 )
             );
 
-            $sheet->setCellValue(
+            $this->setTextCell(
+                $sheet,
                 'H'.$row,
-                $this->text(
-                    $item[
-                        'outcome'
-                    ]
+                $item['outcome']
                     ?? null
-                )
             );
 
-            $sheet->setCellValue(
+            $this->setTextCell(
+                $sheet,
                 'I'.$row,
-                $this->text(
-                    $item[
-                        'blocked_reason'
-                    ]
-                    ?? $item[
-                        'error'
-                    ]
+                $item['blocked_reason']
+                    ?? $item['error']
                     ?? null
-                )
             );
 
-            $sheet->setCellValue(
+            $this->setTextCell(
+                $sheet,
                 'J'.$row,
                 $hubSpotUrl !== ''
                     ? 'Abrir no HubSpot'
                     : ''
             );
 
-            $sheet->setCellValue(
+            $this->setTextCell(
+                $sheet,
                 'K'.$row,
                 $dossierUrl
             );
@@ -905,6 +888,34 @@ final class ProspectingRunExcelService
 
             default => 'Todos',
         };
+    }
+
+    /*
+     * EC_EXCEL_LITERAL_TEXT
+     *
+     * Todo valor vindo de cadastro,
+     * integrações ou filtros deve entrar
+     * no Excel como texto literal.
+     *
+     * Isso impede que valores iniciados por
+     * =, +, -, @ sejam interpretados como
+     * fórmulas pelo Excel.
+     */
+    private function setTextCell(
+        Worksheet $sheet,
+        string $coordinate,
+        mixed $value,
+    ): void {
+        $sheet
+            ->getCell(
+                $coordinate
+            )
+            ->setValueExplicit(
+                $this->text(
+                    $value
+                ),
+                DataType::TYPE_STRING
+            );
     }
 
     private function text(

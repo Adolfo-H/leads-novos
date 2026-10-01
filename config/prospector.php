@@ -32,6 +32,34 @@ return [
         ),
     ],
 
+    'prospecting' => [
+        /*
+         * Somente uma execução do motor pode
+         * reservar prospects por vez.
+         *
+         * O lock protege apenas:
+         *
+         * preview definitivo
+         * +
+         * gravação do lote.
+         *
+         * Os jobs são enviados depois.
+         */
+        'execution_lock_seconds' => (int) env(
+            'PROSPECTING_EXECUTION_LOCK_SECONDS',
+            300
+        ),
+
+        /*
+         * Tempo máximo que uma segunda
+         * execução aguarda a primeira.
+         */
+        'execution_lock_wait_seconds' => (int) env(
+            'PROSPECTING_EXECUTION_LOCK_WAIT_SECONDS',
+            30
+        ),
+    ],
+
     'export_research' => [
         /*
          * A pesquisa externa fica desligada

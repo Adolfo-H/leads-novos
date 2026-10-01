@@ -340,6 +340,7 @@ final class CnpjEnrichmentService
                 $this->cnaes(
                     $data
                 ),
+                replaceCnaes: true,
             );
     }
 

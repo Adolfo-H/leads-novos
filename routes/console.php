@@ -28,6 +28,12 @@ Schedule::command(
     ->withoutOverlapping();
 
 Schedule::command(
+    'hubspot:webhooks-recover --minutes=10 --limit=100'
+)
+    ->everyMinute()
+    ->withoutOverlapping();
+
+Schedule::command(
     'hubspot:lead-statuses'
 )
     ->everyFiveMinutes()

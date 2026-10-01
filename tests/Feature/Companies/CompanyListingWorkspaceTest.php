@@ -89,3 +89,98 @@ it('keeps pagination available in the company list', function () {
         ->set('search', 'Empresa Paginação UI 01')
         ->assertSee('Empresa Paginação UI 01');
 });
+
+it('applies establishment filters to the same establishment instead of mixing branches', function () {
+    $mixed =
+        Company::query()->create([
+            'cnpj_root' => '51515151',
+
+            'corporate_name' => 'Empresa Filtro Cruzado',
+        ]);
+
+    $mixed
+        ->establishments()
+        ->create([
+            'cnpj' => '51515151000101',
+
+            'order_number' => '0001',
+
+            'check_digits' => '01',
+
+            'type' => 'matrix',
+
+            'state' => 'PR',
+
+            'municipality_name' => 'Cascavel',
+
+            'registration_status' => 'ATIVA',
+        ]);
+
+    $mixed
+        ->establishments()
+        ->create([
+            'cnpj' => '51515151000284',
+
+            'order_number' => '0002',
+
+            'check_digits' => '84',
+
+            'type' => 'branch',
+
+            'state' => 'SC',
+
+            'municipality_name' => 'Chapecó',
+
+            'registration_status' => 'BAIXADA',
+        ]);
+
+    $matching =
+        Company::query()->create([
+            'cnpj_root' => '61616161',
+
+            'corporate_name' => 'Empresa Filtro Correto',
+        ]);
+
+    $matching
+        ->establishments()
+        ->create([
+            'cnpj' => '61616161000102',
+
+            'order_number' => '0001',
+
+            'check_digits' => '02',
+
+            'type' => 'branch',
+
+            'state' => 'PR',
+
+            'municipality_name' => 'Toledo',
+
+            'registration_status' => 'BAIXADA',
+        ]);
+
+    Livewire::actingAs(
+        companyListingWorkspaceManager()
+    )
+        ->test(
+            'pages::companies.index'
+        )
+        ->set(
+            'state',
+            'PR'
+        )
+        ->set(
+            'type',
+            'branch'
+        )
+        ->set(
+            'status',
+            'BAIXADA'
+        )
+        ->assertDontSee(
+            'Empresa Filtro Cruzado'
+        )
+        ->assertSee(
+            'Empresa Filtro Correto'
+        );
+});

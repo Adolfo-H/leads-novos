@@ -1,0 +1,490 @@
+{
+  "uid": "exportcontrol_webhooks",
+  "type": "webhooks",
+  "config": {
+    "settings": {
+      "targetUrl": "https://palpitate-hypnotize-eloquence.ngrok-free.dev/webhooks/hubspot",
+      "maxConcurrentRequests": 10
+    },
+    "subscriptions": {
+      "crmObjects": [
+        {
+          "subscriptionType": "object.creation",
+          "objectType": "company",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.deletion",
+          "objectType": "company",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.associationChange",
+          "objectType": "company",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "company",
+          "active": true,
+          "propertyName": "name"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "company",
+          "active": true,
+          "propertyName": "domain"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "company",
+          "active": true,
+          "propertyName": "lifecyclestage"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "company",
+          "active": true,
+          "propertyName": "hs_lead_status"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "company",
+          "active": true,
+          "propertyName": "hubspot_owner_id"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "company",
+          "active": true,
+          "propertyName": "city"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "company",
+          "active": true,
+          "propertyName": "state"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "company",
+          "active": true,
+          "propertyName": "phone"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "company",
+          "active": true,
+          "propertyName": "notes_last_contacted"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "company",
+          "active": true,
+          "propertyName": "notes_last_updated"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "company",
+          "active": true,
+          "propertyName": "num_contacted_notes"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "company",
+          "active": true,
+          "propertyName": "num_associated_deals"
+        },
+        {
+          "subscriptionType": "object.creation",
+          "objectType": "deal",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.deletion",
+          "objectType": "deal",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.associationChange",
+          "objectType": "deal",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "deal",
+          "active": true,
+          "propertyName": "dealname"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "deal",
+          "active": true,
+          "propertyName": "dealstage"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "deal",
+          "active": true,
+          "propertyName": "pipeline"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "deal",
+          "active": true,
+          "propertyName": "hubspot_owner_id"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "deal",
+          "active": true,
+          "propertyName": "amount"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "deal",
+          "active": true,
+          "propertyName": "deal_currency_code"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "deal",
+          "active": true,
+          "propertyName": "hs_is_closed"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "deal",
+          "active": true,
+          "propertyName": "hs_is_closed_won"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "deal",
+          "active": true,
+          "propertyName": "closedate"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "deal",
+          "active": true,
+          "propertyName": "notes_last_contacted"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "deal",
+          "active": true,
+          "propertyName": "notes_last_updated"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "deal",
+          "active": true,
+          "propertyName": "num_contacted_notes"
+        },
+        {
+          "subscriptionType": "object.creation",
+          "objectType": "contact",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.deletion",
+          "objectType": "contact",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.associationChange",
+          "objectType": "contact",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "contact",
+          "active": true,
+          "propertyName": "firstname"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "contact",
+          "active": true,
+          "propertyName": "lastname"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "contact",
+          "active": true,
+          "propertyName": "email"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "contact",
+          "active": true,
+          "propertyName": "phone"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "contact",
+          "active": true,
+          "propertyName": "mobilephone"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "contact",
+          "active": true,
+          "propertyName": "jobtitle"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "contact",
+          "active": true,
+          "propertyName": "company"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "contact",
+          "active": true,
+          "propertyName": "hubspot_owner_id"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "contact",
+          "active": true,
+          "propertyName": "lifecyclestage"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "contact",
+          "active": true,
+          "propertyName": "notes_last_contacted"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "contact",
+          "active": true,
+          "propertyName": "notes_last_updated"
+        },
+        {
+          "subscriptionType": "object.creation",
+          "objectType": "task",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.deletion",
+          "objectType": "task",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.associationChange",
+          "objectType": "task",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "task",
+          "active": true,
+          "propertyName": "hs_timestamp"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "task",
+          "active": true,
+          "propertyName": "hs_task_subject"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "task",
+          "active": true,
+          "propertyName": "hs_task_body"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "task",
+          "active": true,
+          "propertyName": "hs_task_status"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "task",
+          "active": true,
+          "propertyName": "hs_task_priority"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "task",
+          "active": true,
+          "propertyName": "hs_task_type"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "task",
+          "active": true,
+          "propertyName": "hubspot_owner_id"
+        },
+        {
+          "subscriptionType": "object.creation",
+          "objectType": "note",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.deletion",
+          "objectType": "note",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.associationChange",
+          "objectType": "note",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "note",
+          "active": true,
+          "propertyName": "hs_timestamp"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "note",
+          "active": true,
+          "propertyName": "hs_note_body"
+        },
+        {
+          "subscriptionType": "object.creation",
+          "objectType": "call",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.deletion",
+          "objectType": "call",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.associationChange",
+          "objectType": "call",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "call",
+          "active": true,
+          "propertyName": "hs_timestamp"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "call",
+          "active": true,
+          "propertyName": "hs_call_title"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "call",
+          "active": true,
+          "propertyName": "hs_call_body"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "call",
+          "active": true,
+          "propertyName": "hs_call_status"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "call",
+          "active": true,
+          "propertyName": "hs_call_disposition"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "call",
+          "active": true,
+          "propertyName": "hs_call_duration"
+        },
+        {
+          "subscriptionType": "object.creation",
+          "objectType": "meeting_event",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.deletion",
+          "objectType": "meeting_event",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.associationChange",
+          "objectType": "meeting_event",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "meeting_event",
+          "active": true,
+          "propertyName": "hs_timestamp"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "meeting_event",
+          "active": true,
+          "propertyName": "hs_meeting_title"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "meeting_event",
+          "active": true,
+          "propertyName": "hs_meeting_body"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "meeting_event",
+          "active": true,
+          "propertyName": "hs_meeting_start_time"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "meeting_event",
+          "active": true,
+          "propertyName": "hs_meeting_end_time"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "meeting_event",
+          "active": true,
+          "propertyName": "hs_meeting_outcome"
+        },
+        {
+          "subscriptionType": "object.creation",
+          "objectType": "email",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.deletion",
+          "objectType": "email",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.associationChange",
+          "objectType": "email",
+          "active": true
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "email",
+          "active": true,
+          "propertyName": "hs_timestamp"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "email",
+          "active": true,
+          "propertyName": "hs_email_status"
+        },
+        {
+          "subscriptionType": "object.propertyChange",
+          "objectType": "email",
+          "active": true,
+          "propertyName": "hs_email_direction"
+        }
+      ],
+      "legacyCrmObjects": [],
+      "hubEvents": []
+    }
+  }
+}

@@ -6,15 +6,22 @@ use App\Contracts\CnpjDataProvider;
 use App\Contracts\CnpjGroupDataProvider;
 use App\Contracts\CrmCompanyProvider;
 use App\Contracts\ExportResearchProvider;
+use App\Http\Middleware\EnsureCommercialCompanyAccess;
+use App\Http\Middleware\EnsureCommercialManager;
+use App\Models\Company;
+use App\Policies\CompanyPolicy;
 use App\Services\Providers\BrasilApiCnpjProvider;
 use App\Services\Providers\HubSpotCrmCompanyProvider;
 use App\Services\Providers\ReceitaLocalCnpjGroupProvider;
 use App\Services\Providers\TavilyExportResearchProvider;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -50,6 +57,22 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        Gate::policy(
+            Company::class,
+            CompanyPolicy::class,
+        );
+
+        /*
+         * Middlewares aplicados na rota inicial
+         * precisam continuar valendo nas
+         * requisições seguintes do Livewire.
+         */
+        Livewire::addPersistentMiddleware([
+            EnsureEmailIsVerified::class,
+            EnsureCommercialManager::class,
+            EnsureCommercialCompanyAccess::class,
+        ]);
     }
 
     /**

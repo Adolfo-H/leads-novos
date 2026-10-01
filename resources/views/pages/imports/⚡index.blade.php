@@ -370,7 +370,7 @@ new class extends Component
 
             'not_found' => 'bg-white/5 text-[#a8afc8]',
 
-            default => 'bg-white/5 text-[#7f87a7]',
+            default => 'bg-white/5 text-[var(--ec-text-muted)]',
         };
     }
 
@@ -680,7 +680,7 @@ new class extends Component
 
             'neutral' => 'border-white/[0.06] '
                 .'bg-white/[0.03] '
-                .'text-[#9ca5c5]',
+                .'text-[var(--ec-text-soft)]',
 
             'danger' => 'border-rose-400/15 '
                 .'bg-rose-400/[0.06] '
@@ -696,7 +696,7 @@ new class extends Component
 
             default => 'border-white/[0.06] '
                 .'bg-white/[0.03] '
-                .'text-[#aab2cc]',
+                .'text-[var(--ec-text-soft)]',
         };
     }
 };

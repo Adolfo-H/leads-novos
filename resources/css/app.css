@@ -2,10 +2,12 @@
 @import './imports-workspace.css';
 @import './company-list-workspace.css';
 @import './company-create-workspace.css';
+@import './company-dossier.css';
 @import './dashboard-overview.css';
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
 @import './prospecting-workspace.css';
+@import './leads-workspace.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -41,33 +43,12 @@
 }
 
 :root {
-    --ec-bg: #181a3e;
-    --ec-bg-deep: #141632;
-
-    --ec-sidebar: #292b50;
-    --ec-sidebar-deep: #252749;
-
-    --ec-topbar: #2b2d54;
-
-    --ec-surface: #292c55;
-    --ec-surface-soft: #30335e;
-    --ec-surface-hover: #353963;
-
-    --ec-border: #3a3e68;
-    --ec-border-soft: rgba(255, 255, 255, 0.07);
-
-    --ec-primary: #43b9a7;
-    --ec-primary-strong: #35a995;
-    --ec-primary-soft: rgba(67, 185, 167, 0.12);
-
-    --ec-text: #f4f6ff;
-    --ec-text-soft: #c6cbe2;
-    --ec-text-muted: #848ba9;
-
-    --ec-success: #43c59e;
-    --ec-warning: #e6b75a;
-    --ec-danger: #ef6c82;
-
+    /*
+     * Dimensões estruturais.
+     *
+     * As cores ficam exclusivamente na
+     * paleta global Claro / Escuro.
+     */
     --ec-sidebar-width: 252px;
     --ec-topbar-height: 64px;
 }
@@ -281,7 +262,7 @@ select:focus[data-flux-control] {
 }
 
 .ec-sidebar-group [data-flux-sidebar-group-heading] {
-    color: #767d9e !important;
+    color: var(--ec-text-muted) !important;
     font-size: 10px !important;
     font-weight: 700 !important;
     letter-spacing: 0.09em !important;
@@ -292,7 +273,7 @@ select:focus[data-flux-control] {
     margin: 2px 6px;
     border-radius: 7px !important;
 
-    color: #c4c9dd !important;
+    color: var(--ec-text-soft) !important;
 
     transition:
         color 160ms ease,
@@ -301,8 +282,8 @@ select:focus[data-flux-control] {
 }
 
 .ec-nav-item:hover {
-    background: rgba(255, 255, 255, 0.055) !important;
-    color: #ffffff !important;
+    background: var(--ec-surface-hover) !important;
+    color: var(--ec-text) !important;
 }
 
 .ec-nav-item[data-current],
@@ -1188,7 +1169,7 @@ select.ec-input option {
 }
 
 .ec-meta-separator {
-    color: #596080;
+    color: var(--ec-text-muted);
 }
 
 .ec-button-secondary {
@@ -1201,11 +1182,11 @@ select.ec-input option {
 
     padding: 0 15px;
 
-    border: 1px solid #4a5078;
+    border: 1px solid var(--ec-border);
     border-radius: 6px;
 
-    color: #ced3e6;
-    background: rgba(255, 255, 255, 0.015);
+    color: var(--ec-text-soft);
+    background: var(--ec-surface-soft);
 
     font-size: 12px;
     font-weight: 650;
@@ -1220,9 +1201,9 @@ select.ec-input option {
 }
 
 .ec-button-secondary:hover {
-    color: #ffffff;
-    border-color: #626991;
-    background: rgba(255, 255, 255, 0.04);
+    color: var(--ec-text);
+    border-color: var(--ec-primary);
+    background: var(--ec-surface-hover);
 }
 
 
@@ -1257,7 +1238,7 @@ select.ec-input option {
 }
 
 .ec-section-hint {
-    color: #69718f;
+    color: var(--ec-text-muted);
 
     font-size: 10px;
 }
@@ -1284,12 +1265,7 @@ select.ec-input option {
     border: 1px solid var(--ec-border-soft);
     border-radius: 8px;
 
-    background:
-        linear-gradient(
-            145deg,
-            rgba(49, 52, 96, 0.96),
-            rgba(39, 42, 80, 0.98)
-        );
+    background: linear-gradient(145deg, var(--ec-surface-soft), var(--ec-surface));
 
     transition:
         border-color 150ms ease,
@@ -1311,7 +1287,7 @@ select.ec-input option {
 }
 
 .ec-intelligence-label {
-    color: #838aa9;
+    color: var(--ec-text-muted);
 
     font-size: 9px;
     font-weight: 750;
@@ -1326,13 +1302,13 @@ select.ec-input option {
 
     border-radius: 50%;
 
-    background: #656c8c;
+    background: var(--ec-text-muted);
 }
 
 .ec-intelligence-value {
     margin-top: 15px;
 
-    color: #e3e6f4;
+    color: var(--ec-text);
 
     font-size: 12px;
     font-weight: 650;
@@ -1341,7 +1317,7 @@ select.ec-input option {
 .ec-intelligence-caption {
     margin-top: 5px;
 
-    color: #6f7696;
+    color: var(--ec-text-muted);
 
     font-size: 9px;
 }
@@ -1349,12 +1325,7 @@ select.ec-input option {
 .ec-intelligence-score {
     border-color: rgba(67, 185, 167, 0.1);
 
-    background:
-        linear-gradient(
-            145deg,
-            rgba(39, 74, 87, 0.36),
-            rgba(39, 42, 80, 0.98)
-        );
+    background: linear-gradient(145deg, var(--ec-primary-soft), var(--ec-surface));
 }
 
 .ec-intelligence-score
@@ -1449,7 +1420,7 @@ select.ec-input option {
 }
 
 .ec-data-item dt {
-    color: #747c9d;
+    color: var(--ec-text-muted);
 
     font-size: 9px;
     font-weight: 750;
@@ -1463,14 +1434,14 @@ select.ec-input option {
 
     overflow-wrap: anywhere;
 
-    color: #d8dced;
+    color: var(--ec-text-soft);
 
     font-size: 12px;
     font-weight: 520;
 }
 
 .ec-data-muted {
-    color: #8289a7;
+    color: var(--ec-text-muted);
 }
 
 
@@ -1515,7 +1486,7 @@ select.ec-input option {
 }
 
 .ec-contact-label {
-    color: #747c9d;
+    color: var(--ec-text-muted);
 
     font-size: 9px;
     font-weight: 700;
@@ -1529,7 +1500,7 @@ select.ec-input option {
 
     overflow-wrap: anywhere;
 
-    color: #d9ddec;
+    color: var(--ec-text-soft);
 
     font-size: 12px;
 }
@@ -1550,8 +1521,8 @@ select.ec-input option {
 
     border-radius: 6px;
 
-    color: #7b829f;
-    background: rgba(255, 255, 255, 0.02);
+    color: var(--ec-text-muted);
+    background: var(--ec-surface-soft);
 
     font-size: 9px;
     line-height: 1.45;
@@ -1582,8 +1553,8 @@ select.ec-input option {
 }
 
 .ec-type-branch {
-    color: #a9b0c8;
-    background: rgba(169, 176, 200, 0.07);
+    color: var(--ec-text-soft);
+    background: color-mix(in srgb, var(--ec-text-muted) 8%, transparent);
 }
 
 
@@ -1606,7 +1577,7 @@ select.ec-input option {
 
     border-bottom: 1px solid var(--ec-border-soft);
 
-    background: rgba(20, 22, 50, 0.28);
+    background: var(--ec-surface-soft);
 }
 
 .ec-field-error {
@@ -1637,7 +1608,7 @@ select.ec-input option {
 .ec-checkbox-row strong {
     display: block;
 
-    color: #d8dced;
+    color: var(--ec-text-soft);
 
     font-size: 11px;
     font-weight: 600;
@@ -1648,7 +1619,7 @@ select.ec-input option {
 
     margin-top: 2px;
 
-    color: #737b9a;
+    color: var(--ec-text-muted);
 
     font-size: 9px;
 }
@@ -1664,7 +1635,7 @@ select.ec-input option {
 .ec-cnae-block-label {
     margin-bottom: 7px;
 
-    color: #757d9e;
+    color: var(--ec-text-muted);
 
     font-size: 9px;
     font-weight: 750;
@@ -1684,11 +1655,11 @@ select.ec-input option {
     border: 1px solid rgba(67, 185, 167, 0.14);
     border-radius: 7px;
 
-    background: rgba(67, 185, 167, 0.045);
+    background: var(--ec-primary-soft);
 }
 
 .ec-cnae-main-code {
-    color: #eef1fa;
+    color: var(--ec-text);
 
     font-size: 13px;
     font-weight: 700;
@@ -1700,7 +1671,7 @@ select.ec-input option {
     border-radius: 999px;
 
     color: var(--ec-primary);
-    background: rgba(67, 185, 167, 0.1);
+    background: var(--ec-primary-soft);
 
     font-size: 8px;
     font-weight: 750;
@@ -1712,7 +1683,7 @@ select.ec-input option {
 .ec-cnae-main-description {
     margin-top: 5px;
 
-    color: #8990ad;
+    color: var(--ec-text-muted);
 
     font-size: 10px;
 }
@@ -1720,7 +1691,7 @@ select.ec-input option {
 .ec-cnae-empty {
     padding: 25px 18px;
 
-    border: 1px dashed #474d74;
+    border: 1px dashed var(--ec-border);
     border-radius: 7px;
 
     text-align: center;
@@ -1751,11 +1722,11 @@ select.ec-input option {
 }
 
 .ec-cnae-row:hover {
-    background: rgba(255, 255, 255, 0.018);
+    background: var(--ec-surface-hover);
 }
 
 .ec-cnae-row-code {
-    color: #d9ddec;
+    color: var(--ec-text-soft);
 
     font-size: 11px;
     font-weight: 650;
@@ -1764,7 +1735,7 @@ select.ec-input option {
 .ec-cnae-row-description {
     margin-top: 3px;
 
-    color: #777f9e;
+    color: var(--ec-text-muted);
 
     font-size: 9px;
 }
@@ -1793,7 +1764,7 @@ select.ec-input option {
 }
 
 .ec-link-action:hover {
-    color: #65d1c0;
+    color: var(--ec-primary-strong);
 }
 
 .ec-danger-action {
@@ -1801,7 +1772,7 @@ select.ec-input option {
 }
 
 .ec-danger-action:hover {
-    color: #f092a3;
+    color: var(--ec-danger);
 }
 
 
@@ -2164,69 +2135,19 @@ select.ec-input option {
 |--------------------------------------------------------------------------
 */
 
-.ec-dashboard-mode {
-    --ec-bg:
-        #06152a;
-
-    --ec-bg-deep:
-        #041022;
-
-    --ec-sidebar:
-        #071a31;
-
-    --ec-sidebar-deep:
-        #06152a;
-
-    --ec-topbar:
-        #091d38;
-
-    --ec-surface:
-        rgba(
-            10,
-            38,
-            70,
-            .74
-        );
-
-    --ec-surface-soft:
-        rgba(
-            15,
-            49,
-            87,
-            .82
-        );
-
-    --ec-border:
-        rgba(
-            69,
-            139,
-            211,
-            .22
-        );
-
-    --ec-border-soft:
-        rgba(
-            95,
-            155,
-            220,
-            .16
-        );
-
-    --ec-primary:
-        #26dac8;
-
-    --ec-primary-strong:
-        #20c8b8;
-
-    --ec-text:
-        #f4f8ff;
-
-    --ec-text-soft:
-        #d6e2f1;
-
-    --ec-text-muted:
-        #7f99b7;
-}
+/*
+|--------------------------------------------------------------------------
+| Dashboard mode
+|--------------------------------------------------------------------------
+|
+| ec-dashboard-mode NÃO possui mais uma paleta própria.
+|
+| Toda cor deve vir de:
+|
+| :root      -> modo claro
+| html.dark  -> modo escuro
+|
+*/
 
 
 /*
@@ -2236,82 +2157,80 @@ select.ec-input option {
 */
 
 body.ec-dashboard-mode {
+    color:
+        var(--ec-text);
+
     background:
         radial-gradient(
             circle at 70% 7%,
-            rgba(0, 105, 255, .17),
+            color-mix(
+                in srgb,
+                var(--ec-primary) 7%,
+                transparent
+            ),
             transparent 35rem
         ),
         radial-gradient(
             circle at 31% 82%,
-            rgba(0, 204, 186, .07),
+            color-mix(
+                in srgb,
+                var(--ec-primary) 4%,
+                transparent
+            ),
             transparent 30rem
         ),
-        linear-gradient(
-            180deg,
-            #07192f,
-            #041124
-        );
-
-    color: #edf5ff;
+        var(--ec-bg);
 }
 
 .ec-dashboard-mode .ec-sidebar {
     border-right:
         1px solid
-        rgba(
-            64,
-            133,
-            202,
-            .18
-        ) !important;
+        var(--ec-border-soft) !important;
 
     background:
         linear-gradient(
             180deg,
-            rgba(7, 26, 49, .98),
-            rgba(4, 17, 34, .99)
+            var(--ec-sidebar),
+            var(--ec-sidebar-deep)
         ) !important;
 
     box-shadow:
         15px 0 42px
-        rgba(0, 0, 0, .13);
+        color-mix(
+            in srgb,
+            var(--ec-text) 5%,
+            transparent
+        );
 }
 
 .ec-dashboard-mode .ec-topbar {
     border-bottom:
         1px solid
-        rgba(
-            54,
-            128,
-            208,
-            .20
-        ) !important;
+        var(--ec-border-soft) !important;
 
     background:
-        linear-gradient(
-            90deg,
-            rgba(8, 28, 53, .97),
-            rgba(9, 34, 67, .96)
-        ) !important;
+        var(--ec-topbar) !important;
 
     box-shadow:
         0 10px 35px
-        rgba(0, 0, 0, .14);
+        color-mix(
+            in srgb,
+            var(--ec-text) 4%,
+            transparent
+        );
 }
 
 .ec-dashboard-mode .ec-nav-item[data-current],
 .ec-dashboard-mode .ec-nav-item[aria-current='page'] {
+    color:
+        var(--ec-primary) !important;
+
     background:
-        linear-gradient(
-            90deg,
-            rgba(22, 164, 211, .23),
-            rgba(22, 164, 211, .10)
-        ) !important;
+        var(--ec-primary-soft) !important;
 
     box-shadow:
         inset 3px 0 0
-        #2be0cd;
+        var(--ec-primary);
 }
 
 .ec-dashboard-mode .ec-nav-item[data-current]::before,
@@ -5481,24 +5400,15 @@ body.ec-dashboard-mode {
 
     border:
         1px solid
-        rgba(
-            78,
-            142,
-            208,
-            .22
-        );
+        var(--ec-border);
 
     border-radius: 9px;
 
-    color: #819bb8;
+    color:
+        var(--ec-text-muted);
 
     background:
-        rgba(
-            8,
-            31,
-            60,
-            .54
-        );
+        var(--ec-surface-soft);
 
     font-size: 9px;
 
@@ -5506,25 +5416,19 @@ body.ec-dashboard-mode {
 
     transition:
         border-color 150ms ease,
-        background-color 150ms ease;
+        background-color 150ms ease,
+        color 150ms ease;
 }
 
 .ec-topbar-search:hover {
     border-color:
-        rgba(
-            53,
-            167,
-            255,
-            .36
-        );
+        var(--ec-primary);
+
+    color:
+        var(--ec-text);
 
     background:
-        rgba(
-            12,
-            43,
-            79,
-            .72
-        );
+        var(--ec-surface-hover);
 }
 
 .ec-topbar-search > svg {
@@ -5536,7 +5440,8 @@ body.ec-dashboard-mode {
         0
         15px;
 
-    color: #8ea7c4;
+    color:
+        var(--ec-text-muted);
 }
 
 .ec-topbar-search > span {
@@ -5560,24 +5465,15 @@ body.ec-dashboard-mode {
 
     border:
         1px solid
-        rgba(
-            97,
-            143,
-            196,
-            .16
-        );
+        var(--ec-border-soft);
 
     border-radius: 5px;
 
-    color: #6e89a8;
+    color:
+        var(--ec-text-muted);
 
     background:
-        rgba(
-            79,
-            121,
-            172,
-            .10
-        );
+        var(--ec-surface);
 
     font-family: inherit;
 
@@ -5598,9 +5494,11 @@ body.ec-dashboard-mode {
 
     border: 0;
 
-    color: #9bb1ca;
+    color:
+        var(--ec-text-muted);
 
-    background: transparent;
+    background:
+        transparent;
 
     cursor: pointer;
 
@@ -5612,15 +5510,11 @@ body.ec-dashboard-mode {
 .ec-topbar-notification:hover {
     border-radius: 8px;
 
-    color: #31dfcb;
+    color:
+        var(--ec-primary);
 
     background:
-        rgba(
-            255,
-            255,
-            255,
-            .035
-        );
+        var(--ec-primary-soft);
 }
 
 .ec-topbar-notification svg {
@@ -5636,12 +5530,7 @@ body.ec-dashboard-mode {
     height: 25px;
 
     background:
-        rgba(
-            72,
-            132,
-            193,
-            .24
-        );
+        var(--ec-border);
 }
 
 
@@ -5663,21 +5552,19 @@ body.ec-dashboard-mode {
 
     border: 0 !important;
 
-    color: #dce8f4 !important;
+    color:
+        var(--ec-text) !important;
 
-    background: transparent !important;
+    background:
+        transparent !important;
 
-    box-shadow: none !important;
+    box-shadow:
+        none !important;
 }
 
 .ec-topbar-profile-trigger:hover {
     background:
-        rgba(
-            255,
-            255,
-            255,
-            .035
-        ) !important;
+        var(--ec-surface-soft) !important;
 }
 
 .ec-topbar-avatar {
@@ -5694,31 +5581,30 @@ body.ec-dashboard-mode {
 
     border:
         1px solid
-        rgba(
-            55,
-            218,
-            203,
-            .25
+        color-mix(
+            in srgb,
+            var(--ec-primary) 50%,
+            transparent
         );
 
     border-radius: 50%;
 
-    color: #dffffa;
+    color:
+        #ffffff;
 
     background:
         linear-gradient(
             145deg,
-            #116e8e,
-            #168f84
+            var(--ec-primary-strong),
+            var(--ec-primary)
         );
 
     box-shadow:
         0 0 20px
-        rgba(
-            28,
-            192,
-            183,
-            .13
+        color-mix(
+            in srgb,
+            var(--ec-primary) 15%,
+            transparent
         );
 
     font-size: 10px;
@@ -5730,7 +5616,8 @@ body.ec-dashboard-mode {
 
     overflow: hidden;
 
-    color: #e7f0fa;
+    color:
+        var(--ec-text);
 
     font-size: 10px;
     font-weight: 550;
@@ -5743,7 +5630,8 @@ body.ec-dashboard-mode {
     width: 14px;
     height: 14px;
 
-    color: #7d97b3;
+    color:
+        var(--ec-text-muted);
 }
 
 
@@ -15073,25 +14961,20 @@ button:disabled {
 .ec-dashboard-mode
 [data-flux-menu] {
     border-color:
-        rgba(
-            69,
-            132,
-            198,
-            .22
-        ) !important;
+        var(--ec-border) !important;
 
-    color: #dbe8f5 !important;
+    color:
+        var(--ec-text) !important;
 
     background:
-        #081f3b !important;
+        var(--ec-surface) !important;
 
     box-shadow:
         0 18px 45px
-        rgba(
-            0,
-            8,
-            20,
-            .35
+        color-mix(
+            in srgb,
+            var(--ec-text) 12%,
+            transparent
         ) !important;
 }
 
@@ -15855,231 +15738,13 @@ strong {
 
 /*
 |--------------------------------------------------------------------------
-| Company dossier - navegacao dinamica
+| Alpine
 |--------------------------------------------------------------------------
 */
 
 [x-cloak] {
     display: none !important;
 }
-
-.ec-dossier-tabs {
-    position: sticky;
-    top: calc(
-        var(--ec-topbar-height)
-        + 10px
-    );
-
-    z-index: 30;
-
-    width: fit-content;
-    max-width: 100%;
-
-    align-self: flex-start;
-
-    display: flex;
-    align-items: center;
-    gap: 6px;
-
-    overflow-x: auto;
-
-    padding: 7px;
-
-    border: 1px solid
-        rgba(255, 255, 255, 0.075);
-
-    border-radius: 10px;
-
-    background:
-        rgba(24, 26, 62, 0.92);
-
-    box-shadow:
-        0 12px 32px
-        rgba(5, 8, 28, 0.20);
-
-    backdrop-filter:
-        blur(18px);
-
-    scrollbar-width: none;
-}
-
-.ec-dossier-tabs::-webkit-scrollbar {
-    display: none;
-}
-
-.ec-dossier-tab {
-    min-height: 38px;
-
-    flex: 0 0 auto;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-
-    padding: 0 14px;
-
-    border: 1px solid transparent;
-    border-radius: 7px;
-
-    color: #8993b2;
-    background: transparent;
-
-    font-size: 12px;
-    font-weight: 650;
-
-    cursor: pointer;
-    white-space: nowrap;
-
-    transition:
-        color 150ms ease,
-        border-color 150ms ease,
-        background-color 150ms ease;
-}
-
-.ec-dossier-tab svg {
-    width: 16px;
-    height: 16px;
-
-    flex: 0 0 16px;
-}
-
-.ec-dossier-tab:hover {
-    color: #dce1f2;
-
-    background:
-        rgba(255, 255, 255, 0.035);
-}
-
-.ec-dossier-tab.is-active {
-    color: #dffff9;
-
-    border-color:
-        rgba(67, 185, 167, 0.22);
-
-    background:
-        rgba(67, 185, 167, 0.11);
-}
-
-.ec-dossier-tab.is-active svg {
-    color: var(--ec-primary);
-}
-
-.ec-dossier-tab-count {
-    min-width: 21px;
-    height: 21px;
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 0 6px;
-
-    border-radius: 999px;
-
-    color: #9ca6c6;
-
-    background:
-        rgba(255, 255, 255, 0.05);
-
-    font-size: 9px;
-    font-weight: 750;
-}
-
-.ec-dossier-tab.is-active
-.ec-dossier-tab-count {
-    color: var(--ec-primary);
-
-    background:
-        rgba(67, 185, 167, 0.10);
-}
-
-.ec-dossier-tab-panel {
-    min-width: 0;
-}
-
-.ec-show-more-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 13px 18px;
-
-    border-top:
-        1px solid
-        var(--ec-border-soft);
-
-    background:
-        rgba(255, 255, 255, 0.012);
-}
-
-.ec-show-more-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-
-    min-height: 32px;
-
-    padding: 0 11px;
-
-    border: 0;
-    border-radius: 6px;
-
-    color: #8e98b9;
-    background: transparent;
-
-    font-size: 11px;
-    font-weight: 650;
-
-    cursor: pointer;
-
-    transition:
-        color 150ms ease,
-        background-color 150ms ease;
-}
-
-.ec-show-more-button:hover {
-    color: var(--ec-primary);
-
-    background:
-        rgba(67, 185, 167, 0.055);
-}
-
-.ec-show-more-button svg {
-    width: 14px;
-    height: 14px;
-
-    transition:
-        transform 160ms ease;
-}
-
-.ec-show-more-button svg.is-expanded {
-    transform:
-        rotate(180deg);
-}
-
-@media (max-width: 639px) {
-    .ec-dossier-tabs {
-        top: calc(
-            var(--ec-topbar-height)
-            + 6px
-        );
-
-        margin-inline: -4px;
-
-        border-radius: 8px;
-    }
-
-    .ec-dossier-tab {
-        min-height: 36px;
-
-        padding-inline: 11px;
-
-        font-size: 11px;
-    }
-}
-
 
 /*
 |--------------------------------------------------------------------------
@@ -16102,16 +15767,13 @@ strong {
 
     padding: 12px 14px;
 
-    border:
-        1px solid
-        rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--ec-border);
 
     border-radius: 8px;
 
-    color: #c9cfe3;
+    color: var(--ec-text-soft);
 
-    background:
-        rgba(255, 255, 255, 0.018);
+    background: var(--ec-surface-soft);
 
     text-align: left;
 
@@ -16123,17 +15785,15 @@ strong {
 }
 
 .ec-contact-units-toggle:hover {
-    border-color:
-        rgba(67, 185, 167, 0.18);
+    border-color: color-mix(in srgb, var(--ec-primary) 40%, var(--ec-border));
 
-    background:
-        rgba(67, 185, 167, 0.035);
+    background: var(--ec-primary-soft);
 }
 
 .ec-contact-units-toggle strong {
     display: block;
 
-    color: #dfe3f1;
+    color: var(--ec-text);
 
     font-size: 11px;
     font-weight: 650;
@@ -16144,7 +15804,7 @@ strong {
 
     margin-top: 3px;
 
-    color: #737d9e;
+    color: var(--ec-text-muted);
 
     font-size: 9px;
 }
@@ -16196,7 +15856,11 @@ strong {
 .ec-dossier-tabs {
     box-shadow:
         0 10px 28px
-        rgba(5, 8, 28, 0.16);
+        color-mix(
+            in srgb,
+            var(--ec-text) 8%,
+            transparent
+        );
 }
 
 
@@ -16779,3 +16443,1591 @@ html {
     }
 
 }
+
+/* EC_THEME_MASTER_START */
+
+/*
+|--------------------------------------------------------------------------
+| PROSPECTOR EXPORTCONTROL - SISTEMA DE TEMA GLOBAL
+|--------------------------------------------------------------------------
+|
+| Flux controla a classe "dark".
+|
+| html SEM .dark  = CLARO
+| html COM .dark  = ESCURO
+|
+*/
+
+
+/*
+|--------------------------------------------------------------------------
+| TOKENS DO TEMA CLARO
+|--------------------------------------------------------------------------
+*/
+
+:root {
+    color-scheme: light;
+
+    --ec-bg: #f3f7fa;
+    --ec-bg-deep: #e8eff4;
+
+    --ec-sidebar: #ffffff;
+    --ec-sidebar-deep: #f7fafc;
+
+    --ec-topbar: #ffffff;
+
+    --ec-surface: #ffffff;
+    --ec-surface-soft: #f2f6f9;
+    --ec-surface-hover: #eaf2f6;
+
+    --ec-border: #cbd8e2;
+    --ec-border-soft: rgba(26, 61, 84, .12);
+
+    --ec-primary: #168f80;
+    --ec-primary-strong: #107568;
+    --ec-primary-soft: rgba(22, 143, 128, .11);
+
+    --ec-text: #183449;
+    --ec-text-soft: #405e73;
+    --ec-text-muted: #6b8497;
+
+    --ec-success: #168463;
+    --ec-warning: #a56b16;
+    --ec-danger: #c34759;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| TOKENS DO TEMA ESCURO
+|--------------------------------------------------------------------------
+*/
+
+html.dark {
+    color-scheme: dark;
+
+    --ec-bg: #00172c;
+    --ec-bg-deep: #001326;
+
+    --ec-sidebar: #031d34;
+    --ec-sidebar-deep: #02182d;
+
+    --ec-topbar: #062443;
+
+    --ec-surface: #092b4d;
+    --ec-surface-soft: #0b3156;
+    --ec-surface-hover: #103a62;
+
+    --ec-border: #174b73;
+    --ec-border-soft: rgba(91, 158, 211, .17);
+
+    --ec-primary: #37d3c1;
+    --ec-primary-strong: #28bfae;
+    --ec-primary-soft: rgba(55, 211, 193, .11);
+
+    --ec-text: #f3f8ff;
+    --ec-text-soft: #bfd2e5;
+    --ec-text-muted: #7896b3;
+
+    --ec-success: #45d7a7;
+    --ec-warning: #f2c15b;
+    --ec-danger: #ff7181;
+}
+
+
+/*
+ * Compatibilidade adicional caso alguma versão
+ * do Flux aplique .dark no body.
+ */
+
+/*
+|--------------------------------------------------------------------------
+| FUNDO DO SISTEMA
+|--------------------------------------------------------------------------
+*/
+
+html {
+    background:
+        var(--ec-bg) !important;
+}
+
+body.ec-app-body {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-bg) !important;
+}
+
+body.ec-app-body::before {
+    content: none !important;
+}
+
+.ec-main {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-bg) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| SIDEBAR
+|--------------------------------------------------------------------------
+*/
+
+.ec-sidebar {
+    color:
+        var(--ec-text-soft) !important;
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--ec-sidebar),
+            var(--ec-sidebar-deep)
+        ) !important;
+
+    border-right:
+        1px solid
+        var(--ec-border) !important;
+}
+
+.ec-sidebar-header,
+.ec-sidebar-footer {
+    border-color:
+        var(--ec-border-soft) !important;
+}
+
+.ec-brand-name {
+    color:
+        var(--ec-text) !important;
+}
+
+.ec-brand-product,
+.ec-logo-mark {
+    color:
+        var(--ec-primary) !important;
+}
+
+.ec-logo-mark {
+    border-color:
+        var(--ec-primary) !important;
+}
+
+.ec-logo-mark::after {
+    background:
+        var(--ec-sidebar) !important;
+}
+
+.ec-sidebar-group
+[data-flux-sidebar-group-heading] {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+.ec-nav-item {
+    color:
+        var(--ec-text-soft) !important;
+}
+
+.ec-nav-item:hover {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+}
+
+.ec-nav-item[data-current],
+.ec-nav-item[aria-current='page'] {
+    color:
+        var(--ec-primary) !important;
+
+    background:
+        var(--ec-primary-soft) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| TOPBAR
+|--------------------------------------------------------------------------
+*/
+
+.ec-topbar {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-topbar) !important;
+
+    border-bottom:
+        1px solid
+        var(--ec-border) !important;
+}
+
+.ec-topbar-title,
+.ec-topbar-brand {
+    color:
+        var(--ec-text) !important;
+}
+
+.ec-topbar-eyebrow {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+.ec-topbar-action {
+    color:
+        var(--ec-text-soft) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CONTEÚDO GENÉRICO
+|--------------------------------------------------------------------------
+*/
+
+.ec-page-shell {
+    color:
+        var(--ec-text);
+}
+
+.ec-page-title,
+.ec-filter-title,
+.ec-table-title,
+.ec-detail-title {
+    color:
+        var(--ec-text) !important;
+}
+
+.ec-page-description,
+.ec-filter-description,
+.ec-table-description,
+.ec-detail-description,
+.ec-table-meta,
+.ec-muted {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+.ec-panel,
+.ec-detail-panel,
+.ec-table-panel,
+.ec-filter-panel {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ec-panel-hover:hover {
+    background:
+        var(--ec-surface-hover) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| FORMULÁRIOS GERAIS
+|--------------------------------------------------------------------------
+*/
+
+body.ec-app-body
+:is(
+    input,
+    textarea,
+    select
+) {
+    color:
+        var(--ec-text);
+}
+
+html:not(.dark)
+body:not(.dark)
+:is(
+    input,
+    textarea,
+    select
+) {
+    color-scheme:
+        light !important;
+}
+
+html.dark
+:is(
+    input,
+    textarea,
+    select
+),
+body.dark
+:is(
+    input,
+    textarea,
+    select
+) {
+    color-scheme:
+        dark !important;
+}
+
+.ec-input {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ec-input::placeholder {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+.ec-field-label {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+select.ec-input option {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| TABELAS GERAIS
+|--------------------------------------------------------------------------
+*/
+
+.ec-table thead {
+    background:
+        var(--ec-surface-soft) !important;
+}
+
+.ec-table th {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+.ec-table td {
+    color:
+        var(--ec-text-soft) !important;
+}
+
+.ec-table tbody tr {
+    border-color:
+        var(--ec-border-soft) !important;
+}
+
+.ec-table tbody tr:hover {
+    background:
+        var(--ec-surface-hover) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD
+|--------------------------------------------------------------------------
+*/
+
+.ec-overview {
+    --eo-bg:
+        var(--ec-surface) !important;
+
+    --eo-bg-soft:
+        var(--ec-surface-soft) !important;
+
+    --eo-line:
+        var(--ec-border) !important;
+
+    --eo-text:
+        var(--ec-text) !important;
+
+    --eo-muted:
+        var(--ec-text-muted) !important;
+
+    --eo-teal:
+        var(--ec-primary) !important;
+
+    color:
+        var(--ec-text) !important;
+}
+
+.ec-overview
+:is(
+    .eo-kpi,
+    .eo-panel
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ec-overview
+.eo-kpi:hover:not(:disabled) {
+    background:
+        var(--ec-surface-hover) !important;
+}
+
+.ec-overview
+:is(
+    .eo-button-quiet,
+    .eo-icon,
+    .eo-icon-neutral,
+    .eo-chip,
+    .eo-search
+) {
+    color:
+        var(--ec-text-soft) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ec-overview
+:is(
+    .eo-kpi-label,
+    .eo-kpi-value,
+    .eo-coverage-title strong,
+    .eo-region,
+    .eo-structure-stat
+) {
+    color:
+        var(--ec-text) !important;
+}
+
+.ec-overview
+:is(
+    .eo-meter,
+    .eo-region-meter,
+    .eo-structure-meter
+) {
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-text-muted) 20%,
+            var(--ec-surface)
+        ) !important;
+}
+
+.ec-overview
+.eo-table th {
+    color:
+        var(--ec-text-muted) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+}
+
+.ec-overview
+.eo-table tbody tr:hover {
+    background:
+        var(--ec-surface-hover) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| MOTOR DE PROSPECÇÃO
+|--------------------------------------------------------------------------
+*/
+
+.pr-workspace {
+    --pr-bg:
+        var(--ec-surface) !important;
+
+    --pr-soft:
+        var(--ec-surface-soft) !important;
+
+    --pr-line:
+        var(--ec-border) !important;
+
+    --pr-text:
+        var(--ec-text) !important;
+
+    --pr-muted:
+        var(--ec-text-muted) !important;
+
+    --pr-teal:
+        var(--ec-primary) !important;
+
+    color:
+        var(--ec-text) !important;
+}
+
+.pr-workspace
+:is(
+    .pr-panel,
+    .pr-steps,
+    .pr-action-bar,
+    .pr-preview-metrics,
+    .pr-confirmation,
+    .pr-run-progress-aside,
+    .pr-run-metric,
+    .pr-inline-details dl
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.pr-workspace
+:is(
+    .pr-btn-secondary,
+    .pr-btn-quiet,
+    .pr-icon-tile,
+    .pr-tag,
+    .pr-count,
+    .pr-quantity-option span,
+    .pr-custom-limit input,
+    .pr-search-field,
+    .pr-choice,
+    .pr-filter-chip,
+    .pr-details-trigger
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.pr-workspace
+:is(
+    .pr-choice:has(input:checked),
+    .pr-quantity-option input:checked + span,
+    .pr-filter-chip.is-active,
+    .pr-steps .is-current
+) {
+    color:
+        var(--ec-primary) !important;
+
+    background:
+        var(--ec-primary-soft) !important;
+
+    border-color:
+        var(--ec-primary) !important;
+}
+
+.pr-workspace
+.pr-table th {
+    color:
+        var(--ec-text-muted) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+}
+
+.pr-workspace
+.pr-table tr:hover > td {
+    background:
+        var(--ec-surface-hover) !important;
+}
+
+.pr-workspace
+.pr-expanded-row > td {
+    background:
+        var(--ec-surface-soft) !important;
+}
+
+.pr-workspace
+:is(
+    input,
+    select,
+    textarea
+) {
+    color:
+        var(--ec-text) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LISTA DE EMPRESAS
+|--------------------------------------------------------------------------
+*/
+
+.eccl-page {
+    color:
+        var(--ec-text) !important;
+}
+
+.eccl-page
+:is(
+    .eccl-panel,
+    .eccl-table tbody tr
+) {
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.eccl-page
+:is(
+    h1,
+    h2,
+    .eccl-company-name,
+    .eccl-cnpj,
+    .eccl-city,
+    .eccl-cnae-code,
+    .eccl-results-head strong,
+    .eccl-empty strong,
+    .eccl-pagination strong
+) {
+    color:
+        var(--ec-text) !important;
+}
+
+.eccl-page
+:is(
+    .eccl-header p,
+    .eccl-field label,
+    .eccl-results-head,
+    .eccl-results-meta,
+    .eccl-context,
+    .eccl-subtext,
+    .eccl-units,
+    .eccl-uf,
+    .eccl-source,
+    .eccl-pagination
+) {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+.eccl-page
+:is(
+    input,
+    select
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.eccl-page
+.eccl-active-filters button {
+    color:
+        var(--ec-primary) !important;
+
+    background:
+        var(--ec-primary-soft) !important;
+
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 35%,
+            var(--ec-border)
+        ) !important;
+}
+
+.eccl-page
+.eccl-table th {
+    color:
+        var(--ec-text-muted) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.eccl-page
+.eccl-table td {
+    border-color:
+        var(--ec-border-soft) !important;
+}
+
+.eccl-page
+.eccl-table tbody tr:nth-child(even) {
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-surface-soft) 62%,
+            var(--ec-surface)
+        ) !important;
+}
+
+.eccl-page
+.eccl-table tbody tr:hover {
+    background:
+        var(--ec-surface-hover) !important;
+}
+
+.eccl-page
+:is(
+    .eccl-secondary,
+    .eccl-pagination button
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| NOVA EMPRESA
+|--------------------------------------------------------------------------
+*/
+
+.ecnc-page {
+    color:
+        var(--ec-text) !important;
+}
+
+.ecnc-page
+:is(
+    .ecnc-card,
+    .ecnc-summary,
+    .ecnc-note,
+    .ecnc-actions
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ecnc-page
+:is(
+    h1,
+    .ecnc-card h2,
+    .ecnc-summary h2,
+    .ecnc-summary dd
+) {
+    color:
+        var(--ec-text) !important;
+}
+
+.ecnc-page
+:is(
+    .ecnc-breadcrumb,
+    .ecnc-header p,
+    .ecnc-card-head p,
+    .ecnc-summary > p,
+    .ecnc-help,
+    .ecnc-summary dt,
+    .ecnc-note p
+) {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+.ecnc-page
+:is(
+    input,
+    select,
+    textarea
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ecnc-page
+.ecnc-number {
+    color:
+        var(--ec-primary) !important;
+
+    background:
+        var(--ec-primary-soft) !important;
+
+    border-color:
+        var(--ec-primary) !important;
+}
+
+.ecnc-page
+.ecnc-secondary {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| IMPORTAÇÕES
+|--------------------------------------------------------------------------
+*/
+
+.ecim-page {
+    color:
+        var(--ec-text) !important;
+}
+
+.ecim-page
+:is(
+    .ecim-panel,
+    .ecim-history
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ecim-page
+:is(
+    h1,
+    h2,
+    h3,
+    .ecim-company-name,
+    .ecim-cnpj
+) {
+    color:
+        var(--ec-text) !important;
+}
+
+.ecim-page
+:is(
+    .ecim-header p,
+    .ecim-panel-head p,
+    .ecim-composer-toggle small,
+    .ecim-help,
+    .ecim-form-actions > span,
+    .ecim-muted,
+    .ecim-footnote,
+    .ecim-table-footer
+) {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+.ecim-page
+textarea {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ecim-page
+.ecim-progress {
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-text-muted) 20%,
+            var(--ec-surface)
+        ) !important;
+}
+
+.ecim-page
+.ecim-table th {
+    color:
+        var(--ec-text-muted) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ecim-page
+.ecim-table td {
+    color:
+        var(--ec-text-soft) !important;
+
+    border-color:
+        var(--ec-border-soft) !important;
+}
+
+.ecim-page
+.ecim-table tbody tr:nth-child(even) {
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-surface-soft) 62%,
+            var(--ec-surface)
+        ) !important;
+}
+
+.ecim-page
+.ecim-table tbody tr:hover {
+    background:
+        var(--ec-surface-hover) !important;
+}
+
+.ecim-page
+:is(
+    .ecim-secondary,
+    .ecim-history-item
+) {
+    color:
+        var(--ec-text) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ecim-page
+.ecim-history-item:hover,
+.ecim-page
+.ecim-history-item[aria-current="true"] {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-primary-soft) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| GESTÃO COMERCIAL
+|--------------------------------------------------------------------------
+*/
+
+.ecgm-page {
+    --ew-bg:
+        var(--ec-surface) !important;
+
+    --ew-soft:
+        var(--ec-surface-soft) !important;
+
+    --ew-border:
+        var(--ec-border) !important;
+
+    --ew-text:
+        var(--ec-text) !important;
+
+    --ew-muted:
+        var(--ec-text-muted) !important;
+
+    --ew-accent:
+        var(--ec-primary) !important;
+
+    --ew-input:
+        var(--ec-surface) !important;
+
+    color:
+        var(--ec-text) !important;
+}
+
+.ecgm-page
+:is(
+    .ecgm-panel,
+    .ecgm-metric
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ecgm-page
+.ecgm-table thead th {
+    color:
+        var(--ec-text-muted) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+}
+
+.ecgm-page
+.ecgm-table
+:is(
+    th,
+    td
+) {
+    border-color:
+        var(--ec-border-soft) !important;
+}
+
+.ecgm-page
+.ecgm-table tbody tr:hover {
+    background:
+        var(--ec-surface-hover) !important;
+}
+
+.ecgm-page
+:is(
+    .ecgm-person,
+    .ecgm-role-buttons button
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ecgm-page
+.ecgm-person:has(input:checked),
+.ecgm-page
+.ecgm-role-buttons button[aria-pressed="true"] {
+    color:
+        var(--ec-primary) !important;
+
+    background:
+        var(--ec-primary-soft) !important;
+
+    border-color:
+        var(--ec-primary) !important;
+}
+
+.ecgm-page
+.ecgm-field input {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CONFIGURAÇÕES
+|--------------------------------------------------------------------------
+*/
+
+.ec-settings-screen.ecui-settings {
+    --ew-bg:
+        var(--ec-surface) !important;
+
+    --ew-soft:
+        var(--ec-surface-soft) !important;
+
+    --ew-border:
+        var(--ec-border) !important;
+
+    --ew-text:
+        var(--ec-text) !important;
+
+    --ew-muted:
+        var(--ec-text-muted) !important;
+
+    --ew-accent:
+        var(--ec-primary) !important;
+
+    --ew-input:
+        var(--ec-surface) !important;
+
+    color:
+        var(--ec-text) !important;
+}
+
+.ecui-heading h1,
+.ecui-section-head h2,
+.ecui-card-head h3,
+.ecui-account > strong {
+    color:
+        var(--ec-text) !important;
+}
+
+.ecui-heading p,
+.ecui-section-head p,
+.ecui-card-head p,
+.ecui-account > p,
+.ecui-muted {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+.ec-settings-screen.ecui-settings
+:is(
+    .ecui-card,
+    .ec-settings-card
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ecui-tabs {
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ecui-tabs a {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+.ecui-tabs a:hover {
+    background:
+        var(--ec-surface-soft) !important;
+}
+
+.ecui-tabs a[aria-current="page"] {
+    color:
+        var(--ec-primary) !important;
+
+    background:
+        var(--ec-primary-soft) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ec-settings-screen.ecui-settings
+:is(
+    .ecui-field input,
+    .ec-settings-field input
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LEADS
+|--------------------------------------------------------------------------
+|
+| Leads contém <style> dentro da própria view.
+| Por isso estas regras usam !important.
+|
+*/
+
+.leads-rf {
+    --rf-bg:
+        var(--ec-surface) !important;
+
+    --rf-panel:
+        var(--ec-surface) !important;
+
+    --rf-panel-2:
+        var(--ec-surface-soft) !important;
+
+    --rf-border:
+        var(--ec-border-soft) !important;
+
+    --rf-border-strong:
+        var(--ec-primary) !important;
+
+    --rf-text:
+        var(--ec-text) !important;
+
+    --rf-muted:
+        var(--ec-text-muted) !important;
+
+    --rf-muted-2:
+        var(--ec-text-soft) !important;
+
+    --rf-cyan:
+        var(--ec-primary) !important;
+
+    color:
+        var(--ec-text) !important;
+}
+
+.leads-rf
+.rf-title {
+    color:
+        var(--ec-text) !important;
+}
+
+.leads-rf
+:is(
+    .rf-header-guide,
+    .rf-kpi,
+    .rf-stage-summary,
+    .rf-status-guide,
+    .rf-panel,
+    .rf-header-sync,
+    .rf-sync-progress
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.leads-rf
+:is(
+    .rf-input,
+    .rf-select,
+    .rf-owner-select
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.leads-rf
+:is(
+    .rf-filter-action,
+    .rf-chip,
+    .rf-work-badge,
+    .rf-btn,
+    .rf-page-btn,
+    .rf-sync-stat,
+    .rf-sync-summary-box
+) {
+    color:
+        var(--ec-text-soft) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.leads-rf
+.rf-list-head {
+    color:
+        var(--ec-text-muted) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+}
+
+.leads-rf
+.rf-lead-row:hover {
+    background:
+        var(--ec-surface-hover) !important;
+}
+
+.leads-rf
+:is(
+    .rf-company-name,
+    .rf-next-action,
+    .rf-owner-name,
+    .rf-header-sync-copy strong,
+    .rf-sync-progress-title,
+    .rf-sync-stat strong,
+    .rf-sync-summary-box > strong,
+    .rf-sync-company-name,
+    .rf-score-number
+) {
+    color:
+        var(--ec-text) !important;
+}
+
+.leads-rf
+:is(
+    .rf-score-bar,
+    .rf-progress-track
+) {
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-text-muted) 19%,
+            var(--ec-surface)
+        ) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| DOSSIÊ DA EMPRESA
+|--------------------------------------------------------------------------
+*/
+
+.ec-dossier-page {
+    color:
+        var(--ec-text) !important;
+}
+
+.ec-dossier-page
+:is(
+    .ec-detail-panel,
+    .ec-table-panel,
+    .ec-cnae-list
+) {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ec-dossier-page
+.ec-dossier-tabs {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface) !important;
+
+    border-color:
+        var(--ec-border) !important;
+}
+
+.ec-dossier-page
+.ec-dossier-tab {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+.ec-dossier-page
+.ec-dossier-tab:hover {
+    color:
+        var(--ec-text) !important;
+
+    background:
+        var(--ec-surface-soft) !important;
+}
+
+.ec-dossier-page
+.ec-dossier-tab.is-active {
+    color:
+        var(--ec-primary) !important;
+
+    background:
+        var(--ec-primary-soft) !important;
+}
+
+.ec-dossier-page
+:is(
+    .ec-data-item dd,
+    .ec-contact-value,
+    .ec-checkbox-row strong,
+    .ec-cnae-main-code,
+    .ec-cnae-row-code
+) {
+    color:
+        var(--ec-text) !important;
+}
+
+.ec-dossier-page
+:is(
+    .ec-data-item dt,
+    .ec-contact-label,
+    .ec-cnae-block-label,
+    .ec-data-muted,
+    .ec-contact-note,
+    .ec-checkbox-row small,
+    .ec-cnae-main-description,
+    .ec-cnae-row-description
+) {
+    color:
+        var(--ec-text-muted) !important;
+}
+
+.ec-dossier-page
+.ec-contact-note,
+.ec-dossier-page
+.ec-cnae-form,
+.ec-dossier-page
+.ec-show-more-bar,
+.ec-dossier-page
+.ec-contact-units-toggle {
+    background:
+        var(--ec-surface-soft) !important;
+}
+
+/*
+|--------------------------------------------------------------------------
+| UTILITIES ESCURAS ANTIGAS
+|--------------------------------------------------------------------------
+*/
+
+html:not(.dark)
+body:not(.dark).ec-app-body
+:is(
+    [class~="bg-white/[0.02]"],
+    [class~="bg-white/[0.025]"],
+    [class~="bg-white/[0.03]"],
+    [class~="bg-white/[0.04]"],
+    [class~="bg-white/[0.05]"],
+    [class~="bg-white/[0.06]"],
+    [class~="bg-white/[0.08]"]
+) {
+    background-color:
+        rgba(38, 70, 91, .04) !important;
+}
+
+html:not(.dark)
+body:not(.dark).ec-app-body
+:is(
+    [class~="border-white/[0.05]"],
+    [class~="border-white/[0.06]"],
+    [class~="border-white/[0.08]"],
+    [class~="border-white/10"]
+) {
+    border-color:
+        var(--ec-border-soft) !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LOGIN
+|--------------------------------------------------------------------------
+*/
+
+html:not(.dark)
+body:not(.dark).ec-auth-body {
+    background:
+        #edf4f7 !important;
+}
+
+html:not(.dark)
+body:not(.dark)
+.ec-auth-login-page {
+    background:
+        #dfeaf0 !important;
+}
+
+html:not(.dark)
+body:not(.dark)
+.ec-auth-card-login {
+    color:
+        #183449 !important;
+
+    background:
+        rgba(255, 255, 255, .94) !important;
+
+    border-color:
+        rgba(255, 255, 255, .88) !important;
+}
+
+html:not(.dark)
+body:not(.dark)
+.ec-auth-card-login
+:is(
+    .ec-auth-logo strong,
+    .ec-login-header h1
+) {
+    color:
+        #183449 !important;
+}
+
+html:not(.dark)
+body:not(.dark)
+.ec-auth-card-login
+.ec-login-header p {
+    color:
+        #6b8497 !important;
+}
+
+html:not(.dark)
+body:not(.dark)
+.ec-auth-card-login
+.ec-login-input {
+    color:
+        #183449 !important;
+
+    background:
+        #ffffff !important;
+
+    border-color:
+        #cbd8e2 !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| FLUX
+|--------------------------------------------------------------------------
+*/
+
+html:not(.dark)
+body:not(.dark)
+[data-flux-control] {
+    color-scheme:
+        light !important;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| EC_THEME_MASTER_END
+|--------------------------------------------------------------------------
+*/
+
+/* EC_THEME_MASTER_END */
