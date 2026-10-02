@@ -33,6 +33,7 @@ final class HubSpotWebhookMirrorSyncService
     public function __construct(
         private readonly HubSpotWebhookEventContextService $context,
         private readonly HubSpotDealCompanyAssociationService $dealCompanyAssociations,
+        private readonly HubSpotKnownCompanyLinkService $knownCompanyLinker,
     ) {}
 
     /**
@@ -292,6 +293,20 @@ final class HubSpotWebhookMirrorSyncService
 
             'raw_properties' => $raw,
         ])->save();
+
+        /*
+         * Se esta Company foi criada pelo
+         * próprio Prospector, o relacionamento
+         * fiscal já é conhecido.
+         *
+         * Isso evita que ela apareça novamente
+         * na fila "HubSpot sem vínculo fiscal".
+         */
+        $this
+            ->knownCompanyLinker
+            ->link(
+                $company
+            );
 
         $this->syncCompanyAssociations(
             $company

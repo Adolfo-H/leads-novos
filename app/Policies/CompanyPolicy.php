@@ -53,6 +53,23 @@ final class CompanyPolicy
     }
 
     /**
+     * Criação manual de oportunidade no HubSpot.
+     *
+     * Gestores podem trabalhar qualquer empresa.
+     * Vendedores somente empresas da própria
+     * carteira, seguindo a mesma regra de view.
+     */
+    public function createHubSpotOpportunity(
+        User $user,
+        Company $company,
+    ): bool {
+        return $this->view(
+            $user,
+            $company,
+        );
+    }
+
+    /**
      * Pesquisa normal respeita as regras
      * de ICP, CRM e cooldown.
      *

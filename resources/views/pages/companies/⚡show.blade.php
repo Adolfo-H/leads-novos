@@ -2,10 +2,13 @@
 
 use App\Contracts\ExportResearchProvider;
 use App\Models\Company;
+use App\Models\User;
 use App\Services\CrmReprospectingPolicyService;
 use App\Services\EstablishmentService;
 use App\Services\ExportResearchEligibilityService;
 use App\Services\ExportResearchQueueService;
+use App\Services\HubSpotLeadEligibilityService;
+use App\Services\HubSpotManualOpportunityQueueService;
 use App\Services\SdrScoringService;
 use App\Support\Cnpj;
 use Carbon\CarbonImmutable;
@@ -25,6 +28,8 @@ new class extends Component
     public bool $newCnaePrimary = false;
 
     public bool $showCnaeForm = false;
+
+    public bool $showHubSpotOpportunityProgress = false;
 
     public function mount(Company $company): void
     {
@@ -273,15 +278,498 @@ new class extends Component
             : '—';
     }
 
-    public function hubSpotCompanyUrl(): ?string
+    /**
+     * @return array{
+     *     visible: bool,
+     *     enabled: bool,
+     *     status: string,
+     *     label: string,
+     *     message: string,
+     *     active: bool,
+     *     can_queue: bool,
+     *     error: string|null,
+     *     owner_email: string|null,
+     *     progress: int,
+     *     progress_step: string,
+     *     progress_message: string|null
+     * }
+     */
+    #[Computed]
+    public function hubSpotManualOpportunityState(): array
     {
+        $this->company->loadMissing([
+            'crmCheck',
+            'hubSpotLead',
+        ]);
+
+        $sync =
+            $this->company
+                ->hubSpotLead;
+
         $crm =
             $this->company
                 ->crmCheck;
 
-        if ($crm === null) {
-            return null;
+        $rawMetadata =
+            $sync?->getAttribute(
+                'metadata'
+            );
+
+        $metadata =
+            is_array(
+                $rawMetadata
+            )
+                ? $rawMetadata
+                : [];
+
+        $rawManual =
+            $metadata[
+                'manual_sync'
+            ]
+            ?? [];
+
+        $manual =
+            is_array(
+                $rawManual
+            )
+                ? $rawManual
+                : [];
+
+        $enabled =
+            (bool) config(
+                'services.hubspot.manual_opportunity_enabled',
+                false
+            );
+
+        $storedStatus =
+            trim(
+                (string) (
+                    $manual[
+                        'status'
+                    ]
+                    ?? ''
+                )
+            );
+
+        /*
+         * O status persistido pelo Job tem
+         * prioridade.
+         *
+         * synced_at pode ser preenchido quando
+         * os objetos remotos já foram criados,
+         * mas ainda podem faltar:
+         *
+         * - refresh CRM;
+         * - etapa;
+         * - tarefas;
+         * - responsável local.
+         */
+        if (
+            in_array(
+                $storedStatus,
+                [
+                    'queued',
+                    'processing',
+                    'retrying',
+                    'failed',
+                    'completed',
+                ],
+                true
+            )
+        ) {
+            $status =
+                $storedStatus;
+
+        } elseif (
+            $sync !== null
+            && $sync->synced_at !== null
+        ) {
+            $status =
+                'completed';
+
+        } elseif (
+            $sync !== null
+            && (
+                $sync->hubspot_company_id !== null
+                || $sync->hubspot_deal_id !== null
+            )
+        ) {
+            $status =
+                'partial';
+
+        } else {
+            $status =
+                'available';
         }
+
+        $rawProgress =
+            $manual[
+                'progress'
+            ]
+            ?? null;
+
+        $progress =
+            is_numeric(
+                $rawProgress
+            )
+                ? (int) $rawProgress
+                : 0;
+
+        /*
+         * Fallback baseado nos IDs realmente
+         * persistidos.
+         *
+         * Assim a barra continua avançando
+         * mesmo durante chamadas demoradas
+         * ao HubSpot.
+         */
+        if ($status === 'queued') {
+            $progress =
+                max(
+                    $progress,
+                    5
+                );
+        }
+
+        if (
+            in_array(
+                $status,
+                [
+                    'processing',
+                    'retrying',
+                ],
+                true
+            )
+        ) {
+            $progress =
+                max(
+                    $progress,
+                    10
+                );
+        }
+
+        if (
+            $sync?->hubspot_company_id
+            !== null
+        ) {
+            $progress =
+                max(
+                    $progress,
+                    30
+                );
+        }
+
+        if (
+            $sync?->hubspot_contact_id
+            !== null
+        ) {
+            $progress =
+                max(
+                    $progress,
+                    50
+                );
+        }
+
+        if (
+            $sync?->hubspot_deal_id
+            !== null
+        ) {
+            $progress =
+                max(
+                    $progress,
+                    70
+                );
+        }
+
+        if (
+            $sync?->hubspot_task_id
+            !== null
+        ) {
+            $progress =
+                max(
+                    $progress,
+                    85
+                );
+        }
+
+        if ($status === 'completed') {
+            $progress =
+                100;
+        }
+
+        $progress =
+            max(
+                0,
+                min(
+                    100,
+                    $progress
+                )
+            );
+
+        $progressStep =
+            trim(
+                (string) (
+                    $manual[
+                        'step'
+                    ]
+                    ?? ''
+                )
+            );
+
+        $rawProgressMessage =
+            $manual[
+                'progress_message'
+            ]
+            ?? null;
+
+        $progressMessage =
+            is_scalar(
+                $rawProgressMessage
+            )
+            && trim(
+                (string)
+                    $rawProgressMessage
+            ) !== ''
+                ? trim(
+                    (string)
+                        $rawProgressMessage
+                )
+                : null;
+
+        $active =
+            in_array(
+                $status,
+                [
+                    'queued',
+                    'processing',
+                    'retrying',
+                ],
+                true
+            );
+
+        $evaluation =
+            app(
+                HubSpotLeadEligibilityService::class
+            )->evaluateManual(
+                $this->company
+            );
+
+        $canQueue =
+            $enabled
+            && ! $active
+            && $status !== 'completed'
+            && $evaluation[
+                'eligible'
+            ];
+
+        $label =
+            match ($status) {
+                'queued' => 'Na fila',
+
+                'processing' => 'Criando no HubSpot',
+
+                'retrying' => 'Tentando novamente',
+
+                'failed' => 'Falha na criação',
+
+                'completed' => 'Oportunidade criada',
+
+                'partial' => 'Criação incompleta',
+
+                default => 'Disponível',
+            };
+
+        $message =
+            match ($status) {
+                'queued' => 'Solicitação enviada para processamento.',
+
+                'processing' => 'Criando e sincronizando a oportunidade.',
+
+                'retrying' => 'O HubSpot apresentou uma falha temporária. '
+                    .'O sistema tentará novamente.',
+
+                'failed' => 'Não foi possível concluir a criação.',
+
+                'completed' => 'Empresa, negócio, tarefa e CRM sincronizados.',
+
+                'partial' => 'Parte dos registros já foi criada. '
+                    .'Você pode retomar com segurança.',
+
+                default => 'Crie a empresa, contatos, negócio e tarefa '
+                    .'de primeiro contato no HubSpot.',
+            };
+
+        $rawError =
+            $manual[
+                'last_error'
+            ]
+            ?? $sync?->sync_error;
+
+        $error =
+            is_scalar(
+                $rawError
+            )
+            && trim(
+                (string) $rawError
+            ) !== ''
+                ? trim(
+                    (string) $rawError
+                )
+                : null;
+
+        $rawOwnerEmail =
+            $manual[
+                'initiated_by_email'
+            ]
+            ?? null;
+
+        $ownerEmail =
+            is_scalar(
+                $rawOwnerEmail
+            )
+            && trim(
+                (string)
+                    $rawOwnerEmail
+            ) !== ''
+                ? trim(
+                    (string)
+                        $rawOwnerEmail
+                )
+                : null;
+
+        $hasManualState =
+            $manual !== [];
+
+        $visible =
+            $hasManualState
+            || (
+                $enabled
+                && $crm?->status
+                    === 'not_found'
+            )
+            || (
+                $sync !== null
+                && $sync->synced_at !== null
+            );
+
+        return [
+            'visible' => $visible,
+
+            'enabled' => $enabled,
+
+            'status' => $status,
+
+            'label' => $label,
+
+            'message' => $message,
+
+            'active' => $active,
+
+            'can_queue' => $canQueue,
+
+            'error' => $error,
+
+            'owner_email' => $ownerEmail,
+
+            'progress' => $progress,
+
+            'progress_step' => $progressStep,
+
+            'progress_message' => $progressMessage,
+        ];
+    }
+
+    public function createHubSpotOpportunity(): void
+    {
+        Gate::authorize(
+            'createHubSpotOpportunity',
+            $this->company,
+        );
+
+        $user =
+            request()
+                ->user();
+
+        if (! $user instanceof User) {
+            abort(
+                403
+            );
+        }
+
+        $this->resetErrorBag(
+            'hubSpotOpportunity'
+        );
+
+        $this->showHubSpotOpportunityProgress =
+            true;
+
+        try {
+            app(
+                HubSpotManualOpportunityQueueService::class
+            )->enqueue(
+                company: $this->company,
+                actor: $user,
+            );
+
+            $this->refreshHubSpotOpportunity();
+
+        } catch (Throwable $exception) {
+            $this->refreshHubSpotOpportunity();
+
+            $this->addError(
+                'hubSpotOpportunity',
+                $exception
+                    ->getMessage()
+            );
+        }
+    }
+
+    public function closeHubSpotOpportunityProgress(): void
+    {
+        $state =
+            $this
+                ->hubSpotManualOpportunityState;
+
+        /*
+         * Não permitimos esconder o andamento
+         * enquanto o processo está ativo.
+         */
+        if (
+            $state[
+                'active'
+            ]
+        ) {
+            return;
+        }
+
+        $this->showHubSpotOpportunityProgress =
+            false;
+    }
+
+    public function refreshHubSpotOpportunity(): void
+    {
+        $this->company
+            ->unsetRelation(
+                'hubSpotLead'
+            );
+
+        $this->company
+            ->unsetRelation(
+                'crmCheck'
+            );
+
+        $this->company->load([
+            'hubSpotLead',
+            'crmCheck',
+        ]);
+    }
+
+    public function hubSpotCompanyUrl(): ?string
+    {
+        $this->company->loadMissing([
+            'hubSpotLead',
+            'crmCheck',
+        ]);
 
         $portalId =
             trim(
@@ -292,17 +780,17 @@ new class extends Component
 
         $companyId =
             trim(
-                (string) $crm
-                    ->external_id
+                (string) (
+                    $this->company
+                        ->hubSpotLead
+                        ?->hubspot_company_id
+                    ?? $this->company
+                        ->crmCheck
+                        ?->external_id
+                    ?? ''
+                )
             );
 
-        /*
-         * Sempre reconstruímos o endereço
-         * usando Portal ID + Company ID.
-         *
-         * Assim URLs antigas salvas no banco
-         * não afetam o botão do dossiê.
-         */
         if (
             $portalId !== ''
             && $companyId !== ''
@@ -320,8 +808,12 @@ new class extends Component
 
         $externalUrl =
             trim(
-                (string) $crm
-                    ->external_url
+                (string) (
+                    $this->company
+                        ->crmCheck
+                        ?->external_url
+                    ?? ''
+                )
             );
 
         if (
@@ -335,6 +827,47 @@ new class extends Component
         }
 
         return null;
+    }
+
+    public function hubSpotDealUrl(): ?string
+    {
+        $this->company->loadMissing(
+            'hubSpotLead'
+        );
+
+        $portalId =
+            trim(
+                (string) config(
+                    'services.hubspot.portal_id'
+                )
+            );
+
+        $dealId =
+            trim(
+                (string) (
+                    $this->company
+                        ->hubSpotLead
+                        ?->hubspot_deal_id
+                    ?? ''
+                )
+            );
+
+        if (
+            $portalId === ''
+            || $dealId === ''
+        ) {
+            return null;
+        }
+
+        return sprintf(
+            'https://app.hubspot.com/contacts/%s/record/0-3/%s',
+            rawurlencode(
+                $portalId
+            ),
+            rawurlencode(
+                $dealId
+            ),
+        );
     }
 
     public function formatPhone(

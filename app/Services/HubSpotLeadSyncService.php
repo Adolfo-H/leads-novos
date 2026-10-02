@@ -527,27 +527,54 @@ final class HubSpotLeadSyncService
                 !== null;
 
             if ($manual) {
+                $rawManualMetadata =
+                    $metadata[
+                        'manual_sync'
+                    ]
+                    ?? [];
+
+                $manualMetadata =
+                    is_array(
+                        $rawManualMetadata
+                    )
+                        ? $rawManualMetadata
+                        : [];
+
+                /*
+                 * Preservamos status/progresso
+                 * definidos pelo Job.
+                 *
+                 * syncManual() termina a criação
+                 * dos objetos remotos, porém
+                 * 100% só acontece depois da
+                 * reconciliação local.
+                 */
                 $metadata[
                     'manual_sync'
-                ] = [
-                    'initiated_by_user_id' => $actor->id,
+                ] =
+                    array_merge(
+                        $manualMetadata,
+                        [
+                            'initiated_by_user_id' => $actor->id,
 
-                    'initiated_by_email' => $actor->email,
+                            'initiated_by_email' => $actor->email,
 
-                    'hubspot_owner_id' => $ownerId,
+                            'hubspot_owner_id' => $ownerId,
 
-                    'contacts' => $contacts,
+                            'contacts' => $contacts,
 
-                    'contact_ids' => $contactIds,
+                            'contact_ids' => $contactIds,
 
-                    'task_id' => $sync->hubspot_task_id,
+                            'task_id' => $sync
+                                ->hubspot_task_id,
 
-                    'task_due_at' => $taskDueAt
-                        ?->toIso8601String(),
+                            'task_due_at' => $taskDueAt
+                                ?->toIso8601String(),
 
-                    'completed_at' => now()
-                        ->toIso8601String(),
-                ];
+                            'remote_objects_created_at' => now()
+                                ->toIso8601String(),
+                        ]
+                    );
             }
 
             /*

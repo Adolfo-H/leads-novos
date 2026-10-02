@@ -648,6 +648,12 @@
                 };
             @endphp
 
+            @php
+                $hubSpotOpportunity =
+                    $this
+                        ->hubSpotManualOpportunityState;
+            @endphp
+
             <div class="ec-intelligence-card">
 
                 <div class="ec-intelligence-top">
@@ -764,7 +770,803 @@
 
                 @endif
 
+
+                @if (
+                    $hubSpotOpportunity[
+                        'visible'
+                    ]
+                )
+
+                    <div
+                        @if (
+                            $hubSpotOpportunity[
+                                'active'
+                            ]
+                        )
+                            wire:poll.3s="
+                                refreshHubSpotOpportunity
+                            "
+                        @endif
+                        class="
+                            mt-4 rounded-xl
+                            border border-[var(--ec-border-soft)]
+                            bg-[var(--ec-surface-soft)]
+                            p-3
+                        "
+                    >
+
+                        <div
+                            class="
+                                flex items-start
+                                justify-between
+                                gap-3
+                            "
+                        >
+
+                            <div class="min-w-0">
+
+                                <div
+                                    class="
+                                        text-[11px]
+                                        font-semibold
+                                        uppercase
+                                        tracking-[0.08em]
+                                        text-[var(--ec-text-muted)]
+                                    "
+                                >
+                                    Integração HubSpot
+                                </div>
+
+                                <div
+                                    class="
+                                        mt-1 text-sm
+                                        font-semibold
+                                        text-[var(--ec-text)]
+                                    "
+                                >
+                                    {{
+                                        $hubSpotOpportunity[
+                                            'label'
+                                        ]
+                                    }}
+                                </div>
+
+                            </div>
+
+
+                            @if (
+                                $hubSpotOpportunity[
+                                    'active'
+                                ]
+                            )
+
+                                <span
+                                    class="
+                                        inline-flex
+                                        shrink-0
+                                        items-center
+                                        gap-1.5
+                                        rounded-full
+                                        bg-cyan-500/10
+                                        px-2 py-1
+                                        text-[10px]
+                                        font-bold
+                                        uppercase
+                                        text-cyan-300
+                                    "
+                                >
+                                    <span
+                                        class="
+                                            size-1.5
+                                            animate-pulse
+                                            rounded-full
+                                            bg-current
+                                        "
+                                    ></span>
+
+                                    Processando
+                                </span>
+
+                            @elseif (
+                                $hubSpotOpportunity[
+                                    'status'
+                                ]
+                                === 'completed'
+                            )
+
+                                <span
+                                    class="
+                                        shrink-0
+                                        rounded-full
+                                        bg-emerald-500/10
+                                        px-2 py-1
+                                        text-[10px]
+                                        font-bold
+                                        uppercase
+                                        text-emerald-300
+                                    "
+                                >
+                                    Concluído
+                                </span>
+
+                            @elseif (
+                                $hubSpotOpportunity[
+                                    'status'
+                                ]
+                                === 'failed'
+                            )
+
+                                <span
+                                    class="
+                                        shrink-0
+                                        rounded-full
+                                        bg-rose-500/10
+                                        px-2 py-1
+                                        text-[10px]
+                                        font-bold
+                                        uppercase
+                                        text-rose-300
+                                    "
+                                >
+                                    Erro
+                                </span>
+
+                            @elseif (
+                                $hubSpotOpportunity[
+                                    'status'
+                                ]
+                                === 'partial'
+                            )
+
+                                <span
+                                    class="
+                                        shrink-0
+                                        rounded-full
+                                        bg-amber-500/10
+                                        px-2 py-1
+                                        text-[10px]
+                                        font-bold
+                                        uppercase
+                                        text-amber-300
+                                    "
+                                >
+                                    Incompleto
+                                </span>
+
+                            @endif
+
+                        </div>
+
+
+                        <p
+                            class="
+                                mt-2 text-xs
+                                leading-5
+                                text-[var(--ec-text-muted)]
+                            "
+                        >
+                            {{
+                                $hubSpotOpportunity[
+                                    'message'
+                                ]
+                            }}
+                        </p>
+
+
+                        @if (
+                            $hubSpotOpportunity[
+                                'owner_email'
+                            ]
+                        )
+
+                            <div
+                                class="
+                                    mt-2 truncate
+                                    text-[11px]
+                                    text-[var(--ec-text-muted)]
+                                "
+                            >
+                                Responsável:
+                                {{
+                                    $hubSpotOpportunity[
+                                        'owner_email'
+                                    ]
+                                }}
+                            </div>
+
+                        @endif
+
+
+                        @if (
+                            $hubSpotOpportunity[
+                                'error'
+                            ]
+                        )
+
+                            <div
+                                class="
+                                    mt-3 rounded-lg
+                                    border border-rose-400/15
+                                    bg-rose-400/[0.06]
+                                    px-3 py-2
+                                    text-xs
+                                    leading-5
+                                    text-rose-300
+                                "
+                            >
+                                {{
+                                    $hubSpotOpportunity[
+                                        'error'
+                                    ]
+                                }}
+                            </div>
+
+                        @endif
+
+
+                        @error(
+                            'hubSpotOpportunity'
+                        )
+
+                            <div
+                                class="
+                                    mt-3 rounded-lg
+                                    border border-rose-400/15
+                                    bg-rose-400/[0.06]
+                                    px-3 py-2
+                                    text-xs
+                                    leading-5
+                                    text-rose-300
+                                "
+                            >
+                                {{ $message }}
+                            </div>
+
+                        @enderror
+
+
+                        @if (
+                            $hubSpotOpportunity[
+                                'status'
+                            ]
+                            === 'completed'
+                        )
+
+                            <div
+                                class="
+                                    mt-3 flex
+                                    flex-wrap gap-2
+                                "
+                            >
+
+                                @if (
+                                    $this
+                                        ->hubSpotCompanyUrl()
+                                )
+
+                                    <a
+                                        href="{{
+                                            $this
+                                                ->hubSpotCompanyUrl()
+                                        }}"
+                                        target="_blank"
+                                        rel="
+                                            noopener noreferrer
+                                        "
+                                        class="
+                                            ec-button-secondary
+                                        "
+                                    >
+                                        Abrir empresa
+
+                                        <span
+                                            aria-hidden="true"
+                                        >
+                                            ↗
+                                        </span>
+                                    </a>
+
+                                @endif
+
+
+                                @if (
+                                    $this
+                                        ->hubSpotDealUrl()
+                                )
+
+                                    <a
+                                        href="{{
+                                            $this
+                                                ->hubSpotDealUrl()
+                                        }}"
+                                        target="_blank"
+                                        rel="
+                                            noopener noreferrer
+                                        "
+                                        class="
+                                            ec-button-primary
+                                        "
+                                    >
+                                        Abrir negócio
+
+                                        <span
+                                            aria-hidden="true"
+                                        >
+                                            ↗
+                                        </span>
+                                    </a>
+
+                                @endif
+
+                            </div>
+
+
+                        @elseif (
+                            $hubSpotOpportunity[
+                                'can_queue'
+                            ]
+                        )
+
+                            @can(
+                                'createHubSpotOpportunity',
+                                $company
+                            )
+
+                                <div class="mt-3">
+
+                                    <button
+                                        type="button"
+                                        wire:click="
+                                            createHubSpotOpportunity
+                                        "
+                                        wire:loading.attr="
+                                            disabled
+                                        "
+                                        wire:target="
+                                            createHubSpotOpportunity
+                                        "
+                                        wire:confirm="
+                                            Deseja criar a empresa,
+                                            contatos, negócio e a
+                                            tarefa de primeiro contato
+                                            no HubSpot?
+                                        "
+                                        class="
+                                            ec-button-primary
+                                        "
+                                    >
+
+                                        <span
+                                            wire:loading.remove
+                                            wire:target="
+                                                createHubSpotOpportunity
+                                            "
+                                        >
+                                            {{
+                                                in_array(
+                                                    $hubSpotOpportunity[
+                                                        'status'
+                                                    ],
+                                                    [
+                                                        'failed',
+                                                        'partial',
+                                                    ],
+                                                    true
+                                                )
+                                                    ? 'Tentar novamente'
+                                                    : 'Criar oportunidade no HubSpot'
+                                            }}
+                                        </span>
+
+                                        <span
+                                            wire:loading
+                                            wire:target="
+                                                createHubSpotOpportunity
+                                            "
+                                        >
+                                            Enviando...
+                                        </span>
+
+                                    </button>
+
+                                </div>
+
+                            @endcan
+
+                        @endif
+
+                    </div>
+
+                @endif
+
             </div>
+
+
+
+            @if (
+                $this
+                    ->showHubSpotOpportunityProgress
+            )
+
+                @php
+                    $hubSpotProgress =
+                        $hubSpotOpportunity[
+                            'progress'
+                        ];
+
+                    $hubSpotProgressSteps = [
+                        5 =>
+                            'Enviado para fila',
+
+                        15 =>
+                            'Responsável validado',
+
+                        30 =>
+                            'Empresa criada',
+
+                        50 =>
+                            'Contatos sincronizados',
+
+                        70 =>
+                            'Negócio criado',
+
+                        85 =>
+                            'Tarefa criada',
+
+                        95 =>
+                            'Atualizando CRM',
+
+                        100 =>
+                            'Concluído',
+                    ];
+                @endphp
+
+                <div
+                    @if (
+                        $hubSpotOpportunity[
+                            'active'
+                        ]
+                    )
+                        wire:poll.2s="
+                            refreshHubSpotOpportunity
+                        "
+                    @endif
+                    data-testid="hubspot-progress-modal"
+                    class="
+                        fixed inset-0
+                        z-[100]
+                        flex items-center
+                        justify-center
+                        bg-black/65
+                        px-4
+                        backdrop-blur-sm
+                    "
+                >
+
+                    <div
+                        class="
+                            w-full max-w-xl
+                            rounded-2xl
+                            border
+                            border-[var(--ec-border)]
+                            bg-[var(--ec-surface)]
+                            p-6
+                            shadow-2xl
+                        "
+                    >
+
+                        <div
+                            class="
+                                flex
+                                items-start
+                                justify-between
+                                gap-4
+                            "
+                        >
+
+                            <div>
+
+                                <div
+                                    class="
+                                        text-xs
+                                        font-semibold
+                                        uppercase
+                                        tracking-[0.12em]
+                                        text-[var(--ec-primary)]
+                                    "
+                                >
+                                    Integração HubSpot
+                                </div>
+
+                                <h3
+                                    class="
+                                        mt-1
+                                        text-lg
+                                        font-bold
+                                        text-[var(--ec-text)]
+                                    "
+                                >
+                                    Criando oportunidade no HubSpot
+                                </h3>
+
+                            </div>
+
+                            <div
+                                class="
+                                    text-3xl
+                                    font-bold
+                                    tabular-nums
+                                    text-[var(--ec-primary)]
+                                "
+                            >
+                                {{
+                                    $hubSpotProgress
+                                }}%
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            class="
+                                mt-5 h-3
+                                overflow-hidden
+                                rounded-full
+                                bg-[var(--ec-surface-soft)]
+                            "
+                        >
+                            <div
+                                class="
+                                    h-full
+                                    rounded-full
+                                    bg-[var(--ec-primary)]
+                                    transition-all
+                                    duration-500
+                                "
+                                style="
+                                    width:
+                                    {{ $hubSpotProgress }}%;
+                                "
+                            ></div>
+                        </div>
+
+
+                        <div
+                            class="
+                                mt-3
+                                min-h-5
+                                text-sm
+                                font-medium
+                                text-[var(--ec-text-soft)]
+                            "
+                        >
+                            {{
+                                $hubSpotOpportunity[
+                                    'progress_message'
+                                ]
+                                ?? $hubSpotOpportunity[
+                                    'message'
+                                ]
+                            }}
+                        </div>
+
+
+                        <div
+                            class="
+                                mt-5 grid
+                                gap-2
+                                sm:grid-cols-2
+                            "
+                        >
+
+                            @foreach (
+                                $hubSpotProgressSteps
+                                as $requiredProgress
+                                    => $stepLabel
+                            )
+
+                                @php
+                                    $stepDone =
+                                        $hubSpotProgress
+                                        >=
+                                        $requiredProgress;
+                                @endphp
+
+                                <div
+                                    class="
+                                        flex
+                                        items-center
+                                        gap-2
+                                        rounded-lg
+                                        border
+                                        px-3 py-2
+                                        text-xs
+                                        {{
+                                            $stepDone
+                                                ? 'border-emerald-400/15 bg-emerald-400/[0.06] text-emerald-300'
+                                                : 'border-[var(--ec-border-soft)] bg-[var(--ec-surface-soft)] text-[var(--ec-text-muted)]'
+                                        }}
+                                    "
+                                >
+
+                                    <span
+                                        class="
+                                            inline-flex
+                                            size-5
+                                            shrink-0
+                                            items-center
+                                            justify-center
+                                            rounded-full
+                                        "
+                                    >
+                                        {{
+                                            $stepDone
+                                                ? '✓'
+                                                : '•'
+                                        }}
+                                    </span>
+
+                                    <span>
+                                        {{ $stepLabel }}
+                                    </span>
+
+                                </div>
+
+                            @endforeach
+
+                        </div>
+
+
+                        @if (
+                            $hubSpotOpportunity[
+                                'error'
+                            ]
+                        )
+
+                            <div
+                                class="
+                                    mt-5
+                                    rounded-xl
+                                    border
+                                    border-rose-400/20
+                                    bg-rose-400/[0.07]
+                                    px-4 py-3
+                                    text-sm
+                                    text-rose-300
+                                "
+                            >
+                                {{
+                                    $hubSpotOpportunity[
+                                        'error'
+                                    ]
+                                }}
+                            </div>
+
+                        @endif
+
+
+                        <div
+                            class="
+                                mt-6 flex
+                                flex-wrap
+                                justify-end
+                                gap-2
+                            "
+                        >
+
+                            @if (
+                                $hubSpotOpportunity[
+                                    'status'
+                                ]
+                                === 'completed'
+                            )
+
+                                @if (
+                                    $this
+                                        ->hubSpotCompanyUrl()
+                                )
+
+                                    <a
+                                        href="{{
+                                            $this
+                                                ->hubSpotCompanyUrl()
+                                        }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="ec-button-secondary"
+                                    >
+                                        Abrir empresa ↗
+                                    </a>
+
+                                @endif
+
+
+                                @if (
+                                    $this
+                                        ->hubSpotDealUrl()
+                                )
+
+                                    <a
+                                        href="{{
+                                            $this
+                                                ->hubSpotDealUrl()
+                                        }}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="ec-button-secondary"
+                                    >
+                                        Abrir negócio ↗
+                                    </a>
+
+                                @endif
+
+
+                                <button
+                                    type="button"
+                                    wire:click="
+                                        closeHubSpotOpportunityProgress
+                                    "
+                                    class="ec-button-primary"
+                                >
+                                    Concluir
+                                </button>
+
+                            @elseif (
+                                in_array(
+                                    $hubSpotOpportunity[
+                                        'status'
+                                    ],
+                                    [
+                                        'failed',
+                                        'partial',
+                                    ],
+                                    true
+                                )
+                            )
+
+                                <button
+                                    type="button"
+                                    wire:click="
+                                        closeHubSpotOpportunityProgress
+                                    "
+                                    class="ec-button-secondary"
+                                >
+                                    Fechar
+                                </button>
+
+                            @else
+
+                                <div
+                                    class="
+                                        inline-flex
+                                        items-center
+                                        gap-2
+                                        text-xs
+                                        text-[var(--ec-text-muted)]
+                                    "
+                                >
+                                    <span
+                                        class="
+                                            size-2
+                                            animate-pulse
+                                            rounded-full
+                                            bg-[var(--ec-primary)]
+                                        "
+                                    ></span>
+
+                                    Aguarde a conclusão
+                                    do processo
+                                </div>
+
+                            @endif
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            @endif
 
 
             {{-- ICP --}}

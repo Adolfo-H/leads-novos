@@ -143,6 +143,28 @@ return [
             false
         ),
 
+        /*
+         * Criação MANUAL de oportunidade
+         * iniciada pelo usuário no Prospector.
+         *
+         * É independente da sincronização
+         * automática por score SDR.
+         */
+        'manual_opportunity_enabled' => (bool) env(
+            'HUBSPOT_MANUAL_OPPORTUNITY_ENABLED',
+            false
+        ),
+
+        /*
+         * Depois deste período, um estado
+         * queued/processing pode ser reenfileirado
+         * caso o worker tenha sido interrompido.
+         */
+        'manual_opportunity_stale_minutes' => (int) env(
+            'HUBSPOT_MANUAL_OPPORTUNITY_STALE_MINUTES',
+            20
+        ),
+
         'lead_min_score' => (int) env(
             'HUBSPOT_LEAD_MIN_SCORE',
             60
