@@ -28,7 +28,7 @@ Schedule::command(
     ->withoutOverlapping();
 
 Schedule::command(
-    'hubspot:webhooks-recover --minutes=10 --limit=100'
+    'hubspot:webhooks-recover --minutes=1 --limit=500'
 )
     ->everyMinute()
     ->withoutOverlapping();

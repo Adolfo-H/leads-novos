@@ -83,6 +83,99 @@ services:
             - --max-time=3600
         restart: unless-stopped
 
+    hubspot-webhook-worker:
+        profiles:
+            - background
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.5
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP:-1000}'
+        image: sail-8.5/app
+        environment:
+            WWWUSER: '${WWWUSER:-1000}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - pgsql
+            - redis
+        command:
+            - php
+            - artisan
+            - queue:work
+            - redis
+            - --queue=hubspot-webhooks
+            - --sleep=1
+            - --tries=5
+            - --timeout=180
+            - --max-time=3600
+        restart: unless-stopped
+
+    hubspot-realtime-worker:
+        profiles:
+            - background
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.5
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP:-1000}'
+        image: sail-8.5/app
+        environment:
+            WWWUSER: '${WWWUSER:-1000}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - pgsql
+            - redis
+        command:
+            - php
+            - artisan
+            - queue:work
+            - redis
+            - --queue=hubspot-realtime
+            - --sleep=1
+            - --tries=4
+            - --timeout=600
+            - --max-time=3600
+        restart: unless-stopped
+
+    hubspot-bulk-worker:
+        profiles:
+            - background
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.5
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP:-1000}'
+        image: sail-8.5/app
+        environment:
+            WWWUSER: '${WWWUSER:-1000}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - pgsql
+            - redis
+        command:
+            - php
+            - artisan
+            - queue:work
+            - redis
+            - --queue=hubspot-bulk
+            - --sleep=1
+            - --tries=4
+            - --timeout=600
+            - --max-time=3600
+        restart: unless-stopped
+
     scheduler:
         profiles:
             - background

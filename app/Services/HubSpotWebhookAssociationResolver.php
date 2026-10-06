@@ -46,6 +46,10 @@ final class HubSpotWebhookAssociationResolver
                     $objectId
                 ),
 
+                'task' => $this->localByTask(
+                    $objectId
+                ),
+
                 default => [],
             };
 
@@ -466,6 +470,76 @@ final class HubSpotWebhookAssociationResolver
                                 .'FROM hubspot_company_deal hcd_count '
                                 .'WHERE hcd_count.hubspot_deal_id = '
                                 .'hcd.hubspot_deal_id) = 1'
+                            );
+                    }
+                )
+                ->pluck(
+                    'hc.company_id'
+                )
+                ->map(
+                    static fn (
+                        mixed $id
+                    ): int => (int) $id
+                )
+                ->filter(
+                    static fn (
+                        int $id
+                    ): bool => $id > 0
+                )
+                ->unique()
+                ->values()
+                ->all()
+        );
+    }
+
+    /**
+     * Task -> HubSpot Company ->
+     * Company fiscal confiável.
+     *
+     * Esta resolução local é essencial para
+     * eventos de exclusão: quando a tarefa já
+     * deixou de existir no HubSpot, ainda temos
+     * a associação anterior no mirror local.
+     *
+     * @return list<int>
+     */
+    private function localByTask(
+        string $hubSpotTaskId
+    ): array {
+        return array_values(
+            DB::table(
+                'hubspot_tasks as ht'
+            )
+                ->join(
+                    'hubspot_company_task as hct',
+                    'hct.hubspot_task_id',
+                    '=',
+                    'ht.id'
+                )
+                ->join(
+                    'hubspot_companies as hc',
+                    'hc.id',
+                    '=',
+                    'hct.hubspot_company_id'
+                )
+                ->where(
+                    'ht.hubspot_id',
+                    $hubSpotTaskId
+                )
+                ->whereNotNull(
+                    'hc.company_id'
+                )
+                ->where(
+                    function (
+                        $query
+                    ): void {
+                        $query
+                            ->whereNull(
+                                'hc.match_source'
+                            )
+                            ->orWhereNotIn(
+                                'hc.match_source',
+                                HubSpotCompany::UNSAFE_FISCAL_MATCH_SOURCES
                             );
                     }
                 )

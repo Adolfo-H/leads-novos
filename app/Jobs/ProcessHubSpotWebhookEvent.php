@@ -27,6 +27,14 @@ class ProcessHubSpotWebhookEvent implements ShouldQueue
         $this->onConnection(
             'redis'
         );
+
+        /*
+         * Webhooks nunca devem esperar
+         * atrás de refreshes em massa.
+         */
+        $this->onQueue(
+            'hubspot-webhooks'
+        );
     }
 
     /**
@@ -252,6 +260,36 @@ class ProcessHubSpotWebhookEvent implements ShouldQueue
         foreach (
             $companyIds as $companyId
         ) {
+            /*
+             * Alteração de tarefa é o caso mais
+             * frequente da operação comercial.
+             *
+             * Não precisamos reconstruir todo o
+             * CRM para mudar:
+             *
+             * - data;
+             * - assunto;
+             * - status;
+             * - conclusão;
+             * - criação/exclusão.
+             */
+            if (
+                $event->object_type
+                === 'task'
+            ) {
+                SyncHubSpotCompanyRealtimeStatus::dispatch(
+                    $companyId
+                );
+
+                continue;
+            }
+
+            /*
+             * Empresa, negócio, contato ou
+             * atividade estrutural continuam
+             * usando refresh completo, porém
+             * na fila realtime.
+             */
             RefreshCompanyFromHubSpot::dispatch(
                 $companyId
             );

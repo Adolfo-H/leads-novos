@@ -106,6 +106,18 @@ docker compose \
     scheduler
 
 
+echo "     Iniciando workers HubSpot prioritarios..."
+
+docker compose \
+    --profile background \
+    up -d \
+    --scale hubspot-webhook-worker=2 \
+    --scale hubspot-realtime-worker=2 \
+    hubspot-webhook-worker \
+    hubspot-realtime-worker \
+    hubspot-bulk-worker
+
+
 NGROK_TOKEN="$(
     env_value \
         NGROK_AUTHTOKEN \

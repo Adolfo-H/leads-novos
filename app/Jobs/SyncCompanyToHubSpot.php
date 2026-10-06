@@ -24,7 +24,15 @@ class SyncCompanyToHubSpot implements ShouldBeUnique, ShouldQueue
 
     public function __construct(
         public int $companyId,
-    ) {}
+    ) {
+        $this->onConnection(
+            'redis'
+        );
+
+        $this->onQueue(
+            'hubspot-realtime'
+        );
+    }
 
     public function uniqueId(): string
     {

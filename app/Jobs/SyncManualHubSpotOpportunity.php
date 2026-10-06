@@ -30,7 +30,15 @@ class SyncManualHubSpotOpportunity implements ShouldBeUnique, ShouldQueue
     public function __construct(
         public int $companyId,
         public int $actorId,
-    ) {}
+    ) {
+        $this->onConnection(
+            'redis'
+        );
+
+        $this->onQueue(
+            'hubspot-realtime'
+        );
+    }
 
     public function uniqueId(): string
     {

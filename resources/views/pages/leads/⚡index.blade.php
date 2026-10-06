@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\RefreshCompanyFromHubSpot;
 use App\Models\Company;
 use App\Models\CompanyCrmCheck;
 use App\Models\CompanyExportIntelligence;
@@ -67,6 +68,11 @@ new class extends Component
     public string $commercialActionMessage = '';
 
     public string $commercialActionError = '';
+
+    /**
+     * @var array<int, int>
+     */
+    public array $hubSpotRefreshRequestedAt = [];
 
     public function isCommercialManager(): bool
     {
@@ -2035,6 +2041,56 @@ new class extends Component
                 : $view;
 
         $this->resetPage();
+    }
+
+    public function verifyHubSpotNow(
+        int $companyId
+    ): void {
+        $company =
+            Company::query()
+                ->with(
+                    'hubSpotLead'
+                )
+                ->findOrFail(
+                    $companyId
+                );
+
+        $lead =
+            $company->hubSpotLead;
+
+        abort_unless(
+            $lead instanceof CompanyHubSpotLead,
+            404
+        );
+
+        $this->assertCanOperateLead(
+            $lead
+        );
+
+        if (
+            trim(
+                (string)
+                $lead->hubspot_company_id
+            ) === ''
+        ) {
+            $this->commercialActionError =
+                'Esta empresa ainda não possui '
+                .'vínculo válido com o HubSpot.';
+
+            return;
+        }
+
+        $this->commercialActionError =
+            '';
+
+        $this->hubSpotRefreshRequestedAt[
+            $companyId
+        ] =
+            now()->getTimestamp();
+
+        RefreshCompanyFromHubSpot::dispatch(
+            $companyId
+        );
     }
 
     public function assignOwner(
@@ -4588,6 +4644,25 @@ new class extends Component
                                 'is-old',
                         };
 
+                    $hubSpotRefreshRequestedAt =
+                        $this
+                            ->hubSpotRefreshRequestedAt[
+                                $lead->id
+                            ]
+                        ?? null;
+
+                    $hubSpotRefreshPending =
+                        is_numeric(
+                            $hubSpotRefreshRequestedAt
+                        )
+                        && (
+                            $hubSpotSyncedAt === null
+                            || $hubSpotSyncedAt
+                                ->getTimestamp()
+                                < (int)
+                                    $hubSpotRefreshRequestedAt
+                        );
+
                     $leadWorkState =
                         $lead->leadWorkState;
 
@@ -5211,6 +5286,11 @@ new class extends Component
                         @if ($hubSpotLead)
 
                             <div
+                                @if (
+                                    $hubSpotRefreshPending
+                                )
+                                    wire:poll.2s="$refresh"
+                                @endif
                                 class="
                                     rf-sync-state
                                     {{ $hubSpotSyncClass }}
@@ -5230,6 +5310,51 @@ new class extends Component
                                         $hubSpotSyncLabel
                                     }}
                                 </span>
+
+                                <button
+                                    type="button"
+                                    wire:click="
+                                        verifyHubSpotNow(
+                                            {{ $lead->id }}
+                                        )
+                                    "
+                                    wire:loading.attr="
+                                        disabled
+                                    "
+                                    wire:target="
+                                        verifyHubSpotNow(
+                                            {{ $lead->id }}
+                                        )
+                                    "
+                                    @disabled(
+                                        $hubSpotRefreshPending
+                                    )
+                                    class="
+                                        rf-sync-refresh
+                                    "
+                                    title="{{
+                                        $hubSpotRefreshPending
+                                            ? 'Verificando no HubSpot...'
+                                            : 'Verificar agora no HubSpot'
+                                    }}"
+                                    aria-label="
+                                        Verificar agora no HubSpot
+                                    "
+                                >
+                                    @if (
+                                        $hubSpotRefreshPending
+                                    )
+                                        <span
+                                            class="
+                                                animate-pulse
+                                            "
+                                        >
+                                            …
+                                        </span>
+                                    @else
+                                        ↻
+                                    @endif
+                                </button>
                             </div>
 
                         @endif

@@ -2600,3 +2600,42 @@ html.dark
 }
 
 /* EC_LEADS_THEME_END */
+
+/*
+ * Atualização manual pontual do HubSpot.
+ *
+ * Pequeno de propósito: fica ao lado do
+ * indicador "HubSpot verificado há...".
+ */
+.leads-rf .rf-sync-refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 2px;
+    padding: 0;
+    border: 1px solid rgba(128,184,222,.14);
+    border-radius: 6px;
+    background: rgba(255,255,255,.025);
+    color: #7896b5;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        color .15s ease,
+        border-color .15s ease,
+        background .15s ease;
+}
+
+.leads-rf .rf-sync-refresh:hover:not(:disabled) {
+    border-color: rgba(46,221,210,.3);
+    background: rgba(46,221,210,.055);
+    color: #5ee2d7;
+}
+
+.leads-rf .rf-sync-refresh:disabled {
+    cursor: wait;
+    opacity: .55;
+}

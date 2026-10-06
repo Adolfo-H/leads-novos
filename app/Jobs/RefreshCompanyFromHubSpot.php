@@ -23,7 +23,9 @@ class RefreshCompanyFromHubSpot implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
-    public int $tries = 4;
+    public int $tries = 12;
+
+    public int $maxExceptions = 4;
 
     public int $timeout = 240;
 
@@ -39,6 +41,20 @@ class RefreshCompanyFromHubSpot implements ShouldBeUnique, ShouldQueue
          */
         $this->onConnection(
             'redis'
+        );
+
+        /*
+         * Refresh com refreshItemId pertence a
+         * uma rodada completa/bulk.
+         *
+         * Refresh sem refreshItemId normalmente
+         * veio de webhook ou ação pontual e deve
+         * passar na frente.
+         */
+        $this->onQueue(
+            $refreshItemId !== null
+                ? 'hubspot-bulk'
+                : 'hubspot-realtime'
         );
     }
 
@@ -67,7 +83,9 @@ class RefreshCompanyFromHubSpot implements ShouldBeUnique, ShouldQueue
                     .$this->companyId
                 )
             )
-                ->dontRelease()
+                ->releaseAfter(
+                    5
+                )
                 ->expireAfter(
                     $this->timeout + 60
                 ),
