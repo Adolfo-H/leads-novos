@@ -36,6 +36,7 @@ final class HubSpotLeadSyncService
         private readonly CrmCompanyProvider $crmProvider,
         private readonly CommercialActivityRecorder $activityRecorder,
         private readonly HubSpotOwnerResolverService $ownerResolver,
+        private readonly HubSpotCompanyContactSyncService $contactSync,
     ) {}
 
     /**
@@ -200,6 +201,15 @@ final class HubSpotLeadSyncService
                     ]
                 );
 
+        if ($manual) {
+            $this->updateManualProgress(
+                sync: $sync,
+                progress: 15,
+                step: 'owner',
+                message: 'Responsável do HubSpot validado.',
+            );
+        }
+
         try {
             /*
              * Retomada depois de falha parcial.
@@ -256,43 +266,116 @@ final class HubSpotLeadSyncService
                 );
             }
 
+            if ($manual) {
+                $this->updateManualProgress(
+                    sync: $sync,
+                    progress: 30,
+                    step: 'company',
+                    message: 'Empresa criada e vinculada no HubSpot.',
+                );
+            }
+
             /*
              * CONTATOS
              */
             $contacts = [];
 
             if ($manual) {
-                foreach (
-                    $this->contactCandidates(
-                        $company
-                    ) as $contact
-                ) {
-                    $contactId =
-                        $this->resolveContact(
+                $this->updateManualProgress(
+                    sync: $sync,
+                    progress: 35,
+                    step: 'contacts',
+                    message: 'Sincronizando todos os contatos cadastrais...',
+                );
+
+                $contacts =
+                    $this->contactSync
+                        ->sync(
                             company: $company,
-                            email: $contact['email'],
-                            phone: $contact['phone'],
+
+                            hubSpotCompanyId: $sync
+                                ->hubspot_company_id,
+
                             ownerId: $ownerId,
+
+                            onProgress: function (
+                                int $processed,
+                                int $total,
+                            ) use (
+                                $sync
+                            ): void {
+                                $progress =
+                                    $total > 0
+                                        ? 35
+                                            + (int) floor(
+                                                (
+                                                    $processed
+                                                    / $total
+                                                )
+                                                * 15
+                                            )
+                                        : 50;
+
+                                $this
+                                    ->updateManualProgress(
+                                        sync: $sync,
+
+                                        progress: min(
+                                            50,
+                                            $progress
+                                        ),
+
+                                        step: 'contacts',
+
+                                        message: 'Sincronizando contatos: '
+                                            .$processed
+                                            .'/'
+                                            .$total
+                                            .'.',
+
+                                        extra: [
+                                            'contacts_processed' => $processed,
+
+                                            'contacts_total' => $total,
+                                        ],
+                                    );
+                            },
                         );
 
-                    $contacts[] = [
-                        'id' => $contactId,
+                if (
+                    $sync->hubspot_contact_id
+                    === null
+                    && isset(
+                        $contacts[0][
+                            'id'
+                        ]
+                    )
+                ) {
+                    $sync->hubspot_contact_id =
+                        $contacts[0][
+                            'id'
+                        ];
 
-                        'email' => $contact['email'],
-
-                        'phone' => $contact['phone'],
-                    ];
-
-                    if (
-                        $sync->hubspot_contact_id
-                        === null
-                    ) {
-                        $sync->hubspot_contact_id =
-                            $contactId;
-
-                        $sync->save();
-                    }
+                    $sync->save();
                 }
+
+                $this->updateManualProgress(
+                    sync: $sync,
+                    progress: 50,
+                    step: 'contacts',
+                    message: count($contacts)
+                        .' contato(s) sincronizado(s) no HubSpot.',
+                    extra: [
+                        'contacts_processed' => count(
+                            $contacts
+                        ),
+
+                        'contacts_total' => count(
+                            $contacts
+                        ),
+                    ],
+                );
+
             } else {
                 $contact =
                     $this->contactData(
@@ -428,6 +511,15 @@ final class HubSpotLeadSyncService
                 );
             }
 
+            if ($manual) {
+                $this->updateManualProgress(
+                    sync: $sync,
+                    progress: 70,
+                    step: 'deal',
+                    message: 'Negócio criado e contatos associados.',
+                );
+            }
+
             /*
              * TAREFA INICIAL
              *
@@ -496,6 +588,15 @@ final class HubSpotLeadSyncService
                         toId: $contactId,
                     );
                 }
+            }
+
+            if ($manual) {
+                $this->updateManualProgress(
+                    sync: $sync,
+                    progress: 85,
+                    step: 'task',
+                    message: 'Tarefa criada e associada aos contatos.',
+                );
             }
 
             /*
@@ -1577,6 +1678,82 @@ final class HubSpotLeadSyncService
         }
 
         return $domain;
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     */
+    private function updateManualProgress(
+        CompanyHubSpotLead $sync,
+        int $progress,
+        string $step,
+        string $message,
+        array $extra = [],
+    ): void {
+        $rawMetadata =
+            $sync->getAttribute(
+                'metadata'
+            );
+
+        $metadata =
+            is_array(
+                $rawMetadata
+            )
+                ? $rawMetadata
+                : [];
+
+        $rawManual =
+            $metadata[
+                'manual_sync'
+            ]
+            ?? [];
+
+        $manual =
+            is_array(
+                $rawManual
+            )
+                ? $rawManual
+                : [];
+
+        $current =
+            is_numeric(
+                $manual[
+                    'progress'
+                ]
+                ?? null
+            )
+                ? (int) $manual[
+                    'progress'
+                ]
+                : 0;
+
+        $metadata[
+            'manual_sync'
+        ] =
+            array_merge(
+                $manual,
+                [
+                    'progress' => max(
+                        $current,
+                        min(
+                            100,
+                            $progress
+                        )
+                    ),
+
+                    'step' => $step,
+
+                    'progress_message' => $message,
+
+                    'progress_updated_at' => now()
+                        ->toIso8601String(),
+                ],
+                $extra,
+            );
+
+        $sync->forceFill([
+            'metadata' => $metadata,
+        ])->save();
     }
 
     private function pipelineId(): string

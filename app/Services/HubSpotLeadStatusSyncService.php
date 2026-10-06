@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -192,52 +193,80 @@ final class HubSpotLeadStatusSyncService
                 default => null,
             };
 
-        $rawMetadata =
-            $lead->getAttribute(
-                'metadata'
-            );
-
-        $metadata =
-            is_array($rawMetadata)
-                ? $rawMetadata
-                : [];
-
-        $metadata[
-            'hubspot_status'
-        ] = [
-            'contacted_count' => $contactedCount,
-
-            'deal_stage' => $dealStage,
-
-            'open_tasks' => $tasks['items'],
-        ];
-
-        $lead->forceFill([
-            'work_status' => $status,
-
-            'work_status_changed_at' => $workStatusChangedAt,
-
-            'deal_stage_id' => $dealStage,
-
-            'last_activity_type' => $activityType,
-
-            'last_activity_at' => $lastActivityAt,
-
-            'open_task_count' => count(
-                $tasks['items']
-            ),
-
-            'last_task_due_at' => $tasks['next_due_at'],
-
-            'status_synced_at' => now(),
-
-            'sync_error' => null,
-
-            'metadata' => $metadata,
-        ])->save();
-
         $lead =
-            $lead->refresh();
+            DB::transaction(
+                function () use (
+                    $lead,
+                    $status,
+                    $workStatusChangedAt,
+                    $dealStage,
+                    $activityType,
+                    $lastActivityAt,
+                    $tasks,
+                    $contactedCount,
+                ): CompanyHubSpotLead {
+                    $freshLead =
+                        CompanyHubSpotLead::query()
+                            ->lockForUpdate()
+                            ->findOrFail(
+                                $lead->id
+                            );
+
+                    $rawMetadata =
+                        $freshLead->getAttribute(
+                            'metadata'
+                        );
+
+                    $metadata =
+                        is_array(
+                            $rawMetadata
+                        )
+                            ? $rawMetadata
+                            : [];
+
+                    $metadata[
+                        'hubspot_status'
+                    ] = [
+                        'contacted_count' => $contactedCount,
+
+                        'deal_stage' => $dealStage,
+
+                        'open_tasks' => $tasks['items'],
+                    ];
+
+                    $freshLead->forceFill([
+                        'work_status' => $status,
+
+                        'work_status_changed_at' => $workStatusChangedAt,
+
+                        'deal_stage_id' => $dealStage,
+
+                        'last_activity_type' => $activityType,
+
+                        'last_activity_at' => $lastActivityAt,
+
+                        'open_task_count' => count(
+                            $tasks[
+                                'items'
+                            ]
+                        ),
+
+                        'last_task_due_at' => $tasks[
+                                'next_due_at'
+                            ],
+
+                        'status_synced_at' => now(),
+
+                        'sync_error' => null,
+
+                        'metadata' => $metadata,
+                    ])->save();
+
+                    return $freshLead
+                        ->refresh();
+                },
+                3
+            );
 
         $this
             ->activityRecorder

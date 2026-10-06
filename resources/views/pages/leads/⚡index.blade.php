@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Services\HubSpotCompanyLinkService;
 use App\Services\HubSpotLeadReprospectingActionService;
 use App\Services\HubSpotLeadReprospectingService;
+use App\Services\HubSpotRealtimeHealthService;
 use App\Services\LeadOwnershipService;
 use App\Services\Providers\ReceitaLocalCnpjGroupProvider;
 use App\Support\Cnpj;
@@ -73,6 +74,27 @@ new class extends Component
      * @var array<int, int>
      */
     public array $hubSpotRefreshRequestedAt = [];
+
+    /**
+     * @return array{
+     *     status: string,
+     *     label: string,
+     *     pending: int,
+     *     failed_recently: int,
+     *     last_event_label: string,
+     *     oldest_pending_label: string|null,
+     *     bulk_active: bool,
+     *     bulk_progress: int|null,
+     *     bulk_label: string|null
+     * }
+     */
+    #[Computed]
+    public function hubSpotRealtimeHealth(): array
+    {
+        return app(
+            HubSpotRealtimeHealthService::class
+        )->snapshot();
+    }
 
     public function isCommercialManager(): bool
     {
@@ -3691,6 +3713,147 @@ new class extends Component
 
 
     </header>
+
+
+
+    @php
+        $hubSpotHealth =
+            $this
+                ->hubSpotRealtimeHealth;
+    @endphp
+
+    <section
+        class="
+            rf-hubspot-health
+            is-{{ $hubSpotHealth['status'] }}
+        "
+        wire:poll.10s="$refresh"
+    >
+
+        <div class="rf-hubspot-health-main">
+
+            <span class="rf-hubspot-health-dot"></span>
+
+            <strong>
+                {{ $hubSpotHealth['label'] }}
+            </strong>
+
+            <span>
+                Último evento
+                {{ $hubSpotHealth['last_event_label'] }}
+            </span>
+
+            <span>
+                ·
+            </span>
+
+            <span>
+                {{
+                    number_format(
+                        $hubSpotHealth['pending'],
+                        0,
+                        ',',
+                        '.'
+                    )
+                }}
+                pendente(s)
+            </span>
+
+            @if (
+                $hubSpotHealth[
+                    'failed_recently'
+                ] > 0
+            )
+
+                <span>
+                    ·
+                    {{
+                        $hubSpotHealth[
+                            'failed_recently'
+                        ]
+                    }}
+                    falha(s) na última hora
+                </span>
+
+            @endif
+
+        </div>
+
+
+        @if (
+            $hubSpotHealth[
+                'status'
+            ] === 'delayed'
+            && $hubSpotHealth[
+                'oldest_pending_label'
+            ]
+        )
+
+            <div class="rf-hubspot-health-warning">
+                Evento mais antigo pendente
+                {{
+                    $hubSpotHealth[
+                        'oldest_pending_label'
+                    ]
+                }}.
+            </div>
+
+        @endif
+
+
+        @if (
+            $hubSpotHealth[
+                'bulk_active'
+            ]
+        )
+
+            <div class="rf-hubspot-bulk">
+
+                <div class="rf-hubspot-bulk-head">
+
+                    <span>
+                        Conferência geral
+                    </span>
+
+                    <strong>
+                        {{
+                            $hubSpotHealth[
+                                'bulk_progress'
+                            ]
+                        }}%
+                    </strong>
+
+                    <span>
+                        {{
+                            $hubSpotHealth[
+                                'bulk_label'
+                            ]
+                        }}
+                    </span>
+
+                </div>
+
+                <div class="rf-hubspot-bulk-track">
+
+                    <div
+                        class="rf-hubspot-bulk-bar"
+                        style="
+                            width:
+                            {{
+                                $hubSpotHealth[
+                                    'bulk_progress'
+                                ]
+                            }}%;
+                        "
+                    ></div>
+
+                </div>
+
+            </div>
+
+        @endif
+
+    </section>
 
 
     @if ($commercialActionMessage !== '')

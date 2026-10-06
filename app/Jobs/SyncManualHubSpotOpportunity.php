@@ -6,6 +6,7 @@ use App\Contracts\CrmCompanyProvider;
 use App\Models\Company;
 use App\Models\CompanyHubSpotLead;
 use App\Models\User;
+use App\Services\CompanyHubSpotLeadMetadataService;
 use App\Services\CrmCheckService;
 use App\Services\HubSpotLeadStatusSyncService;
 use App\Services\HubSpotLeadSyncService;
@@ -26,6 +27,8 @@ class SyncManualHubSpotOpportunity implements ShouldBeUnique, ShouldQueue
     public int $timeout = 180;
 
     public int $uniqueFor = 600;
+
+    private ?CompanyHubSpotLeadMetadataService $metadataService = null;
 
     public function __construct(
         public int $companyId,
@@ -82,7 +85,11 @@ class SyncManualHubSpotOpportunity implements ShouldBeUnique, ShouldQueue
         CrmCompanyProvider $crmProvider,
         HubSpotLeadStatusSyncService $statusService,
         LeadOwnershipService $ownership,
+        CompanyHubSpotLeadMetadataService $metadataService,
     ): void {
+        $this->metadataService =
+            $metadataService;
+
         if (
             ! (bool) config(
                 'services.hubspot.manual_opportunity_enabled',
@@ -393,32 +400,32 @@ class SyncManualHubSpotOpportunity implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        $metadata =
-            $this->metadata(
-                $sync
+        $service =
+            $this->metadataService
+            ?? app(
+                CompanyHubSpotLeadMetadataService::class
             );
 
-        $manual =
-            $this->manualMetadata(
-                $metadata
-            );
+        $service->mergeManualSync(
+            leadId: $sync->id,
 
-        $metadata[
-            'manual_sync'
-        ] =
-            array_merge(
-                $manual,
+            values: array_merge(
                 [
                     'status' => $status,
                 ],
                 $values,
-            );
+            ),
+        );
 
-        $sync->forceFill([
-            'sync_error' => $syncError,
-
-            'metadata' => $metadata,
-        ])->save();
+        if ($syncError !== null) {
+            CompanyHubSpotLead::query()
+                ->whereKey(
+                    $sync->id
+                )
+                ->update([
+                    'sync_error' => $syncError,
+                ]);
+        }
     }
 
     /**

@@ -762,6 +762,43 @@ new class extends Component
             'hubSpotLead',
             'crmCheck',
         ]);
+
+        /*
+         * O estado é #[Computed].
+         *
+         * Sem invalidar explicitamente,
+         * a mesma requisição pode continuar
+         * exibindo o snapshot anterior e o
+         * usuário só percebe após F5.
+         */
+        unset(
+            $this
+                ->hubSpotManualOpportunityState
+        );
+
+        /*
+         * O job roda em background.
+         *
+         * Se o polling descobrir que a
+         * oportunidade entrou em fila ou
+         * processamento, abrimos o modal
+         * automaticamente.
+         *
+         * Isso elimina a necessidade de F5.
+         */
+        $state =
+            $this
+                ->hubSpotManualOpportunityState;
+
+        if (
+            $state[
+                'active'
+            ]
+        ) {
+            $this->showHubSpotOpportunityProgress =
+                true;
+        }
+
     }
 
     public function hubSpotCompanyUrl(): ?string

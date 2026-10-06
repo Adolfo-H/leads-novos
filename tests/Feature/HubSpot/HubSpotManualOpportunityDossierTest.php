@@ -278,3 +278,61 @@ it('does not show the creation action when the feature is disabled', function ()
             'Criar oportunidade no HubSpot'
         );
 });
+
+it('opens the progress automatically when polling detects an active HubSpot creation', function () {
+    $manager =
+        User::factory()->create([
+            'email_verified_at' => now(),
+
+            'commercial_role' => User::ROLE_MANAGER,
+        ]);
+
+    $company =
+        manualOpportunityDossierCompany(
+            '56567777'
+        );
+
+    $company
+        ->hubSpotLead()
+        ->create([
+            'pipeline_id' => 'default',
+
+            'deal_stage_id' => 'appointmentscheduled',
+
+            'metadata' => [
+                'manual_sync' => [
+                    'status' => 'queued',
+
+                    'progress' => 5,
+
+                    'step' => 'queued',
+
+                    'progress_message' => 'Solicitação enviada para a fila.',
+                ],
+            ],
+        ]);
+
+    Livewire::actingAs(
+        $manager
+    )
+        ->test(
+            'pages::companies.show',
+            [
+                'company' => $company,
+            ]
+        )
+        ->assertSet(
+            'showHubSpotOpportunityProgress',
+            false
+        )
+        ->call(
+            'refreshHubSpotOpportunity'
+        )
+        ->assertSet(
+            'showHubSpotOpportunityProgress',
+            true
+        )
+        ->assertSee(
+            'Solicitação enviada para a fila.'
+        );
+});

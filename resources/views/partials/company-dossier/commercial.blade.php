@@ -777,13 +777,43 @@
                     ]
                 )
 
+                    {{--
+                        Este polling existe antes mesmo
+                        do clique.
+
+                        Assim, depois que a criacao entra
+                        na fila em background, a tela
+                        percebe queued/processing sem F5.
+
+                        Ele desaparece automaticamente
+                        depois da conclusao.
+                    --}}
+                    @if (
+                        $hubSpotOpportunity[
+                            'can_queue'
+                        ]
+                        || $hubSpotOpportunity[
+                            'active'
+                        ]
+                    )
+
+                        <span
+                            class="hidden"
+                            aria-hidden="true"
+                            wire:poll.1s="
+                                refreshHubSpotOpportunity
+                            "
+                        ></span>
+
+                    @endif
+
                     <div
                         @if (
                             $hubSpotOpportunity[
                                 'active'
                             ]
                         )
-                            wire:poll.3s="
+                            wire:poll.1s="
                                 refreshHubSpotOpportunity
                             "
                         @endif
@@ -951,6 +981,92 @@
                                 ]
                             }}
                         </p>
+
+
+
+                        @if (
+                            $hubSpotOpportunity[
+                                'active'
+                            ]
+                        )
+
+                            <div
+                                data-testid="hubspot-inline-progress"
+                                class="
+                                    mt-3 rounded-lg
+                                    border
+                                    border-cyan-400/10
+                                    bg-cyan-400/[0.04]
+                                    p-3
+                                "
+                            >
+
+                                <div
+                                    class="
+                                        flex items-center
+                                        justify-between
+                                        gap-3
+                                        text-[11px]
+                                    "
+                                >
+                                    <span
+                                        class="
+                                            font-medium
+                                            text-cyan-200
+                                        "
+                                    >
+                                        {{
+                                            $hubSpotOpportunity[
+                                                'progress_message'
+                                            ]
+                                            ?? 'Processando...'
+                                        }}
+                                    </span>
+
+                                    <strong
+                                        class="
+                                            tabular-nums
+                                            text-cyan-300
+                                        "
+                                    >
+                                        {{
+                                            $hubSpotOpportunity[
+                                                'progress'
+                                            ]
+                                        }}%
+                                    </strong>
+                                </div>
+
+                                <div
+                                    class="
+                                        mt-2 h-1.5
+                                        overflow-hidden
+                                        rounded-full
+                                        bg-white/5
+                                    "
+                                >
+                                    <div
+                                        class="
+                                            h-full
+                                            rounded-full
+                                            bg-cyan-400
+                                            transition-all
+                                            duration-300
+                                        "
+                                        style="
+                                            width:
+                                            {{
+                                                $hubSpotOpportunity[
+                                                    'progress'
+                                                ]
+                                            }}%;
+                                        "
+                                    ></div>
+                                </div>
+
+                            </div>
+
+                        @endif
 
 
                         @if (
@@ -1183,6 +1299,66 @@
 
 
 
+
+            <div
+                wire:loading.flex
+                wire:target="createHubSpotOpportunity"
+                data-testid="hubspot-starting-overlay"
+                class="
+                    fixed inset-0
+                    z-[110]
+                    items-center
+                    justify-center
+                    bg-black/65
+                    px-4
+                    backdrop-blur-sm
+                "
+            >
+                <div
+                    class="
+                        w-full max-w-md
+                        rounded-2xl
+                        border
+                        border-[var(--ec-border)]
+                        bg-[var(--ec-surface)]
+                        p-6
+                        text-center
+                        shadow-2xl
+                    "
+                >
+                    <div
+                        class="
+                            mx-auto size-8
+                            animate-spin
+                            rounded-full
+                            border-2
+                            border-cyan-400/20
+                            border-t-cyan-300
+                        "
+                    ></div>
+
+                    <div
+                        class="
+                            mt-4 text-base
+                            font-semibold
+                            text-[var(--ec-text)]
+                        "
+                    >
+                        Preparando oportunidade no HubSpot
+                    </div>
+
+                    <div
+                        class="
+                            mt-1 text-xs
+                            text-[var(--ec-text-muted)]
+                        "
+                    >
+                        Enviando para a fila de processamento...
+                    </div>
+                </div>
+            </div>
+
+
             @if (
                 $this
                     ->showHubSpotOpportunityProgress
@@ -1227,7 +1403,7 @@
                             'active'
                         ]
                     )
-                        wire:poll.2s="
+                        wire:poll.1s="
                             refreshHubSpotOpportunity
                         "
                     @endif
