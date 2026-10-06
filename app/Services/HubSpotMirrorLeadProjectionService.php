@@ -13,6 +13,7 @@ final class HubSpotMirrorLeadProjectionService
     public function __construct(
         private readonly LeadOperationalClassificationService $classification,
         private readonly LeadQualificationScoreService $qualification,
+        private readonly HubSpotRepresentativeDealService $representativeDeals,
     ) {}
 
     /**
@@ -409,99 +410,11 @@ final class HubSpotMirrorLeadProjectionService
     private function representativeDeal(
         array $deals
     ): array {
-        if ($deals === []) {
-            return [];
-        }
-
-        usort(
-            $deals,
-            function (
-                array $left,
-                array $right
-            ): int {
-                $leftRank =
-                    $this->dealRank(
-                        $left
-                    );
-
-                $rightRank =
-                    $this->dealRank(
-                        $right
-                    );
-
-                if (
-                    $leftRank
-                    !== $rightRank
-                ) {
-                    return $leftRank
-                        <=>
-                        $rightRank;
-                }
-
-                $leftClosed =
-                    $this->parseDate(
-                        $left[
-                            'closed_at'
-                        ]
-                        ?? null
-                    );
-
-                $rightClosed =
-                    $this->parseDate(
-                        $right[
-                            'closed_at'
-                        ]
-                        ?? null
-                    );
-
-                return (
-                    $rightClosed
-                        ?->getTimestamp()
-                    ?? 0
-                )
-                    <=>
-                    (
-                        $leftClosed
-                            ?->getTimestamp()
-                        ?? 0
-                    );
-            }
-        );
-
-        return $deals[0];
-    }
-
-    /**
-     * @param  array<string, mixed>  $deal
-     */
-    private function dealRank(
-        array $deal
-    ): int {
-        $closed =
-            $this->boolean(
-                $deal[
-                    'is_closed'
-                ]
-                ?? false
+        return $this
+            ->representativeDeals
+            ->select(
+                $deals
             );
-
-        $won =
-            $this->boolean(
-                $deal[
-                    'is_closed_won'
-                ]
-                ?? false
-            );
-
-        if (! $closed) {
-            return 0;
-        }
-
-        if ($won) {
-            return 1;
-        }
-
-        return 2;
     }
 
     /**
@@ -663,37 +576,6 @@ final class HubSpotMirrorLeadProjectionService
         return $value !== ''
             ? $value
             : null;
-    }
-
-    private function boolean(
-        mixed $value
-    ): bool {
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_int($value)) {
-            return $value === 1;
-        }
-
-        if (! is_string($value)) {
-            return false;
-        }
-
-        return in_array(
-            mb_strtolower(
-                trim(
-                    $value
-                )
-            ),
-            [
-                '1',
-                'true',
-                'yes',
-                'sim',
-            ],
-            true
-        );
     }
 
     private function parseDate(

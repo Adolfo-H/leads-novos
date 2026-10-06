@@ -1265,6 +1265,18 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
                         'closedate'
                     ] ?? null
                 ),
+
+                /*
+                 * Usado apenas para decidir qual
+                 * dos vários negócios abertos é
+                 * o representante operacional.
+                 */
+                'updated_at' => $this->nullable(
+                    $record[
+                        'updatedAt'
+                    ]
+                    ?? null
+                ),
             ];
         }
 

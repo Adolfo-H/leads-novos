@@ -3,13 +3,13 @@
 namespace App\Services;
 
 use App\Models\CompanyHubSpotLead;
+use App\Support\HubSpotDateTime;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
-use Throwable;
 
 final class HubSpotLeadStatusSyncService
 {
@@ -512,38 +512,9 @@ final class HubSpotLeadStatusSyncService
     private function dateValue(
         mixed $value
     ): ?CarbonImmutable {
-        if (
-            $value === null
-            || $value === ''
-        ) {
-            return null;
-        }
-
-        try {
-            if (is_numeric($value)) {
-                $number =
-                    (int) $value;
-
-                if (
-                    $number
-                    > 100000000000
-                ) {
-                    return CarbonImmutable::createFromTimestampMs(
-                        $number
-                    );
-                }
-
-                return CarbonImmutable::createFromTimestamp(
-                    $number
-                );
-            }
-
-            return CarbonImmutable::parse(
-                (string) $value
-            );
-        } catch (Throwable) {
-            return null;
-        }
+        return HubSpotDateTime::parse(
+            $value
+        );
     }
 
     private function integerValue(

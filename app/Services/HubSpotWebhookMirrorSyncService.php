@@ -8,8 +8,8 @@ use App\Models\HubSpotDeal;
 use App\Models\HubSpotPipelineStage;
 use App\Models\HubSpotTask;
 use App\Models\HubSpotWebhookEvent;
+use App\Support\HubSpotDateTime;
 use Carbon\CarbonImmutable;
-use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
@@ -17,7 +17,6 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
-use Throwable;
 
 final class HubSpotWebhookMirrorSyncService
 {
@@ -1732,48 +1731,9 @@ final class HubSpotWebhookMirrorSyncService
     private function dateValue(
         mixed $value
     ): ?CarbonImmutable {
-        if (
-            $value instanceof CarbonInterface
-        ) {
-            return CarbonImmutable::instance(
-                $value
-            );
-        }
-
-        if (
-            $value === null
-            || $value === ''
-        ) {
-            return null;
-        }
-
-        try {
-            if (is_numeric($value)) {
-                $number =
-                    (int) $value;
-
-                return
-                    $number
-                    > 100000000000
-                        ? CarbonImmutable::createFromTimestampMs(
-                            $number
-                        )
-                        : CarbonImmutable::createFromTimestamp(
-                            $number
-                        );
-            }
-
-            if (is_scalar($value)) {
-                return CarbonImmutable::parse(
-                    (string)
-                    $value
-                );
-            }
-        } catch (Throwable) {
-            return null;
-        }
-
-        return null;
+        return HubSpotDateTime::parse(
+            $value
+        );
     }
 
     private function stringValue(

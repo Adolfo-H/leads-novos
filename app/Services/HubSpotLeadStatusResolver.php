@@ -13,12 +13,12 @@ final class HubSpotLeadStatusResolver
         ?CarbonInterface $lastActivityAt,
     ): string {
         /*
-         * Estados definidos diretamente pela
-         * etapa do Deal possuem prioridade sobre
-         * tarefas e atividades.
+         * Estados realmente finais continuam
+         * prevalecendo sobre qualquer follow-up.
          *
-         * Um negócio ganho, por exemplo, não pode
-         * continuar aparecendo como "Em contato".
+         * Um negócio ganho ou descartado não
+         * deve reaparecer na fila operacional
+         * apenas porque sobrou uma tarefa antiga.
          */
         if (
             $dealStage !== null
@@ -46,6 +46,29 @@ final class HubSpotLeadStatusResolver
             return 'discarded';
         }
 
+        /*
+         * Uma tarefa aberta significa que existe
+         * uma ação comercial concreta pendente.
+         *
+         * Portanto:
+         *
+         * Recusou + tarefa aberta
+         *      => Aguardando retorno
+         *
+         * Oportunidade futura + tarefa aberta
+         *      => Aguardando retorno
+         *
+         * A etapa do negócio continua aparecendo
+         * separadamente no CRM / HubSpot.
+         */
+        if ($openTasks > 0) {
+            return 'waiting';
+        }
+
+        /*
+         * Sem tarefa pendente, respeitamos as
+         * etapas especiais do negócio.
+         */
         if (
             $dealStage !== null
             && in_array(
@@ -70,10 +93,6 @@ final class HubSpotLeadStatusResolver
             )
         ) {
             return 'future';
-        }
-
-        if ($openTasks > 0) {
-            return 'waiting';
         }
 
         if (
@@ -120,6 +139,10 @@ final class HubSpotLeadStatusResolver
             }
         }
 
-        return $stages;
+        return array_values(
+            array_unique(
+                $stages
+            )
+        );
     }
 }

@@ -26,7 +26,7 @@ beforeEach(function () {
     ]);
 });
 
-it('maps a new HubSpot lead', function () {
+it('maps a new lead', function () {
     $resolver =
         app(
             HubSpotLeadStatusResolver::class
@@ -42,7 +42,7 @@ it('maps a new HubSpot lead', function () {
     )->toBe('new');
 });
 
-it('maps a contacted HubSpot lead', function () {
+it('maps recent commercial activity as contacting', function () {
     $resolver =
         app(
             HubSpotLeadStatusResolver::class
@@ -53,12 +53,12 @@ it('maps a contacted HubSpot lead', function () {
             dealStage: 'appointmentscheduled',
             openTasks: 0,
             contactedCount: 1,
-            lastActivityAt: null,
+            lastActivityAt: now(),
         )
     )->toBe('contacting');
 });
 
-it('maps a lead with follow up as waiting', function () {
+it('maps an open follow up as waiting', function () {
     $resolver =
         app(
             HubSpotLeadStatusResolver::class
@@ -68,13 +68,13 @@ it('maps a lead with follow up as waiting', function () {
         $resolver->resolve(
             dealStage: 'appointmentscheduled',
             openTasks: 1,
-            contactedCount: 5,
+            contactedCount: 1,
             lastActivityAt: now(),
         )
     )->toBe('waiting');
 });
 
-it('maps a won deal as converted even if tasks are still open', function () {
+it('keeps a won deal terminal even with an open task', function () {
     $resolver =
         app(
             HubSpotLeadStatusResolver::class
@@ -83,14 +83,14 @@ it('maps a won deal as converted even if tasks are still open', function () {
     expect(
         $resolver->resolve(
             dealStage: 'closedwon',
-            openTasks: 3,
-            contactedCount: 9,
+            openTasks: 2,
+            contactedCount: 5,
             lastActivityAt: now(),
         )
     )->toBe('converted');
 });
 
-it('maps discarded HubSpot stages', function () {
+it('keeps a discarded deal terminal even with an open task', function () {
     $resolver =
         app(
             HubSpotLeadStatusResolver::class
@@ -106,23 +106,7 @@ it('maps discarded HubSpot stages', function () {
     )->toBe('discarded');
 });
 
-it('maps future opportunity separately', function () {
-    $resolver =
-        app(
-            HubSpotLeadStatusResolver::class
-        );
-
-    expect(
-        $resolver->resolve(
-            dealStage: '13185626',
-            openTasks: 2,
-            contactedCount: 5,
-            lastActivityAt: now(),
-        )
-    )->toBe('future');
-});
-
-it('maps refused deal separately', function () {
+it('maps refused deal without an open task as refused', function () {
     $resolver =
         app(
             HubSpotLeadStatusResolver::class
@@ -131,9 +115,57 @@ it('maps refused deal separately', function () {
     expect(
         $resolver->resolve(
             dealStage: 'closedlost',
-            openTasks: 2,
+            openTasks: 0,
             contactedCount: 5,
             lastActivityAt: now(),
         )
     )->toBe('refused');
+});
+
+it('prioritizes an open task over a refused deal', function () {
+    $resolver =
+        app(
+            HubSpotLeadStatusResolver::class
+        );
+
+    expect(
+        $resolver->resolve(
+            dealStage: 'closedlost',
+            openTasks: 1,
+            contactedCount: 5,
+            lastActivityAt: now(),
+        )
+    )->toBe('waiting');
+});
+
+it('maps future opportunity without an open task as future', function () {
+    $resolver =
+        app(
+            HubSpotLeadStatusResolver::class
+        );
+
+    expect(
+        $resolver->resolve(
+            dealStage: '13185626',
+            openTasks: 0,
+            contactedCount: 5,
+            lastActivityAt: now(),
+        )
+    )->toBe('future');
+});
+
+it('prioritizes an open task over a future opportunity', function () {
+    $resolver =
+        app(
+            HubSpotLeadStatusResolver::class
+        );
+
+    expect(
+        $resolver->resolve(
+            dealStage: '13185626',
+            openTasks: 1,
+            contactedCount: 5,
+            lastActivityAt: now(),
+        )
+    )->toBe('waiting');
 });
