@@ -2832,3 +2832,2452 @@ html.dark
         white-space: normal;
     }
 }
+
+
+/* LEADS_ACTION_CENTER_START */
+
+/*
+|--------------------------------------------------------------------------
+| LEADS — CENTRAL DE AÇÃO
+|--------------------------------------------------------------------------
+|
+| Camada de decisão rápida.
+| Usa somente contadores e filtros que já
+| existiam na tela — nenhuma regra comercial
+| é duplicada aqui.
+|
+*/
+
+.leads-rf .rf-action-center {
+    padding:
+        18px;
+    border:
+        1px solid
+        var(--ec-border);
+    border-radius:
+        18px;
+    background:
+        linear-gradient(
+            135deg,
+            color-mix(
+                in srgb,
+                var(--ec-surface) 94%,
+                var(--ec-primary) 6%
+            ),
+            var(--ec-surface)
+        );
+    box-shadow:
+        0 16px 42px
+        color-mix(
+            in srgb,
+            #000 10%,
+            transparent
+        );
+}
+
+.leads-rf .rf-action-center-head {
+    display:
+        flex;
+    align-items:
+        center;
+    justify-content:
+        space-between;
+    gap:
+        24px;
+}
+
+.leads-rf .rf-action-eyebrow {
+    color:
+        var(--ec-primary);
+    font-size:
+        10px;
+    font-weight:
+        850;
+    letter-spacing:
+        .11em;
+    text-transform:
+        uppercase;
+}
+
+.leads-rf .rf-action-center-head h2 {
+    margin:
+        4px 0 0;
+    color:
+        var(--ec-text);
+    font-size:
+        18px;
+    line-height:
+        1.2;
+    font-weight:
+        850;
+    letter-spacing:
+        -.02em;
+}
+
+.leads-rf .rf-action-center-head p {
+    max-width:
+        700px;
+    margin:
+        5px 0 0;
+    color:
+        var(--ec-text-muted);
+    font-size:
+        11px;
+    line-height:
+        1.5;
+}
+
+.leads-rf .rf-action-primary {
+    display:
+        flex;
+    flex:
+        0 0 auto;
+    align-items:
+        center;
+    gap:
+        14px;
+    min-height:
+        44px;
+    padding:
+        0 8px 0 14px;
+    border:
+        1px solid
+        color-mix(
+            in srgb,
+            var(--ec-primary) 32%,
+            transparent
+        );
+    border-radius:
+        12px;
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 8%,
+            var(--ec-surface)
+        );
+    color:
+        var(--ec-primary);
+    font:
+        inherit;
+    font-size:
+        11px;
+    font-weight:
+        800;
+    cursor:
+        pointer;
+    transition:
+        transform .16s ease,
+        border-color .16s ease,
+        background .16s ease;
+}
+
+.leads-rf .rf-action-primary strong {
+    display:
+        grid;
+    place-items:
+        center;
+    min-width:
+        34px;
+    height:
+        30px;
+    padding:
+        0 7px;
+    border-radius:
+        8px;
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 12%,
+            transparent
+        );
+    color:
+        var(--ec-text);
+    font-size:
+        13px;
+}
+
+.leads-rf .rf-action-primary:hover,
+.leads-rf .rf-action-primary.is-active {
+    transform:
+        translateY(-1px);
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 58%,
+            transparent
+        );
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 13%,
+            var(--ec-surface)
+        );
+}
+
+.leads-rf .rf-action-grid {
+    display:
+        grid;
+    grid-template-columns:
+        repeat(
+            4,
+            minmax(0, 1fr)
+        );
+    gap:
+        10px;
+    margin-top:
+        16px;
+}
+
+.leads-rf .rf-action-card {
+    position:
+        relative;
+    width:
+        100%;
+    min-height:
+        118px;
+    padding:
+        14px;
+    overflow:
+        hidden;
+    border:
+        1px solid
+        var(--ec-border-soft);
+    border-radius:
+        14px;
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-surface-soft) 68%,
+            var(--ec-surface)
+        );
+    color:
+        var(--ec-primary);
+    font:
+        inherit;
+    text-align:
+        left;
+    cursor:
+        pointer;
+    transition:
+        transform .16s ease,
+        border-color .16s ease,
+        box-shadow .16s ease,
+        background .16s ease;
+}
+
+.leads-rf .rf-action-card::after {
+    content:
+        "";
+    position:
+        absolute;
+    top:
+        -28px;
+    right:
+        -24px;
+    width:
+        84px;
+    height:
+        84px;
+    border-radius:
+        999px;
+    background:
+        currentColor;
+    opacity:
+        .045;
+}
+
+.leads-rf .rf-action-card:hover {
+    transform:
+        translateY(-2px);
+    border-color:
+        color-mix(
+            in srgb,
+            currentColor 34%,
+            transparent
+        );
+    box-shadow:
+        0 12px 28px
+        color-mix(
+            in srgb,
+            #000 12%,
+            transparent
+        );
+}
+
+.leads-rf .rf-action-card.is-active {
+    border-color:
+        color-mix(
+            in srgb,
+            currentColor 55%,
+            transparent
+        );
+    box-shadow:
+        inset 0 0 0 1px
+        color-mix(
+            in srgb,
+            currentColor 12%,
+            transparent
+        );
+}
+
+.leads-rf .rf-action-card.is-danger {
+    color:
+        var(--ec-danger);
+}
+
+.leads-rf .rf-action-card.is-warning {
+    color:
+        var(--ec-warning);
+}
+
+.leads-rf .rf-action-card.is-accent {
+    color:
+        #a58bff;
+}
+
+.leads-rf .rf-action-card.is-primary {
+    color:
+        var(--ec-primary);
+}
+
+.leads-rf .rf-action-card-top {
+    display:
+        flex;
+    align-items:
+        center;
+    gap:
+        8px;
+}
+
+.leads-rf .rf-action-icon {
+    display:
+        grid;
+    place-items:
+        center;
+    width:
+        23px;
+    height:
+        23px;
+    flex:
+        0 0 23px;
+    border-radius:
+        7px;
+    background:
+        color-mix(
+            in srgb,
+            currentColor 11%,
+            transparent
+        );
+    color:
+        currentColor;
+    font-size:
+        12px;
+    font-weight:
+        900;
+}
+
+.leads-rf .rf-action-label {
+    color:
+        var(--ec-text-soft);
+    font-size:
+        10px;
+    font-weight:
+        800;
+    letter-spacing:
+        .02em;
+}
+
+.leads-rf .rf-action-number {
+    display:
+        block;
+    margin-top:
+        12px;
+    color:
+        var(--ec-text);
+    font-size:
+        28px;
+    line-height:
+        1;
+    font-weight:
+        900;
+    letter-spacing:
+        -.04em;
+}
+
+.leads-rf .rf-action-helper {
+    display:
+        block;
+    margin-top:
+        8px;
+    color:
+        var(--ec-text-muted);
+    font-size:
+        9px;
+    line-height:
+        1.4;
+}
+
+.leads-rf .rf-action-secondary {
+    display:
+        flex;
+    flex-wrap:
+        wrap;
+    gap:
+        7px;
+    margin-top:
+        11px;
+    padding-top:
+        11px;
+    border-top:
+        1px solid
+        var(--ec-border-soft);
+}
+
+.leads-rf .rf-action-metric {
+    display:
+        inline-flex;
+    align-items:
+        center;
+    gap:
+        9px;
+    min-height:
+        32px;
+    padding:
+        0 9px 0 10px;
+    border:
+        1px solid
+        var(--ec-border-soft);
+    border-radius:
+        9px;
+    background:
+        transparent;
+    color:
+        var(--ec-text-muted);
+    font:
+        inherit;
+    font-size:
+        9px;
+    font-weight:
+        750;
+    cursor:
+        pointer;
+    transition:
+        border-color .15s ease,
+        color .15s ease,
+        background .15s ease;
+}
+
+.leads-rf .rf-action-metric strong {
+    display:
+        grid;
+    place-items:
+        center;
+    min-width:
+        24px;
+    height:
+        21px;
+    padding:
+        0 5px;
+    border-radius:
+        6px;
+    background:
+        var(--ec-surface-soft);
+    color:
+        var(--ec-text);
+    font-size:
+        9px;
+}
+
+.leads-rf .rf-action-metric:hover,
+.leads-rf .rf-action-metric.is-active {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 38%,
+            transparent
+        );
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 6%,
+            transparent
+        );
+    color:
+        var(--ec-primary);
+}
+
+.leads-rf .rf-action-metric.is-manager {
+    margin-left:
+        auto;
+}
+
+@media (
+    max-width: 1100px
+) {
+    .leads-rf .rf-action-grid {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+}
+
+@media (
+    max-width: 700px
+) {
+    .leads-rf .rf-action-center {
+        padding:
+            14px;
+    }
+
+    .leads-rf .rf-action-center-head {
+        align-items:
+            stretch;
+        flex-direction:
+            column;
+        gap:
+            12px;
+    }
+
+    .leads-rf .rf-action-primary {
+        justify-content:
+            space-between;
+        width:
+            100%;
+    }
+
+    .leads-rf .rf-action-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+    .leads-rf .rf-action-metric {
+        flex:
+            1 1
+            calc(50% - 7px);
+        justify-content:
+            space-between;
+    }
+
+    .leads-rf .rf-action-metric.is-manager {
+        margin-left:
+            0;
+    }
+}
+
+/* LEADS_ACTION_CENTER_END */
+
+
+/* LEADS_TOP_SIMPLIFICATION_START */
+
+/*
+|--------------------------------------------------------------------------
+| LEADS — TOPO SIMPLIFICADO
+|--------------------------------------------------------------------------
+|
+| Central de ação = decisão.
+| Pipeline = contexto.
+| Filtros = ferramenta secundária.
+|
+*/
+
+.leads-rf .rf-stage-strip {
+    display:
+        flex;
+    align-items:
+        center;
+    gap:
+        14px;
+    min-height:
+        48px;
+    padding:
+        8px 11px;
+    overflow:
+        hidden;
+    border:
+        1px solid
+        var(--ec-border);
+    border-radius:
+        13px;
+    background:
+        var(--ec-surface);
+}
+
+.leads-rf .rf-stage-strip-heading {
+    display:
+        flex;
+    flex:
+        0 0 auto;
+    align-items:
+        center;
+    gap:
+        10px;
+    padding-right:
+        12px;
+    border-right:
+        1px solid
+        var(--ec-border-soft);
+}
+
+.leads-rf .rf-stage-strip-heading strong {
+    display:
+        block;
+    color:
+        var(--ec-text);
+    font-size:
+        10px;
+    font-weight:
+        850;
+    white-space:
+        nowrap;
+}
+
+.leads-rf .rf-stage-strip-heading span {
+    display:
+        block;
+    margin-top:
+        2px;
+    color:
+        var(--ec-text-muted);
+    font-size:
+        8px;
+    white-space:
+        nowrap;
+}
+
+.leads-rf .rf-stage-strip-list {
+    display:
+        flex;
+    flex:
+        1 1 auto;
+    align-items:
+        center;
+    gap:
+        6px;
+    min-width:
+        0;
+    overflow-x:
+        auto;
+    scrollbar-width:
+        thin;
+}
+
+.leads-rf .rf-stage-strip-chip {
+    display:
+        inline-flex;
+    flex:
+        0 0 auto;
+    align-items:
+        center;
+    gap:
+        7px;
+    min-height:
+        29px;
+    padding:
+        0 7px 0 9px;
+    border:
+        1px solid
+        var(--ec-border-soft);
+    border-radius:
+        8px;
+    background:
+        var(--ec-surface-soft);
+    color:
+        var(--ec-text-soft);
+    font:
+        inherit;
+    font-size:
+        9px;
+    font-weight:
+        700;
+    cursor:
+        pointer;
+    transition:
+        border-color .15s ease,
+        color .15s ease,
+        background .15s ease;
+}
+
+.leads-rf .rf-stage-strip-chip strong {
+    display:
+        grid;
+    place-items:
+        center;
+    min-width:
+        21px;
+    height:
+        19px;
+    padding:
+        0 5px;
+    border-radius:
+        5px;
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 7%,
+            transparent
+        );
+    color:
+        var(--ec-text);
+    font-size:
+        8px;
+}
+
+.leads-rf .rf-stage-strip-chip:hover,
+.leads-rf .rf-stage-strip-chip.is-active {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 42%,
+            transparent
+        );
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 7%,
+            var(--ec-surface)
+        );
+    color:
+        var(--ec-primary);
+}
+
+.leads-rf .rf-stage-strip-clear {
+    min-height:
+        25px;
+    padding:
+        0 7px;
+    border:
+        1px solid
+        color-mix(
+            in srgb,
+            var(--ec-primary) 24%,
+            transparent
+        );
+    border-radius:
+        7px;
+    background:
+        transparent;
+    color:
+        var(--ec-primary);
+    font:
+        inherit;
+    font-size:
+        8px;
+    font-weight:
+        800;
+    cursor:
+        pointer;
+    white-space:
+        nowrap;
+}
+
+.leads-rf .rf-stage-strip-empty {
+    color:
+        var(--ec-text-muted);
+    font-size:
+        9px;
+}
+
+.leads-rf .rf-filters {
+    padding:
+        0;
+    overflow:
+        hidden;
+}
+
+.leads-rf .rf-filters-head {
+    display:
+        flex;
+    align-items:
+        center;
+    justify-content:
+        space-between;
+    gap:
+        16px;
+    padding:
+        10px 13px;
+    border-bottom:
+        1px solid
+        var(--ec-border-soft);
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-surface-soft) 65%,
+            var(--ec-surface)
+        );
+}
+
+.leads-rf .rf-filters-head strong {
+    display:
+        block;
+    color:
+        var(--ec-text);
+    font-size:
+        10px;
+    font-weight:
+        850;
+}
+
+.leads-rf .rf-filters-head span {
+    display:
+        block;
+    margin-top:
+        2px;
+    color:
+        var(--ec-text-muted);
+    font-size:
+        8px;
+}
+
+.leads-rf .rf-filters-clear {
+    flex:
+        0 0 auto;
+    min-height:
+        29px;
+    padding:
+        0 9px;
+    border:
+        1px solid
+        var(--ec-border);
+    border-radius:
+        8px;
+    background:
+        transparent;
+    color:
+        var(--ec-text-muted);
+    font:
+        inherit;
+    font-size:
+        8px;
+    font-weight:
+        800;
+    cursor:
+        pointer;
+}
+
+.leads-rf .rf-filters-clear:hover {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 35%,
+            transparent
+        );
+    color:
+        var(--ec-primary);
+}
+
+.leads-rf .rf-filter-main {
+    padding:
+        12px 13px 0;
+}
+
+.leads-rf .rf-filter-secondary {
+    padding:
+        0 13px 12px;
+}
+
+/*
+ * Quando saudável, health é infraestrutura de fundo.
+ * Continua visível, mas deixa de competir com
+ * o conteúdo comercial.
+ */
+.leads-rf
+.rf-hubspot-health.is-healthy
+.rf-hubspot-health-checks {
+    opacity:
+        .72;
+}
+
+.leads-rf
+.rf-hubspot-health.is-healthy {
+    padding-top:
+        8px;
+    padding-bottom:
+        8px;
+}
+
+/*
+ * As classes antigas permanecem temporariamente
+ * no stylesheet para evitar uma limpeza agressiva
+ * nesta etapa. Elas já não são renderizadas.
+ */
+
+@media (
+    max-width: 850px
+) {
+    .leads-rf .rf-stage-strip {
+        align-items:
+            stretch;
+        flex-direction:
+            column;
+        gap:
+            8px;
+    }
+
+    .leads-rf .rf-stage-strip-heading {
+        justify-content:
+            space-between;
+        padding-right:
+            0;
+        padding-bottom:
+            7px;
+        border-right:
+            0;
+        border-bottom:
+            1px solid
+            var(--ec-border-soft);
+    }
+
+    .leads-rf .rf-filters-head {
+        align-items:
+            flex-start;
+    }
+}
+
+/* LEADS_TOP_SIMPLIFICATION_END */
+
+/* LEADS_ROW_HIERARCHY_START */
+
+/*
+|--------------------------------------------------------------------------
+| LEADS — HIERARQUIA DAS LINHAS
+|--------------------------------------------------------------------------
+|
+| Ordem de leitura desejada:
+|
+| 1. Empresa
+| 2. Urgência
+| 3. Próxima ação
+| 4. Contexto comercial / CRM
+|
+*/
+
+.leads-rf .rf-list-head,
+.leads-rf .rf-lead-row {
+    grid-template-columns:
+        minmax(285px, 1.55fr)
+        115px
+        125px
+        minmax(155px, .82fr)
+        minmax(190px, 1fr)
+        145px
+        minmax(190px, .95fr);
+
+    min-width:
+        1260px;
+
+    gap:
+        13px;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| EMPRESA + FOCO
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf .rf-col-company {
+    min-width:
+        0;
+}
+
+.leads-rf .rf-company-name {
+    font-size:
+        14px;
+    line-height:
+        1.25;
+}
+
+.leads-rf .rf-lead-focus {
+    display:
+        flex;
+    flex-wrap:
+        wrap;
+    align-items:
+        center;
+    gap:
+        6px 9px;
+    margin-top:
+        7px;
+}
+
+.leads-rf .rf-lead-attention {
+    display:
+        inline-flex;
+    align-items:
+        center;
+    gap:
+        5px;
+    min-height:
+        22px;
+    padding:
+        0 7px;
+    border:
+        1px solid
+        var(--ec-border-soft);
+    border-radius:
+        999px;
+    background:
+        var(--ec-surface-soft);
+    color:
+        var(--ec-text-soft);
+    font-size:
+        8px;
+    font-weight:
+        850;
+    white-space:
+        nowrap;
+}
+
+.leads-rf .rf-lead-attention i {
+    display:
+        block;
+    width:
+        5px;
+    height:
+        5px;
+    flex:
+        0 0 5px;
+    border-radius:
+        999px;
+    background:
+        currentColor;
+}
+
+.leads-rf .rf-lead-attention.is-danger {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-danger) 32%,
+            transparent
+        );
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-danger) 8%,
+            transparent
+        );
+    color:
+        var(--ec-danger);
+}
+
+.leads-rf .rf-lead-attention.is-warning {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-warning) 34%,
+            transparent
+        );
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-warning) 8%,
+            transparent
+        );
+    color:
+        var(--ec-warning);
+}
+
+.leads-rf .rf-lead-attention.is-reprospecting {
+    border-color:
+        rgba(165, 139, 255, .30);
+    background:
+        rgba(165, 139, 255, .08);
+    color:
+        #a58bff;
+}
+
+.leads-rf .rf-lead-attention.is-progress {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-success) 28%,
+            transparent
+        );
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-success) 7%,
+            transparent
+        );
+    color:
+        var(--ec-success);
+}
+
+.leads-rf .rf-lead-attention.is-success {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-success) 28%,
+            transparent
+        );
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-success) 7%,
+            transparent
+        );
+    color:
+        var(--ec-success);
+}
+
+.leads-rf .rf-lead-attention.is-primary {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 25%,
+            transparent
+        );
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 6%,
+            transparent
+        );
+    color:
+        var(--ec-primary);
+}
+
+.leads-rf .rf-lead-attention.is-muted {
+    color:
+        var(--ec-text-muted);
+}
+
+.leads-rf .rf-lead-focus-action {
+    overflow:
+        hidden;
+    max-width:
+        190px;
+    color:
+        var(--ec-text-muted);
+    font-size:
+        8px;
+    text-overflow:
+        ellipsis;
+    white-space:
+        nowrap;
+}
+
+.leads-rf .rf-lead-focus-action strong {
+    color:
+        var(--ec-text-soft);
+    font-weight:
+        800;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| SCORE MAIS DISCRETO
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf .rf-col-score
+.rf-section-label {
+    margin-bottom:
+        6px;
+}
+
+.leads-rf .rf-col-score
+.rf-score-number {
+    font-size:
+        18px;
+    letter-spacing:
+        -.025em;
+}
+
+.leads-rf .rf-col-score
+.rf-score-bar {
+    width:
+        70px;
+    height:
+        3px;
+    margin-top:
+        6px;
+}
+
+.leads-rf .rf-col-score
+.rf-score-info {
+    align-items:
+        flex-start;
+    flex-direction:
+        column;
+    gap:
+        4px;
+    margin-top:
+        6px;
+}
+
+.leads-rf .rf-col-score
+.rf-score-quality {
+    display:
+        none;
+}
+
+.leads-rf .rf-col-score
+.rf-priority {
+    min-height:
+        20px;
+    padding:
+        0 6px;
+    font-size:
+        8px;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CONTEXTO COMERCIAL SECUNDÁRIO
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf .rf-col-commercial,
+.leads-rf .rf-col-crm,
+.leads-rf .rf-col-followup,
+.leads-rf .rf-col-owner {
+    min-width:
+        0;
+}
+
+.leads-rf .rf-col-commercial {
+    opacity:
+        .92;
+}
+
+.leads-rf .rf-col-commercial
+.rf-commercial-explain {
+    line-height:
+        1.35;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LINHAS QUE EXIGEM ATENÇÃO
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf .rf-lead-row.rf-row-overdue {
+    border-left-width:
+        4px;
+    border-left-color:
+        var(--ec-danger);
+    background:
+        linear-gradient(
+            90deg,
+            color-mix(
+                in srgb,
+                var(--ec-danger) 7%,
+                transparent
+            ),
+            transparent 34%
+        );
+}
+
+.leads-rf .rf-lead-row.rf-row-due-today {
+    border-left-width:
+        4px;
+    border-left-color:
+        var(--ec-warning);
+    background:
+        linear-gradient(
+            90deg,
+            color-mix(
+                in srgb,
+                var(--ec-warning) 5%,
+                transparent
+            ),
+            transparent 30%
+        );
+}
+
+.leads-rf
+.rf-lead-row.rf-row-reprospecting-ready:not(.rf-row-overdue) {
+    border-left-width:
+        4px;
+    border-left-color:
+        rgba(165, 139, 255, .72);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| PRÓXIMA AÇÃO
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf .rf-col-action {
+    min-width:
+        0;
+}
+
+.leads-rf .rf-col-action
+.rf-section-label {
+    margin-bottom:
+        6px;
+}
+
+.leads-rf .rf-next-action-main {
+    display:
+        block;
+    margin:
+        0;
+    padding:
+        9px 10px;
+    border:
+        1px solid
+        color-mix(
+            in srgb,
+            var(--ec-primary) 18%,
+            transparent
+        );
+    border-radius:
+        10px;
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 5%,
+            var(--ec-surface)
+        );
+}
+
+.leads-rf .rf-next-action-main > span {
+    display:
+        block;
+    color:
+        var(--ec-text-muted);
+    font-size:
+        7px;
+    font-weight:
+        800;
+    letter-spacing:
+        .07em;
+    text-transform:
+        uppercase;
+}
+
+.leads-rf .rf-next-action-main > strong {
+    display:
+        block;
+    margin-top:
+        4px;
+    color:
+        var(--ec-primary);
+    font-size:
+        10px;
+    line-height:
+        1.35;
+    font-weight:
+        850;
+}
+
+.leads-rf .rf-next-action-main.is-overdue {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-danger) 32%,
+            transparent
+        );
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-danger) 7%,
+            var(--ec-surface)
+        );
+}
+
+.leads-rf .rf-next-action-main.is-overdue > strong {
+    color:
+        var(--ec-danger);
+}
+
+.leads-rf .rf-next-action-main.is-today {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-warning) 34%,
+            transparent
+        );
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-warning) 6%,
+            var(--ec-surface)
+        );
+}
+
+.leads-rf .rf-next-action-main.is-today > strong {
+    color:
+        var(--ec-warning);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| BOTÕES DE ACESSO
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf .rf-col-action
+.rf-actions {
+    display:
+        grid;
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
+    gap:
+        5px;
+    margin-top:
+        7px;
+}
+
+.leads-rf .rf-col-action
+.rf-btn {
+    justify-content:
+        center;
+}
+
+.leads-rf .rf-col-action
+.rf-btn-primary {
+    font-weight:
+        850;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| TOOLBAR DA LISTA
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf .rf-list-toolbar {
+    padding-top:
+        12px;
+    padding-bottom:
+        12px;
+}
+
+.leads-rf .rf-list-toolbar strong {
+    font-size:
+        11px;
+}
+
+.leads-rf .rf-list-toolbar
+.rf-list-legend {
+    opacity:
+        .72;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| RESPONSIVIDADE INTERMEDIÁRIA
+|--------------------------------------------------------------------------
+*/
+
+@media (
+    max-width: 1350px
+) {
+    .leads-rf .rf-list-head,
+    .leads-rf .rf-lead-row {
+        grid-template-columns:
+            minmax(270px, 1.45fr)
+            105px
+            120px
+            minmax(150px, .8fr)
+            minmax(180px, 1fr)
+            135px
+            minmax(185px, .95fr);
+    }
+}
+
+/* LEADS_ROW_HIERARCHY_END */
+
+
+/* LEADS_RESPONSIVE_POLISH_START */
+
+/*
+|--------------------------------------------------------------------------
+| LEADS — ACABAMENTO E RESPONSIVIDADE
+|--------------------------------------------------------------------------
+|
+| Desktop:
+|   mantém leitura em formato operacional.
+|
+| Tablet / mobile:
+|   cada lead vira um card comercial.
+|
+| Nenhuma regra ou informação é removida.
+|
+*/
+
+
+/*
+|--------------------------------------------------------------------------
+| FOCO / TECLADO
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf
+:is(
+    button,
+    a,
+    input,
+    select
+):focus-visible {
+    outline:
+        2px solid
+        color-mix(
+            in srgb,
+            var(--ec-primary) 78%,
+            white 22%
+        );
+
+    outline-offset:
+        2px;
+}
+
+
+.leads-rf button:disabled,
+.leads-rf select:disabled,
+.leads-rf input:disabled {
+    cursor:
+        wait;
+
+    opacity:
+        .58;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| LOADING DOS FILTROS
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf .rf-filters-loading {
+    display:
+        flex;
+    align-items:
+        center;
+    gap:
+        7px;
+    min-height:
+        27px;
+    padding:
+        5px 13px;
+    border-bottom:
+        1px solid
+        var(--ec-border-soft);
+    background:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 4%,
+            var(--ec-surface)
+        );
+    color:
+        var(--ec-text-muted);
+    font-size:
+        8px;
+    font-weight:
+        700;
+}
+
+
+.leads-rf .rf-filters-loading span {
+    width:
+        7px;
+    height:
+        7px;
+    border:
+        2px solid
+        color-mix(
+            in srgb,
+            var(--ec-primary) 24%,
+            transparent
+        );
+    border-top-color:
+        var(--ec-primary);
+    border-radius:
+        999px;
+    animation:
+        rf-loading-spin
+        .65s
+        linear
+        infinite;
+}
+
+
+@keyframes rf-loading-spin {
+    to {
+        transform:
+            rotate(360deg);
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| ESTADO VAZIO
+|--------------------------------------------------------------------------
+*/
+
+.leads-rf .rf-empty-state {
+    display:
+        grid;
+    place-items:
+        center;
+    min-height:
+        210px;
+    padding:
+        30px 20px;
+    text-align:
+        center;
+}
+
+
+.leads-rf .rf-empty-state::before {
+    content:
+        "⌕";
+    display:
+        grid;
+    place-items:
+        center;
+    width:
+        42px;
+    height:
+        42px;
+    margin-bottom:
+        10px;
+    border:
+        1px solid
+        var(--ec-border);
+    border-radius:
+        13px;
+    background:
+        var(--ec-surface-soft);
+    color:
+        var(--ec-primary);
+    font-size:
+        20px;
+}
+
+
+.leads-rf .rf-empty-state strong {
+    color:
+        var(--ec-text);
+    font-size:
+        12px;
+    font-weight:
+        850;
+}
+
+
+.leads-rf .rf-empty-state span {
+    display:
+        block;
+    max-width:
+        360px;
+    margin-top:
+        5px;
+    color:
+        var(--ec-text-muted);
+    font-size:
+        9px;
+    line-height:
+        1.5;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| DESKTOP / NOTEBOOK
+|--------------------------------------------------------------------------
+*/
+
+@media (
+    min-width: 901px
+) and (
+    max-width: 1450px
+) {
+
+    .leads-rf .rf-list-head,
+    .leads-rf .rf-lead-row {
+        min-width:
+            1160px;
+
+        grid-template-columns:
+            minmax(250px, 1.45fr)
+            95px
+            110px
+            minmax(135px, .78fr)
+            minmax(175px, .95fr)
+            125px
+            minmax(175px, .9fr);
+
+        gap:
+            10px;
+    }
+
+
+    .leads-rf .rf-lead-row {
+        padding-left:
+            14px;
+        padding-right:
+            14px;
+    }
+
+
+    .leads-rf .rf-list-head {
+        padding-left:
+            14px;
+        padding-right:
+            14px;
+    }
+
+
+    .leads-rf .rf-company-name {
+        font-size:
+            13px;
+    }
+
+
+    .leads-rf .rf-lead-focus-action {
+        max-width:
+            155px;
+    }
+
+
+    .leads-rf .rf-col-owner
+    .rf-owner-helper {
+        display:
+            none;
+    }
+
+
+    .leads-rf .rf-col-crm
+    .rf-deal-name {
+        display:
+            none;
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| TABLET / TELAS MENORES
+|--------------------------------------------------------------------------
+|
+| A partir daqui não queremos uma tabela
+| horizontal de 1.200px.
+|
+| Cada lead vira um card comercial.
+|
+*/
+
+@media (
+    max-width: 900px
+) {
+
+    .leads-rf .rf-list-panel {
+        overflow:
+            visible;
+    }
+
+
+    .leads-rf .rf-list-scroll {
+        overflow:
+            visible;
+    }
+
+
+    .leads-rf .rf-list-head {
+        display:
+            none;
+    }
+
+
+    .leads-rf .rf-lead-row {
+        display:
+            grid;
+
+        grid-template-columns:
+            minmax(0, 1fr)
+            minmax(0, 1fr);
+
+        min-width:
+            0;
+
+        min-height:
+            0;
+
+        margin:
+            10px;
+
+        padding:
+            15px;
+
+        gap:
+            15px;
+
+        border:
+            1px solid
+            var(--ec-border);
+
+        border-left:
+            4px solid
+            var(--ec-border);
+
+        border-radius:
+            15px;
+
+        background:
+            var(--ec-surface);
+    }
+
+
+    .leads-rf .rf-lead-row:hover {
+        background:
+            color-mix(
+                in srgb,
+                var(--ec-surface) 96%,
+                var(--ec-primary) 4%
+            );
+    }
+
+
+    /*
+     * Empresa sempre primeiro.
+     */
+    .leads-rf .rf-col-company {
+        grid-column:
+            1 / -1;
+
+        order:
+            1;
+
+        padding-bottom:
+            2px;
+    }
+
+
+    /*
+     * Próxima ação sobe imediatamente
+     * abaixo da empresa.
+     */
+    .leads-rf .rf-col-action {
+        grid-column:
+            1 / -1;
+
+        order:
+            2;
+
+        padding:
+            12px;
+
+        border:
+            1px solid
+            var(--ec-border-soft);
+
+        border-radius:
+            12px;
+
+        background:
+            color-mix(
+                in srgb,
+                var(--ec-primary) 3%,
+                var(--ec-surface)
+            );
+    }
+
+
+    .leads-rf .rf-col-followup {
+        grid-column:
+            1 / -1;
+
+        order:
+            3;
+
+        padding-top:
+            2px;
+    }
+
+
+    .leads-rf .rf-col-score {
+        order:
+            4;
+    }
+
+
+    .leads-rf .rf-col-commercial {
+        order:
+            5;
+    }
+
+
+    .leads-rf .rf-col-crm {
+        grid-column:
+            1 / -1;
+
+        order:
+            6;
+
+        padding-top:
+            11px;
+
+        border-top:
+            1px solid
+            var(--ec-border-soft);
+    }
+
+
+    .leads-rf .rf-col-owner {
+        grid-column:
+            1 / -1;
+
+        order:
+            7;
+
+        padding-top:
+            11px;
+
+        border-top:
+            1px solid
+            var(--ec-border-soft);
+    }
+
+
+    .leads-rf .rf-lead-focus-action {
+        max-width:
+            none;
+    }
+
+
+    .leads-rf .rf-company-name {
+        min-height:
+            0;
+
+        font-size:
+            15px;
+    }
+
+
+    .leads-rf .rf-col-action
+    .rf-actions {
+        grid-template-columns:
+            minmax(0, 1fr)
+            minmax(0, 1fr);
+    }
+
+
+    .leads-rf .rf-col-action
+    .rf-btn {
+        min-height:
+            37px;
+    }
+
+
+    .leads-rf .rf-next-action-main {
+        padding:
+            10px 11px;
+    }
+
+
+    .leads-rf .rf-next-action-main > strong {
+        font-size:
+            11px;
+    }
+
+
+    .leads-rf .rf-owner-select {
+        max-width:
+            none;
+    }
+
+
+    .leads-rf .rf-pagination {
+        margin:
+            10px;
+
+        padding-left:
+            0;
+
+        padding-right:
+            0;
+    }
+
+
+    /*
+     * Header.
+     */
+    .leads-rf .rf-header {
+        align-items:
+            flex-start;
+
+        flex-direction:
+            column;
+
+        gap:
+            12px;
+    }
+
+
+    .leads-rf .rf-title {
+        font-size:
+            32px;
+    }
+
+
+    /*
+     * Health.
+     */
+    .leads-rf .rf-hubspot-health {
+        align-items:
+            stretch;
+
+        flex-direction:
+            column;
+    }
+
+
+    .leads-rf .rf-hubspot-health-content {
+        flex:
+            1 1 auto;
+    }
+
+
+    .leads-rf .rf-hubspot-health-checks {
+        gap:
+            6px;
+    }
+
+
+    /*
+     * Pipeline.
+     */
+    .leads-rf .rf-stage-strip-list {
+        padding-bottom:
+            3px;
+    }
+
+
+    /*
+     * Filtros.
+     */
+    .leads-rf .rf-filter-main {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+
+
+    .leads-rf .rf-filter-main
+    > :first-child {
+        grid-column:
+            1 / -1;
+    }
+
+
+    .leads-rf .rf-filter-secondary {
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CELULAR
+|--------------------------------------------------------------------------
+*/
+
+@media (
+    max-width: 600px
+) {
+
+    .ec-page-shell.leads-rf {
+        padding-left:
+            0;
+
+        padding-right:
+            0;
+    }
+
+
+    .leads-rf .rf-shell {
+        gap:
+            9px;
+    }
+
+
+    .leads-rf .rf-header {
+        padding-left:
+            13px;
+
+        padding-right:
+            13px;
+    }
+
+
+    .leads-rf .rf-title-row {
+        gap:
+            8px;
+    }
+
+
+    .leads-rf .rf-title {
+        font-size:
+            29px;
+    }
+
+
+    .leads-rf .rf-subtitle {
+        margin-top:
+            7px;
+
+        font-size:
+            11px;
+    }
+
+
+    /*
+     * Central de ação.
+     */
+    .leads-rf .rf-action-center {
+        margin-left:
+            9px;
+
+        margin-right:
+            9px;
+
+        border-radius:
+            14px;
+    }
+
+
+    /*
+     * Health.
+     */
+    .leads-rf .rf-hubspot-health {
+        margin-left:
+            9px;
+
+        margin-right:
+            9px;
+
+        border-radius:
+            11px;
+    }
+
+
+    .leads-rf .rf-hubspot-health-main {
+        align-items:
+            flex-start;
+
+        flex-direction:
+            column;
+
+        gap:
+            3px;
+    }
+
+
+    .leads-rf .rf-hubspot-health-main
+    > span:nth-of-type(2) {
+        display:
+            none;
+    }
+
+
+    /*
+     * Pipeline.
+     */
+    .leads-rf .rf-stage-strip {
+        margin-left:
+            9px;
+
+        margin-right:
+            9px;
+    }
+
+
+    .leads-rf .rf-stage-strip-heading span {
+        display:
+            none;
+    }
+
+
+    /*
+     * Filtros.
+     */
+    .leads-rf .rf-filters {
+        margin-left:
+            9px;
+
+        margin-right:
+            9px;
+    }
+
+
+    .leads-rf .rf-filters-head span {
+        display:
+            none;
+    }
+
+
+    .leads-rf .rf-filter-main,
+    .leads-rf .rf-filter-secondary {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .leads-rf .rf-filter-main
+    > :first-child {
+        grid-column:
+            auto;
+    }
+
+
+    /*
+     * Lista em card único.
+     */
+    .leads-rf .rf-list-panel {
+        margin-left:
+            0;
+
+        margin-right:
+            0;
+
+        border-left:
+            0;
+
+        border-right:
+            0;
+
+        border-radius:
+            0;
+    }
+
+
+    .leads-rf .rf-list-toolbar {
+        align-items:
+            flex-start;
+
+        flex-direction:
+            column;
+
+        padding:
+            12px 13px;
+    }
+
+
+    .leads-rf .rf-list-legend {
+        display:
+            none;
+    }
+
+
+    .leads-rf .rf-lead-row {
+        grid-template-columns:
+            1fr;
+
+        margin:
+            9px;
+
+        padding:
+            14px;
+
+        gap:
+            13px;
+    }
+
+
+    .leads-rf
+    :is(
+        .rf-col-company,
+        .rf-col-action,
+        .rf-col-followup,
+        .rf-col-score,
+        .rf-col-commercial,
+        .rf-col-crm,
+        .rf-col-owner
+    ) {
+        grid-column:
+            1 / -1;
+    }
+
+
+    /*
+     * Score e perfil ficam compactos.
+     */
+    .leads-rf .rf-col-score {
+        display:
+            grid;
+
+        grid-template-columns:
+            auto
+            1fr;
+
+        align-items:
+            center;
+
+        column-gap:
+            12px;
+    }
+
+
+    .leads-rf .rf-col-score
+    .rf-section-label {
+        grid-column:
+            1 / -1;
+    }
+
+
+    .leads-rf .rf-col-score
+    .rf-score-bar {
+        display:
+            none;
+    }
+
+
+    .leads-rf .rf-col-score
+    .rf-score-info {
+        margin-top:
+            0;
+    }
+
+
+    .leads-rf .rf-col-action
+    .rf-actions {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .leads-rf .rf-col-action
+    .rf-btn {
+        width:
+            100%;
+    }
+
+
+    .leads-rf .rf-commercial-explain {
+        max-width:
+            none;
+    }
+
+
+    /*
+     * Paginação.
+     */
+    .leads-rf .rf-pagination {
+        align-items:
+            stretch;
+
+        flex-direction:
+            column;
+
+        gap:
+            10px;
+
+        margin:
+            12px;
+    }
+
+
+    .leads-rf .rf-pagination-buttons {
+        justify-content:
+            center;
+
+        width:
+            100%;
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| TELAS MUITO PEQUENAS
+|--------------------------------------------------------------------------
+*/
+
+@media (
+    max-width: 390px
+) {
+
+    .leads-rf .rf-lead-focus {
+        align-items:
+            flex-start;
+
+        flex-direction:
+            column;
+    }
+
+
+    .leads-rf .rf-action-secondary {
+        display:
+            grid;
+
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .leads-rf .rf-action-metric {
+        width:
+            100%;
+    }
+
+
+    .leads-rf .rf-hubspot-health-checks {
+        display:
+            grid;
+
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .leads-rf .rf-hubspot-check {
+        justify-content:
+            flex-start;
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| MOVIMENTO REDUZIDO
+|--------------------------------------------------------------------------
+*/
+
+@media (
+    prefers-reduced-motion: reduce
+) {
+
+    .leads-rf *,
+    .leads-rf *::before,
+    .leads-rf *::after {
+        scroll-behavior:
+            auto !important;
+
+        animation-duration:
+            .01ms !important;
+
+        animation-iteration-count:
+            1 !important;
+
+        transition-duration:
+            .01ms !important;
+    }
+}
+
+/* LEADS_RESPONSIVE_POLISH_END */

@@ -4002,7 +4002,11 @@ new class extends Component
 
     @if ($commercialActionMessage !== '')
 
-        <div class="rf-alert rf-alert-ok">
+        <div
+            class="rf-alert rf-alert-ok"
+            role="status"
+            aria-live="polite"
+        >
             {{ $commercialActionMessage }}
         </div>
 
@@ -4011,481 +4015,75 @@ new class extends Component
 
     @if ($commercialActionError !== '')
 
-        <div class="rf-alert rf-alert-error">
+        <div
+            class="rf-alert rf-alert-error"
+            role="alert"
+            aria-live="assertive"
+        >
             {{ $commercialActionError }}
         </div>
 
     @endif
 
 
-    <section class="rf-kpis">
-
-        <button
-            type="button"
-            wire:click="clearFilters"
-            class="
-                rf-kpi
-                rf-kpi-total
-                rf-kpi-clickable
-            "
-        >
-
-            <div class="rf-kpi-label">
-                Leads na operação
-            </div>
-
-            <div class="rf-kpi-value">
-                {{
-                    number_format(
-                        $this->operationalCount,
-                        0,
-                        ',',
-                        '.'
-                    )
-                }}
-            </div>
-
-            <div class="rf-kpi-caption">
-                {{
-                    count(
-                        $this->crmStageOptions
-                    )
-                }}
-                etapas HubSpot identificadas
-            </div>
-
-        </button>
+    @include(
+        'partials.leads-action-center'
+    )
 
 
-        <button
-            type="button"
-            wire:click="applyKpiView('high')"
-            class="
-                rf-kpi
-                rf-kpi-high
-                rf-kpi-clickable
-                {{
-                    $priority === 'high'
-                        ? 'is-active'
-                        : ''
-                }}
-            "
-        >
-
-            <div class="rf-kpi-label">
-                Prioridade alta
-            </div>
-
-            <div class="rf-kpi-value">
-                {{
-                    number_format(
-                        $this->highCount,
-                        0,
-                        ',',
-                        '.'
-                    )
-                }}
-            </div>
-
-            <div class="rf-kpi-caption">
-                {{
-                    $this->summaryPercent(
-                        $this->highCount
-                    )
-                }}
-                da fila · Score 75 a 100
-            </div>
-
-        </button>
+            @include(
+        'partials.leads-crm-stage-strip'
+    )
 
 
-        <button
-            type="button"
-            wire:click="applyKpiView('new')"
-            class="
-                rf-kpi
-                rf-kpi-new
-                rf-kpi-clickable
-                {{
-                    $workStatus === 'new'
-                        ? 'is-active'
-                        : ''
-                }}
-            "
-        >
+        <section class="rf-panel rf-filters">
 
-            <div class="rf-kpi-label">
-                Novo
-            </div>
-
-            <div class="rf-kpi-value">
-                {{
-                    number_format(
-                        $this->newCount,
-                        0,
-                        ',',
-                        '.'
-                    )
-                }}
-            </div>
-
-            <div class="rf-kpi-caption">
-                {{
-                    $this->summaryPercent(
-                        $this->newCount
-                    )
-                }}
-                da fila · sem interação registrada
-            </div>
-
-        </button>
-
-
-        <button
-            type="button"
-            wire:click="applyKpiView('contacting')"
-            class="
-                rf-kpi
-                rf-kpi-contacting
-                rf-kpi-clickable
-                {{
-                    $workStatus === 'contacting'
-                        ? 'is-active'
-                        : ''
-                }}
-            "
-        >
-
-            <div class="rf-kpi-label">
-                Em contato
-            </div>
-
-            <div class="rf-kpi-value">
-                {{
-                    number_format(
-                        $this->contactingCount,
-                        0,
-                        ',',
-                        '.'
-                    )
-                }}
-            </div>
-
-            <div class="rf-kpi-caption">
-                {{
-                    $this->summaryPercent(
-                        $this->contactingCount
-                    )
-                }}
-                da fila · atividade até 30 dias
-            </div>
-
-        </button>
-
-
-        <button
-            type="button"
-            wire:click="applyKpiView('waiting')"
-            class="
-                rf-kpi
-                rf-kpi-waiting
-                rf-kpi-clickable
-                {{
-                    $workStatus === 'waiting'
-                        ? 'is-active'
-                        : ''
-                }}
-            "
-        >
-
-            <div class="rf-kpi-label">
-                Aguardando retorno
-            </div>
-
-            <div class="rf-kpi-value">
-                {{
-                    number_format(
-                        $this->waitingCount,
-                        0,
-                        ',',
-                        '.'
-                    )
-                }}
-            </div>
-
-            <div class="rf-kpi-caption">
-                {{
-                    $this->summaryPercent(
-                        $this->waitingCount
-                    )
-                }}
-                da fila · existe tarefa pendente
-            </div>
-
-        </button>
-
-
-        <button
-            type="button"
-            wire:click="applyKpiView('future')"
-            class="
-                rf-kpi
-                rf-kpi-future
-                rf-kpi-clickable
-                {{
-                    $workStatus === 'future'
-                        ? 'is-active'
-                        : ''
-                }}
-            "
-        >
-
-            <div class="rf-kpi-label">
-                Oportunidade futura
-            </div>
-
-            <div class="rf-kpi-value">
-                {{
-                    number_format(
-                        $this->futureCount,
-                        0,
-                        ',',
-                        '.'
-                    )
-                }}
-            </div>
-
-            <div class="rf-kpi-caption">
-                {{
-                    $this->summaryPercent(
-                        $this->futureCount
-                    )
-                }}
-                da fila · contato há mais de 30 dias
-            </div>
-
-        </button>
-
-    </section>
-
-
-    <section class="rf-stage-summary">
-
-        <div class="rf-stage-summary-head">
+        <div class="rf-filters-head">
 
             <div>
 
                 <strong>
-                    Etapas atuais no HubSpot
+                    Refinar fila
                 </strong>
 
                 <span>
-                    Dados reais dos negócios sincronizados.
-                    Clique em uma etapa para filtrar.
+                    Busque e combine critérios apenas quando precisar
+                    aprofundar a carteira.
                 </span>
 
             </div>
 
-            @if (
-                str_starts_with(
-                    $crm,
-                    'stage:'
-                )
-            )
-
-                <button
-                    type="button"
-                    wire:click="$set('crm', '')"
-                    class="rf-stage-clear"
-                >
-                    Limpar etapa
-                </button>
-
-            @endif
+            <button
+                type="button"
+                wire:click="clearFilters"
+                class="rf-filters-clear"
+            >
+                Limpar filtros
+            </button>
 
         </div>
 
+        <div
+            wire:loading.delay.longer
+            wire:target="
+                search,
+                priority,
+                icp,
+                crm,
+                state,
+                owner,
+                workStatus,
+                followUp
+            "
+            class="rf-filters-loading"
+            role="status"
+            aria-live="polite"
+        >
+            <span></span>
 
-        <div class="rf-stage-chips">
-
-            @forelse (
-                $this->crmStageOptions
-                as $stage
-            )
-
-                <button
-                    type="button"
-                    wire:click="
-                        applyCrmStageView(
-                            {{ $loop->index }}
-                        )
-                    "
-                    class="
-                        rf-stage-chip
-                        {{
-                            $crm
-                                ===
-                                'stage:'
-                                .$stage['label']
-                                    ? 'is-active'
-                                    : ''
-                        }}
-                    "
-                >
-
-                    <span>
-                        {{ $stage['label'] }}
-                    </span>
-
-                    <strong>
-                        {{
-                            number_format(
-                                $stage['count'],
-                                0,
-                                ',',
-                                '.'
-                            )
-                        }}
-                    </strong>
-
-                </button>
-
-            @empty
-
-                <span class="rf-stage-empty">
-                    Nenhuma etapa identificada.
-                </span>
-
-            @endforelse
-
+            Atualizando fila...
         </div>
 
-    </section>
-
-
-    <section class="rf-status-guide">
-
-        <div class="rf-guide-title">
-
-            <strong>
-                Acompanhamento
-            </strong>
-
-            <span>
-                O que cada status significa.
-            </span>
-
-        </div>
-
-
-        <div class="rf-guide-item">
-
-            <strong style="color:#78bfff">
-
-                <i
-                    class="rf-guide-dot"
-                    style="background:#78bfff"
-                ></i>
-
-                Novo
-
-            </strong>
-
-            <span>
-                Ainda não existe chamada
-                registrada para a empresa.
-            </span>
-
-        </div>
-
-
-        <div class="rf-guide-item">
-
-            <strong style="color:#52e0c6">
-
-                <i
-                    class="rf-guide-dot"
-                    style="background:#52e0c6"
-                ></i>
-
-                Em contato
-
-            </strong>
-
-            <span>
-                Houve chamada ou contato
-                nos últimos 30 dias.
-            </span>
-
-        </div>
-
-
-        <div class="rf-guide-item">
-
-            <strong style="color:#ffd25f">
-
-                <i
-                    class="rf-guide-dot"
-                    style="background:#ffd25f"
-                ></i>
-
-                Aguardando retorno
-
-            </strong>
-
-            <span>
-                Existe tarefa aberta
-                aguardando uma ação.
-            </span>
-
-        </div>
-
-
-        <div class="rf-guide-item">
-
-            <strong style="color:#9eabff">
-
-                <i
-                    class="rf-guide-dot"
-                    style="background:#9eabff"
-                ></i>
-
-                Oportunidade futura
-
-            </strong>
-
-            <span>
-                Último contato passou
-                de 30 dias.
-            </span>
-
-        </div>
-
-
-        <div class="rf-guide-item">
-
-            <strong style="color:#ff8290">
-
-                <i
-                    class="rf-guide-dot"
-                    style="background:#ff8290"
-                ></i>
-
-                Reprospecção
-
-            </strong>
-
-            <span>
-                Sem atividade comercial
-                há mais de 90 dias.
-            </span>
-
-        </div>
-
-    </section>
-
-
-    <section class="rf-panel rf-filters">
 
         <div class="rf-filter-main">
 
@@ -4738,33 +4336,7 @@ new class extends Component
             @endif
 
 
-            <button
-                type="button"
-                wire:click="applyDailyView"
-                class="
-                    rf-filter-action
-                    {{
-                        $dailyView === 'today'
-                            ? 'is-active'
-                            : ''
-                    }}
-                "
-            >
-                Minha fila hoje
-                ·
-                {{ $this->dailyQueueCount }}
-            </button>
-
-
-            <button
-                type="button"
-                wire:click="clearFilters"
-                class="rf-filter-action"
-            >
-                Limpar filtros
-            </button>
-
-        </div>
+                                </div>
 
     </section>
 
@@ -4836,19 +4408,19 @@ new class extends Component
                 </div>
 
                 <div>
-                    Score / prioridade
+                    Prioridade
                 </div>
 
                 <div>
-                    Situação comercial
+                    Perfil comercial
                 </div>
 
                 <div>
-                    CRM / HubSpot
+                    Pipeline
                 </div>
 
                 <div>
-                    Acompanhamento
+                    Status / prazo
                 </div>
 
                 <div>
@@ -4856,7 +4428,7 @@ new class extends Component
                 </div>
 
                 <div>
-                    Próxima ação / acesso
+                    Próxima ação
                 </div>
 
             </div>
@@ -5213,6 +4785,120 @@ new class extends Component
                         $this->scoreReasons(
                             $score
                         );
+
+
+                    /*
+                     * Hierarquia visual da fila.
+                     *
+                     * Não altera classificação ou
+                     * filtros: apenas transforma os
+                     * dados já existentes em um resumo
+                     * operacional para leitura rápida.
+                     */
+                    $leadIsOverdue =
+                        $currentWorkStatus
+                            === 'waiting'
+                        && $hubSpotLead
+                            ?->last_task_due_at
+                            ?->isPast();
+
+                    $leadIsDueToday =
+                        $currentWorkStatus
+                            === 'waiting'
+                        && $hubSpotLead
+                            ?->last_task_due_at
+                            !== null
+                        && ! $leadIsOverdue
+                        && $hubSpotLead
+                            ->last_task_due_at
+                            ->isToday();
+
+                    $leadCanReprospect =
+                        is_array(
+                            $reprospectingInfo
+                        )
+                        && (
+                            $reprospectingInfo[
+                                'eligible'
+                            ]
+                            ?? false
+                        ) === true;
+
+                    $leadAttentionLabel =
+                        match (true) {
+                            $leadIsOverdue =>
+                                'Atrasado',
+
+                            $leadIsDueToday =>
+                                'Ação hoje',
+
+                            $leadCanReprospect =>
+                                'Reprospecção pronta',
+
+                            $currentWorkStatus
+                                === 'contacting' =>
+                                    'Em andamento',
+
+                            $currentWorkStatus
+                                === 'waiting' =>
+                                    'Aguardando retorno',
+
+                            $currentWorkStatus
+                                === 'future' =>
+                                    'Agendado',
+
+                            $currentWorkStatus
+                                === 'refused' =>
+                                    'Recusou',
+
+                            $currentWorkStatus
+                                === 'converted' =>
+                                    'Convertido',
+
+                            $currentWorkStatus
+                                === 'discarded' =>
+                                    'Descartado',
+
+                            default =>
+                                'Novo lead',
+                        };
+
+                    $leadAttentionClass =
+                        match (true) {
+                            $leadIsOverdue =>
+                                'is-danger',
+
+                            $leadIsDueToday =>
+                                'is-warning',
+
+                            $leadCanReprospect =>
+                                'is-reprospecting',
+
+                            $currentWorkStatus
+                                === 'contacting' =>
+                                    'is-progress',
+
+                            $currentWorkStatus
+                                === 'converted' =>
+                                    'is-success',
+
+                            $currentWorkStatus
+                                === 'discarded' =>
+                                    'is-muted',
+
+                            default =>
+                                'is-primary',
+                        };
+
+                    $leadPrimaryAction =
+                        $currentWorkStatus
+                            === 'waiting'
+                        && $leadIsOverdue
+                            ? 'Retomar contato'
+                            : $this
+                                ->nextActionLabel(
+                                    $hubSpotLead
+                                );
                 @endphp
 
 
@@ -5222,21 +4908,54 @@ new class extends Component
                         rf-lead-row
                         rf-row-{{ $displayPriority }}
                         {{
-                            $currentWorkStatus === 'waiting'
-                            && $hubSpotLead
-                                ?->last_task_due_at
-                                ?->isPast()
+                            $leadIsOverdue
                                 ? 'rf-row-overdue'
+                                : ''
+                        }}
+
+                        {{
+                            $leadIsDueToday
+                                ? 'rf-row-due-today'
+                                : ''
+                        }}
+
+                        {{
+                            $leadCanReprospect
+                                ? 'rf-row-reprospecting-ready'
                                 : ''
                         }}
                     "
                 >
 
                     {{-- EMPRESA --}}
-                    <div>
+                    <div
+                        class="rf-col-company">
 
                         <div class="rf-company-name">
                             {{ $lead->corporate_name }}
+                        </div>
+
+
+                        <div class="rf-lead-focus">
+
+                            <span
+                                class="
+                                    rf-lead-attention
+                                    {{ $leadAttentionClass }}
+                                "
+                            >
+                                <i></i>
+
+                                {{ $leadAttentionLabel }}
+                            </span>
+
+                            <span class="rf-lead-focus-action">
+                                Próximo:
+                                <strong>
+                                    {{ $leadPrimaryAction }}
+                                </strong>
+                            </span>
+
                         </div>
 
                         <div class="rf-location">
@@ -5297,7 +5016,7 @@ new class extends Component
 
                     {{-- SCORE --}}
                     <div
-                        class="{{
+                        class="rf-col-score {{
                             $displayScore >= 50
                                 ? ''
                                 : 'rf-score-low'
@@ -5305,7 +5024,7 @@ new class extends Component
                     >
 
                         <div class="rf-section-label">
-                            Score
+                            Prioridade
                         </div>
 
                         <div class="rf-score-top">
@@ -5367,7 +5086,8 @@ new class extends Component
 
 
                     {{-- SITUACAO COMERCIAL --}}
-                    <div>
+                    <div
+                        class="rf-col-commercial">
 
                         <div class="rf-section-label">
                             Situação comercial
@@ -5414,7 +5134,8 @@ new class extends Component
 
 
                     {{-- CRM --}}
-                    <div>
+                    <div
+                        class="rf-col-crm">
 
                         <div class="rf-section-label">
                             CRM / HubSpot
@@ -5537,7 +5258,8 @@ new class extends Component
 
 
                     {{-- ACOMPANHAMENTO --}}
-                    <div>
+                    <div
+                        class="rf-col-followup">
 
                         <div class="rf-section-label">
                             Acompanhamento
@@ -5737,7 +5459,8 @@ new class extends Component
 
 
                     {{-- RESPONSAVEL --}}
-                    <div>
+                    <div
+                        class="rf-col-owner">
 
                         <div class="rf-section-label">
                             Responsável
@@ -5847,7 +5570,8 @@ new class extends Component
 
 
                     {{-- ACOES --}}
-                    <div>
+                    <div
+                        class="rf-col-action">
 
                         <div class="rf-section-label">
                             Próxima ação
@@ -5858,29 +5582,36 @@ new class extends Component
                             <div
                                 class="
                                     rf-next-action
+                                    rf-next-action-main
                                     {{
-                                        $hubSpotLead
-                                            ?->work_status
-                                            === 'waiting'
-                                        && $hubSpotLead
-                                            ?->last_task_due_at
-                                            ?->isPast()
-                                                ? 'is-overdue'
-                                                : ''
+                                        $leadIsOverdue
+                                            ? 'is-overdue'
+                                            : ''
+                                    }}
+                                    {{
+                                        $leadIsDueToday
+                                            ? 'is-today'
+                                            : ''
                                     }}
                                 "
                             >
-                                {{
-                                    $currentWorkStatus === 'waiting'
-                                    && $hubSpotLead
-                                        ?->last_task_due_at
-                                        ?->isPast()
-                                            ? 'Retomar contato'
-                                            : $this
-                                                ->nextActionLabel(
-                                                    $hubSpotLead
-                                                )
-                                }}
+
+                                <span>
+                                    {{
+                                        $leadIsOverdue
+                                            ? 'Ação atrasada'
+                                            : (
+                                                $leadIsDueToday
+                                                    ? 'Ação para hoje'
+                                                    : 'Próximo passo'
+                                            )
+                                    }}
+                                </span>
+
+                                <strong>
+                                    {{ $leadPrimaryAction }}
+                                </strong>
+
                             </div>
 
                         @endif
