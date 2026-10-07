@@ -1,7 +1,9 @@
 <?php
 
+use App\Jobs\HubSpotQueueHeartbeat;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command(
@@ -14,6 +16,37 @@ Artisan::command(
 )->purpose(
     'Display an inspiring quote'
 );
+
+Artisan::command(
+    'hubspot:health-ping',
+    function (): void {
+        Cache::put(
+            HubSpotQueueHeartbeat::dispatchCacheKey(),
+            now()->toIso8601String(),
+            now()->addMinutes(10),
+        );
+
+        foreach (
+            HubSpotQueueHeartbeat::QUEUES as $queue
+        ) {
+            HubSpotQueueHeartbeat::dispatch(
+                $queue
+            );
+        }
+
+        $this->info(
+            'Heartbeats HubSpot enviados.'
+        );
+    }
+)->purpose(
+    'Verifica se os workers prioritários do HubSpot estão consumindo filas.'
+);
+
+Schedule::command(
+    'hubspot:health-ping'
+)
+    ->everyMinute()
+    ->withoutOverlapping();
 
 Schedule::command(
     'imports:recover-stale'

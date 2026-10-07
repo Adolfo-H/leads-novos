@@ -6,11 +6,11 @@ use App\Contracts\CrmCompanyProvider;
 use App\Models\Company;
 use App\Models\CompanyHubSpotLead;
 use App\Models\User;
+use App\Support\HubSpotHttpClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use Throwable;
 
@@ -1847,26 +1847,17 @@ final class HubSpotLeadSyncService
 
     private function client(): PendingRequest
     {
-        $token =
-            trim(
-                (string) config(
-                    'services.hubspot.access_token'
-                )
-            );
-
-        if ($token === '') {
-            throw new RuntimeException(
-                'Token do HubSpot não configurado.'
-            );
-        }
-
-        return Http::withToken(
-            $token
-        )
-            ->acceptJson()
-            ->asJson()
-            ->connectTimeout(5)
-            ->timeout(30);
+        /*
+         * GETs podem ser repetidos em falhas
+         * transitórias.
+         *
+         * POST/PATCH/PUT continuam sem retry
+         * automático para não duplicar objetos
+         * no HubSpot.
+         */
+        return HubSpotHttpClient::make(
+            asJson: true,
+        );
     }
 
     private function ensureSuccess(

@@ -2,13 +2,19 @@
 
 namespace App\Services;
 
+use App\Jobs\HubSpotQueueHeartbeat;
 use App\Models\HubSpotRefreshRun;
 use App\Models\HubSpotWebhookEvent;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
+use Illuminate\Support\Facades\Cache;
 
 final class HubSpotRealtimeHealthService
 {
+    public function __construct(
+        private readonly HubSpotTunnelHealthService $tunnelHealth,
+    ) {}
+
     /**
      * @return array{
      *     status: string,
@@ -17,6 +23,15 @@ final class HubSpotRealtimeHealthService
      *     failed_recently: int,
      *     last_event_label: string,
      *     oldest_pending_label: string|null,
+     *     webhook_worker_online: bool,
+     *     webhook_worker_label: string,
+     *     realtime_worker_online: bool,
+     *     realtime_worker_label: string,
+     *     tunnel_configured: bool,
+     *     tunnel_checked: bool,
+     *     tunnel_online: bool|null,
+     *     tunnel_label: string,
+     *     monitor_label: string,
      *     bulk_active: bool,
      *     bulk_progress: int|null,
      *     bulk_label: string|null
@@ -54,6 +69,16 @@ final class HubSpotRealtimeHealthService
                     'occurred_at'
                 );
 
+        /*
+         * created_at é a prova de quando o
+         * Prospector realmente RECEBEU o webhook.
+         */
+        $latestReceivedAt =
+            HubSpotWebhookEvent::query()
+                ->max(
+                    'created_at'
+                );
+
         $failedRecently =
             HubSpotWebhookEvent::query()
                 ->where(
@@ -63,7 +88,8 @@ final class HubSpotRealtimeHealthService
                 ->where(
                     'updated_at',
                     '>=',
-                    now()->subHour()
+                    now()
+                        ->subHour()
                 )
                 ->count();
 
@@ -77,6 +103,125 @@ final class HubSpotRealtimeHealthService
                 $latestEventAt
             );
 
+        $latestReceived =
+            $this->date(
+                $latestReceivedAt
+            );
+
+        $webhookWorker =
+            $this->worker(
+                'hubspot-webhooks'
+            );
+
+        $realtimeWorker =
+            $this->worker(
+                'hubspot-realtime'
+            );
+
+        $tunnel =
+            $this
+                ->tunnelHealth
+                ->snapshot();
+
+        /*
+         * Evidência real > auto-probe.
+         *
+         * Se o HubSpot acabou de entregar um
+         * webhook para nós, então necessariamente:
+         *
+         * HubSpot
+         *   -> internet
+         *   -> domínio/ngrok
+         *   -> Laravel
+         *
+         * está funcionando.
+         *
+         * Em ambiente Docker local é possível o
+         * container não conseguir acessar a própria
+         * URL pública, gerando falso negativo.
+         */
+        $evidenceMinutes =
+            max(
+                1,
+                (int) config(
+                    'services.hubspot.health_public_evidence_minutes',
+                    5
+                )
+            );
+
+        $recentWebhookEvidence =
+            $latestReceived !== null
+            && $latestReceived
+                ->greaterThanOrEqualTo(
+                    now()
+                        ->subMinutes(
+                            $evidenceMinutes
+                        )
+                        ->toImmutable()
+                );
+
+        $tunnelConfigured =
+            $tunnel[
+                'configured'
+            ];
+
+        $tunnelChecked =
+            $tunnel[
+                'checked'
+            ];
+
+        $tunnelOnline =
+            $tunnel[
+                'online'
+            ];
+
+        $tunnelLabel =
+            $tunnel[
+                'label'
+            ];
+
+        if ($recentWebhookEvidence) {
+            $tunnelConfigured =
+                true;
+
+            $tunnelChecked =
+                true;
+
+            $tunnelOnline =
+                true;
+
+            $tunnelLabel =
+                'online · webhook '
+                .$this->relative($latestReceived);
+        }
+
+        $monitorAt =
+            $this->date(
+                Cache::get(
+                    HubSpotQueueHeartbeat::dispatchCacheKey()
+                )
+            );
+
+        $monitorLabel =
+            $monitorAt !== null
+                ? $this->relative(
+                    $monitorAt
+                )
+                : 'não inicializado';
+
+        $workerProblem =
+            ! $webhookWorker[
+                'online'
+            ]
+            || ! $realtimeWorker[
+                'online'
+            ];
+
+        $tunnelProblem =
+            $tunnelChecked
+            && $tunnelOnline
+                !== true;
+
         $delayed =
             $failedRecently > 0
             || (
@@ -88,7 +233,17 @@ final class HubSpotRealtimeHealthService
                 )
             );
 
-        if ($delayed) {
+        if (
+            $workerProblem
+            || $tunnelProblem
+        ) {
+            $status =
+                'degraded';
+
+            $label =
+                'HubSpot integração degradada';
+
+        } elseif ($delayed) {
             $status =
                 'delayed';
 
@@ -106,8 +261,19 @@ final class HubSpotRealtimeHealthService
             $status =
                 'healthy';
 
+            /*
+             * Só chamamos de "tempo real OK"
+             * quando também conseguimos testar
+             * o endpoint público.
+             *
+             * Se o túnel não estiver configurado,
+             * afirmamos apenas aquilo que sabemos:
+             * as filas estão saudáveis.
+             */
             $label =
-                'HubSpot tempo real OK';
+                $tunnelChecked
+                    ? 'HubSpot tempo real OK'
+                    : 'HubSpot filas OK';
         }
 
         $bulk =
@@ -144,19 +310,47 @@ final class HubSpotRealtimeHealthService
                     + (int) $bulk->failed
                 );
 
-            $bulkProgress =
-                $total > 0
-                    ? min(
-                        100,
-                        (int) round(
-                            (
-                                $finished
-                                / $total
+            /*
+             * Nunca mostramos 100% por
+             * arredondamento.
+             *
+             * Exemplo:
+             *
+             * 1145 / 1146 = 99,91%
+             *
+             * round() transformava isso em 100%.
+             *
+             * Agora:
+             *
+             * - enquanto faltar qualquer item,
+             *   o máximo visual é 99%;
+             * - 100% somente quando finished
+             *   realmente alcança total.
+             */
+            if ($total <= 0) {
+                $bulkProgress =
+                    0;
+
+            } elseif ($finished >= $total) {
+                $bulkProgress =
+                    100;
+
+            } else {
+                $bulkProgress =
+                    min(
+                        99,
+                        max(
+                            0,
+                            (int) floor(
+                                (
+                                    $finished
+                                    / $total
+                                )
+                                * 100
                             )
-                            * 100
                         )
-                    )
-                    : 0;
+                    );
+            }
 
             $bulkLabel =
                 number_format(
@@ -195,11 +389,96 @@ final class HubSpotRealtimeHealthService
                     )
                     : null,
 
+            'webhook_worker_online' => $webhookWorker[
+                    'online'
+                ],
+
+            'webhook_worker_label' => $webhookWorker[
+                    'label'
+                ],
+
+            'realtime_worker_online' => $realtimeWorker[
+                    'online'
+                ],
+
+            'realtime_worker_label' => $realtimeWorker[
+                    'label'
+                ],
+
+            'tunnel_configured' => $tunnelConfigured,
+
+            'tunnel_checked' => $tunnelChecked,
+
+            'tunnel_online' => $tunnelOnline,
+
+            'tunnel_label' => $tunnelLabel,
+
+            'monitor_label' => $monitorLabel,
+
             'bulk_active' => $bulk !== null,
 
             'bulk_progress' => $bulkProgress,
 
             'bulk_label' => $bulkLabel,
+        ];
+    }
+
+    /**
+     * @return array{
+     *     online: bool,
+     *     label: string
+     * }
+     */
+    private function worker(
+        string $queue
+    ): array {
+        $heartbeat =
+            $this->date(
+                Cache::get(
+                    HubSpotQueueHeartbeat::cacheKey(
+                        $queue
+                    )
+                )
+            );
+
+        if ($heartbeat === null) {
+            return [
+                'online' => false,
+                'label' => 'sem heartbeat',
+            ];
+        }
+
+        $staleSeconds =
+            max(
+                60,
+                (int) config(
+                    'services.hubspot.health_worker_stale_seconds',
+                    180
+                )
+            );
+
+        $online =
+            $heartbeat
+                ->greaterThanOrEqualTo(
+                    now()
+                        ->subSeconds(
+                            $staleSeconds
+                        )
+                        ->toImmutable()
+                );
+
+        return [
+            'online' => $online,
+
+            'label' => $online
+                    ? 'ativo '
+                        .$this->relative(
+                            $heartbeat
+                        )
+                    : 'sem resposta '
+                        .$this->relative(
+                            $heartbeat
+                        ),
         ];
     }
 
@@ -229,6 +508,7 @@ final class HubSpotRealtimeHealthService
             return CarbonImmutable::parse(
                 (string) $value
             );
+
         } catch (\Throwable) {
             return null;
         }
@@ -240,9 +520,10 @@ final class HubSpotRealtimeHealthService
         $seconds =
             max(
                 0,
-                $date->diffInSeconds(
-                    now()
-                )
+                (int) $date
+                    ->diffInSeconds(
+                        now()
+                    )
             );
 
         if ($seconds < 10) {

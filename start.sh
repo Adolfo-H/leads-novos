@@ -118,6 +118,14 @@ docker compose \
     hubspot-bulk-worker
 
 
+echo "     Testando workers prioritarios..."
+
+./vendor/bin/sail artisan \
+    hubspot:health-ping \
+    >/dev/null 2>&1 \
+    || true
+
+
 NGROK_TOKEN="$(
     env_value \
         NGROK_AUTHTOKEN \

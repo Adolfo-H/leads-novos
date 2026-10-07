@@ -3,9 +3,9 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Support\HubSpotHttpClient;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 final class HubSpotOwnerResolverService
@@ -207,31 +207,17 @@ final class HubSpotOwnerResolverService
 
     private function client(): PendingRequest
     {
-        $token =
-            trim(
-                (string) config(
-                    'services.hubspot.access_token'
-                )
-            );
-
-        if ($token === '') {
-            throw new RuntimeException(
-                'Token do HubSpot não configurado.'
-            );
-        }
-
-        return Http::withToken(
-            $token
-        )
-            ->acceptJson()
-            ->asJson()
-            ->connectTimeout(5)
-            ->timeout(30)
-            ->retry(
-                2,
-                300,
-                throw: false,
-            );
+        /*
+         * GETs podem ser repetidos em falhas
+         * transitórias.
+         *
+         * POST/PATCH/PUT continuam sem retry
+         * automático para não duplicar objetos
+         * no HubSpot.
+         */
+        return HubSpotHttpClient::make(
+            asJson: true,
+        );
     }
 
     private function ensureSuccess(

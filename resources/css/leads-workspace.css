@@ -2730,3 +2730,105 @@ html.dark
     background: #42dcca;
     transition: width .35s ease;
 }
+
+/*
+ * HubSpot health v2
+ *
+ * Os indicadores abaixo representam checks
+ * reais da infraestrutura, não apenas ausência
+ * de backlog.
+ */
+.leads-rf .rf-hubspot-health-content {
+    display: flex;
+    flex: 1 1 520px;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.leads-rf .rf-hubspot-health-checks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+}
+
+.leads-rf .rf-hubspot-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 22px;
+    padding: 3px 7px;
+    border: 1px solid rgba(128,184,222,.09);
+    border-radius: 999px;
+    background: rgba(255,255,255,.018);
+    color: #7896b5;
+    font-size: 8px;
+    white-space: nowrap;
+}
+
+.leads-rf .rf-hubspot-check i {
+    display: block;
+    width: 5px;
+    height: 5px;
+    flex: 0 0 5px;
+    border-radius: 999px;
+    background: #7896b5;
+}
+
+.leads-rf .rf-hubspot-check strong {
+    color: #a9bfd5;
+    font-size: inherit;
+    font-weight: 700;
+}
+
+.leads-rf .rf-hubspot-check.is-ok i {
+    background: #42dfac;
+    box-shadow:
+        0 0 0 2px rgba(66,223,172,.07);
+}
+
+.leads-rf .rf-hubspot-check.is-ok strong {
+    color: #75d9b8;
+}
+
+.leads-rf .rf-hubspot-check.is-bad {
+    border-color: rgba(255,110,123,.13);
+    background: rgba(255,110,123,.025);
+}
+
+.leads-rf .rf-hubspot-check.is-bad i {
+    background: #ff6e7b;
+    box-shadow:
+        0 0 0 2px rgba(255,110,123,.07);
+}
+
+.leads-rf .rf-hubspot-check.is-bad strong {
+    color: #ff9ba5;
+}
+
+.leads-rf .rf-hubspot-check.is-unknown i {
+    background: #f5c54b;
+}
+
+.leads-rf .rf-hubspot-check.is-unknown strong {
+    color: #dbc071;
+}
+
+.leads-rf .rf-hubspot-health.is-degraded {
+    border-color: rgba(255,110,123,.2);
+    background: rgba(255,110,123,.032);
+}
+
+.leads-rf .rf-hubspot-health.is-degraded
+.rf-hubspot-health-dot {
+    background: #ff6e7b;
+    box-shadow:
+        0 0 0 3px rgba(255,110,123,.08);
+}
+
+@media (max-width: 760px) {
+    .leads-rf .rf-hubspot-check {
+        white-space: normal;
+    }
+}

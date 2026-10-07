@@ -4,12 +4,12 @@ namespace App\Services;
 
 use App\Models\CompanyHubSpotLead;
 use App\Support\HubSpotDateTime;
+use App\Support\HubSpotHttpClient;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 final class HubSpotLeadStatusSyncService
@@ -574,25 +574,7 @@ final class HubSpotLeadStatusSyncService
 
     private function client(): PendingRequest
     {
-        $token =
-            trim(
-                (string) config(
-                    'services.hubspot.access_token'
-                )
-            );
-
-        if ($token === '') {
-            throw new RuntimeException(
-                'Token do HubSpot não configurado.'
-            );
-        }
-
-        return Http::withToken(
-            $token
-        )
-            ->acceptJson()
-            ->connectTimeout(5)
-            ->timeout(30);
+        return HubSpotHttpClient::make();
     }
 
     private function baseUrl(): string

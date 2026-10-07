@@ -9,13 +9,13 @@ use App\Models\HubSpotPipelineStage;
 use App\Models\HubSpotTask;
 use App\Models\HubSpotWebhookEvent;
 use App\Support\HubSpotDateTime;
+use App\Support\HubSpotHttpClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 final class HubSpotWebhookMirrorSyncService
@@ -167,7 +167,7 @@ final class HubSpotWebhookMirrorSyncService
 
         $company =
             HubSpotCompany::query()
-                ->firstOrNew([
+                ->firstOrCreate([
                     'hubspot_id' => $objectId,
                 ]);
 
@@ -411,7 +411,7 @@ final class HubSpotWebhookMirrorSyncService
 
         $deal =
             HubSpotDeal::query()
-                ->firstOrNew([
+                ->firstOrCreate([
                     'hubspot_id' => $objectId,
                 ]);
 
@@ -537,7 +537,7 @@ final class HubSpotWebhookMirrorSyncService
 
         $contact =
             HubSpotContact::query()
-                ->firstOrNew([
+                ->firstOrCreate([
                     'hubspot_id' => $objectId,
                 ]);
 
@@ -691,7 +691,7 @@ final class HubSpotWebhookMirrorSyncService
 
         $task =
             HubSpotTask::query()
-                ->firstOrNew([
+                ->firstOrCreate([
                     'hubspot_id' => $objectId,
                 ]);
 
@@ -1756,26 +1756,7 @@ final class HubSpotWebhookMirrorSyncService
 
     private function client(): PendingRequest
     {
-        $token =
-            trim(
-                (string) config(
-                    'services.hubspot.access_token',
-                    ''
-                )
-            );
-
-        if ($token === '') {
-            throw new RuntimeException(
-                'HUBSPOT_ACCESS_TOKEN não configurado.'
-            );
-        }
-
-        return Http::withToken(
-            $token
-        )
-            ->acceptJson()
-            ->connectTimeout(5)
-            ->timeout(30);
+        return HubSpotHttpClient::make();
     }
 
     private function baseUrl(): string

@@ -5,9 +5,9 @@ namespace App\Services\Providers;
 use App\Contracts\CrmCompanyProvider;
 use App\Models\Company;
 use App\Models\HubSpotCompany;
+use App\Support\HubSpotHttpClient;
 use App\Support\TextNormalizer;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 /**
@@ -490,12 +490,7 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
     ): ?array {
         try {
             $response =
-                Http::withToken(
-                    $this->token()
-                )
-                    ->acceptJson()
-                    ->connectTimeout(5)
-                    ->timeout(30)
+                HubSpotHttpClient::make()
                     ->get(
                         $this->baseUrl()
                         .'/crm/v3/objects/companies/'
@@ -690,13 +685,13 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
 
         try {
             $response =
-                Http::withToken(
-                    $token
+                HubSpotHttpClient::make(
+                    asJson: true,
+                    retryMethods: [
+                        'GET',
+                        'POST',
+                    ],
                 )
-                    ->acceptJson()
-                    ->asJson()
-                    ->connectTimeout(5)
-                    ->timeout(30)
                     ->post(
                         $baseUrl
                         .'/crm/v3/objects/companies/search',
@@ -1317,12 +1312,7 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
 
             try {
                 $response =
-                    Http::withToken(
-                        $token
-                    )
-                        ->acceptJson()
-                        ->connectTimeout(5)
-                        ->timeout(30)
+                    HubSpotHttpClient::make()
                         ->get(
                             $url,
                             $query
@@ -1429,13 +1419,13 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
         ) {
             try {
                 $response =
-                    Http::withToken(
-                        $token
+                    HubSpotHttpClient::make(
+                        asJson: true,
+                        retryMethods: [
+                            'GET',
+                            'POST',
+                        ],
                     )
-                        ->acceptJson()
-                        ->asJson()
-                        ->connectTimeout(5)
-                        ->timeout(30)
                         ->post(
                             $baseUrl
                             .'/crm/v3/objects/deals/batch/read',
@@ -1511,12 +1501,7 @@ final class HubSpotCrmCompanyProvider implements CrmCompanyProvider
 
         try {
             $response =
-                Http::withToken(
-                    $token
-                )
-                    ->acceptJson()
-                    ->connectTimeout(5)
-                    ->timeout(30)
+                HubSpotHttpClient::make()
                     ->get(
                         $baseUrl
                         .'/crm/v3/pipelines/deals'

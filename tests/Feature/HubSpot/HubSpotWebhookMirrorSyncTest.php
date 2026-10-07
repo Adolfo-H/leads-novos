@@ -8,6 +8,7 @@ use App\Models\HubSpotWebhookEvent;
 use App\Services\HubSpotWebhookMirrorSyncService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 
@@ -414,6 +415,237 @@ it(
                 ->owner_name
         )->toBe(
             'Responsável já conhecido'
+        );
+    }
+);
+
+it(
+    'survives a concurrent company insert while mirroring the same HubSpot id',
+    function (): void {
+        config([
+            'services.hubspot.access_token' => 'test-token',
+
+            'services.hubspot.base_url' => 'https://api.hubapi.com',
+        ]);
+
+        $event =
+            HubSpotWebhookEvent::query()
+                ->create([
+                    'event_key' => 'mirror-company-race-condition',
+
+                    'subscription_type' => 'object.propertyChange',
+
+                    'object_type' => 'company',
+
+                    'object_type_id' => '0-2',
+
+                    'object_id' => 'company-race-100',
+
+                    'property_name' => 'notes_last_updated',
+
+                    'status' => 'received',
+
+                    'payload' => [
+                        'objectTypeId' => '0-2',
+
+                        'objectId' => 'company-race-100',
+
+                        'subscriptionType' => 'object.propertyChange',
+
+                        'propertyName' => 'notes_last_updated',
+                    ],
+                ]);
+
+        Http::fake(
+            function (
+                Request $request
+            ) {
+                $url =
+                    $request->url();
+
+                if (
+                    str_contains(
+                        $url,
+                        '/crm/v3/objects/companies/company-race-100'
+                    )
+                ) {
+                    return Http::response([
+                        'id' => 'company-race-100',
+
+                        'createdAt' => '2026-10-07T10:00:00Z',
+
+                        'updatedAt' => '2026-10-07T10:01:00Z',
+
+                        'properties' => [
+                            'name' => 'EMPRESA TESTE CORRIDA',
+
+                            'domain' => 'race-condition.test',
+
+                            'lifecyclestage' => 'lead',
+
+                            'hs_lead_status' => null,
+
+                            /*
+                             * Mantemos null para
+                             * não precisar consultar
+                             * Owners neste teste.
+                             */
+                            'hubspot_owner_id' => null,
+
+                            'city' => 'CASCAVEL',
+
+                            'state' => 'PR',
+
+                            'phone' => '45999999999',
+
+                            'notes_last_contacted' => null,
+
+                            'notes_last_updated' => '2026-10-07T10:01:00Z',
+
+                            'num_contacted_notes' => '0',
+
+                            'num_associated_deals' => '0',
+                        ],
+                    ]);
+                }
+
+                if (
+                    str_contains(
+                        $url,
+                        '/crm/v4/objects/companies/company-race-100/associations/'
+                    )
+                ) {
+                    return Http::response([
+                        'results' => [],
+                    ]);
+                }
+
+                return Http::response(
+                    [],
+                    404
+                );
+            }
+        );
+
+        /*
+         * Simulação precisa da condição de corrida:
+         *
+         * 1. o mirror consulta se existe;
+         * 2. a consulta responde "não";
+         * 3. ANTES do INSERT do mirror,
+         *    outro worker insere o mesmo hubspot_id;
+         * 4. o mirror tenta continuar.
+         *
+         * firstOrNew + save quebrava com UNIQUE.
+         *
+         * firstOrCreate utiliza createOrFirst
+         * internamente e recupera a linha criada
+         * pelo processo concorrente.
+         */
+        $raceInjected =
+            false;
+
+        DB::listen(
+            function (
+                $query
+            ) use (
+                &$raceInjected
+            ): void {
+                if ($raceInjected) {
+                    return;
+                }
+
+                $sql =
+                    mb_strtolower(
+                        $query->sql
+                    );
+
+                if (
+                    ! str_contains(
+                        $sql,
+                        'select'
+                    )
+                    || ! str_contains(
+                        $sql,
+                        'hubspot_companies'
+                    )
+                ) {
+                    return;
+                }
+
+                $raceInjected =
+                    true;
+
+                HubSpotCompany::query()
+                    ->create([
+                        'hubspot_id' => 'company-race-100',
+
+                        'name' => 'PLACEHOLDER CONCORRENTE',
+                    ]);
+            }
+        );
+
+        $handled =
+            app(
+                HubSpotWebhookMirrorSyncService::class
+            )->syncEvent(
+                $event
+            );
+
+        expect(
+            $handled
+        )->toBeTrue();
+
+        expect(
+            $raceInjected
+        )->toBeTrue();
+
+        expect(
+            HubSpotCompany::query()
+                ->where(
+                    'hubspot_id',
+                    'company-race-100'
+                )
+                ->count()
+        )->toBe(
+            1
+        );
+
+        $company =
+            HubSpotCompany::query()
+                ->where(
+                    'hubspot_id',
+                    'company-race-100'
+                )
+                ->firstOrFail();
+
+        /*
+         * Além de não duplicar, o mirror
+         * precisa completar o placeholder
+         * criado pelo outro processo.
+         */
+        expect(
+            $company->name
+        )->toBe(
+            'EMPRESA TESTE CORRIDA'
+        );
+
+        expect(
+            $company->domain
+        )->toBe(
+            'race-condition.test'
+        );
+
+        expect(
+            $company->city
+        )->toBe(
+            'CASCAVEL'
+        );
+
+        expect(
+            $company->state
+        )->toBe(
+            'PR'
         );
     }
 );

@@ -138,6 +138,52 @@ return [
             false
         ),
 
+        /*
+         * Saúde operacional da integração.
+         *
+         * Heartbeats comprovam que as filas
+         * prioritárias realmente estão sendo
+         * consumidas.
+         */
+        'health_worker_stale_seconds' => (int) env(
+            'HUBSPOT_HEALTH_WORKER_STALE_SECONDS',
+            180
+        ),
+
+        /*
+         * Teste leve da URL pública usada pelo
+         * webhook. O resultado é cacheado para
+         * não consultar o túnel a cada render.
+         */
+        'health_tunnel_check_enabled' => (bool) env(
+            'HUBSPOT_HEALTH_TUNNEL_CHECK_ENABLED',
+            true
+        ),
+
+        'health_tunnel_cache_seconds' => (int) env(
+            'HUBSPOT_HEALTH_TUNNEL_CACHE_SECONDS',
+            30
+        ),
+
+        'health_tunnel_timeout_seconds' => (int) env(
+            'HUBSPOT_HEALTH_TUNNEL_TIMEOUT_SECONDS',
+            4
+        ),
+
+        /*
+         * Se um webhook real acabou de chegar do
+         * HubSpot, isso prova que o endpoint
+         * público está acessível externamente.
+         *
+         * Essa evidência é mais confiável do que
+         * o container tentar acessar sua própria
+         * URL pública via ngrok.
+         */
+        'health_public_evidence_minutes' => (int) env(
+            'HUBSPOT_HEALTH_PUBLIC_EVIDENCE_MINUTES',
+            5
+        ),
+
         'lead_sync_enabled' => (bool) env(
             'HUBSPOT_LEAD_SYNC_ENABLED',
             false

@@ -76,17 +76,7 @@ new class extends Component
     public array $hubSpotRefreshRequestedAt = [];
 
     /**
-     * @return array{
-     *     status: string,
-     *     label: string,
-     *     pending: int,
-     *     failed_recently: int,
-     *     last_event_label: string,
-     *     oldest_pending_label: string|null,
-     *     bulk_active: bool,
-     *     bulk_progress: int|null,
-     *     bulk_label: string|null
-     * }
+     * @return array<string, mixed>
      */
     #[Computed]
     public function hubSpotRealtimeHealth(): array
@@ -3730,72 +3720,226 @@ new class extends Component
         wire:poll.10s="$refresh"
     >
 
-        <div class="rf-hubspot-health-main">
+        <div class="rf-hubspot-health-content">
 
-            <span class="rf-hubspot-health-dot"></span>
+            <div class="rf-hubspot-health-main">
 
-            <strong>
-                {{ $hubSpotHealth['label'] }}
-            </strong>
+                <span class="rf-hubspot-health-dot"></span>
 
-            <span>
-                Último evento
-                {{ $hubSpotHealth['last_event_label'] }}
-            </span>
-
-            <span>
-                ·
-            </span>
-
-            <span>
-                {{
-                    number_format(
-                        $hubSpotHealth['pending'],
-                        0,
-                        ',',
-                        '.'
-                    )
-                }}
-                pendente(s)
-            </span>
-
-            @if (
-                $hubSpotHealth[
-                    'failed_recently'
-                ] > 0
-            )
+                <strong>
+                    {{ $hubSpotHealth['label'] }}
+                </strong>
 
                 <span>
-                    ·
+                    Último webhook
                     {{
                         $hubSpotHealth[
-                            'failed_recently'
+                            'last_event_label'
                         ]
                     }}
-                    falha(s) na última hora
                 </span>
 
-            @endif
+                <span>·</span>
+
+                <span>
+                    {{
+                        number_format(
+                            $hubSpotHealth[
+                                'pending'
+                            ],
+                            0,
+                            ',',
+                            '.'
+                        )
+                    }}
+                    pendente(s)
+                </span>
+
+                @if (
+                    $hubSpotHealth[
+                        'failed_recently'
+                    ] > 0
+                )
+
+                    <span>
+                        ·
+                        {{
+                            $hubSpotHealth[
+                                'failed_recently'
+                            ]
+                        }}
+                        falha(s) na última hora
+                    </span>
+
+                @endif
+
+            </div>
+
+
+            <div class="rf-hubspot-health-checks">
+
+                <span
+                    class="
+                        rf-hubspot-check
+                        {{
+                            $hubSpotHealth[
+                                'webhook_worker_online'
+                            ]
+                                ? 'is-ok'
+                                : 'is-bad'
+                        }}
+                    "
+                >
+                    <i></i>
+
+                    Worker webhook
+
+                    <strong>
+                        {{
+                            $hubSpotHealth[
+                                'webhook_worker_label'
+                            ]
+                        }}
+                    </strong>
+                </span>
+
+
+                <span
+                    class="
+                        rf-hubspot-check
+                        {{
+                            $hubSpotHealth[
+                                'realtime_worker_online'
+                            ]
+                                ? 'is-ok'
+                                : 'is-bad'
+                        }}
+                    "
+                >
+                    <i></i>
+
+                    Worker realtime
+
+                    <strong>
+                        {{
+                            $hubSpotHealth[
+                                'realtime_worker_label'
+                            ]
+                        }}
+                    </strong>
+                </span>
+
+
+                @if (
+                    $hubSpotHealth[
+                        'tunnel_checked'
+                    ]
+                )
+
+                    <span
+                        class="
+                            rf-hubspot-check
+                            {{
+                                $hubSpotHealth[
+                                    'tunnel_online'
+                                ]
+                                    ? 'is-ok'
+                                    : 'is-bad'
+                            }}
+                        "
+                    >
+                        <i></i>
+
+                        Webhook público
+
+                        <strong>
+                            {{
+                                $hubSpotHealth[
+                                    'tunnel_label'
+                                ]
+                            }}
+                        </strong>
+                    </span>
+
+                @else
+
+                    <span
+                        class="
+                            rf-hubspot-check
+                            is-unknown
+                        "
+                    >
+                        <i></i>
+
+                        Webhook público
+
+                        <strong>
+                            {{
+                                $hubSpotHealth[
+                                    'tunnel_label'
+                                ]
+                            }}
+                        </strong>
+                    </span>
+
+                @endif
+
+            </div>
 
         </div>
 
 
         @if (
-            $hubSpotHealth[
-                'status'
-            ] === 'delayed'
-            && $hubSpotHealth[
-                'oldest_pending_label'
-            ]
+            in_array(
+                $hubSpotHealth[
+                    'status'
+                ],
+                [
+                    'delayed',
+                    'degraded',
+                ],
+                true
+            )
         )
 
             <div class="rf-hubspot-health-warning">
-                Evento mais antigo pendente
-                {{
+
+                @if (
+                    ! $hubSpotHealth[
+                        'webhook_worker_online'
+                    ]
+                )
+                    Fila de webhooks sem heartbeat.
+                @elseif (
+                    ! $hubSpotHealth[
+                        'realtime_worker_online'
+                    ]
+                )
+                    Fila realtime sem heartbeat.
+                @elseif (
+                    $hubSpotHealth[
+                        'tunnel_checked'
+                    ]
+                    && ! $hubSpotHealth[
+                        'tunnel_online'
+                    ]
+                )
+                    URL pública do webhook não está respondendo corretamente.
+                @elseif (
                     $hubSpotHealth[
                         'oldest_pending_label'
                     ]
-                }}.
+                )
+                    Evento mais antigo pendente
+                    {{
+                        $hubSpotHealth[
+                            'oldest_pending_label'
+                        ]
+                    }}.
+                @else
+                    Existem falhas recentes na integração HubSpot.
+                @endif
+
             </div>
 
         @endif
