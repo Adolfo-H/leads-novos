@@ -15,6 +15,7 @@ use App\Services\HubSpotCompanyLinkService;
 use App\Services\HubSpotLeadReprospectingActionService;
 use App\Services\HubSpotLeadReprospectingService;
 use App\Services\HubSpotRealtimeHealthService;
+use App\Services\LeadExportService;
 use App\Services\LeadOwnershipService;
 use App\Services\Providers\ReceitaLocalCnpjGroupProvider;
 use App\Support\Cnpj;
@@ -23,6 +24,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 new class extends Component
 {
@@ -245,6 +247,16 @@ new class extends Component
     #[Computed]
     public function leads()
     {
+        return $this
+            ->filteredLeadsQuery()
+            ->paginate(
+                20
+            );
+    }
+
+    private function filteredLeadsQuery()
+    {
+
         $search =
             trim(
                 $this->search
@@ -898,8 +910,25 @@ new class extends Component
             )
             ->orderBy(
                 'companies.corporate_name'
-            )
-            ->paginate(20);
+            );
+
+    }
+
+    public function exportExcel(
+        LeadExportService $service,
+    ): StreamedResponse {
+        $companies =
+            $this
+                ->filteredLeadsQuery()
+                ->with(
+                    'establishments'
+                )
+                ->get();
+
+        return $service
+            ->excel(
+                $companies
+            );
     }
 
     public function openCompanyLink(
@@ -3702,7 +3731,34 @@ new class extends Component
         </div>
 
 
-    </header>
+
+        <div class="rf-header-actions">
+
+            <button
+                type="button"
+                class="rf-export-button"
+                wire:click="exportExcel"
+                wire:loading.attr="disabled"
+                wire:target="exportExcel"
+            >
+                <span
+                    wire:loading.remove
+                    wire:target="exportExcel"
+                >
+                    ↓ Exportar Excel
+                </span>
+
+                <span
+                    wire:loading
+                    wire:target="exportExcel"
+                >
+                    Gerando Excel...
+                </span>
+            </button>
+
+        </div>
+
+</header>
 
 
 

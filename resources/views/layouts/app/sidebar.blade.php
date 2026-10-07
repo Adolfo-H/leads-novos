@@ -52,9 +52,9 @@
 
         <flux:sidebar.nav>
 
-            {{-- PROSPECÇÃO --}}
+            {{-- AREA PRINCIPAL --}}
             <flux:sidebar.group
-                heading="Prospecção"
+                heading="Principal"
                 class="ec-sidebar-group grid"
             >
 
@@ -68,70 +68,6 @@
                     Dashboard
                 </flux:sidebar.item>
 
-                {{-- ACESSO GESTOR: PROSPECCAO --}}
-                @if (
-                    auth()
-                        ->user()
-                        ?->isCommercialManager()
-                )
-
-                <flux:sidebar.item
-                    icon="magnifying-glass"
-                    :href="route('prospecting.index')"
-                    :current="request()->routeIs('prospecting.*')"
-                    wire:navigate
-                    class="ec-nav-item"
-                >
-                    Motor de Prospecção
-                </flux:sidebar.item>
-
-                <flux:sidebar.item
-                    icon="building-office"
-                    :href="route('companies.index')"
-                    :current="request()->routeIs('companies.*')"
-                    wire:navigate
-                    class="ec-nav-item"
-                >
-                    Empresas
-                </flux:sidebar.item>
-
-                @endif
-
-            </flux:sidebar.group>
-
-            {{-- FUTUROS MÓDULOS --}}
-            <flux:sidebar.group
-                heading="Automação"
-                class="ec-sidebar-group grid"
-            >
-
-                {{-- ACESSO GESTOR: AUTOMACAO --}}
-                @if (
-                    auth()
-                        ->user()
-                        ?->isCommercialManager()
-                )
-
-                <flux:sidebar.item
-                    icon="arrow-up-tray"
-                    :href="route('imports.index')"
-                    :current="request()->routeIs('imports.*')"
-                    wire:navigate
-                    class="ec-nav-item"
-                >
-                    Importações
-                </flux:sidebar.item>
-
-                <div class="ec-coming-soon-row">
-
-                    <span>
-                        Pesquisas
-                    </span>
-
-                </div>
-
-                @endif
-
                 <flux:sidebar.item
                     icon="user-group"
                     :href="route('leads.index')"
@@ -142,25 +78,70 @@
                     Leads
                 </flux:sidebar.item>
 
-                {{-- ACESSO GESTOR: GESTAO COMERCIAL --}}
-                @if (
-                    auth()
-                        ->user()
-                        ?->isCommercialManager()
-                )
+                @if (auth()->user()?->isCommercialManager())
 
-                <flux:sidebar.item
-                    icon="chart-bar"
-                    :href="route('leads.management')"
-                    :current="request()->routeIs('leads.management')"
-                    wire:navigate
-                    class="ec-nav-item"
-                >
-                    Gestão Comercial
-                </flux:sidebar.item>
+                    <flux:sidebar.item
+                        icon="chart-bar"
+                        :href="route('leads.management')"
+                        :current="request()->routeIs('leads.management')"
+                        wire:navigate
+                        class="ec-nav-item"
+                    >
+                        Gestão Comercial
+                    </flux:sidebar.item>
+
                 @endif
 
             </flux:sidebar.group>
+
+            {{-- RECURSOS EXCLUSIVOS DA GESTAO --}}
+            @if (auth()->user()?->isCommercialManager())
+
+                <flux:sidebar.group
+                    heading="Prospecção"
+                    class="ec-sidebar-group grid"
+                >
+
+                    <flux:sidebar.item
+                        icon="magnifying-glass"
+                        :href="route('prospecting.index')"
+                        :current="request()->routeIs('prospecting.*')"
+                        wire:navigate
+                        class="ec-nav-item"
+                    >
+                        Motor de Prospecção
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item
+                        icon="building-office"
+                        :href="route('companies.index')"
+                        :current="request()->routeIs('companies.*')"
+                        wire:navigate
+                        class="ec-nav-item"
+                    >
+                        Empresas
+                    </flux:sidebar.item>
+
+                </flux:sidebar.group>
+
+                <flux:sidebar.group
+                    heading="Dados"
+                    class="ec-sidebar-group grid"
+                >
+
+                    <flux:sidebar.item
+                        icon="arrow-up-tray"
+                        :href="route('imports.index')"
+                        :current="request()->routeIs('imports.*')"
+                        wire:navigate
+                        class="ec-nav-item"
+                    >
+                        Importações
+                    </flux:sidebar.item>
+
+                </flux:sidebar.group>
+
+            @endif
 
         </flux:sidebar.nav>
 
@@ -188,6 +169,23 @@
     </flux:sidebar>
 
 
+    @php
+        $ecPageLabel = match (true) {
+            request()->routeIs('dashboard') => 'Dashboard',
+            request()->routeIs('leads.management') => 'Gestão comercial',
+            request()->routeIs('leads.*') => 'Leads',
+            request()->routeIs('prospecting.*') => 'Motor de prospecção',
+            request()->routeIs('companies.*') => 'Empresas',
+            request()->routeIs('imports.*') => 'Importações',
+            request()->routeIs(
+                'profile.edit',
+                'security.edit',
+                'appearance.edit'
+            ) => 'Configurações',
+            default => 'Prospector',
+        };
+    @endphp
+
     {{-- TOPBAR DESKTOP --}}
     <flux:header
         class="ec-topbar hidden lg:flex"
@@ -200,12 +198,30 @@
             </span>
 
             <span class="ec-topbar-title">
-                Prospector Comercial
+                {{ $ecPageLabel }}
             </span>
 
         </div>
 
-        <flux:spacer />
+                    @if (request()->routeIs('dashboard') && auth()->user()?->isCommercialManager())
+                <form
+                    class="ds-v5-topbar-search"
+                    role="search"
+                    x-data="{ term: '' }"
+                    x-on:submit.prevent="window.Livewire?.dispatch('dashboard-global-search', { term: term })"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <path d="m16 16 5 5"></path>
+                    </svg>
+                    <input x-model="term" type="search" maxlength="120"
+                        aria-label="Pesquisar empresas por nome ou CNPJ"
+                        placeholder="Buscar empresas, CNPJ...">
+                    <kbd>Enter</kbd>
+                </form>
+            @endif
+
+<flux:spacer />
 
         <div class="ec-topbar-tools">
 
@@ -341,7 +357,7 @@
         <div class="ml-2">
 
             <span class="ec-topbar-title">
-                Prospector
+                {{ $ecPageLabel }}
             </span>
 
         </div>

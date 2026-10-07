@@ -1,6 +1,6 @@
 {{-- Dashboard v3: indicadores e explorador da base. --}}
-<div class="ec-overview" x-data
-     x-on:overview-explorer-opened.window="$nextTick(() => { const panel = $el.querySelector('[data-overview-explorer]'); if (panel) { panel.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); panel.focus({ preventScroll: true }); } })"
+<div class="ec-overview ec-strategic-v4" x-data="{ dashboardTab: 'commercial', attentionExpanded: false }"
+     x-on:overview-explorer-opened.window="dashboardTab = 'base'; $nextTick(() => { const panel = $el.querySelector('[data-overview-explorer]'); if (panel) { panel.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); panel.focus({ preventScroll: true }); } })"
      x-on:overview-explorer-closed.window="$nextTick(() => { const button = $el.querySelector('[data-dataset=&quot;' + $event.detail.dataset + '&quot;]'); if (button) button.focus(); })">
     @php
         $s = $this->summary;
@@ -15,9 +15,41 @@
         ];
     @endphp
 
+
+
+    <section id="ec-dash-panel-commercial"
+             class="ec-dash-pane"
+             role="region"
+             aria-label="Dashboard estratégico"
+             x-show="dashboardTab === 'commercial'"
+             x-cloak>
+
+        @include('livewire.dashboard-overview.strategic', [
+            'manager' => $manager,
+            'commercial' => $manager ? $this->commercialSummary : null,
+            'strategic' => $manager ? $this->strategicMetrics : null,
+            's' => $s,
+        ])
+
+    </section>
+
+    <section id="ec-dash-panel-base"
+             class="ec-dash-pane"
+             role="region"
+             aria-label="Base empresarial"
+             x-show="dashboardTab === 'base'"
+             x-cloak>
+
+        <div class="ds-v4-base-back">
+            <button type="button" x-on:click="dashboardTab = 'commercial'">
+                ← Voltar ao dashboard estratégico
+            </button>
+        </div>
+
+
     <header class="eo-header">
         <div>
-            <h1>Visão geral</h1>
+            <h2>Base empresarial</h2>
             <p>Explore a base empresarial e encontre seu próximo ponto de partida.</p>
         </div>
         <div class="eo-header-actions">
@@ -221,4 +253,6 @@
         </div>
     </section>
     <footer class="eo-footnote"><span>Base local · sem consultas externas nesta tela</span><span>Indicadores consultados em {{ $s['consulted_at'] }}</span></footer>
+    </section>
+
 </div>

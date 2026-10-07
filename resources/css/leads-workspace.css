@@ -5281,3 +5281,95 @@ html.dark
 }
 
 /* LEADS_RESPONSIVE_POLISH_END */
+/* LEADS_EXPORT_ACTIONS_START */
+
+.rf-header-actions {
+    display:
+        flex;
+    align-items:
+        center;
+    justify-content:
+        flex-end;
+    gap:
+        8px;
+    flex-wrap:
+        wrap;
+}
+
+.rf-export-button {
+    display:
+        inline-flex;
+    align-items:
+        center;
+    justify-content:
+        center;
+    min-height:
+        36px;
+    padding:
+        0 12px;
+    border:
+        1px solid
+        var(--ec-border);
+    border-radius:
+        8px;
+    background:
+        var(--ec-surface);
+    color:
+        var(--ec-text-soft);
+    font-size:
+        10px;
+    font-weight:
+        800;
+    cursor:
+        pointer;
+    transition:
+        border-color .14s ease,
+        background-color .14s ease,
+        color .14s ease;
+}
+
+.rf-export-button:hover {
+    border-color:
+        color-mix(
+            in srgb,
+            var(--ec-primary) 42%,
+            var(--ec-border)
+        );
+    background:
+        var(--ec-primary-soft);
+    color:
+        var(--ec-primary);
+}
+
+.rf-export-button:disabled {
+    opacity:
+        .55;
+    cursor:
+        wait;
+}
+
+.rf-export-button:focus-visible {
+    outline:
+        2px solid
+        var(--ec-primary);
+    outline-offset:
+        2px;
+}
+
+@media (
+    max-width: 700px
+) {
+    .rf-header-actions {
+        width:
+            100%;
+        justify-content:
+            stretch;
+    }
+
+    .rf-export-button {
+        width:
+            100%;
+    }
+}
+
+/* LEADS_EXPORT_ACTIONS_END */

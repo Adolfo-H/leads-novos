@@ -1,0 +1,169 @@
+/*
+ * ExportControl Prospector
+ * Shell V2 - Navegação compacta
+ *
+ * Usa exclusivamente os tokens de tema já existentes.
+ * Não modifica telas de autenticação.
+ */
+
+/* Estrutura geral */
+
+body.ec-app-body.ec-dashboard-mode {
+    --ec-topbar-height: 60px;
+}
+
+/* Sidebar */
+
+body.ec-app-body.ec-dashboard-mode .ec-sidebar {
+    background: var(--ec-sidebar) !important;
+    border-right: 1px solid var(--ec-border-soft) !important;
+    box-shadow: none !important;
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-header {
+    min-height: 68px;
+    padding-inline: 12px;
+    border-bottom: 1px solid var(--ec-border-soft);
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-group {
+    margin-top: 8px;
+}
+
+body.ec-app-body.ec-dashboard-mode
+.ec-sidebar-group [data-flux-sidebar-group-heading] {
+    padding-top: 10px;
+    padding-bottom: 8px;
+    color: var(--ec-text-muted) !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: .05em !important;
+    text-transform: uppercase;
+}
+
+/* Itens de navegação */
+
+body.ec-app-body.ec-dashboard-mode .ec-nav-item {
+    min-height: 39px;
+    margin: 2px 5px;
+    padding-inline: 12px !important;
+    border-radius: 9px !important;
+    color: var(--ec-text-soft) !important;
+    font-size: 13px;
+    font-weight: 550;
+    transition:
+        background-color .16s ease,
+        color .16s ease;
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-nav-item:hover {
+    background: var(--ec-surface-hover) !important;
+    color: var(--ec-text) !important;
+}
+
+body.ec-app-body.ec-dashboard-mode
+.ec-nav-item:is([data-current], [aria-current="page"]) {
+    background: var(--ec-primary-soft) !important;
+    color: var(--ec-primary) !important;
+    box-shadow: inset 3px 0 0 var(--ec-primary) !important;
+}
+
+body.ec-app-body.ec-dashboard-mode
+.ec-nav-item:is([data-current], [aria-current="page"])::before {
+    display: none !important;
+}
+
+/* Rodapé do menu */
+
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-footer {
+    border-top: 1px solid var(--ec-border-soft);
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+/* Cabeçalho superior */
+
+body.ec-app-body.ec-dashboard-mode .ec-topbar {
+    min-height: 60px;
+    height: 60px !important;
+    padding-inline: 24px !important;
+    background: var(--ec-topbar) !important;
+    border-bottom: 1px solid var(--ec-border-soft) !important;
+    box-shadow: none !important;
+    color: var(--ec-text);
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-topbar-context {
+    min-width: 0;
+    gap: 3px;
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-topbar-eyebrow {
+    color: var(--ec-primary) !important;
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-topbar-title {
+    color: var(--ec-text) !important;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Usuário */
+
+body.ec-app-body.ec-dashboard-mode .ec-topbar-profile-trigger {
+    min-height: 38px;
+    border: 1px solid transparent !important;
+    border-radius: 10px;
+    transition:
+        border-color .16s ease,
+        background-color .16s ease;
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-topbar-profile-trigger:hover {
+    background: var(--ec-surface-soft) !important;
+    border-color: var(--ec-border-soft) !important;
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-topbar-avatar {
+    background: var(--ec-primary) !important;
+    color: var(--ec-bg-deep) !important;
+}
+
+/* Acessibilidade */
+
+body.ec-app-body.ec-dashboard-mode
+.ec-nav-item:focus-visible,
+body.ec-app-body.ec-dashboard-mode
+.ec-topbar-profile-trigger:focus-visible {
+    outline: 2px solid var(--ec-primary) !important;
+    outline-offset: 2px;
+}
+
+/* Responsivo */
+
+@media (max-width: 1024px) {
+    body.ec-app-body.ec-dashboard-mode .ec-topbar {
+        padding-inline: 14px !important;
+    }
+
+    body.ec-app-body.ec-dashboard-mode .ec-topbar-title {
+        font-size: 13px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.ec-app-body.ec-dashboard-mode
+    .ec-nav-item,
+    body.ec-app-body.ec-dashboard-mode
+    .ec-topbar-profile-trigger {
+        transition: none !important;
+    }
+}

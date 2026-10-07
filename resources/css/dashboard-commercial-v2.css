@@ -1,0 +1,451 @@
+/*
+ * ExportControl Prospector
+ * Dashboard V2.1 - compacto e unificado
+ */
+
+.ec-overview {
+    --eo-bg: #0b2944;
+    --eo-bg-soft: #10314e;
+    --eo-line: #244a66;
+    --eo-teal: #47d1c0;
+    --eo-text: #edf6fd;
+    --eo-muted: #9ab4cb;
+}
+
+.ec-overview [x-cloak] {
+    display: none !important;
+}
+
+/* Navegação entre os dashboards */
+
+.ec-overview .ec-dash-switch {
+    display: inline-flex;
+    justify-self: start;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 11px;
+    border: 1px solid var(--eo-line);
+    background: #071e32;
+}
+
+.ec-overview .ec-dash-switch button {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 19px;
+    background: transparent;
+    color: #a9bfd4;
+    font-size: 13px;
+    font-weight: 650;
+    transition: background .2s, color .2s;
+}
+
+.ec-overview .ec-dash-switch button:hover {
+    color: #ffffff;
+}
+
+.ec-overview .ec-dash-switch button.is-active {
+    color: #0a302c;
+    background: #4bd3c2;
+}
+
+.ec-overview .ec-dash-pane {
+    display: grid;
+    gap: 15px;
+    min-width: 0;
+}
+
+/* Unificação com a base empresarial */
+
+.ec-overview .eo-panel,
+.ec-overview .eo-kpi {
+    background: var(--eo-bg);
+    border-color: var(--eo-line);
+}
+
+/* Cabeçalho compacto */
+
+.ec-overview .ec-c2 {
+    display: grid;
+    gap: 15px;
+    width: 100%;
+    margin: 0;
+}
+
+.ec-overview .ec-c2-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    padding: 8px 2px 4px;
+}
+
+.ec-overview .ec-c2-eyebrow {
+    color: #53d7c7;
+    font-size: 10px;
+    letter-spacing: .12em;
+    font-weight: 750;
+}
+
+.ec-overview .ec-c2-top h1 {
+    margin: 7px 0;
+    color: #f3f8ff;
+    font-size: clamp(24px, 2.3vw, 31px);
+    font-weight: 750;
+    letter-spacing: -.035em;
+}
+
+.ec-overview .ec-c2-top p {
+    font-size: 13px;
+    color: #9ab4cb;
+}
+
+.ec-overview .ec-c2-actions {
+    display: flex;
+    gap: 9px;
+    flex-wrap: wrap;
+}
+
+.ec-overview .ec-c2-primary,
+.ec-overview .ec-c2-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 39px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.ec-overview .ec-c2-primary {
+    background: #4bd3c2;
+    color: #092e2c;
+}
+
+.ec-overview .ec-c2-primary:hover {
+    background: #7aebdd;
+}
+
+.ec-overview .ec-c2-secondary {
+    background: var(--eo-bg);
+    color: #d3e2ed;
+    border: 1px solid var(--eo-line);
+}
+
+.ec-overview .ec-c2-secondary:hover {
+    background: var(--eo-bg-soft);
+}
+
+/* Indicadores menores */
+
+.ec-overview .ec-c2-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 13px;
+}
+
+.ec-overview .ec-c2-kpi {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 122px;
+    border: 1px solid var(--eo-line);
+    border-radius: 12px;
+    padding: 16px 18px;
+    background: var(--eo-bg);
+    transition: border-color .2s, transform .2s;
+}
+
+.ec-overview .ec-c2-kpi:hover {
+    border-color: #4bd3c2;
+    transform: translateY(-2px);
+}
+
+.ec-overview .ec-c2-kpi-label {
+    color: #b5c9dc;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.ec-overview .ec-c2-kpi-number {
+    color: #f5faff;
+    font-size: clamp(27px, 2.5vw, 35px);
+    line-height: 1.15;
+    font-weight: 750;
+    margin: 9px 0 5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.ec-overview .ec-c2-kpi-note {
+    color: #87a8c1;
+    font-size: 11px;
+    margin-top: auto;
+}
+
+/* Distribuição comercial */
+
+.ec-overview .ec-c2-panel,
+.ec-overview .ec-c2-attention,
+.ec-overview .ec-c2-seller {
+    padding: 20px 23px;
+    border-radius: 12px;
+    background: var(--eo-bg);
+    border: 1px solid var(--eo-line);
+}
+
+.ec-overview .ec-c2-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+}
+
+.ec-overview .ec-c2-panel h2 {
+    font-size: 15px;
+    color: #f1f7fd;
+}
+
+.ec-overview .ec-c2-panel p {
+    font-size: 12px;
+    margin-top: 4px;
+    color: #90acc3;
+}
+
+.ec-overview .ec-c2-link {
+    color: #5bd9c9;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.ec-overview .ec-c2-stack {
+    display: flex;
+    width: 100%;
+    height: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1b405e;
+    margin: 22px 0 18px;
+}
+
+.ec-overview .ec-c2-stack-segment {
+    height: 100%;
+    min-width: 0;
+    transition: filter .2s;
+}
+
+.ec-overview .ec-c2-stack-segment:hover {
+    filter: brightness(1.25);
+}
+
+.ec-overview .ec-c2-stack--new,
+.ec-overview .ec-c2-dot--new {
+    background: #48d2bf;
+}
+
+.ec-overview .ec-c2-stack--contacting,
+.ec-overview .ec-c2-dot--contacting {
+    background: #76a9dc;
+}
+
+.ec-overview .ec-c2-stack--waiting,
+.ec-overview .ec-c2-dot--waiting {
+    background: #eeb978;
+}
+
+.ec-overview .ec-c2-stack--future,
+.ec-overview .ec-c2-dot--future {
+    background: #b69bdf;
+}
+
+.ec-overview .ec-c2-legend {
+    display: flex;
+    gap: 14px 24px;
+    flex-wrap: wrap;
+}
+
+.ec-overview .ec-c2-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #a9bfd3;
+    font-size: 12px;
+}
+
+.ec-overview .ec-c2-legend-item strong {
+    color: #edf7fd;
+    font-variant-numeric: tabular-nums;
+}
+
+.ec-overview .ec-c2-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Pendências expansíveis */
+
+.ec-overview .ec-c2-attention {
+    padding: 0;
+    overflow: hidden;
+}
+
+.ec-overview .ec-c2-attention-toggle {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    padding: 17px 22px;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    color: #f0f8fd;
+}
+
+.ec-overview .ec-c2-attention-toggle:hover {
+    background: #ffffff05;
+}
+
+.ec-overview .ec-c2-attention-heading {
+    display: grid;
+    gap: 4px;
+    flex: 1;
+}
+
+.ec-overview .ec-c2-attention-heading strong {
+    font-size: 13px;
+}
+
+.ec-overview .ec-c2-attention-heading small {
+    color: #91aec5;
+    font-size: 11px;
+}
+
+.ec-overview .ec-c2-attention-count {
+    color: #69dece;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.ec-overview .ec-c2-chevron {
+    color: #8eaac0;
+    font-size: 23px;
+    line-height: 1;
+    transition: transform .2s;
+}
+
+.ec-overview .ec-c2-chevron.is-open {
+    transform: rotate(180deg);
+}
+
+.ec-overview .ec-c2-attention-details {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    padding: 0 22px 18px;
+}
+
+.ec-overview .ec-c2-attention-details a {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid #ffffff12;
+    border-radius: 9px;
+    background: #ffffff04;
+    font-size: 11px;
+    color: #adcadb;
+}
+
+.ec-overview .ec-c2-attention-details a:hover {
+    border-color: #47d1c0;
+}
+
+.ec-overview .ec-c2-attention-details strong {
+    color: #f5faff;
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Visão do vendedor */
+
+.ec-overview .ec-c2-seller h2 {
+    font-size: 17px;
+}
+
+.ec-overview .ec-c2-seller p {
+    margin: 9px 0;
+    color: #a4bfd2;
+}
+
+.ec-overview .ec-c2-seller a {
+    color: #4bd3c2;
+    font-weight: 700;
+}
+
+/* Responsividade */
+
+@media (max-width: 1050px) {
+    .ec-overview .ec-c2-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ec-overview .ec-c2-attention-details {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 650px) {
+    .ec-overview .ec-dash-switch {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .ec-overview .ec-dash-switch button {
+        padding: 10px 7px;
+        font-size: 12px;
+    }
+
+    .ec-overview .ec-c2-top {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .ec-overview .ec-c2-actions {
+        width: 100%;
+    }
+
+    .ec-overview .ec-c2-actions a {
+        flex: 1;
+    }
+
+    .ec-overview .ec-c2-kpis {
+        gap: 9px;
+    }
+
+    .ec-overview .ec-c2-kpi {
+        padding: 14px;
+        min-height: 118px;
+    }
+
+    .ec-overview .ec-c2-panel,
+    .ec-overview .ec-c2-seller {
+        padding: 16px;
+    }
+
+    .ec-overview .ec-c2-attention-details {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ec-overview .ec-c2 * {
+        transition: none !important;
+    }
+}

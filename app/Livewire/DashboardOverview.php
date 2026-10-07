@@ -4,11 +4,14 @@ namespace App\Livewire;
 
 use App\Models\Cnae;
 use App\Models\User;
+use App\Services\CommercialManagementMetricsService;
+use App\Services\DashboardStrategicMetricsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithoutUrlPagination;
@@ -132,6 +135,59 @@ class DashboardOverview extends Component
         ];
     }
 
+    /**
+     * Indicadores comerciais exclusivos da gestão.
+     *
+     * @return array<string, int>|null
+     */
+    #[Computed]
+    public function commercialSummary(): ?array
+    {
+        if (! $this->canExplore) {
+            return null;
+        }
+
+        return app(
+            CommercialManagementMetricsService::class
+        )->summary();
+    }
+
+    /**
+     * Dados estratégicos restritos à gestão comercial.
+     *
+     * @return array{
+     *   export: array{confirmed_companies: int, direct: int, indirect: int, trading: int, researched: int},
+     *   cnaes: list<array{code: string, description: string, companies: int}>
+     * }|null
+     */
+    #[Computed]
+    public function strategicMetrics(): ?array
+    {
+        if (! $this->canExplore) {
+            return null;
+        }
+
+        return app(DashboardStrategicMetricsService::class)->snapshot();
+    }
+
+    /**
+     * Pesquisa global local: respeita a autorização do explorador empresarial.
+     */
+    #[On('dashboard-global-search')]
+    public function dashboardGlobalSearch(string $term): void
+    {
+        $this->assertManager();
+        $term = trim(mb_substr($term, 0, 120));
+
+        if ($term === '') {
+            return;
+        }
+
+        $this->openExplorer('companies');
+        $this->search = $term;
+        unset($this->records);
+    }
+
     public function openExplorer(string $dataset, string $value = ''): void
     {
         $this->assertManager();
@@ -173,7 +229,7 @@ class DashboardOverview extends Component
 
     public function refreshSummary(): void
     {
-        unset($this->summary, $this->records);
+        unset($this->summary, $this->records, $this->commercialSummary, $this->strategicMetrics);
     }
 
     #[Computed]
