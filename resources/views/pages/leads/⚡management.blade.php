@@ -210,6 +210,69 @@ new class extends Component
     }
 
     /**
+     * Prévia não persistente da distribuição.
+     *
+     * @return array<string, mixed>|null
+     */
+    #[Computed]
+    public function distributionPreview(): ?array
+    {
+        $this->assertCommercialManager();
+
+        if (
+            $this->distributionSellerIds
+            === []
+        ) {
+            return null;
+        }
+
+        try {
+            return app(
+                LeadAutoDistributionService::class
+            )->preview(
+                userIds: $this->distributionSellerIds,
+
+                limit: $this->distributionLimit,
+            );
+
+        } catch (DomainException) {
+            /*
+             * Enquanto o gestor edita os
+             * controles, uma configuração
+             * temporariamente inválida apenas
+             * oculta a prévia.
+             */
+            return null;
+        }
+    }
+
+    /**
+     * @return list<array{
+     *     company_id: int,
+     *     company_name: string,
+     *     owner_id: int|null,
+     *     owner_name: string,
+     *     score: int,
+     *     reason: string,
+     *     reason_key: string,
+     *     detail: string,
+     *     moment: string|null,
+     *     filters: array<string, string>
+     * }>
+     */
+    #[Computed]
+    public function managementAttentionQueue(): array
+    {
+        $this->assertCommercialManager();
+
+        return app(
+            CommercialManagementMetricsService::class
+        )->attentionQueue(
+            limit: 20,
+        );
+    }
+
+    /**
      * @return array{
      *     summary: array<string, int>,
      *     sellers: list<array<string, int|string>>
@@ -229,6 +292,22 @@ new class extends Component
 
 <div class="ecgm-page" wire:poll.visible.30s="$refresh">
 
+    <div
+        class="ecgm-page-loading"
+        wire:loading.delay
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+    >
+        <span
+            class="ecgm-page-loading-dot"
+            aria-hidden="true"
+        ></span>
+
+        Atualizando painel comercial...
+    </div>
+
+
     @php
         $dashboard = $this->dashboard;
         $summary = $dashboard['summary'];
@@ -237,6 +316,49 @@ new class extends Component
         $participants = $this->distributionUsers;
         $commercialUsers = $this->commercialUsers;
 
+        $attentionQueue =
+            $this->managementAttentionQueue;
+
+        $distributionPreview =
+            $this->distributionPreview;
+
+
+        $sellerLoads =
+            array_map(
+                static fn (
+                    array $seller
+                ): int => (int) $seller[
+                    'active_total'
+                ],
+                $sellers
+            );
+
+        $maxSellerLoad =
+            $sellerLoads === []
+                ? 1
+                : max(
+                    1,
+                    max(
+                        $sellerLoads
+                    )
+                );
+
+        $attentionSellers =
+            array_slice(
+                array_values(
+                    array_filter(
+                        $sellers,
+                        static fn (
+                            array $seller
+                        ): bool => (int) $seller[
+                            'attention_total'
+                        ] > 0
+                    )
+                ),
+                0,
+                6
+            );
+
         $number = static fn ($value): string =>
             number_format((int) $value, 0, ',', '.');
 
@@ -244,23 +366,16 @@ new class extends Component
             [
                 'active_total',
                 'Carteira ativa',
-                'Leads em operação',
+                'Leads atualmente em trabalho',
                 'neutral',
                 null,
             ],
             [
-                'assigned_total',
-                'Com responsável',
-                'Carteiras atribuídas',
-                'success',
+                'opportunities_total',
+                'Oportunidades ativas',
+                'Com negócio HubSpot em andamento',
+                'info',
                 null,
-            ],
-            [
-                'unassigned_total',
-                'Sem responsável',
-                'Consultar na fila →',
-                'warning',
-                ['owner' => 'unassigned'],
             ],
             [
                 'overdue_total',
@@ -283,26 +398,40 @@ new class extends Component
                 ],
             ],
             [
-                'contacting_total',
-                'Em contato',
-                'Abordagens abertas →',
-                'info',
-                ['workStatus' => 'contacting'],
+                'attention_total',
+                'Exigem atenção',
+                'Atrasos, sem prazo e parados',
+                'danger',
+                null,
+            ],
+            [
+                'unassigned_total',
+                'Sem responsável',
+                'Distribuir carteira →',
+                'warning',
+                [
+                    'owner' => 'unassigned',
+                ],
             ],
         ];
 
         $columns = [
-            ['active_total', 'Carteira', []],
-            ['new_total', 'Novos', ['workStatus' => 'new']],
             [
-                'contacting_total',
-                'Em contato',
-                ['workStatus' => 'contacting'],
+                'active_total',
+                'Carteira',
+                [],
             ],
             [
-                'waiting_total',
-                'Aguardando',
-                ['workStatus' => 'waiting'],
+                'opportunities_total',
+                'Oportunidades',
+                [],
+            ],
+            [
+                'new_total',
+                'Novos',
+                [
+                    'workStatus' => 'new',
+                ],
             ],
             [
                 'overdue_total',
@@ -321,9 +450,19 @@ new class extends Component
                 ],
             ],
             [
-                'future_total',
-                'Futuras',
-                ['workStatus' => 'future'],
+                'unscheduled_total',
+                'Sem prazo',
+                [
+                    'workStatus' => 'waiting',
+                    'followUp' => 'unscheduled',
+                ],
+            ],
+            [
+                'stale_total',
+                'Parados',
+                [
+                    'workStatus' => 'contacting',
+                ],
             ],
         ];
     @endphp
@@ -380,6 +519,271 @@ new class extends Component
         @endforeach
     </section>
 
+    @include(
+        'partials.commercial-attention-queue'
+    )
+
+
+    <section
+        class="ecgm-panel ecgm-team-focus"
+        aria-labelledby="ecgm-focus-title"
+    >
+
+        <header class="ecgm-panel-head">
+
+            <div>
+
+                <span class="ecgm-eyebrow">
+                    ATENÇÃO DA EQUIPE
+                </span>
+
+                <h2 id="ecgm-focus-title">
+                    Carga e pendências por vendedor
+                </h2>
+
+                <p>
+                    Quem concentra mais trabalho e onde
+                    existem retornos que precisam de ação.
+                </p>
+
+            </div>
+
+            <span class="ecgm-focus-total">
+                {{
+                    $number(
+                        $summary[
+                            'attention_total'
+                        ]
+                    )
+                }}
+                item(ns) exigem atenção
+            </span>
+
+        </header>
+
+
+        <div class="ecgm-team-focus-grid">
+
+            @forelse (
+                $sellers
+                as $seller
+            )
+
+                @php
+                    $loadPercent =
+                        min(
+                            100,
+                            (int) round(
+                                (
+                                    (int) $seller[
+                                        'active_total'
+                                    ]
+                                    / $maxSellerLoad
+                                )
+                                * 100
+                            )
+                        );
+                @endphp
+
+                <article
+                    class="
+                        ecgm-seller-card
+                        {{
+                            (int) $seller[
+                                'attention_total'
+                            ] > 0
+                                ? 'has-attention'
+                                : ''
+                        }}
+                    "
+                    wire:key="
+                        ecgm-focus-{{
+                            $seller[
+                                'user_id'
+                            ]
+                        }}
+                    "
+                >
+
+                    <div class="ecgm-seller-card-head">
+
+                        <div>
+
+                            <strong>
+                                {{ $seller['name'] }}
+                            </strong>
+
+                            <span>
+                                {{
+                                    $number(
+                                        $seller[
+                                            'active_total'
+                                        ]
+                                    )
+                                }}
+                                na carteira
+                            </span>
+
+                        </div>
+
+                        @if (
+                            (int) $seller[
+                                'attention_total'
+                            ] > 0
+                        )
+
+                            <span class="ecgm-attention-pill">
+                                {{
+                                    $number(
+                                        $seller[
+                                            'attention_total'
+                                        ]
+                                    )
+                                }}
+                                atenção
+                            </span>
+
+                        @else
+
+                            <span
+                                class="
+                                    ecgm-attention-pill
+                                    is-clear
+                                "
+                            >
+                                Em dia
+                            </span>
+
+                        @endif
+
+                    </div>
+
+
+                    <div
+                        class="ecgm-load-track"
+                        title="
+                            Carga relativa da carteira
+                        "
+                    >
+                        <span
+                            style="
+                                width:
+                                {{ $loadPercent }}%;
+                            "
+                        ></span>
+                    </div>
+
+
+                    <div class="ecgm-seller-signals">
+
+                        <span
+                            class="{{
+                                (int) $seller[
+                                    'overdue_total'
+                                ] > 0
+                                    ? 'is-danger'
+                                    : ''
+                            }}"
+                        >
+                            Atrasados
+                            <strong>
+                                {{
+                                    $number(
+                                        $seller[
+                                            'overdue_total'
+                                        ]
+                                    )
+                                }}
+                            </strong>
+                        </span>
+
+                        <span>
+                            Hoje
+                            <strong>
+                                {{
+                                    $number(
+                                        $seller[
+                                            'due_today_total'
+                                        ]
+                                    )
+                                }}
+                            </strong>
+                        </span>
+
+                        <span>
+                            Sem prazo
+                            <strong>
+                                {{
+                                    $number(
+                                        $seller[
+                                            'unscheduled_total'
+                                        ]
+                                    )
+                                }}
+                            </strong>
+                        </span>
+
+                        <span>
+                            Parados
+                            <strong>
+                                {{
+                                    $number(
+                                        $seller[
+                                            'stale_total'
+                                        ]
+                                    )
+                                }}
+                            </strong>
+                        </span>
+
+                    </div>
+
+
+                    <a
+                        href="{{
+                            route(
+                                'leads.index',
+                                [
+                                    'owner' =>
+                                        (string) $seller[
+                                            'user_id'
+                                        ],
+                                ]
+                            )
+                        }}"
+                        wire:navigate
+                        class="ecgm-seller-open"
+                    >
+                        Abrir carteira →
+                    </a>
+
+                </article>
+
+            @empty
+
+                <div class="ecgm-focus-empty">
+                    <div class="ecgm-empty-state">
+
+                                    <strong>
+                                        Nenhuma carteira atribuída.
+                                    </strong>
+
+                                    <span>
+                                        Distribua novos leads ou atribua
+                                        empresas para começar a acompanhar
+                                        a carga da equipe.
+                                    </span>
+
+                                </div>
+                </div>
+
+            @endforelse
+
+        </div>
+
+    </section>
+
+
     <section
         class="ecgm-panel"
         aria-labelledby="ecgm-team-title"
@@ -391,8 +795,8 @@ new class extends Component
                 </h2>
 
                 <p>
-                    Clique nos números para consultar os leads
-                    de cada responsável.
+                    Compare carteira, oportunidades e pendências.
+                    Clique nos números para abrir a fila correspondente.
                 </p>
             </div>
 
@@ -402,7 +806,7 @@ new class extends Component
         </header>
 
         <div class="ecgm-table-scroll">
-            <table class="ecgm-table">
+            <table class="ecgm-table ecgm-management-table">
                 <caption class="ecgm-sr">
                     Carteira e pendências por responsável comercial
                 </caption>
@@ -478,20 +882,59 @@ new class extends Component
         </div>
 
         <footer class="ecgm-totals">
+
             <span>
                 Novos
-                <strong>{{ $number($summary['new_total']) }}</strong>
+                <strong>
+                    {{
+                        $number(
+                            $summary[
+                                'new_total'
+                            ]
+                        )
+                    }}
+                </strong>
             </span>
 
             <span>
-                Aguardando retorno
-                <strong>{{ $number($summary['waiting_total']) }}</strong>
+                Sem prazo
+                <strong>
+                    {{
+                        $number(
+                            $summary[
+                                'unscheduled_total'
+                            ]
+                        )
+                    }}
+                </strong>
             </span>
 
             <span>
-                Oportunidades futuras ativas
-                <strong>{{ $number($summary['future_total']) }}</strong>
+                Contatos parados
+                <strong>
+                    {{
+                        $number(
+                            $summary[
+                                'stale_total'
+                            ]
+                        )
+                    }}
+                </strong>
             </span>
+
+            <span>
+                Futuras
+                <strong>
+                    {{
+                        $number(
+                            $summary[
+                                'future_total'
+                            ]
+                        )
+                    }}
+                </strong>
+            </span>
+
         </footer>
     </section>
 
@@ -600,6 +1043,11 @@ new class extends Component
                         </p>
                     @endforelse
                 </fieldset>
+
+                @include(
+                    'partials.commercial-distribution-preview'
+                )
+
 
                 <div class="ecgm-distribution-actions">
                     <div class="ecgm-field">

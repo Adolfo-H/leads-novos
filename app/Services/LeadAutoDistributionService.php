@@ -22,6 +22,249 @@ final class LeadAutoDistributionService
     }
 
     /**
+     * Simula a distribuição sem alterar ownership.
+     *
+     * Usa a mesma carga ativa e o mesmo critério
+     * de menor carteira da execução real.
+     *
+     * @param  array<int, int|string>  $userIds
+     * @return array{
+     *     available_before: int,
+     *     planned: int,
+     *     remaining_after: int,
+     *     requested_limit: int,
+     *     balance_before: array{
+     *         min: int,
+     *         max: int,
+     *         spread: int
+     *     },
+     *     balance_after: array{
+     *         min: int,
+     *         max: int,
+     *         spread: int
+     *     },
+     *     users: list<array{
+     *         user_id: int,
+     *         name: string,
+     *         starting_load: int,
+     *         assigned_now: int,
+     *         ending_load: int
+     *     }>
+     * }
+     */
+    public function preview(
+        array $userIds,
+        int $limit = 50,
+    ): array {
+        if (
+            $limit < 1
+            || $limit > 500
+        ) {
+            throw new DomainException(
+                'A quantidade deve ficar entre 1 e 500 leads.'
+            );
+        }
+
+        $normalizedUserIds =
+            $this->normalizeUserIds(
+                $userIds
+            );
+
+        if ($normalizedUserIds === []) {
+            throw new DomainException(
+                'Selecione pelo menos um responsável.'
+            );
+        }
+
+        $users =
+            User::query()
+                ->whereIn(
+                    'id',
+                    $normalizedUserIds
+                )
+                ->whereNotNull(
+                    'email_verified_at'
+                )
+                ->orderBy(
+                    'id'
+                )
+                ->get([
+                    'id',
+                    'name',
+                ]);
+
+        if (
+            $users->count()
+            !== count(
+                $normalizedUserIds
+            )
+        ) {
+            throw new DomainException(
+                'Um ou mais responsáveis selecionados não estão disponíveis.'
+            );
+        }
+
+        /** @var array<int, User> $ownersById */
+        $ownersById = [];
+
+        foreach ($users as $user) {
+            $ownersById[
+                (int) $user->id
+            ] =
+                $user;
+        }
+
+        $availableBefore =
+            $this
+                ->candidateQuery()
+                ->count();
+
+        $planned =
+            min(
+                $availableBefore,
+                $limit
+            );
+
+        $loads =
+            $this->activeLoads(
+                $normalizedUserIds
+            );
+
+        $startingLoads =
+            $loads;
+
+        $assignedNow =
+            array_fill_keys(
+                $normalizedUserIds,
+                0
+            );
+
+        /*
+         * Simulação puramente em memória.
+         *
+         * Nenhum CompanyLeadWorkState é
+         * criado ou alterado aqui.
+         */
+        for (
+            $index = 0;
+            $index < $planned;
+            $index++
+        ) {
+            $recipientId =
+                $this->leastLoadedUserId(
+                    $loads
+                );
+
+            $loads[
+                $recipientId
+            ]++;
+
+            $assignedNow[
+                $recipientId
+            ]++;
+        }
+
+        $userSummary = [];
+
+        foreach (
+            $normalizedUserIds as $userId
+        ) {
+            $userSummary[] = [
+                'user_id' => $userId,
+
+                'name' => $ownersById[
+                        $userId
+                    ]->name,
+
+                'starting_load' => $startingLoads[
+                        $userId
+                    ],
+
+                'assigned_now' => $assignedNow[
+                        $userId
+                    ],
+
+                'ending_load' => $loads[
+                        $userId
+                    ],
+            ];
+        }
+
+        $beforeValues =
+            array_values(
+                $startingLoads
+            );
+
+        $afterValues =
+            array_values(
+                $loads
+            );
+
+        if (
+            $beforeValues === []
+            || $afterValues === []
+        ) {
+            throw new DomainException(
+                'Não há responsável disponível para simular a distribuição.'
+            );
+        }
+
+        $beforeMin =
+            min(
+                $beforeValues
+            );
+
+        $beforeMax =
+            max(
+                $beforeValues
+            );
+
+        $afterMin =
+            min(
+                $afterValues
+            );
+
+        $afterMax =
+            max(
+                $afterValues
+            );
+
+        return [
+            'available_before' => $availableBefore,
+
+            'planned' => $planned,
+
+            'remaining_after' => max(
+                0,
+                $availableBefore
+                - $planned
+            ),
+
+            'requested_limit' => $limit,
+
+            'balance_before' => [
+                'min' => $beforeMin,
+
+                'max' => $beforeMax,
+
+                'spread' => $beforeMax
+                    - $beforeMin,
+            ],
+
+            'balance_after' => [
+                'min' => $afterMin,
+
+                'max' => $afterMax,
+
+                'spread' => $afterMax
+                    - $afterMin,
+            ],
+
+            'users' => $userSummary,
+        ];
+    }
+
+    /**
      * @param  array<int, int|string>  $userIds
      * @return array{
      *     available_before: int,

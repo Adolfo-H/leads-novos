@@ -8,6 +8,7 @@
 @import '../../vendor/livewire/flux/dist/flux.css';
 @import './prospecting-workspace.css';
 @import './leads-workspace.css';
+@import './commercial-management.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
