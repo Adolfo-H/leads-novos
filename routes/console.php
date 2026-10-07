@@ -78,6 +78,12 @@ Schedule::command(
     ->everyTenMinutes()
     ->withoutOverlapping();
 
+Schedule::command(
+    'hubspot:bulk-recover --minutes=20 --limit=100'
+)
+    ->everyFiveMinutes()
+    ->withoutOverlapping();
+
 /*
  * Reconciliação preventiva das Primary Companies.
  *
