@@ -1,0 +1,280 @@
+/* Dashboard V7 — Correções pontuais. Não altera Leads e demais módulos. */
+
+/* Mapa SVG verdadeiro: cada UF possui sua própria área de foco e hover. */
+.ec-strategic-v4 .ds-v5-map.ds-v7-map-interactive {
+    position: relative;
+    display: block;
+    width: 100%;
+    max-width: 205px;
+    height: 176px;
+    max-height: 176px;
+    margin-inline: auto;
+    overflow: visible;
+    background: transparent;
+    isolation: isolate;
+    filter: drop-shadow(0 0 8px rgba(24, 184, 226, .14));
+}
+.ec-strategic-v4 .ds-v7-map-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+.ec-strategic-v4 .ds-v7-state {
+    fill: #143c67;
+    stroke: #27aacf;
+    stroke-width: 2.1px;
+    stroke-linejoin: round;
+    cursor: pointer;
+    transition: fill .14s ease, stroke .14s ease, filter .14s ease;
+}
+.ec-strategic-v4 .ds-v7-state:nth-of-type(3n) { fill: #174d7a; }
+.ec-strategic-v4 .ds-v7-state:nth-of-type(4n) { fill: #0c335b; }
+.ec-strategic-v4 .ds-v7-state:is(:hover, :focus, .is-active),
+.ec-strategic-v4 .ds-v7-df-target:is(:hover, :focus) {
+    fill: #34c8d3;
+    stroke: #a2faff;
+    filter: drop-shadow(0 0 6px rgba(43, 225, 237, .55));
+    outline: none;
+}
+.ec-strategic-v4 .ds-v7-df-target {
+    fill: #2e9dbf;
+    stroke: #9df6ff;
+    stroke-width: 1.5px;
+    cursor: pointer;
+}
+.ec-strategic-v4 .ds-v7-map-tooltip {
+    position: absolute;
+    z-index: 30;
+    width: 150px;
+    min-height: 66px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    background: #062c48;
+    border: 1px solid rgba(74, 220, 228, .6);
+    box-shadow: 0 8px 24px rgba(0, 8, 20, .4);
+    color: #eafaff;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 10px;
+    line-height: 1.25;
+    white-space: normal;
+}
+.ec-strategic-v4 .ds-v7-map-tooltip strong { color: #68e7dc; font-size: 11px; }
+.ec-strategic-v4 .ds-v7-map-tooltip span:last-child { color: #a0c4d9; }
+.ec-strategic-v4 .ds-v7-map-tooltip[x-cloak] { display: none !important; }
+
+/* Único card ilustrado acima de Configurações, com imagem carregada como <img>. */
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-world-v7 {
+    position: relative;
+    flex: 0 0 auto;
+    isolation: isolate;
+    height: 168px;
+    min-height: 168px;
+    margin: 8px 16px 13px;
+    border-radius: 14px;
+    border: 1px solid rgba(43, 148, 188, .37);
+    background: #062743;
+    overflow: hidden;
+}
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-world-v7 > img {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 43%;
+    opacity: .87;
+}
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-world-v7::after {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(2, 22, 41, .03) 10%, rgba(2, 22, 41, .52) 65%, rgba(2, 22, 41, .92) 100%);
+}
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-world-v7__caption {
+    position: absolute;
+    z-index: 2;
+    left: 15px;
+    right: 10px;
+    bottom: 15px;
+    display: flex;
+    align-items: end;
+    gap: 11px;
+}
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-world-v7__caption::before {
+    content: '';
+    display: block;
+    width: 3px;
+    min-width: 3px;
+    height: 52px;
+    border-radius: 2px;
+    background: #46e5dd;
+    box-shadow: 0 0 10px rgba(65, 227, 219, .35);
+}
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-world-v7__caption p {
+    max-width: 148px;
+    margin: 0;
+    color: #f2fbff;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.38;
+    text-shadow: 0 1px 5px rgba(0, 14, 29, .8);
+}
+/* Scroll permanece funcionando, apenas a barra visual desaparece. */
+body.ec-app-body.ec-dashboard-mode .ec-sidebar,
+body.ec-app-body.ec-dashboard-mode .ec-sidebar * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+body.ec-app-body.ec-dashboard-mode .ec-sidebar::-webkit-scrollbar,
+body.ec-app-body.ec-dashboard-mode .ec-sidebar *::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+}
+@media (max-height: 780px) and (min-width: 1024px) {
+    body.ec-app-body.ec-dashboard-mode .ec-sidebar-world-v7 {
+        height: 128px;
+        min-height: 128px;
+        margin-top: 5px;
+        margin-bottom: 8px;
+    }
+    body.ec-app-body.ec-dashboard-mode .ec-sidebar-world-v7__caption { bottom: 10px; }
+}
+@media (max-width: 650px) {
+    .ec-strategic-v4 .ds-v5-map.ds-v7-map-interactive { height: 150px; max-height: 150px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ec-strategic-v4 .ds-v7-state { transition: none !important; }
+}
+
+/* EC_WORLD_BLEND_V8_START */
+
+/* Remove totalmente a aparência de card */
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-world-v7 {
+    position: relative;
+    height: 170px !important;
+    min-height: 170px !important;
+    margin: 4px 5px 6px !important;
+    padding: 0 !important;
+
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+
+    overflow: visible !important;
+    isolation: isolate;
+}
+
+/* Globo fundido ao fundo original da sidebar */
+body.ec-app-body.ec-dashboard-mode
+.ec-sidebar-world-v7 > img {
+    position: absolute !important;
+    inset: 0 !important;
+
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+
+    object-fit: cover !important;
+    object-position: center 45% !important;
+
+    opacity: .86 !important;
+    filter: brightness(.76) saturate(.85) !important;
+
+    -webkit-mask-image: radial-gradient(
+        ellipse 65% 68% at 50% 50%,
+        #000 18%,
+        rgba(0,0,0,.87) 35%,
+        transparent 73%
+    ) !important;
+
+    mask-image: radial-gradient(
+        ellipse 65% 68% at 50% 50%,
+        #000 18%,
+        rgba(0,0,0,.87) 35%,
+        transparent 73%
+    ) !important;
+
+    pointer-events: none;
+}
+
+/* Remove a camada retangular anterior */
+body.ec-app-body.ec-dashboard-mode
+.ec-sidebar-world-v7::after {
+    content: none !important;
+    display: none !important;
+}
+
+/* Mantém a legenda legível */
+body.ec-app-body.ec-dashboard-mode
+.ec-sidebar-world-v7__caption {
+    left: 20px !important;
+    right: 14px !important;
+    bottom: 16px !important;
+    z-index: 2 !important;
+}
+
+body.ec-app-body.ec-dashboard-mode
+.ec-sidebar-world-v7__caption p {
+    color: #edf8ff !important;
+    text-shadow: 0 2px 8px rgba(0, 10, 25, .85);
+}
+
+/* Altura reduzida em telas menores */
+@media (max-height: 780px) and (min-width: 1024px) {
+    body.ec-app-body.ec-dashboard-mode .ec-sidebar-world-v7 {
+        height: 140px !important;
+        min-height: 140px !important;
+    }
+}
+
+/* EC_WORLD_BLEND_V8_END */
+
+/* EC_WORLD_SIZE_V9_START */
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-world-v7 {
+    height: 245px !important;
+    min-height: 245px !important;
+    margin: 10px 6px 14px !important;
+}
+
+body.ec-app-body.ec-dashboard-mode
+.ec-sidebar-world-v7 > img {
+    object-position: center 42% !important;
+    opacity: .9 !important;
+}
+
+body.ec-app-body.ec-dashboard-mode
+.ec-sidebar-world-v7__caption {
+    left: 22px !important;
+    right: 18px !important;
+    bottom: 20px !important;
+}
+
+body.ec-app-body.ec-dashboard-mode
+.ec-sidebar-world-v7__caption p {
+    max-width: 165px !important;
+    font-size: 14px !important;
+    line-height: 1.38 !important;
+}
+
+body.ec-app-body.ec-dashboard-mode
+.ec-sidebar-world-v7__caption-line {
+    height: 78px !important;
+}
+
+@media (max-height: 820px) and (min-width: 1024px) {
+    body.ec-app-body.ec-dashboard-mode .ec-sidebar-world-v7 {
+        height: 210px !important;
+        min-height: 210px !important;
+    }
+}
+/* EC_WORLD_SIZE_V9_END */

@@ -22,6 +22,7 @@ use App\Support\Cnpj;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -42,6 +43,12 @@ new class extends Component
 
     #[Url]
     public string $owner = '';
+
+    #[Url]
+    public string $dashboardView = '';
+
+    #[Url]
+    public string $dashboardStage = '';
 
     #[Url]
     public string $workStatus = '';
@@ -133,6 +140,13 @@ new class extends Component
             $allowed,
             403
         );
+    }
+
+    #[On('leads-topbar-search')]
+    public function leadsTopbarSearch(string $term): void
+    {
+        $this->search = trim(mb_substr($term, 0, 120));
+        $this->updatedSearch();
     }
 
     public function updatedSearch(): void
@@ -227,6 +241,8 @@ new class extends Component
             'crm',
             'state',
             'owner',
+            'dashboardView',
+            'dashboardStage',
             'workStatus',
             'followUp',
             'dailyView',
@@ -266,7 +282,7 @@ new class extends Component
             ->select(
                 'companies.*'
             )
-            ->join(
+            ->leftJoin(
                 'company_sdr_scores as sdr',
                 'sdr.company_id',
                 '=',
@@ -278,24 +294,47 @@ new class extends Component
                 '=',
                 'companies.id'
             )
-            /*
-             * A tela Leads mostra somente
-             * empresas comercialmente elegíveis.
-             *
-             * Cliente, oportunidade ativa e
-             * bloqueios de cooldown ficam fora.
-             */
-            ->where(
+            // A listagem comum mantém a regra original de elegibilidade.
+            // Quando se abre uma etapa do gráfico, ela usa a fonte segura
+            // dos negócios do usuário, inclusive recusados/descartados.
+            ->when(
+                $this->dashboardStage === '',
                 function ($query): void {
-                    $query
-                        ->where(
-                            'sdr.is_eligible',
-                            true
-                        )
-                        ->orWhereNotNull(
-                            'work.hubspot_deal_id'
-                        );
+                    $query->whereNotNull('sdr.company_id')
+                        ->where(function ($eligibleQuery): void {
+                            $eligibleQuery->where('sdr.is_eligible', true)
+                                ->orWhereNotNull('work.hubspot_deal_id');
+                        });
                 }
+            )
+            ->when(
+                $this->dashboardStage !== '',
+                function ($query): void {
+                    $userId = (int) (auth()->id() ?? 0);
+                    $companyIds = app(\App\Services\DashboardStageDrilldownService::class)
+                        ->companyIdsForStage($userId, $this->dashboardStage);
+                    $query->whereIn('companies.id', $companyIds);
+                }
+            )
+            ->when(
+                in_array($this->dashboardView, ['active', 'with_deal'], true),
+                function ($query): void {
+                    $query->where(function ($statusQuery): void {
+                        $statusQuery->whereNull('work.id')
+                            ->orWhereIn('work.work_status', [
+                                'new', 'contacting', 'waiting', 'future',
+                            ]);
+                    });
+                }
+            )
+            ->when(
+                $this->dashboardView === 'with_deal',
+                fn ($query) => $query->whereNotNull('work.hubspot_deal_id')
+            )
+            ->when(
+                $this->dashboardView !== ''
+                    && ! in_array($this->dashboardView, ['active', 'with_deal'], true),
+                fn ($query) => $query->whereRaw('1 = 0')
             )
             ->when(
                 ! $this->isCommercialManager(),
@@ -3688,7 +3727,7 @@ new class extends Component
 ?>
 
 <div
-    class="ec-page-shell leads-rf"
+    class="ec-page-shell leads-rf leads-v11 leads-v13"
     wire:poll.10s="$refresh"
 >
 
@@ -3722,11 +3761,7 @@ new class extends Component
 
             </div>
 
-            <p class="rf-subtitle">
-                Veja rapidamente quem priorizar,
-                em que situação cada empresa está
-                e qual é o próximo passo comercial.
-            </p>
+            <p class="rf-subtitle">Sua operação comercial em um só lugar.</p>
 
         </div>
 
@@ -3734,46 +3769,33 @@ new class extends Component
 
         <div class="rf-header-actions">
 
-            <button
-                type="button"
-                class="rf-export-button"
-                wire:click="exportExcel"
-                wire:loading.attr="disabled"
-                wire:target="exportExcel"
-            >
-                <span
-                    wire:loading.remove
-                    wire:target="exportExcel"
-                >
-                    ↓ Exportar Excel
-                </span>
-
-                <span
-                    wire:loading
-                    wire:target="exportExcel"
-                >
-                    Gerando Excel...
-                </span>
-            </button>
-
-        </div>
-
-</header>
-
-
-
     @php
         $hubSpotHealth =
             $this
                 ->hubSpotRealtimeHealth;
     @endphp
 
-    <section
+    <details class="lv14-hubspot-status"
+                x-on:click.outside="$el.removeAttribute('open')"
+                x-on:keydown.escape="$el.removeAttribute('open')">
+                <summary class="lv14-hubspot-summary" title="Clique para consultar a saúde da integração">
+                    <span class="lv14-hubspot-dot is-{{ $hubSpotHealth['status'] }}" aria-hidden="true"></span>
+                    <span class="lv14-hubspot-copy">
+                        <strong>{{ $hubSpotHealth['status'] === 'healthy' && $hubSpotHealth['tunnel_checked'] ? 'HubSpot sincronizado' : $hubSpotHealth['label'] }}</strong>
+                        <small>Último webhook {{ $hubSpotHealth['last_event_label'] }}</small>
+                    </span>
+                    <span class="lv14-hubspot-chevron" aria-hidden="true">⌄</span>
+                </summary>
+                <div class="lv14-hubspot-popup" role="region" aria-label="Diagnósticos do HubSpot">
+<section
         class="
             rf-hubspot-health
             is-{{ $hubSpotHealth['status'] }}
         "
         wire:poll.10s="$refresh"
+        x-data="{ expanded: false }"
+        x-bind:class="{ 'lv11-health-expanded': expanded }"
+        tabindex="0"
     >
 
         <div class="rf-hubspot-health-content">
@@ -3832,7 +3854,12 @@ new class extends Component
             </div>
 
 
-            <div class="rf-hubspot-health-checks">
+            <button type="button" class="lv11-health-more"
+                    x-on:click="expanded = !expanded"
+                    x-bind:aria-expanded="expanded ? 'true' : 'false'"
+                    aria-controls="lv11-hubspot-diagnostics">Detalhes da integração</button>
+
+            <div id="lv11-hubspot-diagnostics" class="rf-hubspot-health-checks">
 
                 <span
                     class="
@@ -4054,6 +4081,39 @@ new class extends Component
         @endif
 
     </section>
+                </div>
+            </details>
+
+
+
+            <button
+                type="button"
+                class="rf-export-button"
+                wire:click="exportExcel"
+                wire:loading.attr="disabled"
+                wire:target="exportExcel"
+            >
+                <span
+                    wire:loading.remove
+                    wire:target="exportExcel"
+                >
+                    ↓ Exportar Excel
+                </span>
+
+                <span
+                    wire:loading
+                    wire:target="exportExcel"
+                >
+                    Gerando Excel...
+                </span>
+            </button>
+
+        </div>
+
+</header>
+
+
+
 
 
     @if ($commercialActionMessage !== '')
@@ -4082,9 +4142,7 @@ new class extends Component
     @endif
 
 
-    @include(
-        'partials.leads-action-center'
-    )
+    @include('partials.leads-action-center-v11')
 
 
             @include(
@@ -4108,6 +4166,7 @@ new class extends Component
                 </span>
 
             </div>
+
 
             <button
                 type="button"
@@ -4262,6 +4321,13 @@ new class extends Component
             </select>
 
 
+
+
+        </div>
+
+
+        <div class="rf-filter-secondary">
+
             <select
                 wire:model.live="workStatus"
                 class="rf-select"
@@ -4291,10 +4357,6 @@ new class extends Component
                 </option>
             </select>
 
-        </div>
-
-
-        <div class="rf-filter-secondary">
 
             @if (
                 $this->isCommercialManager()
@@ -4394,10 +4456,13 @@ new class extends Component
 
                                 </div>
 
+        @include('partials.leads-active-filters-v11')
     </section>
 
 
-    @include(
+
+
+@include(
         'partials.hubspot-unmatched-leads'
     )
 
@@ -4410,9 +4475,31 @@ new class extends Component
         )
     )
 
-    <section class="rf-panel rf-list-panel">
+    @if ($dashboardView !== '' || $dashboardStage !== '')
+        <section class="rf-dashboard-drilldown" aria-label="Filtro aplicado pelo dashboard">
+            <span>Visualização do dashboard:</span>
+            <strong>
+                @if ($dashboardStage !== '')
+                    Meus negócios · {{ $dashboardStage === '__others__' ? 'Outras etapas' : $dashboardStage }}
+                @elseif ($dashboardView === 'with_deal')
+                    Leads com negócio HubSpot
+                @elseif ($owner === 'unassigned')
+                    Leads em operação sem responsável
+                @else
+                    Leads em operação
+                @endif
+            </strong>
+            <button type="button" wire:click="clearFilters">Limpar filtros</button>
+        </section>
+    @endif
+
+    <section class="rf-panel rf-list-panel" x-data="{ selectedIds: [] }">
 
         <div class="rf-list-toolbar">
+            <div class="lv13-selected" x-show="selectedIds.length > 0" x-cloak>
+                <strong x-text="selectedIds.length + ' selecionado(s)'"></strong>
+                <button type="button" x-on:click="selectedIds = []">Limpar seleção</button>
+            </div>
 
             <div>
 
@@ -4464,19 +4551,19 @@ new class extends Component
                 </div>
 
                 <div>
-                    Prioridade
+                    Score / ICP
                 </div>
 
                 <div>
-                    Perfil comercial
+                    Situação comercial
                 </div>
 
                 <div>
-                    Pipeline
+                    Etapa HubSpot
                 </div>
 
                 <div>
-                    Status / prazo
+                    Próxima ação
                 </div>
 
                 <div>
@@ -4484,11 +4571,22 @@ new class extends Component
                 </div>
 
                 <div>
-                    Próxima ação
+                    Ações
                 </div>
 
             </div>
 
+
+            {{-- Cabeçalho da lista V13; cabeçalho anterior fica como fallback no Blade. --}}
+            <div class="lv13-list-head" aria-label="Colunas da listagem de leads">
+                <label class="lv13-check" title="Selecionar leads desta página">
+                    <input type="checkbox" aria-label="Selecionar leads desta página"
+                           x-on:change="selectedIds = $event.target.checked ? (@js($this->leads->getCollection()->pluck('id')->values()->all())).map(String) : []">
+                </label>
+                <span>Empresa</span><span>Score / ICP</span><span>Situação comercial</span>
+                <span>Etapa HubSpot</span><span>Próxima ação</span>
+                <span>Responsável</span><span>Ações</span>
+            </div>
 
             @forelse (
                 $this->leads
@@ -4981,15 +5079,99 @@ new class extends Component
                                 : ''
                         }}
                     "
-                >
+                 x-data="{ detailsOpen: false }">
+
+                                        {{-- Resumo compacto V13, preservando o bloco completo abaixo. --}}
+                    <div class="lv13-lead-line" x-bind:class="{ 'is-selected': selectedIds.includes('{{ $lead->id }}') }">
+                        <label class="lv13-check" title="Selecionar {{ $lead->corporate_name }}">
+                            <input type="checkbox" value="{{ $lead->id }}" x-model="selectedIds" aria-label="Selecionar {{ $lead->corporate_name }}">
+                        </label>
+
+                        <div class="lv13-company">
+                            <span class="lv13-company-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr(trim((string) $lead->corporate_name), 0, 1)) }}</span>
+                            <span class="lv13-company-body">
+                                <a class="lv13-company-name" href="{{ route('companies.show', $lead) }}" wire:navigate>{{ $lead->corporate_name }}</a>
+                                <small>CNPJ {{ $matrix?->cnpj ? \App\Support\Cnpj::format($matrix->cnpj) : $lead->cnpj_root }}</small>
+                                <small>{{ $matrix?->state ?: 'UF não informada' }}@if ($matrix?->municipality_name) · {{ $matrix->municipality_name }}@endif</small>
+                            </span>
+                        </div>
+
+                        <div class="lv13-score">
+                            <strong>{{ $displayScore }}/100</strong>
+                            <span class="lv13-score-track"><i style="width: {{ $displayScore }}%"></i></span>
+                            <span class="lv13-icp">ICP {{ $icpScore?->grade ?? '—' }}</span>
+                        </div>
+
+                        <div class="lv13-status">
+                            <span class="lv13-pill lv13-status--{{ $currentWorkStatus }}">{{ $this->workStatusLabel($currentWorkStatus) }}</span>
+                            <small>{{ $leadIsOverdue ? 'Follow-up atrasado' : ($leadIsDueToday ? 'Retorno hoje' : $this->workContext($hubSpotLead)) }}</small>
+                        </div>
+
+                        <div class="lv13-stage">
+                            @if ($visibleDeals !== [])
+                                @php
+                                    $lv13First = $visibleDeals[0];
+                                    $lv13Stage = (string) ($lv13First['stage'] ?? 'Etapa não informada');
+                                    $lv13StageLower = mb_strtolower($lv13Stage);
+                                    $lv13StageTone = match (true) {
+                                        str_contains($lv13StageLower, 'recus'), str_contains($lv13StageLower, 'descart') => 'red',
+                                        str_contains($lv13StageLower, 'frio') => 'blue',
+                                        str_contains($lv13StageLower, 'qualific') => 'purple',
+                                        str_contains($lv13StageLower, 'oportunidade') => 'teal',
+                                        default => 'neutral',
+                                    };
+                                @endphp
+                                <span class="lv13-pill lv13-stage--{{ $lv13StageTone }}" title="{{ $lv13Stage }}">{{ \Illuminate\Support\Str::limit($lv13Stage, 24) }}</span>
+                                @if ($hiddenDealCount > 0)<small>+{{ $hiddenDealCount }} etapa(s)</small>@endif
+                            @else
+                                <small>Sem negócio vinculado</small>
+                            @endif
+                        </div>
+
+                        <div class="lv13-next">
+                            <strong>{{ $leadPrimaryAction }}</strong>
+                            @if ($hubSpotLead?->last_task_due_at)
+                                <time datetime="{{ $hubSpotLead->last_task_due_at->toIso8601String() }}">{{ $hubSpotLead->last_task_due_at->format('d/m/Y') }}</time>
+                            @elseif ($hubSpotLead?->last_activity_at)
+                                <small>Interação: {{ $hubSpotLead->last_activity_at->format('d/m/Y') }}</small>
+                            @endif
+                        </div>
+
+                        <div class="lv13-owner">
+                            <span class="lv13-owner-avatar" aria-hidden="true">{{ $assignedUser ? mb_strtoupper(mb_substr($assignedUser->name, 0, 2)) : '—' }}</span>
+                            <span class="lv13-owner-name">{{ $assignedUser?->name ?? 'Sem responsável' }}</span>
+                        </div>
+
+                        <div class="lv13-actions">
+                            <a title="Abrir dossiê" aria-label="Abrir dossiê de {{ $lead->corporate_name }}" href="{{ route('companies.show', $lead) }}" wire:navigate>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </a>
+                            <button type="button" title="Editar e ver detalhes" aria-label="Editar e ver detalhes de {{ $lead->corporate_name }}" x-on:click="detailsOpen = !detailsOpen" x-bind:aria-expanded="detailsOpen ? 'true' : 'false'">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m15 5 4 4M4 20l4.5-1L20 7.5a2.5 2.5 0 0 0-3.5-3.5L5 15.5 4 20z"/></svg>
+                            </button>
+                            <details class="lv13-more">
+                                <summary aria-label="Mais opções para {{ $lead->corporate_name }}" title="Mais opções">⋮</summary>
+                                <div class="lv13-more-menu">
+                                    <button type="button" x-on:click="detailsOpen = true">Ver controles completos</button>
+                                    @if ($hubSpotActionUrl)
+                                        <a href="{{ $hubSpotActionUrl }}" target="_blank" rel="noopener noreferrer">Abrir no HubSpot ↗</a>
+                                    @endif
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+
+                    <div class="lv13-details" x-show="detailsOpen" x-cloak>
 
                     {{-- EMPRESA --}}
                     <div
                         class="rf-col-company">
+                        <span class="lv11-company-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($lead->corporate_name, 0, 1)) }}</span>
 
                         <div class="rf-company-name">
                             {{ $lead->corporate_name }}
                         </div>
+                        <span class="lv11-company-id">{{ $matrix?->cnpj ? \App\Support\Cnpj::format($matrix->cnpj) : $lead->cnpj_root }}</span>
 
 
                         <div class="rf-lead-focus">
@@ -5517,6 +5699,7 @@ new class extends Component
                     {{-- RESPONSAVEL --}}
                     <div
                         class="rf-col-owner">
+                        <span class="lv11-owner-avatar" aria-hidden="true">{{ $assignedUser ? mb_strtoupper(mb_substr($assignedUser->name, 0, 2)) : '—' }}</span>
 
                         <div class="rf-section-label">
                             Responsável
@@ -5625,7 +5808,17 @@ new class extends Component
                     </div>
 
 
-                    {{-- ACOES --}}
+                                        {{-- Próximo passo comercial: coluna compacta, somente leitura. --}}
+                    <div class="lv12-next-step">
+                        <strong>{{ $leadPrimaryAction }}</strong>
+                        @if ($hubSpotLead?->last_task_due_at)
+                            <time datetime="{{ $hubSpotLead->last_task_due_at->toIso8601String() }}">
+                                {{ $hubSpotLead->last_task_due_at->format('d/m/Y') }}
+                            </time>
+                        @endif
+                    </div>
+
+{{-- ACOES --}}
                     <div
                         class="rf-col-action">
 
@@ -5715,8 +5908,9 @@ new class extends Component
                                     rf-btn-primary
                                 "
                             >
-                                Abrir dossiê
-                            </a>
+<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <span class="lv12-visually-hidden">Abrir dossiê</span>
+</a>
 
 
                             @if ($hubSpotActionUrl)
@@ -5732,8 +5926,9 @@ new class extends Component
                                         rf-btn-secondary
                                     "
                                 >
-                                    HubSpot ↗
-                                </a>
+<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14 21 3M13 3h8v8"/><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/></svg>
+                                    <span class="lv12-visually-hidden">HubSpot ↗</span>
+</a>
 
                             @endif
 
@@ -5835,6 +6030,7 @@ new class extends Component
 
                     </div>
 
+                                    </div>
                 </article>
 
 

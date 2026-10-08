@@ -147,7 +147,23 @@
 
         <flux:spacer />
 
+
+
+
+        <div class="ec-sidebar-world-v7" aria-label="Inteligência ExportControl">
+            <img src="{{ asset('images/dashboard/sidebar-world-v7.webp') }}"
+                 alt="Globo e conexões internacionais" loading="lazy">
+            <div class="ec-sidebar-world-v7__caption">
+                <p>Inteligência que conecta<br>seu negócio ao mundo.</p>
+            </div>
+        </div>
+
         <div class="ec-sidebar-footer">
+
+
+
+
+
 
             <flux:sidebar.nav>
 
@@ -221,7 +237,17 @@
                 </form>
             @endif
 
-<flux:spacer />
+@if (request()->routeIs('leads.index'))
+            <form class="lv13-topbar-search" role="search"
+                  x-data="{ term: '' }"
+                  x-on:submit.prevent="window.Livewire?.dispatch('leads-topbar-search', { term: term })">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
+                <input type="search" x-model="term" maxlength="120" placeholder="Buscar empresa, CNPJ, setor..." aria-label="Pesquisar leads pela barra superior">
+                <kbd>Enter</kbd>
+            </form>
+        @endif
+
+        <flux:spacer />
 
         <div class="ec-topbar-tools">
 

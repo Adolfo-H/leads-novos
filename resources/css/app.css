@@ -12,6 +12,8 @@
 @import './commercial-management.css';
 @import './app-shell-v2.css';
 @import './dashboard-strategic-v5.css';
+@import './dashboard-my-deals-v6.css';
+@import './dashboard-map-v7.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -18035,3 +18037,8 @@ body:not(.dark)
 */
 
 /* EC_THEME_MASTER_END */
+@import './dashboard-drilldown-v10.css';
+@import './leads-redesign-v11.css';
+@import './leads-visual-v12.css';
+@import './leads-reference-v13.css';
+@import './leads-hubspot-compact-v14.css';

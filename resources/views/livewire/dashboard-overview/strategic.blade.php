@@ -27,55 +27,36 @@
         @php
             $dsCards = [
                 [
-                    'label' => 'Carteira ativa',
+                    'label' => 'Leads em operação',
                     'value' => $commercial['active_total'],
-                    'detail' => 'Leads ativos na operação comercial',
+                    'detail' => '',
                     'icon' => 'activity',
                     'tone' => 'teal',
-                    'href' => route('leads.index'),
+                    'href' => route('leads.index', ['dashboardView' => 'active']),
+                    'hint' => 'Empresas elegíveis pelo score SDR ou com negócio HubSpot vinculado, com acompanhamento ativo. Indicador de toda a equipe.',
                 ],
                 [
                     'label' => 'Leads sem responsável',
                     'value' => $commercial['unassigned_total'],
-                    'detail' => 'Empresas aguardando distribuição',
+                    'detail' => '',
                     'icon' => 'company',
                     'tone' => 'blue',
-                    'href' => route('leads.index', ['owner' => 'unassigned']),
+                    'href' => route('leads.index', ['owner' => 'unassigned', 'dashboardView' => 'active']),
+                    'hint' => 'Leads ativos ainda sem vendedor atribuído no Prospector.',
                 ],
                 [
-                    'label' => 'Negócios no HubSpot',
+                    'label' => 'Leads com negócio HubSpot',
                     'value' => $commercial['opportunities_total'],
-                    'detail' => 'Negócios vinculados ao Prospector',
+                    'detail' => '',
                     'icon' => 'check',
                     'tone' => 'mint',
-                    'href' => route('leads.management'),
+                    'href' => route('leads.index', ['dashboardView' => 'with_deal']),
+                    'hint' => 'Empresas ativas com ID de negócio HubSpot vinculado. Não é a quantidade de negócios distintos.',
                 ],
             ];
 
-            $dsPipelineBars = [
-                [
-                    'label' => 'Novos',
-                    'value' => $commercial['new_total'] ?? $commercial['new_leads_total'] ?? 0,
-                    'tone' => 'teal',
-                ],
-                [
-                    'label' => 'Em contato',
-                    'value' => $commercial['contacting_total'] ?? $commercial['in_contact_total'] ?? $commercial['contact_total'] ?? 0,
-                    'tone' => 'blue',
-                ],
-                [
-                    'label' => 'Aguardando retorno',
-                    'value' => $commercial['waiting_total'] ?? $commercial['waiting_follow_up_total'] ?? 0,
-                    'tone' => 'violet',
-                ],
-                [
-                    'label' => 'Oportunidade futura',
-                    'value' => $commercial['future_total'] ?? $commercial['future_opportunity_total'] ?? 0,
-                    'tone' => 'steel',
-                ],
-            ];
-
-            // max() precisa de um array ao trabalhar com séries potencialmente vazias.
+            $dsPipeline = $this->myHubSpotStageSummary;
+            $dsPipelineBars = $dsPipeline['stages'] ?? [];
             $dsPipelineMax = max([1, ...array_column($dsPipelineBars, 'value')]);
             $dsUfMax = max([1, ...array_column($s['states'], 'total')]);
 
@@ -90,7 +71,7 @@
                 ],
                 [
                     'title' => 'Leads sem responsável',
-                    'description' => 'Empresas aguardando distribuição',
+                    'description' => '',
                     'value' => $commercial['unassigned_total'],
                     'tone' => 'warning',
                     'symbol' => '△',
@@ -112,6 +93,7 @@
                 <a
                     href="{{ $card['href'] }}"
                     wire:navigate
+                    title="{{ $card['hint'] }}"
                     class="ds-v5-kpi ds-v5-kpi--{{ $card['tone'] }}"
                 >
                     <span class="ds-v5-kpi-icon" aria-hidden="true">
@@ -120,51 +102,57 @@
                     <span class="ds-v5-kpi-body">
                         <span class="ds-v5-kpi-title">{{ $card['label'] }}</span>
                         <strong class="ds-v5-kpi-value">{{ $dsNumber($card['value']) }}</strong>
-                        <small>{{ $card['detail'] }}</small>
+
                     </span>
-                    <svg class="ds-v5-kpi-ornament" viewBox="0 0 110 45" fill="none" aria-hidden="true">
-                        <path d="M2 36C14 34 15 22 28 27S45 12 57 17 76 9 86 12 99 4 108 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        <path d="M2 36C14 34 15 22 28 27S45 12 57 17 76 9 86 12 99 4 108 5V44H2Z" fill="currentColor" opacity="0.08"/>
-                    </svg>
-                    <span class="ds-v5-kpi-sub">Indicador atual · sem série histórica</span>
                 </a>
             @endforeach
         </section>
 
         <div class="ds-v5-grid ds-v5-grid--top">
-            <section class="ds-v5-panel" aria-labelledby="ds-v5-export-title">
+            <section class="ds-v5-panel" aria-labelledby="ds-v6-deals-title">
                 <header class="ds-v5-panel-head">
                     <div>
-                        <h2 id="ds-v5-export-title">Minha carteira comercial</h2>
-                        <p>Status comerciais atuais da carteira.</p>
+                        <h2 id="ds-v6-deals-title">Meus negócios por etapa</h2>
+                        <p>Etapas do HubSpot ligadas às empresas da minha carteira.</p>
                     </div>
-                    <span class="ds-v5-quiet-chip">Carteira atual</span>
+                    <span class="ds-v5-quiet-chip">
+                        {{ $dsNumber($dsPipeline['total'] ?? 0) }} negócios
+                    </span>
                 </header>
 
-                <div class="ds-v5-chart" aria-label="Distribuição da carteira comercial">
-                    <div class="ds-v5-chart-y" aria-hidden="true">
-                        <span>{{ $dsNumber($dsPipelineMax) }}</span>
-                        <span>{{ $dsNumber(round($dsPipelineMax * .75)) }}</span>
-                        <span>{{ $dsNumber(round($dsPipelineMax * .5)) }}</span>
-                        <span>{{ $dsNumber(round($dsPipelineMax * .25)) }}</span>
-                        <span>0</span>
+                @if ($dsPipelineBars !== [])
+                    <div class="ds-v5-chart ds-v6-chart" aria-label="Distribuição real dos meus negócios por etapa do HubSpot">
+                        <div class="ds-v5-chart-y" aria-hidden="true">
+                            <span>{{ $dsNumber($dsPipelineMax) }}</span>
+                            <span>{{ $dsNumber(round($dsPipelineMax * .75)) }}</span>
+                            <span>{{ $dsNumber(round($dsPipelineMax * .5)) }}</span>
+                            <span>{{ $dsNumber(round($dsPipelineMax * .25)) }}</span>
+                            <span>0</span>
+                        </div>
+                        <div class="ds-v5-chart-plot ds-v6-chart-plot"
+                             style="--ds-stage-columns: {{ count($dsPipelineBars) }}">
+                            @foreach ($dsPipelineBars as $bar)
+                                <a href="{{ route('leads.index', ['owner' => 'mine', 'dashboardStage' => $bar['label'] === 'Outras etapas' ? '__others__' : $bar['label']]) }}"
+                                   wire:navigate
+                                   class="ds-v5-chart-column ds-v10-chart-link"
+                                   aria-label="Ver empresas dos meus negócios na etapa {{ $bar['label'] }}"
+                                   title="Abrir empresas da etapa {{ $bar['label'] }} ({{ $dsNumber($bar['value']) }} negócios)">
+                                    <strong class="ds-v5-chart-value">{{ $dsNumber($bar['value']) }}</strong>
+                                    <div class="ds-v5-chart-bar-wrap">
+                                        <span class="ds-v5-chart-bar ds-v5-chart-bar--{{ $bar['tone'] }}"
+                                              style="height: {{ max(4, round($bar['value'] / $dsPipelineMax * 100)) }}%"></span>
+                                    </div>
+                                    <span class="ds-v5-chart-label">{{ $bar['label'] }}</span>
+                                </a>
+                            @endforeach
+                        </div>
                     </div>
-                    <div class="ds-v5-chart-plot">
-                        @foreach ($dsPipelineBars as $bar)
-                            <div class="ds-v5-chart-column">
-                                <strong class="ds-v5-chart-value">{{ $dsNumber($bar['value']) }}</strong>
-                                <div class="ds-v5-chart-bar-wrap">
-                                    <span
-                                        class="ds-v5-chart-bar ds-v5-chart-bar--{{ $bar['tone'] }}"
-                                        style="height: {{ $bar['value'] > 0 ? max(4, round($bar['value'] / $dsPipelineMax * 100)) : 0 }}%"
-                                    ></span>
-                                </div>
-                                <span class="ds-v5-chart-label">{{ $bar['label'] }}</span>
-                            </div>
-                        @endforeach
+                @else
+                    <div class="ds-v6-empty">
+                        Nenhum negócio do HubSpot identificado nas empresas atribuídas à sua carteira.
+                        Confira os vínculos e os responsáveis dos leads.
                     </div>
-                </div>
-                <p class="ds-v5-note">Painel comercial da carteira ativa. Se quiser depois, podemos trocar essas colunas por Descarte, Oportunidade, Lead qualificado e Lead frio.</p>
+                @endif
             </section>
 
             <section class="ds-v5-panel" aria-labelledby="ds-v5-top-title">
@@ -192,7 +180,7 @@
                         <p class="ds-v5-empty">Nenhuma atividade com leads elegíveis encontrada. O ranking aparecerá após a qualificação.</p>
                     @endforelse
                 </div>
-                <p class="ds-v5-note">Contagem de empresas distintas com score SDR elegível; sem estimativas financeiras.</p>
+                <p class="ds-v5-note"></p>
             </section>
         </div>
 
@@ -205,13 +193,52 @@
                     </div>
                     <button type="button" class="ds-v5-panel-button" x-on:click="dashboardTab = 'base'">Ver base <span aria-hidden="true">→</span></button>
                 </header>
+                @php
+                    // Mapeia TODOS os estados; o ranking ao lado continua mostrando o Top 5.
+                    $dsUfNames = [
+                        'AC' => 'Acre',
+                        'AL' => 'Alagoas',
+                        'AM' => 'Amazonas',
+                        'AP' => 'Amapá',
+                        'BA' => 'Bahia',
+                        'CE' => 'Ceará',
+                        'DF' => 'Distrito Federal',
+                        'ES' => 'Espírito Santo',
+                        'GO' => 'Goiás',
+                        'MA' => 'Maranhão',
+                        'MG' => 'Minas Gerais',
+                        'MS' => 'Mato Grosso do Sul',
+                        'MT' => 'Mato Grosso',
+                        'PA' => 'Pará',
+                        'PB' => 'Paraíba',
+                        'PE' => 'Pernambuco',
+                        'PI' => 'Piauí',
+                        'PR' => 'Paraná',
+                        'RJ' => 'Rio de Janeiro',
+                        'RN' => 'Rio Grande do Norte',
+                        'RO' => 'Rondônia',
+                        'RR' => 'Roraima',
+                        'RS' => 'Rio Grande do Sul',
+                        'SC' => 'Santa Catarina',
+                        'SE' => 'Sergipe',
+                        'SP' => 'São Paulo',
+                        'TO' => 'Tocantins',
+                    ];
+                    $dsRawStates = $this->stateMapCounts;
+                    $dsTotalEstablishments = max(1, (int) $s['establishments']);
+                    $dsMapTooltips = [];
+                    foreach ($dsUfNames as $dsUfCode => $dsUfName) {
+                        $dsCount = (int) ($dsRawStates[$dsUfCode] ?? 0);
+                        $dsMapTooltips[$dsUfCode] = [
+                            'name' => $dsUfName,
+                            'total' => $dsNumber($dsCount),
+                            'unit' => $dsCount === 1 ? 'estabelecimento' : 'estabelecimentos',
+                            'percentage' => number_format($dsCount * 100 / $dsTotalEstablishments, 1, ',', '.').'%',
+                        ];
+                    }
+                @endphp
                 <div class="ds-v5-geo">
-                    <img
-                        src="{{ asset('images/dashboard/brazil-map-v5.webp') }}"
-                        alt="Mapa ilustrativo do Brasil com divisas dos estados"
-                        class="ds-v5-map"
-                        loading="lazy"
-                    >
+                    @include('livewire.dashboard-overview.map-interactive-v7', ['dsMapTooltips' => $dsMapTooltips])
                     <div class="ds-v5-states">
                         @forelse ($s['states'] as $state)
                             @php
@@ -259,7 +286,7 @@
                         </a>
                     @endforeach
                 </div>
-                <p class="ds-v5-note">Alertas comerciais do Prospector; não representam um diagnóstico tributário.</p>
+                <p class="ds-v5-note"></p>
             </section>
         </div>
 

@@ -302,3 +302,41 @@ body.ec-app-body.ec-dashboard-mode .ds-v5-topbar-search:focus-within { border-co
 .ec-strategic-v4 .ds-v5-panel-head h2 {
     letter-spacing: -0.01em;
 }
+
+
+/* ===== AJUSTES FINAIS DO DASHBOARD ===== */
+.ec-strategic-v4 .ds-v5-kpi-detail:empty,
+.ec-strategic-v4 .ds-v5-kpi-note:empty,
+.ec-strategic-v4 .ds-v5-note:empty,
+.ec-strategic-v4 .ds-v5-panel-note:empty,
+.ec-strategic-v4 .ds-v5-chart-note:empty {
+    display: none !important;
+}
+
+.ec-strategic-v4 .ds-v5-kpi-subtext,
+.ec-strategic-v4 .ds-v5-kpi-trend-note {
+    display: none !important;
+}
+
+.ec-strategic-v4 .ds-v5-state-row[title] {
+    cursor: help;
+}
+
+.ec-strategic-v4 .ds-v5-state-row[title]:hover {
+    background: rgba(73, 203, 255, 0.05);
+    border-radius: 10px;
+}
+
+.ec-strategic-v4 .ds-v5-risk-note,
+.ec-strategic-v4 .ds-v5-opportunity-note {
+    display: none !important;
+}
+
+/* rodapé mais limpo */
+.ec-strategic-v4 .ds-v5-footer {
+    padding-top: 10px;
+}
+
+.ec-strategic-v4 .ds-v5-footer > span:first-child:empty {
+    display: none !important;
+}

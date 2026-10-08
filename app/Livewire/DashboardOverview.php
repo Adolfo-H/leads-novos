@@ -5,14 +5,15 @@ namespace App\Livewire;
 use App\Models\Cnae;
 use App\Models\User;
 use App\Services\CommercialManagementMetricsService;
+use App\Services\DashboardMyDealsService;
 use App\Services\DashboardStrategicMetricsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\On;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithoutUrlPagination;
 use Livewire\WithPagination;
@@ -171,6 +172,24 @@ class DashboardOverview extends Component
     }
 
     /**
+     * Etapas reais dos negócios de empresas atribuídas ao usuário autenticado.
+     * A visão da equipe continua nos indicadores gerenciais já existentes.
+     *
+     * @return array{total: int, stages: list<array{label: string, value: int, tone: string}>}|null
+     */
+    #[Computed]
+    public function myHubSpotStageSummary(): ?array
+    {
+        $user = auth()->user();
+
+        if (! $this->canExplore || ! $user instanceof User) {
+            return null;
+        }
+
+        return app(DashboardMyDealsService::class)->forUser((int) $user->id);
+    }
+
+    /**
      * Pesquisa global local: respeita a autorização do explorador empresarial.
      */
     #[On('dashboard-global-search')]
@@ -227,9 +246,42 @@ class DashboardOverview extends Component
         unset($this->records);
     }
 
+    /**
+     * Quantidade de estabelecimentos por UF para o mapa SVG interativo.
+     * Os percentuais usam como denominador o total de estabelecimentos de summary().
+     *
+     * @return array<string, int>
+     */
+    #[Computed]
+    public function stateMapCounts(): array
+    {
+        if (! $this->canExplore) {
+            return [];
+        }
+
+        $rows = DB::table('establishments as e')
+            ->selectRaw(self::STATE_SQL.' AS code, COUNT(*) AS total')
+            ->groupByRaw(self::STATE_SQL)
+            ->get();
+
+        $counts = [];
+
+        foreach ($rows as $row) {
+            $code = (string) ($row->code ?? '');
+
+            if (preg_match('/^[A-Z]{2}$/D', $code) !== 1) {
+                continue;
+            }
+
+            $counts[$code] = (int) ($row->total ?? 0);
+        }
+
+        return $counts;
+    }
+
     public function refreshSummary(): void
     {
-        unset($this->summary, $this->records, $this->commercialSummary, $this->strategicMetrics);
+        unset($this->summary, $this->records, $this->commercialSummary, $this->strategicMetrics, $this->myHubSpotStageSummary, $this->stateMapCounts);
     }
 
     #[Computed]

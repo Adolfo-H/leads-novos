@@ -167,3 +167,91 @@ body.ec-app-body.ec-dashboard-mode
         transition: none !important;
     }
 }
+
+
+/* ===== AJUSTES FINAIS SIDEBAR ===== */
+body.ec-app-body.ec-dashboard-mode .ec-sidebar,
+body.ec-app-body.ec-dashboard-mode [data-flux-sidebar],
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-inner {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-sidebar::-webkit-scrollbar,
+body.ec-app-body.ec-dashboard-mode [data-flux-sidebar]::-webkit-scrollbar,
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-inner::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-footer {
+    overflow: visible !important;
+}
+
+/* mundo acima de Configurações integrado ao fundo */
+.ec-sidebar-world-card {
+    position: relative;
+    margin: 14px 10px 12px;
+    min-height: 185px;
+    border: none;
+    border-radius: 18px;
+    overflow: hidden;
+    isolation: isolate;
+    background: transparent;
+    box-shadow: none;
+}
+
+.ec-sidebar-world-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+        url('/images/dashboard/sidebar-world-v7.webp') center center / cover no-repeat;
+    opacity: .42;
+    filter: saturate(.85) brightness(.72);
+    z-index: 0;
+}
+
+.ec-sidebar-world-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+        radial-gradient(circle at 18% 78%, rgba(28, 226, 255, 0.14), transparent 32%),
+        linear-gradient(180deg, rgba(5, 18, 34, 0.08) 0%, rgba(5, 18, 34, 0.42) 58%, rgba(5, 18, 34, 0.78) 100%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.ec-sidebar-world-card__content {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: 16px;
+    z-index: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.ec-sidebar-world-card__line {
+    width: 3px;
+    height: 72px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #1de0ff 0%, #11c6e8 100%);
+    box-shadow: 0 0 12px rgba(29, 224, 255, .28);
+    flex-shrink: 0;
+}
+
+.ec-sidebar-world-card__content p {
+    margin: 0;
+    max-width: 150px;
+    color: #edf7ff;
+    font-size: 13px;
+    line-height: 1.35;
+    font-weight: 600;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, .28);
+}

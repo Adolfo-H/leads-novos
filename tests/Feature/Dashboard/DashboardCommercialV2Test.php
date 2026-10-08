@@ -22,7 +22,7 @@ it('shows commercial indicators to managers without external requests', function
     $page = Livewire::actingAs($manager)
         ->test(DashboardOverview::class)
         ->assertSee('Dashboard estratégico')
-        ->assertSee('Carteira ativa')
+        ->assertSee('Leads em operação')
         ->assertSee('Riscos e oportunidades')
         ->assertSee('Cobertura cadastral');
 

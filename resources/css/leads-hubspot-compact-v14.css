@@ -1,0 +1,167 @@
+/* ExportControl Prospector — Leads V14: compact real-time HubSpot health. */
+
+.leads-rf.leads-v13 .lv14-hubspot-status {
+    position: fixed;
+    z-index: 110;
+    top: 5px;
+    right: 194px;
+    width: 225px;
+    max-width: calc(100vw - 230px);
+    min-width: 0;
+    color: #d6edfb;
+    font-family: inherit;
+}
+.leads-rf.leads-v13 .lv14-hubspot-summary {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 43px;
+    padding: 4px 7px 4px 12px;
+    border-left: 1px solid #225272;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    list-style: none;
+}
+.leads-rf.leads-v13 .lv14-hubspot-summary::-webkit-details-marker {display:none;}
+.leads-rf.leads-v13 .lv14-hubspot-summary:hover,
+.leads-rf.leads-v13 .lv14-hubspot-status[open] > .lv14-hubspot-summary {
+    background: #0c3551;
+}
+.leads-rf.leads-v13 .lv14-hubspot-dot {
+    display: block;
+    flex: 0 0 8px;
+    width: 8px;
+    height: 8px;
+    background: #f1c764;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px #edbb2923;
+}
+.leads-rf.leads-v13 .lv14-hubspot-dot.is-healthy {background: #29dbbd;box-shadow:0 0 0 3px #29dbbd22;}
+.leads-rf.leads-v13 .lv14-hubspot-dot.is-delayed {background: #ffa856;box-shadow:0 0 0 3px #ffa85622;}
+.leads-rf.leads-v13 .lv14-hubspot-dot.is-degraded {background: #ff7581;box-shadow:0 0 0 3px #ff758122;}
+.leads-rf.leads-v13 .lv14-hubspot-dot.is-processing {background: #69afff;box-shadow:0 0 0 3px #69afff22;}
+.leads-rf.leads-v13 .lv14-hubspot-copy {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 2px;
+}
+.leads-rf.leads-v13 .lv14-hubspot-copy strong {
+    overflow: hidden;
+    color: #dff4fa;
+    font-size: 11px;
+    font-weight: 680;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.leads-rf.leads-v13 .lv14-hubspot-copy small {
+    color: #85a9c5;
+    font-size: 9px;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.leads-rf.leads-v13 .lv14-hubspot-chevron {
+    flex: 0 0 auto;
+    color: #8db4c9;
+    font-size: 14px;
+    transition: transform .15s;
+}
+.leads-rf.leads-v13 .lv14-hubspot-status[open] .lv14-hubspot-chevron {transform: rotate(180deg);}
+.leads-rf.leads-v13 .lv14-hubspot-popup {
+    position: absolute;
+    top: calc(100% + 7px);
+    right: 0;
+    z-index: 111;
+    width: 360px;
+    max-width: calc(100vw - 20px);
+    padding: 8px;
+    border: 1px solid #27607e;
+    border-radius: 12px;
+    background: #06263f;
+    box-shadow: 0 18px 36px #0008;
+}
+.leads-rf.leads-v13 .lv14-hubspot-popup .rf-hubspot-health {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    padding: 7px 9px !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+.leads-rf.leads-v13 .lv14-hubspot-popup .rf-hubspot-health-content {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+    flex-wrap: wrap !important;
+}
+.leads-rf.leads-v13 .lv14-hubspot-popup .rf-hubspot-health-main {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 5px !important;
+    white-space: normal !important;
+}
+.leads-rf.leads-v13 .lv14-hubspot-popup .rf-hubspot-health-main :is(span,strong) {
+    display: inline-flex !important;
+    flex-wrap: wrap !important;
+    white-space: normal !important;
+}
+.leads-rf.leads-v13 .lv14-hubspot-popup .rf-hubspot-health-checks {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    width: 100% !important;
+    margin: 0 !important;
+}
+.leads-rf.leads-v13 .lv14-hubspot-popup .lv11-health-more {display:none!important;}
+.leads-rf.leads-v13 .lv14-hubspot-popup .rf-hubspot-health-warning {
+    display: block !important;
+    margin-top: 8px;
+    padding: 6px;
+    white-space: normal !important;
+    font-size: 10px !important;
+}
+.leads-rf.leads-v13 .lv14-hubspot-popup .rf-hubspot-bulk {display:block!important;margin-top:6px;}
+
+/* No extra advanced toggle: all existing filters remain available. */
+.leads-rf.leads-v13 .rf-filters-head {justify-content:flex-end!important;}
+.leads-rf.leads-v13 .rf-filter-main {grid-template-columns:minmax(190px,1.45fr) repeat(3,minmax(135px,.9fr))!important;}
+.leads-rf.leads-v13 .rf-filter-secondary {
+    grid-template-columns:minmax(140px,.95fr) minmax(185px,1.2fr) minmax(150px,.85fr) auto!important;
+    gap: 7px !important;
+}
+.leads-rf.leads-v13 .rf-filter-secondary .rf-filter-action {min-width:0;white-space:nowrap;}
+.leads-rf.leads-v13 .rf-filters-clear {min-width:94px;}
+
+@media (max-width:1250px) {
+    .leads-rf.leads-v13 .lv14-hubspot-status {
+        position:relative;
+        top:auto;
+        right:auto;
+        width:220px;
+        max-width:100%;
+        z-index:20;
+    }
+    .leads-rf.leads-v13 .rf-filter-secondary {grid-template-columns: repeat(2,minmax(0,1fr))!important;}
+}
+@media (max-width:850px) {
+    .leads-rf.leads-v13 .lv14-hubspot-status {width: min(100%, 260px);}
+    .leads-rf.leads-v13 .lv14-hubspot-popup {left:0;right:auto;width:340px;}
+}
+@media (max-width:600px) {
+    .leads-rf.leads-v13 .lv14-hubspot-status {width:100%;}
+    .leads-rf.leads-v13 .lv14-hubspot-popup {width:calc(100vw - 40px);}
+    .leads-rf.leads-v13 .rf-filter-secondary {grid-template-columns:1fr!important;}
+}
+@media (prefers-reduced-motion:reduce) {
+    .leads-rf.leads-v13 .lv14-hubspot-chevron {transition:none!important;}
+}

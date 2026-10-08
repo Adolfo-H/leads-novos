@@ -42,6 +42,18 @@
             as $stage
         )
 
+            @php
+                $lv13StageLabel = mb_strtolower(trim((string) $stage['label']));
+                $lv13StageColor = match (true) {
+                    str_contains($lv13StageLabel, 'descart'),
+                    str_contains($lv13StageLabel, 'recus') => 'red',
+                    str_contains($lv13StageLabel, 'fora') => 'amber',
+                    str_contains($lv13StageLabel, 'frio') => 'blue',
+                    str_contains($lv13StageLabel, 'qualific') => 'purple',
+                    str_contains($lv13StageLabel, 'oportunidade') => 'teal',
+                    default => 'neutral',
+                };
+            @endphp
             <button
                 type="button"
                 wire:click="
@@ -50,7 +62,7 @@
                     )
                 "
                 class="
-                    rf-stage-strip-chip
+                    rf-stage-strip-chip lv13-stage--{{ $lv13StageColor }}
                     {{
                         $crm
                             ===

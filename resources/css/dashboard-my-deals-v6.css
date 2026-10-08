@@ -1,0 +1,135 @@
+/*
+ * ExportControl Prospector — Pacote V6
+ * Mudanças exclusivamente visuais da carteira e do bloco de marca.
+ * Mantém o dashboard V5 e todas as páginas existentes.
+ */
+
+/* Painel de etapas reais dos negócios do usuário autenticado. */
+.ec-strategic-v4 .ds-v6-chart .ds-v6-chart-plot {
+    grid-template-columns: repeat(var(--ds-stage-columns, 4), minmax(0, 1fr));
+    gap: 6px;
+}
+
+.ec-strategic-v4 .ds-v6-chart .ds-v5-chart-column {
+    min-width: 0;
+}
+
+.ec-strategic-v4 .ds-v6-chart .ds-v5-chart-label {
+    max-width: 100%;
+    min-height: 34px;
+    padding: 5px 2px 0;
+    overflow-wrap: anywhere;
+    color: #cfdeed;
+    font-size: 10px;
+    line-height: 1.2;
+    align-content: start;
+}
+
+.ec-strategic-v4 .ds-v6-chart .ds-v5-chart-bar {
+    width: min(64px, 70%);
+}
+
+.ec-strategic-v4 .ds-v6-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 177px;
+    margin: 2px 0;
+    padding: 20px 30px;
+    border: 1px dashed #2b5873;
+    border-radius: 9px;
+    background: #071e33;
+    color: #a5c3d7;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.ec-strategic-v4 .ds-v6-chart-note {
+    color: #8cacc5;
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+/* Bloco decorativo acima de Configurações, com o globo já salvo no projeto. */
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-world {
+    position: relative;
+    flex-shrink: 0;
+    isolation: isolate;
+    min-height: 168px;
+    margin: 8px 16px 13px;
+    padding: 78px 16px 17px;
+    overflow: hidden;
+    border: 1px solid rgba(56, 151, 188, .28);
+    border-radius: 13px;
+    background: #041e36;
+    color: #d6eaf7;
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-world::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background:
+        linear-gradient(0deg, #031a32 3%, rgba(3, 26, 50, .2) 82%),
+        url('/images/dashboard/globe-hero.webp') center -86px / 220px 220px no-repeat;
+    opacity: .60;
+    pointer-events: none;
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-world::after {
+    content: '';
+    position: absolute;
+    left: 16px;
+    bottom: 17px;
+    width: 2px;
+    height: 61px;
+    border-radius: 2px;
+    background: #37d3c1;
+    box-shadow: 0 0 11px rgba(55, 211, 193, .2);
+}
+
+body.ec-app-body.ec-dashboard-mode .ec-sidebar-world p {
+    margin: 0 0 0 13px;
+    font-size: 11px;
+    font-weight: 450;
+    line-height: 1.38;
+    letter-spacing: .02em;
+    color: #e5f0fb;
+}
+
+@media (max-height: 760px) and (min-width: 1024px) {
+    body.ec-app-body.ec-dashboard-mode .ec-sidebar-world {
+        min-height: 110px;
+        margin-block: 5px 8px;
+        padding: 32px 13px 12px;
+    }
+    body.ec-app-body.ec-dashboard-mode .ec-sidebar-world::after {
+        height: 50px;
+        left: 13px;
+        bottom: 12px;
+    }
+}
+
+@media (max-width: 1100px) {
+    .ec-strategic-v4 .ds-v6-chart .ds-v5-chart-label {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 600px) {
+    .ec-strategic-v4 .ds-v6-chart .ds-v6-chart-plot {
+        gap: 3px;
+    }
+    .ec-strategic-v4 .ds-v6-chart .ds-v5-chart-label {
+        font-size: 9px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ec-strategic-v4 .ds-v6-chart * {
+        transition: none !important;
+        animation: none !important;
+    }
+}
