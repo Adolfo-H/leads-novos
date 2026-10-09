@@ -1,6 +1,7 @@
 <?php
 
 use App\Jobs\HubSpotQueueHeartbeat;
+use App\Services\HubSpotTunnelHealthService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -110,3 +111,20 @@ Schedule::command(
     ->everyThirtyMinutes()
     ->withoutOverlapping(30);
 /* HUBSPOT_TASK_RECONCILIATION_V22_END */
+
+/*
+ * WEB_HEALTH_NONBLOCKING_V24103:
+ * Testar a URL publica fora das requisicoes de usuario. Um timeout do
+ * tunel nao deve atrasar Leads nem bloquear a unica thread artisan serve.
+ */
+Artisan::command(
+    'hubspot:tunnel-health-refresh',
+    function (): void {
+        $status = app(HubSpotTunnelHealthService::class)->refresh();
+        $this->line('Webhook HubSpot: '.$status['label']);
+    }
+)->purpose('Atualiza em background a saude do endpoint publico HubSpot.');
+
+Schedule::command('hubspot:tunnel-health-refresh')
+    ->everyMinute()
+    ->withoutOverlapping();

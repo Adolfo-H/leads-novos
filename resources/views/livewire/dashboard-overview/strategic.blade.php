@@ -29,7 +29,8 @@
         @php
             // A mesma origem de dados utilizada pelos links do Dashboard V23.
             $ds25MetricsService = app(\App\Services\DashboardLeadMetricsV23Service::class);
-            $ds25Metrics = $ds25MetricsService->snapshot();
+            $ds25Bundle = $ds25MetricsService->snapshotWithCompanyIds();
+            $ds25Metrics = $ds25Bundle['summary'];
             $ds25Deals = $this->myHubSpotStageSummary;
             $ds25Stages = $ds25Deals['stages'] ?? [];
             $ds25FirstStages = array_slice($ds25Stages, 0, 7);
@@ -39,7 +40,7 @@
                 ->whereNull('company_id')
                 ->whereHas('deals', fn ($query) => $query->where('is_closed', false))
                 ->count();
-            $ds25Ids = $ds25MetricsService->leadCompanyIds();
+            $ds25Ids = $ds25Bundle['lead_ids'];
             $ds25MyLeads = \Illuminate\Support\Facades\DB::table('company_lead_work_states')
                 ->whereIn('company_id', $ds25Ids)
                 ->where('assigned_user_id', auth()->id())
@@ -65,13 +66,13 @@
                 ->whereIn('company_id', $ds25Ids)
                 ->pluck('company_id')->map(static fn ($id): int => (int) $id)->all();
             $ds26UnassignedDealIds = array_values(array_diff(
-                $ds25MetricsService->withDealCompanyIds(),
+                $ds25Bundle['with_deal_ids'],
                 $ds26AssignedIds
             ));
             $ds26UnassignedDealCount = count($ds26UnassignedDealIds);
             // Apenas prioridades altas dentro do mesmo recorte de 90 dias do dashboard.
             $ds26HighStaleCount = \Illuminate\Support\Facades\DB::table('company_sdr_scores')
-                ->whereIn('company_id', $ds25MetricsService->staleCompanyIds())
+                ->whereIn('company_id', $ds25Bundle['stale_ids'])
                 ->where('priority', 'high')
                 ->where('is_eligible', true)
                 ->count();

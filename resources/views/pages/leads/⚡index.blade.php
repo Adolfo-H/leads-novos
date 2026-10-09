@@ -171,29 +171,75 @@ new class extends Component
     #[Computed]
     public function v15DueCount(): int
     {
-        return app(\App\Services\LeadCrmSituationService::class)
-            ->dueForAuthenticatedUser($this->operationalLeadQuery())
-            ->count();
+        return $this->v242DueCounts['total'];
+    }
+
+    /**
+     * LEADS_DUE_QUERY_REUSE_V242
+     *
+     * Duas consultas com os mesmos filtros/autorizações usados antes,
+     * compartilhadas entre os cards. A união dos IDs é necessária:
+     * uma empresa pode ter tarefas atrasadas E tarefas para hoje;
+     * o total não pode contabilizá-la duas vezes.
+     *
+     * Cache somente na requisição Livewire (sem persistir no Redis).
+     *
+     * @return array{total: int, overdue: int, today: int}
+     */
+    #[Computed]
+    public function v242DueCounts(): array
+    {
+        $service = app(\App\Services\LeadCrmSituationService::class);
+        $now = now();
+        $tomorrow = today()->addDay();
+
+        // LEADS_DUE_FAST_PATH_V243
+        // Se nenhuma tarefa global esta aberta e vence ate hoje, nao ha
+        // tarefas elegiveis para nenhum vendedor/empresa. Evitamos duas
+        // consultas com multiplas relacoes e filtros de permissao.
+        // Apenas um atalho: quando ha tarefas, as regras antigas sao usadas.
+        if (! \App\Models\HubSpotTask::query()
+            ->dueInPeriod($tomorrow)
+            ->exists()) {
+            return [
+                'total' => 0,
+                'overdue' => 0,
+                'today' => 0,
+            ];
+        }
+
+        // A consulta operacional seleciona companies.* por padrao.
+        // Para contar IDs, nao carregar todas as colunas das empresas.
+        $overdueIds = $service->dueForAuthenticatedUserPeriod(
+            $this->operationalLeadQuery(), null, $now
+        )->select('companies.id')->pluck('companies.id')
+            ->map(static fn (mixed $id): int => (int) $id)->all();
+
+        $todayIds = $service->dueForAuthenticatedUserPeriod(
+            $this->operationalLeadQuery(), $now, $tomorrow
+        )->select('companies.id')->pluck('companies.id')
+            ->map(static fn (mixed $id): int => (int) $id)->all();
+
+        return [
+            'total' => count(array_unique([...$overdueIds, ...$todayIds])),
+            'overdue' => count($overdueIds),
+            'today' => count($todayIds),
+        ];
     }
 
     /**
      * Duas faixas temporais exclusivas para os próximos vencimentos.
-     * O total do card continua a usar a query original de Leads.
      *
-     * @return array{overdue:int, today:int}
+     * @return array{overdue: int, today: int}
      */
     #[Computed]
     public function v17DueBreakdown(): array
     {
-        $service = app(\App\Services\LeadCrmSituationService::class);
+        $counts = $this->v242DueCounts;
 
         return [
-            'overdue' => $service->dueForAuthenticatedUserPeriod(
-                $this->operationalLeadQuery(), null, now()
-            )->count(),
-            'today' => $service->dueForAuthenticatedUserPeriod(
-                $this->operationalLeadQuery(), now(), today()->addDay()
-            )->count(),
+            'overdue' => $counts['overdue'],
+            'today' => $counts['today'],
         ];
     }
 
@@ -3886,9 +3932,11 @@ new class extends Component
 };
 ?>
 
+{{-- LEADS_POLL_SINGLE_V249: uma atualizacao a cada 30s evita duas renderizacoes caras a cada 10s.
+     Atualizacao mais frequente do status deve usar um componente isolado, nao o workspace inteiro. --}}
 <div
     class="ec-page-shell leads-rf leads-v11 leads-v13 leads-v15 leads-v16 leads-v18 leads-v19 leads-v20 leads-v23"
-    wire:poll.10s="$refresh"
+    wire:poll.30s="$refresh"
 >
 
 
@@ -3952,7 +4000,6 @@ new class extends Component
             rf-hubspot-health
             is-{{ $hubSpotHealth['status'] }}
         "
-        wire:poll.10s="$refresh"
         x-data="{ expanded: false }"
         x-bind:class="{ 'lv11-health-expanded': expanded }"
         tabindex="0"

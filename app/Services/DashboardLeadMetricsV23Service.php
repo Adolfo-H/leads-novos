@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\Company;
 use App\Models\HubSpotCompany;
+use App\Models\HubSpotTask;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Facades\DB;
 
 /** Dashboard V23: shared, read-only drilldown counts for leads and risks. */
@@ -14,20 +16,54 @@ final class DashboardLeadMetricsV23Service
     /** @return array{leads:int,unassigned:int,with_deal:int,overdue:int,stale90:int,largest:list<array{id:int,name:string,establishments:int,emails:int,phones:int}>} */
     public function snapshot(): array
     {
-        $ids = $this->leadCompanyIds();
-        $assigned = DB::table('company_lead_work_states')->whereIn('company_id', $ids)
-            ->whereNotNull('assigned_user_id')->pluck('company_id')->map(static fn (mixed $v): int => (int) $v)->all();
-        $assignedLookup = array_fill_keys($assigned, true);
-        $unassigned = count(array_filter($ids, static fn (int $id): bool => ! isset($assignedLookup[$id])));
+        return $this->snapshotWithCompanyIds()['summary'];
+    }
 
-        // DASHBOARD_SNAPSHOT_REUSE_IDS_V172: uma selecao de empresas elegiveis por snapshot.
+    /**
+     * DASHBOARD_SNAPSHOT_BUNDLE_V244:
+     * Calcula os conjuntos uma vez e entrega ao template o mesmo recorte
+     * utilizado no resumo. Sem cache entre requisições nem usuários.
+     *
+     * @return array{
+     *     summary: array{leads:int,unassigned:int,with_deal:int,overdue:int,stale90:int,largest:list<array{id:int,name:string,establishments:int,emails:int,phones:int}>},
+     *     lead_ids: list<int>,
+     *     with_deal_ids: list<int>,
+     *     stale_ids: list<int>
+     * }
+     */
+    public function snapshotWithCompanyIds(): array
+    {
+        $ids = $this->leadCompanyIds();
+
+        $assigned = DB::table('company_lead_work_states')
+            ->whereIn('company_id', $ids)
+            ->whereNotNull('assigned_user_id')
+            ->pluck('company_id')
+            ->map(static fn (mixed $value): int => (int) $value)
+            ->all();
+
+        $assignedLookup = array_fill_keys($assigned, true);
+        $unassigned = count(array_filter(
+            $ids,
+            static fn (int $id): bool => ! isset($assignedLookup[$id])
+        ));
+
+        $withDealIds = $this->withDealCompanyIds($ids);
+        $overdueIds = $this->overdueCompanyIds($ids);
+        $staleIds = $this->staleCompanyIds($ids);
+
         return [
-            'leads' => count($ids),
-            'unassigned' => $unassigned,
-            'with_deal' => count($this->withDealCompanyIds($ids)),
-            'overdue' => count($this->overdueCompanyIds($ids)),
-            'stale90' => count($this->staleCompanyIds($ids)),
-            'largest' => $this->largestCompanies($ids),
+            'summary' => [
+                'leads' => count($ids),
+                'unassigned' => $unassigned,
+                'with_deal' => count($withDealIds),
+                'overdue' => count($overdueIds),
+                'stale90' => count($staleIds),
+                'largest' => $this->largestCompanies($ids),
+            ],
+            'lead_ids' => $ids,
+            'with_deal_ids' => $withDealIds,
+            'stale_ids' => $staleIds,
         ];
     }
 
@@ -50,21 +86,21 @@ final class DashboardLeadMetricsV23Service
             ->join('hubspot_company_deal as hcd', 'hc.id', '=', 'hcd.hubspot_company_id')
             ->whereIn('hc.company_id', $ids)
             ->whereNotNull('hc.company_id')
-            // HUBSPOT_PRIMARY_DEAL_OWNER_V15: um Deal com varias Companies
-            // pertence comercialmente apenas a Primary unica e confirmada.
-            // Com uma Company, a associacao sozinha e suficiente.
+            // DASHBOARD_DEAL_OWNERSHIP_GROUPED_V246: agregacao unica por negocio.
+            // Regra: 1 Company => aceita; varias => Primary unica.
+            ->joinSub(
+                $this->dealOwnershipSummary(),
+                'ec_owner_counts',
+                static function (JoinClause $join): void {
+                    $join->on('ec_owner_counts.hubspot_deal_id', '=', 'hcd.hubspot_deal_id');
+                }
+            )
             ->where(static function (Builder $owner): void {
-                $owner->whereRaw(
-                    '(SELECT COUNT(*) FROM hubspot_company_deal AS all_links '
-                    .'WHERE all_links.hubspot_deal_id = hcd.hubspot_deal_id) = 1'
-                )->orWhere(static function (Builder $primary): void {
-                    $primary->where('hcd.is_primary', true)
-                        ->whereRaw(
-                            '(SELECT COUNT(*) FROM hubspot_company_deal AS primary_links '
-                            .'WHERE primary_links.hubspot_deal_id = hcd.hubspot_deal_id '
-                            .'AND primary_links.is_primary = true) = 1'
-                        );
-                });
+                $owner->where('ec_owner_counts.company_count', 1)
+                    ->orWhere(static function (Builder $primary): void {
+                        $primary->where('hcd.is_primary', true)
+                            ->where('ec_owner_counts.primary_count', 1);
+                    });
             })
             // FISCAL_READERS_CENTRAL_POLICY_V16_2 - fonte unica: HubSpotCompany::trustedFiscalLink().
             ->whereIn('hc.id', HubSpotCompany::query()->trustedFiscalLink()->select('id'))
@@ -81,6 +117,15 @@ final class DashboardLeadMetricsV23Service
     {
         $ids = $leadIds ?? $this->leadCompanyIds();
         if ($ids === []) {
+            return [];
+        }
+
+        // DASHBOARD_OVERDUE_FAST_PATH_V247
+        // Se nao existe nenhuma tarefa globalmente aberta e vencida,
+        // nenhuma empresa pode ter follow-up atrasado no espelho.
+        // Havendo qualquer tarefa vencida, usa a regra compartilhada
+        // integral (associacoes diretas, por Deal e snapshot).
+        if (! HubSpotTask::query()->dueInPeriod(now())->exists()) {
             return [];
         }
 
@@ -124,21 +169,21 @@ final class DashboardLeadMetricsV23Service
             ->join('hubspot_company_deal as link', 'link.hubspot_deal_id', '=', 'd.id')
             ->join('hubspot_companies as hc', 'hc.id', '=', 'link.hubspot_company_id')
             ->whereIn('hc.company_id', $ids)
-            // HUBSPOT_PRIMARY_DEAL_OWNER_V15: um Deal com varias Companies
-            // pertence comercialmente apenas a Primary unica e confirmada.
-            // Com uma Company, a associacao sozinha e suficiente.
+            // DASHBOARD_DEAL_OWNERSHIP_GROUPED_V246: agregacao unica por negocio.
+            // Regra: 1 Company => aceita; varias => Primary unica.
+            ->joinSub(
+                $this->dealOwnershipSummary(),
+                'ec_owner_counts',
+                static function (JoinClause $join): void {
+                    $join->on('ec_owner_counts.hubspot_deal_id', '=', 'link.hubspot_deal_id');
+                }
+            )
             ->where(static function (Builder $owner): void {
-                $owner->whereRaw(
-                    '(SELECT COUNT(*) FROM hubspot_company_deal AS all_links '
-                    .'WHERE all_links.hubspot_deal_id = link.hubspot_deal_id) = 1'
-                )->orWhere(static function (Builder $primary): void {
-                    $primary->where('link.is_primary', true)
-                        ->whereRaw(
-                            '(SELECT COUNT(*) FROM hubspot_company_deal AS primary_links '
-                            .'WHERE primary_links.hubspot_deal_id = link.hubspot_deal_id '
-                            .'AND primary_links.is_primary = true) = 1'
-                        );
-                });
+                $owner->where('ec_owner_counts.company_count', 1)
+                    ->orWhere(static function (Builder $primary): void {
+                        $primary->where('link.is_primary', true)
+                            ->where('ec_owner_counts.primary_count', 1);
+                    });
             })
             ->whereIn('hc.id', HubSpotCompany::query()->trustedFiscalLink()->select('id'))
             ->whereNotNull('d.last_activity_at')
@@ -173,6 +218,20 @@ final class DashboardLeadMetricsV23Service
         }
 
         return $stale;
+    }
+
+    /**
+     * Conta as associacoes e as empresas Primary de todos os negocios
+     * em uma unica passagem pela tabela pivot, em vez de subqueries
+     * COUNT(*) executadas para cada vinculo encontrado.
+     */
+    private function dealOwnershipSummary(): Builder
+    {
+        return DB::table('hubspot_company_deal as ownership_links')
+            ->select('ownership_links.hubspot_deal_id')
+            ->selectRaw('COUNT(*) AS company_count')
+            ->selectRaw('SUM(CASE WHEN ownership_links.is_primary = TRUE THEN 1 ELSE 0 END) AS primary_count')
+            ->groupBy('ownership_links.hubspot_deal_id');
     }
 
     /**

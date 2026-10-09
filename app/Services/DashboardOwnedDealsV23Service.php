@@ -105,7 +105,19 @@ final class DashboardOwnedDealsV23Service
         // candidatos pela mesma precedência de ownership anterior; somente
         // depois carregamos as Companies associadas, em uma consulta em lote.
         // Deals sem dono remoto permanecem candidatos para o fallback local.
-        $mirrors = HubSpotDeal::query()->get();
+        // DASHBOARD_OWNER_JSON_PROJECTION_V248
+        // A tela nao precisa carregar o JSON completo nem as demais colunas
+        // de cada negocio. O seletor JSON e compilado pelo Laravel para
+        // PostgreSQL e SQLite; a regra de owner continua sendo verificada em PHP.
+        $mirrors = HubSpotDeal::query()->get([
+            'id',
+            'hubspot_id',
+            'owner_name',
+            'stage_label',
+            'pipeline_id',
+            'stage_id',
+            'raw_properties->hubspot_owner_id as remote_owner_id',
+        ]);
         $knownMirrorIds = [];
         /** @var array<int, bool|null> $ownerDecision */
         $ownerDecision = [];
@@ -120,15 +132,9 @@ final class DashboardOwnedDealsV23Service
                 // snapshot para o seu ID: o mirror tem prioridade.
                 $knownMirrorIds[$dealId] = true;
 
-                $rawOwners = $deal->getAttribute('raw_properties');
-                if (is_string($rawOwners)) {
-                    $decodedOwners = json_decode($rawOwners, true);
-                    $owners = is_array($decodedOwners) ? $decodedOwners : [];
-                } else {
-                    $owners = is_array($rawOwners) ? $rawOwners : [];
-                }
-
-                $remoteOwnerId = trim((string) ($owners['hubspot_owner_id'] ?? ''));
+                // Mesmo comportamento anterior: usa somente a propriedade
+                // hubspot_owner_id e preserva o fallback por nome ou carteira.
+                $remoteOwnerId = trim((string) $deal->getAttribute('remote_owner_id'));
                 $remoteOwnerName = mb_strtolower(trim((string) $deal->owner_name));
 
                 if ($remoteOwnerId !== '' && $ownerId !== '') {
