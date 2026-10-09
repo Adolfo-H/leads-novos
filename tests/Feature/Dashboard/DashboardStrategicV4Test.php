@@ -22,9 +22,9 @@ it('shows strategic dashboard to managers without network requests', function ()
         ->test(DashboardOverview::class)
         ->assertSee('Dashboard estratégico')
         ->assertSee('Meus negócios por etapa')
-        ->assertSee('Top oportunidades por CNAE')
+        ->assertSee('Ações rápidas')
         ->assertSee('Concentração por estado')
-        ->assertSee('Riscos e oportunidades')
+        ->assertSee('Prioridades comerciais')
         ->assertSee('Cobertura cadastral');
 
     Http::assertNothingSent();

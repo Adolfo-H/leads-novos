@@ -1,0 +1,158 @@
+/* ExportControl Prospector — V20.1: contexto comercial opcional, sem voltar à grade gigante. */
+.leads-rf.leads-v20 .lv201-context {
+    grid-column: 1 / -1;
+    min-width: 0;
+    border: 1px solid #305c7a;
+    border-radius: 10px;
+    background: #0a2c47;
+    color: #cde6f6;
+    overflow: hidden;
+}
+.leads-rf.leads-v20 .lv201-context > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px;
+    color: #9de9e3;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 720;
+    list-style: none;
+}
+.leads-rf.leads-v20 .lv201-context > summary::-webkit-details-marker { display: none; }
+.leads-rf.leads-v20 .lv201-context > summary:hover { background: #113c56; }
+.leads-rf.leads-v20 .lv201-context[open] > summary span { transform: rotate(180deg); }
+.leads-rf.leads-v20 .lv201-context-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 0 13px 13px;
+}
+.leads-rf.leads-v20 .lv201-context-grid > section {
+    min-width: 0;
+    padding: 12px;
+    background: #0d344e;
+    border: 1px solid #254c69;
+    border-radius: 9px;
+}
+.leads-rf.leads-v20 .lv201-context h5 {
+    margin: 0 0 12px;
+    font-size: 12px;
+    color: #effaff;
+    font-weight: 730;
+}
+.leads-rf.leads-v20 .lv201-fact {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 8px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid #ffffff0d;
+    font-size: 10px;
+}
+.leads-rf.leads-v20 .lv201-fact span { color: #91b2c9; }
+.leads-rf.leads-v20 .lv201-fact strong { color: #e4f7ff; text-align: right; font-variant-numeric: tabular-nums; }
+.leads-rf.leads-v20 .lv201-fact-text,
+.leads-rf.leads-v20 .lv201-muted { color: #a8bfd1; font-size: 10px; line-height: 1.6; }
+.leads-rf.leads-v20 .lv201-stage {
+    display: inline-flex;
+    margin: 4px 5px 2px 0;
+    padding: 5px 9px;
+    border-radius: 7px;
+    border: 1px solid #2e6580;
+    background: #124058;
+    color: #80e9dc;
+    font-size: 10px;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+.leads-rf.leads-v20 a.lv201-stage:hover { border-color: #62ddce; color: #eafcff; }
+.leads-rf.leads-v20 .lv201-reprospecting {
+    padding: 8px 10px;
+    background: #0e433f;
+    border: 1px solid #378c83;
+    border-radius: 8px;
+    color: #9af0d5;
+    font-size: 10px;
+    line-height: 1.45;
+}
+@media (max-width: 1050px) {
+    .leads-rf.leads-v20 .lv201-context-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .leads-rf.leads-v20 .lv201-context * { transition: none !important; }
+}
+
+/* LEADS_UX_V203_BEGIN */
+/* Uma área de controles operacionais, sem repetir acesso ao dossiê/HubSpot. */
+.leads-rf.leads-v20 .lv18-details-advanced.lv20-controls {
+    display: grid; grid-template-columns: repeat(2,minmax(0,1fr));
+    align-items: start; gap: 10px; margin: 0 18px 14px;
+    padding: 11px; border: 1px solid #2c5977; border-top: 0;
+    border-radius: 0 0 12px 12px; background: #092941;
+}
+.leads-rf.leads-v20 .lv18-details-advanced.lv20-controls[x-cloak],
+.leads-rf.leads-v20 .lv18-details-advanced.lv20-controls[style*="display: none"] {
+    display: none !important;
+}
+.leads-rf.leads-v20 .lv20-control-card {
+    display: flex; flex-direction: column; align-items: flex-start;
+    justify-content: flex-start; gap: 9px;
+    height: auto !important; min-height: 0 !important;
+    padding: 14px 16px; border-radius: 9px;
+    border: 1px solid #2c536f; background: #10334c;
+}
+.leads-rf.leads-v20 .lv20-control-card h4 {font-size: 12px; margin: 0;}
+.leads-rf.leads-v20 .lv20-control-card .rf-owner-select {
+    width: 100%; max-width: 360px; min-height: 38px; font-size: 11px;
+}
+.leads-rf.leads-v20 .lv20-controls .lv201-context { grid-column: 1 / -1; margin: 0; }
+.leads-rf.leads-v20 .lv201-context > summary {
+    padding: 12px 14px; font-size: 12px; background: #103750;
+}
+.leads-rf.leads-v20 .lv201-context-grid {gap: 10px; padding: 12px;}
+.leads-rf.leads-v20 .lv201-context-grid > section {padding: 13px;}
+.leads-rf.leads-v20 .lv203-resume {display:flex; margin-top:4px; flex-wrap:wrap;}
+.leads-rf.leads-v20 .lv203-resume button {
+    border: 1px solid #2b9690; background: #104841; color: #7aeee0;
+    border-radius: 8px; padding: 8px 12px; font-size: 11px;
+}
+/* Evitar o terceiro card e altura vazia no cabeçalho. */
+.leads-rf.leads-v20 .lv20-actions-header {margin: 8px 18px 0; padding: 12px 15px;}
+.leads-rf.leads-v20 .lv19-information-grid {gap: 12px; padding: 14px 18px 10px;}
+.leads-rf.leads-v20 .lv19-info-panel {min-height: 0; height: auto;}
+/* Especificidade maior que o CSS legado V17 que fixa HubSpot em apenas 42px. */
+@media (min-width: 981px) {
+    .leads-rf.leads-v13.leads-v16.leads-v20 .lv13-list-head,
+    .leads-rf.leads-v13.leads-v16.leads-v20 .lv13-lead-line {
+        grid-template-columns: 23px minmax(195px,1.8fr) 85px minmax(125px,1fr)
+          minmax(115px,1fr) minmax(128px,1fr) minmax(140px,1fr) 195px !important;
+        min-width: 1150px !important; gap: 8px !important;
+    }
+}
+.leads-rf.leads-v13.leads-v16.leads-v20 .lv13-actions.lv17-actions {
+    display: flex !important; gap: 5px !important;
+    overflow: visible !important; white-space: nowrap !important;
+}
+.leads-rf.leads-v13.leads-v16.leads-v20 .lv13-actions.lv17-actions > a.lv17-action-hubspot {
+    flex: 0 0 76px !important; width: 76px !important;
+    min-width: 76px !important; max-width: 76px !important;
+    height: 29px !important; padding: 0 5px !important;
+    overflow: visible !important; gap: 3px !important;
+    box-sizing: border-box !important;
+}
+.leads-rf.leads-v13.leads-v16.leads-v20 .lv13-actions.lv17-actions .lv16-hubspot-caption {
+    display:inline !important; font-size:10px !important;
+    line-height:1 !important; white-space:nowrap !important;
+}
+@media(max-width:1050px) {
+    .leads-rf.leads-v20 .lv18-details-advanced.lv20-controls,
+    .leads-rf.leads-v20 .lv201-context-grid { grid-template-columns:1fr; }
+}
+@media(max-width:720px) {
+    .leads-rf.leads-v20 .lv19-information-grid {padding: 10px; grid-template-columns: 1fr;}
+    .leads-rf.leads-v20 .lv18-details-advanced.lv20-controls,
+    .leads-rf.leads-v20 .lv20-actions-header {margin-left:10px; margin-right:10px;}
+}
+/* LEADS_UX_V203_END */

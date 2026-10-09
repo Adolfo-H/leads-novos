@@ -15,8 +15,8 @@ it('renders four compact controls without legacy action-card classes', function 
         ->assertSee('Vencem hoje')
         ->assertSee('Minha fila')
         ->assertSee('Novos')
-        ->assertSeeHtml('lv12-card-grid')
-        ->assertSee('Pipeline HubSpot')
+        ->assertSeeHtml('lv15-card-grid')
+        ->assertSee('Situação CRM')
         ->assertSee('Exportar Excel');
 });
 
@@ -26,13 +26,14 @@ it('keeps filtering and real commercial actions available', function () {
     $css = file_get_contents(resource_path('css/leads-visual-v12.css'));
 
     expect($blade)
-        ->toContain('lv12-next-step')
+        ->toContain('lv13-next')
         ->toContain('wire:click="exportExcel"')
         ->toContain('wire:model.live="owner"')
-        ->toContain('wire:model.live="crm"')
+        ->toContain('wire:model.live="crmSituation"')
         ->toContain('assignOwner(')
         ->toContain('Abrir dossiê')
-        ->toContain('HubSpot ↗')
+        ->toContain('lv23-hubspot')
+        ->toContain('hubSpotActionUrl')
         ->toContain('private function filteredLeadsQuery()');
 
     expect($partial)

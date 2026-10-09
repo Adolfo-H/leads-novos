@@ -1109,7 +1109,7 @@ final class CommercialManagementMetricsService
         return DB::table(
             'companies'
         )
-            ->join(
+            ->leftJoin(
                 'company_sdr_scores as sdr',
                 'sdr.company_id',
                 '=',

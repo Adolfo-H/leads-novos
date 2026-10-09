@@ -87,22 +87,14 @@ it('recovers received failed and stale webhook events', function () {
      * Somente queued/processing dependem
      * da idade para recuperação.
      */
-    DB::table(
-        'hubspot_webhook_events'
-    )
-        ->whereIn(
-            'id',
-            [
-                $queued->id,
-                $processing->id,
-            ]
-        )
-        ->update([
-            'updated_at' => now()
-                ->subMinutes(
-                    20
-                ),
-        ]);
+    DB::table('hubspot_webhook_events')
+        ->where('id', $queued->id)
+        ->update(['updated_at' => now()->subMinutes(20)]);
+
+    // O processing pode ter retries normais ainda pendentes.
+    DB::table('hubspot_webhook_events')
+        ->where('id', $processing->id)
+        ->update(['updated_at' => now()->subMinutes(35)]);
 
     $exitCode =
         Artisan::call(

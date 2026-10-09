@@ -442,20 +442,7 @@ final class HubSpotWebhookAssociationResolver
                 ->whereNotNull(
                     'hc.company_id'
                 )
-                ->where(
-                    function (
-                        $query
-                    ): void {
-                        $query
-                            ->whereNull(
-                                'hc.match_source'
-                            )
-                            ->orWhereNotIn(
-                                'hc.match_source',
-                                HubSpotCompany::UNSAFE_FISCAL_MATCH_SOURCES
-                            );
-                    }
-                )
+                ->whereIn('hc.id', HubSpotCompany::query()->trustedFiscalLink()->select('id'))
                 ->where(
                     function (
                         $query
@@ -529,20 +516,7 @@ final class HubSpotWebhookAssociationResolver
                 ->whereNotNull(
                     'hc.company_id'
                 )
-                ->where(
-                    function (
-                        $query
-                    ): void {
-                        $query
-                            ->whereNull(
-                                'hc.match_source'
-                            )
-                            ->orWhereNotIn(
-                                'hc.match_source',
-                                HubSpotCompany::UNSAFE_FISCAL_MATCH_SOURCES
-                            );
-                    }
-                )
+                ->whereIn('hc.id', HubSpotCompany::query()->trustedFiscalLink()->select('id'))
                 ->pluck(
                     'hc.company_id'
                 )
@@ -594,20 +568,7 @@ final class HubSpotWebhookAssociationResolver
                 ->whereNotNull(
                     'hc.company_id'
                 )
-                ->where(
-                    function (
-                        $query
-                    ): void {
-                        $query
-                            ->whereNull(
-                                'hc.match_source'
-                            )
-                            ->orWhereNotIn(
-                                'hc.match_source',
-                                HubSpotCompany::UNSAFE_FISCAL_MATCH_SOURCES
-                            );
-                    }
-                )
+                ->whereIn('hc.id', HubSpotCompany::query()->trustedFiscalLink()->select('id'))
                 ->pluck(
                     'hc.company_id'
                 )

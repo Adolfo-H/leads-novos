@@ -19,6 +19,15 @@ final class HubSpotWebhookQueueService
      */
     private const MAX_TOTAL_ATTEMPTS = 10;
 
+    /* WEBHOOK_RECOVERY_SAFE_V10
+     * Redis retry_after: 720s. O job pode tentar ate 5 vezes,
+     * com timeout de 120s e backoff 15/60/180/600s.
+     * Evita recuperar um evento enquanto o worker ainda tenta.
+     */
+    private const MIN_QUEUED_STALE_MINUTES = 15;
+
+    private const MIN_PROCESSING_STALE_MINUTES = 30;
+
     /**
      * Estados que nunca devem voltar
      * automaticamente para a fila.
@@ -49,6 +58,7 @@ final class HubSpotWebhookQueueService
     public function dispatch(
         HubSpotWebhookEvent|int $event,
         bool $force = false,
+        ?int $staleMinutes = null,
     ): bool {
         $eventId =
             $event instanceof HubSpotWebhookEvent
@@ -60,6 +70,7 @@ final class HubSpotWebhookQueueService
                 function () use (
                     $eventId,
                     $force,
+                    $staleMinutes,
                 ): bool {
                     $locked =
                         HubSpotWebhookEvent::query()
@@ -71,6 +82,39 @@ final class HubSpotWebhookQueueService
 
                     if ($locked === null) {
                         return false;
+                    }
+
+                    /*
+                     * A selecao e a reserva nao sao atomicas.
+                     * Outra tentativa pode ter atualizado o evento
+                     * entre a listagem e este lock. Rechecamos aqui.
+                     */
+                    if (
+                        $force
+                        && $staleMinutes !== null
+                        && in_array(
+                            $locked->status,
+                            ['queued', 'processing'],
+                            true
+                        )
+                    ) {
+                        $minimum = $locked->status === 'queued'
+                            ? self::MIN_QUEUED_STALE_MINUTES
+                            : self::MIN_PROCESSING_STALE_MINUTES;
+
+                        $cutoff = now()->subMinutes(
+                            max($minimum, $staleMinutes)
+                        );
+
+                        if (
+                            $locked->getRawOriginal('updated_at') === null
+                            || HubSpotWebhookEvent::query()
+                                ->whereKey($eventId)
+                                ->where('updated_at', '>', $cutoff)
+                                ->exists()
+                        ) {
+                            return false;
+                        }
                     }
 
                     if (
@@ -235,11 +279,13 @@ final class HubSpotWebhookQueueService
                 )
             );
 
-        $staleBefore =
-            now()
-                ->subMinutes(
-                    $staleMinutes
-                );
+        $queuedStaleBefore = now()->subMinutes(
+            max($staleMinutes, self::MIN_QUEUED_STALE_MINUTES)
+        );
+
+        $processingStaleBefore = now()->subMinutes(
+            max($staleMinutes, self::MIN_PROCESSING_STALE_MINUTES)
+        );
 
         $ids =
             HubSpotWebhookEvent::query()
@@ -247,7 +293,8 @@ final class HubSpotWebhookQueueService
                     function (
                         $query
                     ) use (
-                        $staleBefore
+                        $queuedStaleBefore,
+                        $processingStaleBefore
                     ): void {
                         /*
                          * Persistido sem job.
@@ -285,24 +332,17 @@ final class HubSpotWebhookQueueService
                              * processamento abandonado.
                              */
                             ->orWhere(
-                                function (
-                                    $stale
-                                ) use (
-                                    $staleBefore
-                                ): void {
-                                    $stale
-                                        ->whereIn(
-                                            'status',
-                                            [
-                                                'queued',
-                                                'processing',
-                                            ]
-                                        )
-                                        ->where(
-                                            'updated_at',
-                                            '<=',
-                                            $staleBefore
-                                        );
+                                function ($queued) use ($queuedStaleBefore): void {
+                                    $queued
+                                        ->where('status', 'queued')
+                                        ->where('updated_at', '<=', $queuedStaleBefore);
+                                }
+                            )
+                            ->orWhere(
+                                function ($processing) use ($processingStaleBefore): void {
+                                    $processing
+                                        ->where('status', 'processing')
+                                        ->where('updated_at', '<=', $processingStaleBefore);
                                 }
                             );
                     }
@@ -337,6 +377,7 @@ final class HubSpotWebhookQueueService
                     event: $eventId,
 
                     force: true,
+                    staleMinutes: $staleMinutes,
                 )
             ) {
                 $queued++;

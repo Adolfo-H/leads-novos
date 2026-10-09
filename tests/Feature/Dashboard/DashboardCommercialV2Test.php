@@ -22,8 +22,8 @@ it('shows commercial indicators to managers without external requests', function
     $page = Livewire::actingAs($manager)
         ->test(DashboardOverview::class)
         ->assertSee('Dashboard estratégico')
-        ->assertSee('Leads em operação')
-        ->assertSee('Riscos e oportunidades')
+        ->assertSee('Leads cadastrados')
+        ->assertSee('Prioridades comerciais')
         ->assertSee('Cobertura cadastral');
 
     $summary = $page->get('commercialSummary');

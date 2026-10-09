@@ -20,13 +20,9 @@ class RepairUnsafeHubSpotFiscalLinks extends Command
     {
         $records =
             HubSpotCompany::query()
-                ->whereIn(
-                    'match_source',
-                    HubSpotCompany::UNSAFE_FISCAL_MATCH_SOURCES
-                )
-                ->orderBy(
-                    'id'
-                )
+                // Mesma politica usada nas leituras do Prospector.
+                ->unsafeFiscalLink()
+                ->orderBy('id')
                 ->get();
 
         $this->newLine();

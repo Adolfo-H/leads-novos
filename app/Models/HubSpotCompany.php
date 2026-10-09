@@ -136,26 +136,59 @@ class HubSpotCompany extends Model
     }
 
     /**
+     * FISCAL_MATCH_POLICY_V16_1
+     *
+     * Consulta segura baseada no mesmo criterio do validador PHP.
+     * ESCAPE '!' garante que '_' seja literal e nao coringa SQL.
+     *
      * @param  Builder<HubSpotCompany>  $query
      * @return Builder<HubSpotCompany>
      */
-    public function scopeTrustedFiscalLink(
-        Builder $query
-    ): Builder {
-        return $query->where(
-            function (
-                Builder $query
-            ): void {
-                $query
-                    ->whereNull(
-                        'match_source'
-                    )
-                    ->orWhereNotIn(
-                        'match_source',
-                        self::UNSAFE_FISCAL_MATCH_SOURCES
-                    );
-            }
-        );
+    public function scopeTrustedFiscalLink(Builder $query): Builder
+    {
+        [$unsafeSql, $bindings] = self::unsafeFiscalSourceSql();
+
+        return $query->where(static function (Builder $trusted) use ($unsafeSql, $bindings): void {
+            $trusted->whereNull('match_source')
+                ->orWhereRaw('NOT ('.$unsafeSql.')', $bindings);
+        });
+    }
+
+    /**
+     * Complemento da consulta confiavel, para auditoria e quarentena.
+     *
+     * @param  Builder<HubSpotCompany>  $query
+     * @return Builder<HubSpotCompany>
+     */
+    public function scopeUnsafeFiscalLink(Builder $query): Builder
+    {
+        [$unsafeSql, $bindings] = self::unsafeFiscalSourceSql();
+
+        return $query->whereRaw('('.$unsafeSql.')', $bindings);
+    }
+
+    /**
+     * Ambas as consultas usam o MESMO predicado e bindings.
+     * Os padroes LIKE escapam os underscores exigidos pela regra PHP.
+     *
+     * @return array{literal-string, list<string>}
+     */
+    private static function unsafeFiscalSourceSql(): array
+    {
+        $source = 'LOWER(TRIM(match_source))';
+
+        return [
+            $source.' IN (?, ?)'
+                .' OR '.$source." LIKE ? ESCAPE '!'"
+                .' OR '.$source." LIKE ? ESCAPE '!'"
+                .' OR '.$source." LIKE ? ESCAPE '!'",
+            [
+                ...self::UNSAFE_FISCAL_MATCH_SOURCES,
+                'hubspot!_related!_%',
+                '%inherited!_cnpj%',
+                '%propagated!_cnpj%',
+            ],
+        ];
     }
 
     public function hasTrustedFiscalLink(): bool

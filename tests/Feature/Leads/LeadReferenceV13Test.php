@@ -32,12 +32,12 @@ it('preserves the lead workflows and renders the compact V13 interface', functio
         ->test('pages::leads.index')
         ->assertSee('Empresa Referencia V13 Teste')
         ->assertSee('Atrasados')
-        ->assertSee('Pipeline HubSpot')
+        ->assertSee('Situação CRM')
         ->assertDontSee('Filtros avançados')
         ->assertSee('Exportar Excel')
         ->assertSee('Selecionar Empresa Referencia V13 Teste')
         ->assertSeeHtml('lv13-lead-line')
-        ->assertSeeHtml('lv13-details')
+        ->assertDontSeeHtml('lv13-details')
         ->assertSee('Abrir dossiê');
 });
 
@@ -49,24 +49,24 @@ it('receives the topbar search and applies the original Lead search property', f
         ->assertSet('search', 'Empresa teste');
 });
 
-it('keeps attribution, CRM filtering, export, and source code of the old expanded controls', function (): void {
+it('keeps attribution, CRM filtering, export and direct row actions', function (): void {
     $view = file_get_contents(resource_path('views/pages/leads/⚡index.blade.php'));
     $css = file_get_contents(resource_path('css/leads-reference-v13.css'));
     $pipeline = file_get_contents(resource_path('views/partials/leads-crm-stage-strip.blade.php'));
 
     expect($view)
         ->toContain('leads-v13')
-        ->toContain('lv13-details')
+        ->not->toContain('lv13-details')
         ->toContain('lv13-lead-line')
         ->toContain('wire:click="exportExcel"')
         ->toContain('private function filteredLeadsQuery()')
         ->toContain('wire:model.live="owner"')
-        ->toContain('wire:model.live="crm"')
+        ->toContain('wire:model.live="crmSituation"')
         ->toContain('assignOwner(')
         ->toContain("#[On('leads-topbar-search')]")
         ->toContain('verifyHubSpotNow(')
         ->toContain('claimLead(')
-        ->toContain('rf-col-action');
+        ->toContain('lv23-actions');
 
     expect($css)
         ->toContain('.lv13-lead-line')

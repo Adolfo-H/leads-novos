@@ -108,10 +108,21 @@ class ProcessHubSpotWebhookEvent implements ShouldQueue
                                 'processed',
                                 'ignored',
                                 'blocked_scope',
-                                'processing',
                             ],
                             true
                         )
+                    ) {
+                        return null;
+                    }
+
+                    /* WEBHOOK_RETRY_PROCESSING_V1
+                     * O retry do mesmo job pode assumir processing.
+                     * Primeiras entregas duplicadas continuam bloqueadas.
+                     * WithoutOverlapping impede execução simultânea.
+                     */
+                    if (
+                        $event->status === 'processing'
+                        && $this->attempts() <= 1
                     ) {
                         return null;
                     }
@@ -123,6 +134,7 @@ class ProcessHubSpotWebhookEvent implements ShouldQueue
                                 'queued',
                                 'received',
                                 'failed',
+                                'processing',
                             ],
                             true
                         )
@@ -308,6 +320,10 @@ class ProcessHubSpotWebhookEvent implements ShouldQueue
         HubSpotWebhookEvent::query()
             ->whereKey(
                 $this->eventId
+            )
+            ->where(
+                'status',
+                'processing'
             )
             ->update([
                 'status' => 'failed',

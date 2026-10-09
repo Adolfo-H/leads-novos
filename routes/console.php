@@ -61,7 +61,7 @@ Schedule::command(
     ->withoutOverlapping();
 
 Schedule::command(
-    'hubspot:webhooks-recover --minutes=1 --limit=500'
+    'hubspot:webhooks-recover --minutes=10 --limit=500'
 )
     ->everyMinute()
     ->withoutOverlapping();
@@ -98,3 +98,15 @@ Schedule::command(
         '03:20'
     )
     ->withoutOverlapping();
+
+/* HUBSPOT_TASK_RECONCILIATION_V22_START */
+/*
+ * Rede de segurança para tarefas HubSpot que perderam eventos de webhook.
+ * Atualiza somente situações confirmadas pelo CRM via GET.
+ */
+Schedule::command(
+    'prospector:reconcile-hubspot-due-tasks --apply --limit=50 --stale-minutes=20'
+)
+    ->everyThirtyMinutes()
+    ->withoutOverlapping(30);
+/* HUBSPOT_TASK_RECONCILIATION_V22_END */

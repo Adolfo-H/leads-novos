@@ -21,11 +21,11 @@ it('renders the strategic layout with bounded globe and map assets', function ()
     Livewire::actingAs($manager)
         ->test(DashboardOverview::class)
         ->assertSee('Dashboard estratégico')
-        ->assertSee('Leads em operação')
+        ->assertSee('Leads cadastrados')
         ->assertSee('Meus negócios por etapa')
-        ->assertSee('Top oportunidades por CNAE')
+        ->assertSee('Ações rápidas')
         ->assertSee('Concentração por estado')
-        ->assertSee('Riscos e oportunidades')
+        ->assertSee('Prioridades comerciais')
         ->assertSee('ds-v7-map-svg')
         ->assertSee('globe-hero.webp')
         ->assertSee('Cobertura cadastral');
@@ -71,7 +71,7 @@ it('does not render sensitive management widgets to sellers', function () {
     Livewire::actingAs($seller)
         ->test(DashboardOverview::class)
         ->assertSee('Minha fila de leads')
-        ->assertDontSee('Top oportunidades por CNAE')
+        ->assertDontSee('Empresas com mais estabelecimentos')
         ->assertDontSee('Negócios no HubSpot');
 });
 

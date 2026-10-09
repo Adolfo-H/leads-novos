@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use DateTimeInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -43,6 +45,53 @@ class HubSpotTask extends Model
 
             'raw_properties' => 'array',
         ];
+    }
+
+    /**
+     * Tarefa aberta e não concluída, com prazo no intervalo especificado.
+     *
+     * @param  Builder<HubSpotTask>  $query
+     * @param  list<string>  $owners
+     * @return Builder<HubSpotTask>
+     */
+    public function scopeDueInPeriod(
+        Builder $query,
+        DateTimeInterface $until,
+        ?DateTimeInterface $from = null,
+        array $owners = [],
+    ): Builder {
+        $closed = [
+            'COMPLETED', 'DONE', 'CANCELLED', 'CANCELED', 'CLOSED',
+            'CONCLUIDA', 'CONCLUÍDA', 'CONCLUIDO', 'CONCLUÍDO',
+            'FINALIZADA', 'FINALIZADO', 'CANCELADO', 'CANCELADA',
+        ];
+
+        $query->where('hubspot_tasks.is_open', true)
+            ->whereNull('hubspot_tasks.completed_at')
+            ->whereNotNull('hubspot_tasks.due_at')
+            ->where('hubspot_tasks.due_at', '<', $until)
+            ->whereRaw(
+                "UPPER(TRIM(COALESCE(hubspot_tasks.status, ''))) NOT IN ("
+                .implode(',', array_fill(0, count($closed), '?')).')',
+                $closed
+            );
+
+        if ($from !== null) {
+            $query->where('hubspot_tasks.due_at', '>=', $from);
+        }
+
+        if ($owners !== []) {
+            $query->where(function (Builder $ownerQuery) use ($owners): void {
+                foreach ($owners as $nameOrId) {
+                    $ownerQuery->orWhereRaw(
+                        'LOWER(TRIM(hubspot_tasks.assigned_to)) = ?',
+                        [mb_strtolower($nameOrId)]
+                    );
+                }
+            });
+        }
+
+        return $query;
     }
 
     /**

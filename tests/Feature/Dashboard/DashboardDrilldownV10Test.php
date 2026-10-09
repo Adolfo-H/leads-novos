@@ -67,7 +67,7 @@ it('opens assigned companies from a real HubSpot stage without leaking another s
         ->assertSee('Filtro aplicado pelo dashboard', false);
 });
 
-it('restricts unassigned and HubSpot deal KPIs to the active operational scope', function () {
+it('keeps unassigned filter and includes all stages in HubSpot deal KPI', function () {
     $manager = User::factory()->create(['email_verified_at' => now()]);
     $manager->forceFill(['commercial_role' => User::ROLE_MANAGER])->save();
 
@@ -112,7 +112,7 @@ it('restricts unassigned and HubSpot deal KPIs to the active operational scope',
         ->test('pages::leads.index')
         ->set('dashboardView', 'with_deal')
         ->assertSee('Lead Ativo Com Negocio')
-        ->assertDontSee('Lead Recusado Com Negocio')
+        ->assertSee('Lead Recusado Com Negocio')
         ->assertDontSee('Lead Ativo Sem Dono');
 });
 
@@ -123,7 +123,7 @@ it('uses explicit drilldown links instead of decorative KPI trend lines', functi
     expect($source)
         ->toContain('dashboardStage')
         ->toContain('dashboardView')
-        ->toContain('ds-v10-chart-link')
+        ->toContain('ds25-stage')
         ->not->toContain('ds-v5-kpi-ornament')
         ->and($leads)
         ->toContain('public string $dashboardStage')

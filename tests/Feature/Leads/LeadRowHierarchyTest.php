@@ -5,44 +5,24 @@ use App\Models\CompanyHubSpotLead;
 use App\Models\User;
 use Livewire\Livewire;
 
-it('renders the lead list with semantic commercial columns', function () {
-    $view =
-        file_get_contents(
-            resource_path(
-                'views/pages/leads/⚡index.blade.php'
-            )
-        );
+it('renders the compact lead columns and the supplemental control panel', function () {
+    $view = file_get_contents(resource_path('views/pages/leads/⚡index.blade.php'));
 
-    expect(
-        $view
-    )
-        ->toContain(
-            'rf-col-company'
-        )
-        ->toContain(
-            'rf-col-score'
-        )
-        ->toContain(
-            'rf-col-commercial'
-        )
-        ->toContain(
-            'rf-col-crm'
-        )
-        ->toContain(
-            'rf-col-followup'
-        )
-        ->toContain(
-            'rf-col-owner'
-        )
-        ->toContain(
-            'rf-col-action'
-        )
-        ->toContain(
-            'rf-lead-attention'
-        )
-        ->toContain(
-            'rf-next-action-main'
-        );
+    expect($view)
+        ->toContain('lv13-lead-line')
+        ->toContain('lv13-company')
+        ->toContain('lv13-score')
+        ->toContain('lv13-status')
+        ->toContain('lv13-stage')
+        ->toContain('lv13-next')
+        ->toContain('lv13-owner')
+        ->toContain('lv23-actions')
+        ->not->toContain('lv20-controls')
+        ->not->toContain('lv201-context')
+        ->toContain('assignOwner(')
+        ->toContain('verifyHubSpotNow(')
+        ->toContain('claimLead(')
+        ->toContain('resumeLead(');
 });
 
 it('highlights an overdue lead with its next commercial action', function () {
@@ -209,9 +189,10 @@ it('marks a lead due today without classifying it as overdue', function () {
             'Lead Hoje UX Teste'
         )
         ->assertSee(
-            'Ação hoje'
+            now()->format('d/m/Y')
         )
-        ->assertSeeHtml(
-            'rf-row-due-today'
-        );
+        ->assertSeeHtml('lv13-lead-line');
+
+    expect($company->hubSpotLead?->last_task_due_at?->isToday())->toBeTrue();
+    expect($company->hubSpotLead?->last_task_due_at?->isPast())->toBeFalse();
 });

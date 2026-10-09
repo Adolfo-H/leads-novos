@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CompanyHubSpotLead extends Model
 {
@@ -46,6 +47,16 @@ class CompanyHubSpotLead extends Model
 
             'metadata' => 'array',
         ];
+    }
+
+    /** @return HasOne<HubSpotTask, $this> */
+    public function hubSpotTask(): HasOne
+    {
+        return $this->hasOne(
+            HubSpotTask::class,
+            'hubspot_id',
+            'hubspot_task_id'
+        );
     }
 
     /**

@@ -113,7 +113,7 @@ it('preserves seller restrictions and displays the small brand-world panel in th
     Livewire::actingAs($seller)
         ->test(DashboardOverview::class)
         ->assertDontSee('Meus negócios por etapa')
-        ->assertDontSee('Top oportunidades por CNAE')
+        ->assertDontSee('Empresas com mais estabelecimentos')
         ->assertSee('Minha fila de leads');
 
     $this->actingAs($seller)

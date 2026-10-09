@@ -966,11 +966,24 @@ final class HubSpotWebhookMirrorSyncService
         foreach (
             $externalIds as $externalId
         ) {
+            /* HUBSPOT_TASK_REFERENCE_V13
+             * Uma associação informa somente o ID da tarefa.
+             * Não devemos considerá-la aberta antes de receber
+             * os detalhes pelo CSV ou pela API do HubSpot.
+             */
+            $defaults = $modelClass === HubSpotTask::class
+                ? [
+                    'is_open' => false,
+                    'is_overdue' => false,
+                ]
+                : [];
+
             $model =
                 $modelClass::query()
-                    ->firstOrCreate([
-                        'hubspot_id' => $externalId,
-                    ]);
+                    ->firstOrCreate(
+                        ['hubspot_id' => $externalId],
+                        $defaults
+                    );
 
             $ids[] =
                 (int) $model->getKey();

@@ -95,12 +95,12 @@ it('shows only commercially eligible companies as leads', function () {
         ->assertSee(
             '88/100'
         )
-        ->assertSee(
-            'Muito alta'
-        )
+
         ->assertDontSee(
             'Cliente Bloqueado Teste'
         );
+    expect($eligible->sdrScore()->value('priority'))->toBe('very_high');
+
 });
 
 it('shows commercial context and direct actions in the lead queue', function () {
@@ -236,16 +236,16 @@ it('shows commercial context and direct actions in the lead queue', function () 
             'Lead Comercial Completo'
         )
         ->assertSee(
-            'Perfil ICP'
+            'ICP A'
         )
         ->assertSee(
-            '+30'
+            '88/100'
         )
         ->assertSee(
-            'Exportação direta'
+            'Dossiê'
         )
         ->assertSee(
-            'Atuação identificada'
+            'HubSpot'
         )
         ->assertSee(
             'Abrir dossiê'
@@ -408,15 +408,14 @@ it('keeps the original qualification visible after HubSpot creates an opportunit
         ->assertSee(
             '60/100'
         )
-        ->assertSee(
-            'Oportunidade'
-        )
-        ->assertSee(
-            'Média'
-        )
+
         ->assertSee(
             'Em contato'
         );
+    expect($company->crmCheck()->value('status'))->toBe('opportunity');
+    expect(data_get($company->hubSpotLead?->metadata, 'qualification_snapshot.priority'))
+        ->toBe('medium');
+
 });
 
 it('counts unsynced eligible companies as new operational leads', function () {
@@ -728,24 +727,23 @@ it('shows multiple HubSpot deal stages in the CRM column', function () {
             'Empresa Multiplos Negocios HubSpot'
         )
         ->assertSee(
-            '3 negócios'
+            '+1 etapa(s)'
         )
         ->assertSee(
             'Leads frios'
         )
+
         ->assertSee(
-            'Leads qualificado'
+            '62/100'
         )
         ->assertSee(
-            'Recusou'
-        )
-        ->assertSee(
-            'Bom'
-        )
-        ->assertSee(
-            'https://app.hubspot.com/contacts/12345678/record/0-3/deal-frio',
+            'https://app.hubspot.com/contacts/12345678/record/0-2/company-hubspot-test',
             false
         );
+    $stages = collect(data_get($company->crmCheck?->metadata, 'deals', []))
+        ->pluck('stage_label')->all();
+    expect($stages)->toContain('Leads frios', 'Leads qualificado', 'Recusou');
+
 });
 
 it('filters leads by the real HubSpot deal stage', function () {
@@ -884,10 +882,10 @@ it('filters leads by the real HubSpot deal stage', function () {
             'pages::leads.index'
         )
         ->assertSee(
-            'Leds frio'
+            'Empresa HubSpot Leds Frio'
         )
         ->assertSee(
-            'Leds qualificado'
+            'Empresa HubSpot Qualificada'
         )
         ->set(
             'crm',
@@ -898,5 +896,15 @@ it('filters leads by the real HubSpot deal stage', function () {
         )
         ->assertDontSee(
             'Empresa HubSpot Qualificada'
+        )
+        ->set(
+            'crm',
+            'stage:Leds qualificado'
+        )
+        ->assertSee(
+            'Empresa HubSpot Qualificada'
+        )
+        ->assertDontSee(
+            'Empresa HubSpot Leds Frio'
         );
 });

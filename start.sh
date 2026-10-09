@@ -53,20 +53,19 @@ env_value()
 }
 
 
-echo "1/7  Preparando serviços de background..."
+# STARTUP_SAFE_V20_1: nunca interromper workers nem recriar serviços
+# com dados/filas ativos durante uma inicialização de rotina.
+echo "1/7  Preservando workers e scheduler ativos..."
+echo "2/7  Subindo Laravel sem recriar contêineres..."
 
-docker compose \
-    --profile background \
-    stop \
-    queue-worker \
-    scheduler \
-    >/dev/null 2>&1 \
-    || true
+docker compose up -d --no-recreate laravel.test
 
+APP_CONTAINER="$(docker compose ps -q laravel.test | head -n 1)"
 
-echo "2/7  Subindo Docker/Sail..."
-
-./vendor/bin/sail up -d
+if [ -z "$APP_CONTAINER" ]; then
+    echo "ERRO: contêiner Laravel não encontrado."
+    exit 1
+fi
 
 
 echo "3/7  Aguardando Laravel..."
@@ -75,7 +74,8 @@ READY=0
 
 for ATTEMPT in $(seq 1 45)
 do
-    if ./vendor/bin/sail artisan about >/dev/null 2>&1
+    if docker exec --user sail --workdir /var/www/html \
+        "$APP_CONTAINER" php artisan about >/dev/null 2>&1
     then
         READY=1
         break
@@ -92,16 +92,21 @@ if [ "$READY" != "1" ]; then
 fi
 
 
-echo "4/7  Limpando caches..."
+echo "4/7  Limpando somente artefatos compilados..."
 
-./vendor/bin/sail artisan optimize:clear >/dev/null
+# NÃO executar optimize:clear/cache:clear: podem remover locks,
+# rate limits e outras chaves compartilhadas enquanto jobs rodam.
+for COMMAND in config:clear route:clear view:clear event:clear; do
+    docker exec --user sail --workdir /var/www/html \
+        "$APP_CONTAINER" php artisan "$COMMAND" >/dev/null
+done
 
 
 echo "5/7  Iniciando fila e scheduler..."
 
 docker compose \
     --profile background \
-    up -d \
+    up -d --no-recreate \
     queue-worker \
     scheduler
 
@@ -110,7 +115,7 @@ echo "     Iniciando workers HubSpot prioritarios..."
 
 docker compose \
     --profile background \
-    up -d \
+    up -d --no-recreate \
     --scale hubspot-webhook-worker=2 \
     --scale hubspot-realtime-worker=2 \
     hubspot-webhook-worker \
@@ -120,8 +125,8 @@ docker compose \
 
 echo "     Testando workers prioritarios..."
 
-./vendor/bin/sail artisan \
-    hubspot:health-ping \
+docker exec --user sail --workdir /var/www/html \
+    "$APP_CONTAINER" php artisan hubspot:health-ping \
     >/dev/null 2>&1 \
     || true
 
@@ -147,7 +152,7 @@ then
 
     docker compose \
         --profile background \
-        up -d \
+        up -d --no-recreate \
         ngrok
 else
     echo "     ngrok não configurado; ignorando túnel."
@@ -156,9 +161,8 @@ fi
 
 echo "6/7  Iniciando frontend..."
 
-if docker compose exec \
-    -T \
-    laravel.test \
+if docker exec \
+    "$APP_CONTAINER" \
     sh -lc \
     "ps aux 2>/dev/null | grep -E '[v]p dev|[v]ite-plus' >/dev/null"
 then
@@ -166,10 +170,9 @@ then
 else
     mkdir -p storage/logs
 
-    docker compose exec \
-        -d \
-        --user sail \
-        laravel.test \
+    docker exec \
+        -d --user sail --workdir /var/www/html \
+        "$APP_CONTAINER" \
         sh -lc \
         "npm run dev >> storage/logs/vite-dev.log 2>&1"
 
@@ -213,18 +216,36 @@ then
         .env 2>/dev/null
     then
 
-        mkdir -p storage/logs
+        # Evita enfileirar novamente toda a base em inicializações
+        # de rotina enquanto o worker Bulk continua processando.
+        BULK_PENDING="$(
+            docker exec --user sail --workdir /var/www/html \
+                "$APP_CONTAINER" php -r '
+require getcwd()."/vendor/autoload.php";
+$app = require getcwd()."/bootstrap/app.php";
+$app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+echo (int) \Illuminate\Support\Facades\Queue::connection("redis")->size("hubspot-bulk");
+' 2>/dev/null
+        )" || BULK_PENDING=""
 
-        docker compose exec \
-            -d \
-            --user sail \
-            laravel.test \
-            sh -lc \
-            "printf '\n===== STARTUP HUBSPOT %s =====\n' \"\$(date '+%Y-%m-%d %H:%M:%S')\" >> storage/logs/hubspot-startup-sync.log; php artisan hubspot:startup-refresh --limit=${STARTUP_LIMIT} >> storage/logs/hubspot-startup-sync.log 2>&1"
+        if ! [[ "$BULK_PENDING" =~ ^[0-9]+$ ]]; then
+            echo "     Não foi possível verificar a fila Bulk; atualização inicial ignorada por segurança."
+        elif [ "$BULK_PENDING" -gt 0 ]; then
+            echo "     Fila Bulk tem ${BULK_PENDING} jobs; atualização inicial ignorada para evitar duplicações."
+        elif docker exec "$APP_CONTAINER" sh -lc \
+            "ps aux 2>/dev/null | grep -E '[p]hp artisan hubspot:startup-refresh' >/dev/null"; then
+            echo "     Atualização inicial do HubSpot já está em execução."
+        else
+            mkdir -p storage/logs
 
-        echo ""
-        echo "     Conferência HubSpot iniciada."
-        echo "     Empresas nesta conferência (0 = todas): ${STARTUP_LIMIT}"
+            docker exec -d --user sail --workdir /var/www/html \
+                "$APP_CONTAINER" sh -lc \
+                "printf '\n===== STARTUP HUBSPOT %s =====\n' \"\$(date '+%Y-%m-%d %H:%M:%S')\" >> storage/logs/hubspot-startup-sync.log; php artisan hubspot:startup-refresh --limit=${STARTUP_LIMIT} >> storage/logs/hubspot-startup-sync.log 2>&1"
+
+            echo ""
+            echo "     Conferência HubSpot iniciada."
+            echo "     Empresas nesta conferência (0 = todas): ${STARTUP_LIMIT}"
+        fi
 
     else
 
@@ -254,7 +275,7 @@ echo "Scheduler:"
 echo "  automático"
 echo ""
 echo "HubSpot:"
-echo "  conferência iniciada imediatamente"
+echo "  atualização inicial condicionada à fila Bulk"
 echo "  depois continua a cada 5 minutos"
 echo ""
 echo "Acompanhar conferência inicial:"

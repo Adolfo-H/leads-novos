@@ -1,0 +1,257 @@
+/* ExportControl Prospector • Leads V20 — painel complementar enxuto.
+   Escopo deliberadamente restrito a .leads-v20, sem alterar fila/integrações. */
+
+.leads-rf.leads-v20 .lv19-information-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding-bottom: 12px;
+}
+.leads-rf.leads-v20 .lv19-info-panel {
+    min-height: 0;
+}
+/* A linha de ações faz parte do mesmo painel, não é um segundo dossiê. */
+.leads-rf.leads-v20 .lv18-details-actions.lv19-details-actions.lv20-actions-header {
+    margin: 0 21px;
+    padding: 12px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid #32617e;
+    border-bottom: 0;
+    border-radius: 12px 12px 0 0;
+    background: linear-gradient(110deg, #0e3b56, #0b314d);
+}
+.leads-rf.leads-v20 .lv20-actions-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+.leads-rf.leads-v20 .lv20-actions-heading strong {
+    color: #e8f8fd;
+    font-size: 13px;
+    font-weight: 750;
+}
+.leads-rf.leads-v20 .lv20-actions-heading small {
+    color: #91b1c9;
+    font-size: 10px;
+    line-height: 1.35;
+}
+.leads-rf.leads-v20 .lv20-actions-header > button {
+    flex: 0 0 auto;
+    min-height: 32px;
+    border: 1px solid #387493;
+    border-radius: 8px;
+    background: #0e3554;
+    color: #d0edf9;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 7px 12px;
+}
+.leads-rf.leads-v20 .lv20-actions-header > button:hover {
+    border-color: #59dfd3;
+    color: #6ee7da;
+}
+.leads-rf.leads-v20 .lv18-details-advanced.lv20-controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 12px;
+    margin: 0 21px 18px;
+    padding: 12px;
+    border: 1px solid #32617e;
+    border-top: 0;
+    border-radius: 0 0 12px 12px;
+    background: #0a2d49;
+}
+.leads-rf.leads-v20 .lv20-controls[x-cloak],
+.leads-rf.leads-v20 .lv20-controls[style*="display: none"] {
+    display: none !important;
+}
+.leads-rf.leads-v20 .lv20-control-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid #2a526d;
+    background: #0c3451;
+}
+/* A classe histórica continua existindo, mas agora tem utilidade real. */
+.leads-rf.leads-v20 .lv20-control-card.lv16-details-heading {
+    display: flex !important;
+}
+.leads-rf.leads-v20 .lv20-control-card h4 {
+    margin: 0;
+    color: #deeffa;
+    font-size: 12px;
+    font-weight: 750;
+}
+.leads-rf.leads-v20 .lv20-control-hint {
+    margin: 0;
+    color: #8aacc4;
+    font-size: 10px;
+    line-height: 1.5;
+}
+.leads-rf.leads-v20 .lv20-control-card select,
+.leads-rf.leads-v20 .lv20-control-card .rf-owner-select {
+    width: 100%;
+    max-width: none;
+    min-height: 36px;
+    border: 1px solid #387090;
+    border-radius: 8px;
+    background: #092a45;
+    color: #e9f5ff;
+    padding: 6px 10px;
+    font-size: 11px;
+}
+.leads-rf.leads-v20 .lv20-control-status {
+    color: #a4d9e2;
+    font-size: 11px;
+    line-height: 1.45;
+}
+.leads-rf.leads-v20 .lv20-controls-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.leads-rf.leads-v20 .lv20-control-card :is(button, a).lv20-control-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 8px 12px;
+    border: 1px solid #346d89;
+    border-radius: 8px;
+    background: #10405c;
+    color: #d6f5fa;
+    font-size: 11px;
+    line-height: 1.2;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+.leads-rf.leads-v20 .lv20-control-card :is(button, a).lv20-control-button:hover {
+    border-color: #55e2d5;
+    color: #72f0e2;
+    background: #15516a;
+}
+.leads-rf.leads-v20 .lv20-control-card :is(button, a).lv20-control-button:disabled {
+    opacity: .48;
+    cursor: wait;
+}
+.leads-rf.leads-v20 .lv20-control-card .lv20-button-primary {
+    border-color: #2e918f;
+    background: #105351;
+    color: #78f0df;
+}
+.leads-rf.leads-v20 .lv20-actions-header button:focus-visible,
+.leads-rf.leads-v20 .lv20-control-card :is(a, button, select):focus-visible {
+    outline: 2px solid #66e4d6;
+    outline-offset: 2px;
+}
+@media (max-width: 1050px) {
+    .leads-rf.leads-v20 .lv18-details-advanced.lv20-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 720px) {
+    .leads-rf.leads-v20 .lv19-information-grid,
+    .leads-rf.leads-v20 .lv18-details-advanced.lv20-controls {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    .leads-rf.leads-v20 .lv18-details-actions.lv19-details-actions.lv20-actions-header,
+    .leads-rf.leads-v20 .lv18-details-advanced.lv20-controls {
+        margin-left: 12px;
+        margin-right: 12px;
+    }
+    .leads-rf.leads-v20 .lv18-details-actions.lv19-details-actions.lv20-actions-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .leads-rf.leads-v20 .lv20-actions-header > button {
+        width: 100%;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .leads-rf.leads-v20 .lv20-control-card :is(button, a) { transition: none; }
+}
+
+/* LEADS_REFINO_CONTROLES_V21 */
+
+/* Painel geral */
+.leads-rf.leads-v20 .lv19-information-grid {
+    gap: 12px;
+}
+
+.leads-rf.leads-v20 .lv19-information-grid > * {
+    min-width: 0;
+}
+
+/* Controles sem grandes espaços vazios */
+.leads-rf.leads-v20 .lv18-details-advanced.lv20-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    align-items: stretch;
+}
+
+.leads-rf.leads-v20 .lv20-control-card {
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 14px !important;
+    gap: 8px !important;
+}
+
+/* Retirar bloco duplicado de ações */
+.leads-rf.leads-v20 .lv20-controls
+.lv20-control-card:has(.lv20-controls-links) {
+    display: none !important;
+}
+
+/* Responsável comercial */
+.leads-rf.leads-v20 .lv20-control-card select {
+    min-height: 38px;
+    max-width: 100%;
+}
+
+/* Qualificação e negócios mais compactos */
+.leads-rf.leads-v20 .lv20-controls details {
+    min-width: 0;
+}
+
+.leads-rf.leads-v20 .lv20-controls summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: #e5f5ff;
+}
+
+/* Remover alturas excessivas de conteúdo expandido */
+.leads-rf.leads-v20 .lv18-details-advanced,
+.leads-rf.leads-v20 .lv20-controls {
+    min-height: 0 !important;
+}
+
+/* Botões */
+.leads-rf.leads-v20 .lv20-control-card button,
+.leads-rf.leads-v20 .lv20-control-card a {
+    white-space: normal;
+}
+
+/* Links HubSpot da tabela */
+.leads-rf.leads-v20 .lv16-row-actions a {
+    white-space: nowrap;
+    min-width: max-content;
+}
+
+/* Responsividade */
+@media (max-width: 900px) {
+    .leads-rf.leads-v20
+    .lv18-details-advanced.lv20-controls {
+        grid-template-columns: 1fr;
+    }
+}

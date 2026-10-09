@@ -45,6 +45,9 @@ new class extends Component
     public string $owner = '';
 
     #[Url]
+    public string $dashboardCompany = '';
+
+    #[Url]
     public string $dashboardView = '';
 
     #[Url]
@@ -52,6 +55,11 @@ new class extends Component
 
     #[Url]
     public string $workStatus = '';
+
+    #[Url]
+    public string $crmSituation = '';
+
+    public bool $dueActionOnly = false;
 
     #[Url]
     public string $followUp = '';
@@ -62,6 +70,7 @@ new class extends Component
 
     public bool $reprospectingReadyOnly = false;
 
+    #[Url]
     public bool $hubSpotOnly = false;
 
     public ?int $linkingHubSpotCompanyId = null;
@@ -147,6 +156,102 @@ new class extends Component
     {
         $this->search = trim(mb_substr($term, 0, 120));
         $this->updatedSearch();
+    }
+
+    /** Somente empresas elegíveis e ainda não trabalhadas no HubSpot. */
+    #[Computed]
+    public function v15NewCount(): int
+    {
+        return app(\App\Services\LeadCrmSituationService::class)
+            ->apply($this->operationalLeadQuery(), 'new')
+            ->count();
+    }
+
+    /** Tarefas abertas vencidas ou previstas até o fim de hoje. */
+    #[Computed]
+    public function v15DueCount(): int
+    {
+        return app(\App\Services\LeadCrmSituationService::class)
+            ->dueForAuthenticatedUser($this->operationalLeadQuery())
+            ->count();
+    }
+
+    /**
+     * Duas faixas temporais exclusivas para os próximos vencimentos.
+     * O total do card continua a usar a query original de Leads.
+     *
+     * @return array{overdue:int, today:int}
+     */
+    #[Computed]
+    public function v17DueBreakdown(): array
+    {
+        $service = app(\App\Services\LeadCrmSituationService::class);
+
+        return [
+            'overdue' => $service->dueForAuthenticatedUserPeriod(
+                $this->operationalLeadQuery(), null, now()
+            )->count(),
+            'today' => $service->dueForAuthenticatedUserPeriod(
+                $this->operationalLeadQuery(), now(), today()->addDay()
+            )->count(),
+        ];
+    }
+
+    public function applyV15TopCard(string $card): void
+    {
+        abort_unless(in_array($card, ['due', 'mine', 'new'], true), 422);
+        $this->clearFilters();
+
+        if ($card === 'due') {
+            $this->dueActionOnly = true;
+        } elseif ($card === 'mine') {
+            $this->owner = 'mine';
+        } else {
+            $this->crmSituation = 'new';
+        }
+
+        $this->resetPage();
+    }
+
+    public function applyV15MoreShortcut(string $shortcut): void
+    {
+        abort_unless(in_array($shortcut, [
+            'contacting', 'unscheduled', 'stale', 'ready', 'unassigned',
+        ], true), 422);
+        $this->clearFilters();
+
+        match ($shortcut) {
+            'contacting' => $this->applyQuickView('contacting'),
+            'unscheduled' => $this->applyFollowUpView('unscheduled'),
+            'stale' => $this->applyStaleView(),
+            'ready' => $this->applyReprospectingReadyView(),
+            'unassigned' => $this->applyOwnerView('unassigned'),
+        };
+    }
+
+    public function updatedCrmSituation(): void
+    {
+        if ($this->crmSituation !== '' && ! in_array(
+            $this->crmSituation,
+            \App\Services\LeadCrmSituationService::SITUATIONS,
+            true,
+        )) {
+            $this->crmSituation = '';
+        }
+
+        // A unificação não deve misturar filtros técnicos invisíveis.
+        $this->crm = '';
+        $this->workStatus = '';
+        $this->followUp = '';
+        $this->dailyView = '';
+        $this->dueActionOnly = false;
+        $this->staleOnly = false;
+        $this->reprospectingReadyOnly = false;
+        $this->dashboardStage = '';
+        $this->dashboardView = '';
+        $this->hubSpotOnly = false;
+        $this->resetPage();
+        $this->resetPage('hubspotPage');
     }
 
     public function updatedSearch(): void
@@ -239,10 +344,13 @@ new class extends Component
             'priority',
             'icp',
             'crm',
+            'crmSituation',
+            'dueActionOnly',
             'state',
             'owner',
             'dashboardView',
             'dashboardStage',
+            'dashboardCompany',
             'workStatus',
             'followUp',
             'dailyView',
@@ -298,9 +406,9 @@ new class extends Component
             // Quando se abre uma etapa do gráfico, ela usa a fonte segura
             // dos negócios do usuário, inclusive recusados/descartados.
             ->when(
-                $this->dashboardStage === '',
+                $this->dashboardStage === '' && in_array($this->crmSituation, ['', 'new'], true),
                 function ($query): void {
-                    $query->whereNotNull('sdr.company_id')
+                    $query->when(! in_array($this->dashboardView, ['all', 'with_deal', 'overdue'], true), fn ($builder) => $builder->whereNotNull('sdr.company_id'))
                         ->where(function ($eligibleQuery): void {
                             $eligibleQuery->where('sdr.is_eligible', true)
                                 ->orWhereNotNull('work.hubspot_deal_id');
@@ -317,7 +425,7 @@ new class extends Component
                 }
             )
             ->when(
-                in_array($this->dashboardView, ['active', 'with_deal'], true),
+                $this->dashboardView === 'active',
                 function ($query): void {
                     $query->where(function ($statusQuery): void {
                         $statusQuery->whereNull('work.id')
@@ -329,11 +437,11 @@ new class extends Component
             )
             ->when(
                 $this->dashboardView === 'with_deal',
-                fn ($query) => $query->whereNotNull('work.hubspot_deal_id')
+                fn ($query) => $query->whereIn('companies.id', app(\App\Services\DashboardLeadMetricsV23Service::class)->withDealCompanyIds())
             )
             ->when(
                 $this->dashboardView !== ''
-                    && ! in_array($this->dashboardView, ['active', 'with_deal'], true),
+                    && ! in_array($this->dashboardView, ['active', 'with_deal', 'all', 'overdue', 'stale90'], true),
                 fn ($query) => $query->whereRaw('1 = 0')
             )
             ->when(
@@ -525,6 +633,35 @@ new class extends Component
                             $crmFilter
                         )
                     );
+                }
+            )
+            ->when(
+                $this->crmSituation !== '',
+                fn ($query) => app(\App\Services\LeadCrmSituationService::class)
+                    ->apply($query, $this->crmSituation)
+            )
+            ->when(
+                $this->dueActionOnly,
+                fn ($query) => app(\App\Services\LeadCrmSituationService::class)
+                    ->dueForAuthenticatedUser($query)
+            )
+
+            ->when(
+                $this->dashboardView === 'overdue',
+                fn ($query) => $query->whereIn('companies.id', app(\App\Services\DashboardLeadMetricsV23Service::class)->overdueCompanyIds())
+            )
+            ->when(
+                $this->dashboardView === 'stale90',
+                fn ($query) => $query->whereIn('companies.id', app(\App\Services\DashboardLeadMetricsV23Service::class)->staleCompanyIds())
+            )
+            ->when(
+                $this->dashboardCompany !== '',
+                function ($query): void {
+                    if (! ctype_digit($this->dashboardCompany)) {
+                        $query->whereRaw('1 = 0');
+                        return;
+                    }
+                    $query->where('companies.id', (int) $this->dashboardCompany);
                 }
             )
             ->when(
@@ -956,18 +1093,18 @@ new class extends Component
     public function exportExcel(
         LeadExportService $service,
     ): StreamedResponse {
-        $companies =
-            $this
-                ->filteredLeadsQuery()
-                ->with(
-                    'establishments'
-                )
-                ->get();
+        unset($service); // legacy method injection kept for older integrations.
+        $companies = $this->hubSpotOnly
+            ? collect()
+            : $this->filteredLeadsQuery()->with('establishments')->get();
 
-        return $service
-            ->excel(
-                $companies
-            );
+        // Mesmos filtros da lista CRM sem CNPJ, sem limite de paginação.
+        $crmOnly = $this->filteredCrmOnlyQuery()
+            ->with(['deals', 'contacts', 'tasks'])
+            ->get();
+
+        return app(\App\Services\LeadUnifiedExcelV23Service::class)
+            ->excel($companies, $crmOnly);
     }
 
     public function openCompanyLink(
@@ -1555,8 +1692,9 @@ new class extends Component
             ->count();
     }
 
-    #[Computed]
-    public function hubSpotOnlyLeads()
+    // EXCEL_CRM_QUERY_PARITY_V18_5
+    // Query-base usada pela listagem paginada e pela exportação completa.
+    private function filteredCrmOnlyQuery()
     {
         $search =
             trim(
@@ -1596,8 +1734,7 @@ new class extends Component
          *   existente apenas no HubSpot.
          */
         if (
-            ! $this->hubSpotOnly
-            && $search === ''
+            ! $this->hubSpotOnly && $search === '' && $this->dashboardStage === '' && ! str_starts_with($this->crm, 'stage:')
         ) {
             $query->whereRaw(
                 '1 = 0'
@@ -1705,7 +1842,30 @@ new class extends Component
             }
         }
 
-        return $query
+        if ($this->dashboardStage !== '') {
+            $ids = app(\App\Services\DashboardOwnedDealsV23Service::class)
+                ->crmOnlyIdsForStage((int) auth()->id(), $this->dashboardStage);
+            $query->whereIn('hubspot_companies.id', $ids);
+        }
+
+        // Filtros de CNPJ, score e carteira não se aplicam a CRM sem CNPJ.
+        // O exportador já recusava esses resultados; a lista usa a mesma regra.
+        if (
+            $this->priority !== ''
+            || $this->icp !== ''
+            || $this->dashboardCompany !== ''
+            || ($this->owner !== '' && $this->dashboardStage === '')
+        ) {
+            $query->whereRaw('1 = 0');
+        }
+
+        return $query;
+    }
+
+    #[Computed]
+    public function hubSpotOnlyLeads()
+    {
+        return $this->filteredCrmOnlyQuery()
             ->with([
                 'deals' => fn ($dealQuery) => $dealQuery
                     ->orderBy(
@@ -3727,7 +3887,7 @@ new class extends Component
 ?>
 
 <div
-    class="ec-page-shell leads-rf leads-v11 leads-v13"
+    class="ec-page-shell leads-rf leads-v11 leads-v13 leads-v15 leads-v16 leads-v18 leads-v19 leads-v20 leads-v23"
     wire:poll.10s="$refresh"
 >
 
@@ -4142,13 +4302,9 @@ new class extends Component
     @endif
 
 
-    @include('partials.leads-action-center-v11')
+    @include('partials.leads-action-center-v15')
 
-
-            @include(
-        'partials.leads-crm-stage-strip'
-    )
-
+    @include('partials.leads-crm-stage-strip')
 
         <section class="rf-panel rf-filters">
 
@@ -4258,66 +4414,14 @@ new class extends Component
             </select>
 
 
-            <select
-                wire:model.live="crm"
-                class="rf-select"
-            >
-                <option value="">
-                    CRM / etapa HubSpot
-                </option>
-
-                <optgroup label="Situação no CRM">
-
-                    <option value="not_found">
-                        Novo
-                    </option>
-
-                    <option value="known">
-                        Conhecido
-                    </option>
-
-                    <option value="client">
-                        Cliente
-                    </option>
-
-                    <option value="prospected">
-                        Reprospecção
-                    </option>
-
-                </optgroup>
-
-                @if (
-                    $this->crmStageOptions
-                    !== []
-                )
-
-                    <optgroup
-                        label="Etapas dos negócios no HubSpot"
-                    >
-
-                        @foreach (
-                            $this->crmStageOptions
-                            as $option
-                        )
-
-                            <option
-                                value="stage:{{ $option['label'] }}"
-                            >
-                                {{
-                                    $option['label']
-                                }}
-                                ·
-                                {{
-                                    $option['count']
-                                }}
-                            </option>
-
-                        @endforeach
-
-                    </optgroup>
-
-                @endif
-
+            <select wire:model.live="crmSituation" class="rf-select lv15-crm-filter"
+                    aria-label="Situação CRM">
+                <option value="">Situação CRM — Todas</option>
+                <option value="new">Novo — sem presença no HubSpot</option>
+                <option value="known">Conhecido — movimentação até 30 dias</option>
+                <option value="client">Cliente — cadastro interno ou negócio ganho</option>
+                <option value="reprospecting">Reprospecção — sem contato há 90 dias</option>
+                <option value="waiting">Aguardando retorno — tarefa pendente</option>
             </select>
 
 
@@ -4328,34 +4432,7 @@ new class extends Component
 
         <div class="rf-filter-secondary">
 
-            <select
-                wire:model.live="workStatus"
-                class="rf-select"
-            >
-                <option value="">
-                    Todo acompanhamento
-                </option>
 
-                <option value="new">
-                    Novo
-                </option>
-
-                <option value="contacting">
-                    Em contato
-                </option>
-
-                <option value="waiting">
-                    Aguardando retorno
-                </option>
-
-                <option value="future">
-                    Oportunidade futura
-                </option>
-
-                <option value="reprospecting">
-                    Reprospecção
-                </option>
-            </select>
 
 
             @if (
@@ -4455,6 +4532,27 @@ new class extends Component
 
 
                                 </div>
+    @if ($crmSituation !== '' || $dueActionOnly)
+        <div class="lv15-selected-filter" role="status">
+            <span>
+                @if ($dueActionOnly)
+                    Tarefas abertas vencidas ou previstas para hoje
+                @else
+                    Situação CRM:
+                    {{ match ($crmSituation) {
+                        'new' => 'Novo',
+                        'known' => 'Conhecido',
+                        'client' => 'Cliente',
+                        'reprospecting' => 'Reprospecção',
+                        'waiting' => 'Aguardando retorno',
+                        default => 'Todos',
+                    } }}
+                @endif
+            </span>
+            <button type="button" wire:click="clearFilters">Limpar filtro</button>
+        </div>
+    @endif
+
 
         @include('partials.leads-active-filters-v11')
     </section>
@@ -4475,11 +4573,13 @@ new class extends Component
         )
     )
 
-    @if ($dashboardView !== '' || $dashboardStage !== '')
+    @if ($dashboardView !== '' || $dashboardStage !== '' || $dashboardCompany !== '')
         <section class="rf-dashboard-drilldown" aria-label="Filtro aplicado pelo dashboard">
             <span>Visualização do dashboard:</span>
             <strong>
-                @if ($dashboardStage !== '')
+                @if ($dashboardCompany !== '')
+                    Empresa selecionada
+                @elseif ($dashboardStage !== '')
                     Meus negócios · {{ $dashboardStage === '__others__' ? 'Outras etapas' : $dashboardStage }}
                 @elseif ($dashboardView === 'with_deal')
                     Leads com negócio HubSpot
@@ -4523,21 +4623,7 @@ new class extends Component
             </div>
 
 
-            <div class="rf-list-legend">
 
-                <span>
-                    Score 50+ = bom potencial
-                </span>
-
-                <span>
-                    •
-                </span>
-
-                <span>
-                    Alta = 75 a 100
-                </span>
-
-            </div>
 
         </div>
 
@@ -5079,7 +5165,7 @@ new class extends Component
                                 : ''
                         }}
                     "
-                 x-data="{ detailsOpen: false }">
+                >
 
                                         {{-- Resumo compacto V13, preservando o bloco completo abaixo. --}}
                     <div class="lv13-lead-line" x-bind:class="{ 'is-selected': selectedIds.includes('{{ $lead->id }}') }">
@@ -5104,7 +5190,7 @@ new class extends Component
 
                         <div class="lv13-status">
                             <span class="lv13-pill lv13-status--{{ $currentWorkStatus }}">{{ $this->workStatusLabel($currentWorkStatus) }}</span>
-                            <small>{{ $leadIsOverdue ? 'Follow-up atrasado' : ($leadIsDueToday ? 'Retorno hoje' : $this->workContext($hubSpotLead)) }}</small>
+                            <small>{{ $leadIsOverdue ? 'Follow-up atrasado' : ($leadIsDueToday ? 'Ação hoje' : $this->workContext($hubSpotLead)) }}</small>
                         </div>
 
                         <div class="lv13-stage">
@@ -5142,896 +5228,27 @@ new class extends Component
                             <span class="lv13-owner-name">{{ $assignedUser?->name ?? 'Sem responsável' }}</span>
                         </div>
 
-                        <div class="lv13-actions">
-                            <a title="Abrir dossiê" aria-label="Abrir dossiê de {{ $lead->corporate_name }}" href="{{ route('companies.show', $lead) }}" wire:navigate>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                            </a>
-                            <button type="button" title="Editar e ver detalhes" aria-label="Editar e ver detalhes de {{ $lead->corporate_name }}" x-on:click="detailsOpen = !detailsOpen" x-bind:aria-expanded="detailsOpen ? 'true' : 'false'">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m15 5 4 4M4 20l4.5-1L20 7.5a2.5 2.5 0 0 0-3.5-3.5L5 15.5 4 20z"/></svg>
-                            </button>
-                            <details class="lv13-more">
-                                <summary aria-label="Mais opções para {{ $lead->corporate_name }}" title="Mais opções">⋮</summary>
-                                <div class="lv13-more-menu">
-                                    <button type="button" x-on:click="detailsOpen = true">Ver controles completos</button>
-                                    @if ($hubSpotActionUrl)
-                                        <a href="{{ $hubSpotActionUrl }}" target="_blank" rel="noopener noreferrer">Abrir no HubSpot ↗</a>
-                                    @endif
-                                </div>
-                            </details>
-                        </div>
-                    </div>
-
-                    <div class="lv13-details" x-show="detailsOpen" x-cloak>
-
-                    {{-- EMPRESA --}}
-                    <div
-                        class="rf-col-company">
-                        <span class="lv11-company-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($lead->corporate_name, 0, 1)) }}</span>
-
-                        <div class="rf-company-name">
-                            {{ $lead->corporate_name }}
-                        </div>
-                        <span class="lv11-company-id">{{ $matrix?->cnpj ? \App\Support\Cnpj::format($matrix->cnpj) : $lead->cnpj_root }}</span>
-
-
-                        <div class="rf-lead-focus">
-
-                            <span
-                                class="
-                                    rf-lead-attention
-                                    {{ $leadAttentionClass }}
-                                "
-                            >
-                                <i></i>
-
-                                {{ $leadAttentionLabel }}
-                            </span>
-
-                            <span class="rf-lead-focus-action">
-                                Próximo:
-                                <strong>
-                                    {{ $leadPrimaryAction }}
-                                </strong>
-                            </span>
-
-                        </div>
-
-                        <div class="rf-location">
-
-                            @if ($matrix?->state)
-
-                                <span>
-                                    {{ $matrix->state }}
-                                </span>
-
-                            @endif
-
-                            @if (
-                                $matrix?->municipality_name
-                            )
-
-                                @if ($matrix?->state)
-                                    <span>•</span>
-                                @endif
-
-                                <span>
-                                    {{
-                                        $matrix
-                                            ->municipality_name
-                                    }}
-                                </span>
-
-                            @endif
-
-                        </div>
-
-
-                        <div class="rf-export-state">
-
-                            @if (
-                                $this->exportLabel(
-                                    $export
-                                ) === 'Não pesquisada'
-                            )
-
-                                Exportação não pesquisada
-
-                            @else
-
-                                Exportação ·
-                                {{
-                                    $this->exportLabel(
-                                        $export
-                                    )
-                                }}
-
-                            @endif
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- SCORE --}}
-                    <div
-                        class="rf-col-score {{
-                            $displayScore >= 50
-                                ? ''
-                                : 'rf-score-low'
-                        }}"
-                    >
-
-                        <div class="rf-section-label">
-                            Prioridade
-                        </div>
-
-                        <div class="rf-score-top">
-
-                            <span class="rf-score-number">
-                                {{ $displayScore }}/100
-                            </span>
-
-                        </div>
-
-                        <div class="rf-score-bar">
-
-                            <div
-                                class="rf-score-fill"
-                                style="
-                                    width:
-                                    {{ $displayScore }}%;
-                                "
-                            ></div>
-
-                        </div>
-
-                        <div class="rf-score-info">
-
-                            <span class="rf-score-quality">
-                                {{
-                                    $this
-                                        ->scoreQualityLabel(
-                                            $displayScore
-                                        )
-                                }}
-                            </span>
-
-                            <span
-                                class="
-                                    rf-priority
-                                    {{ $priorityClass }}
-                                "
-                            >
-                                {{
-                                    $this
-                                        ->priorityLabel(
-                                            $displayPriority
-                                        )
-                                }}
-                            </span>
-
-                            <span class="rf-icp">
-                                ICP
-                                {{
-                                    $icpScore?->grade
-                                    ?? '—'
-                                }}
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- SITUACAO COMERCIAL --}}
-                    <div
-                        class="rf-col-commercial">
-
-                        <div class="rf-section-label">
-                            Situação comercial
-                        </div>
-
-                        <div class="rf-commercial-box">
-
-                            <span
-                                class="
-                                    rf-chip
-                                    {{ $commercialClass }}
-                                "
-                            >
-                                <i class="rf-chip-dot"></i>
-
-                                {{ $commercialLabel }}
-                            </span>
-
-                        </div>
-
-                        <div class="rf-commercial-explain">
-
-                            {{
-                                match (
-                                    $commercialStatus
-                                ) {
-                                    'new' =>
-                                        'Nova na operação.',
-
-                                    'client' =>
-                                        'Já é cliente.',
-
-                                    'reprospecting' =>
-                                        'Disponível para nova abordagem.',
-
-                                    default =>
-                                        'Já conhecida no CRM.',
-                                }
-                            }}
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- CRM --}}
-                    <div
-                        class="rf-col-crm">
-
-                        <div class="rf-section-label">
-                            CRM / HubSpot
-                        </div>
-
-
-                        <div class="rf-crm-status">
-
-                            {{
-                                $this->crmLabel(
-                                    $crmCheck?->status
-                                )
-                            }}
-
-                            @if ($dealCount > 0)
-
-                                ·
-                                {{
-                                    $dealCount
-                                    .' '
-                                    .(
-                                        $dealCount === 1
-                                            ? 'negócio'
-                                            : 'negócios'
-                                    )
-                                }}
-
-                            @endif
-
-                        </div>
-
-                        @if ($visibleDeals !== [])
-
-                            <div class="rf-stages">
-
-                                @foreach (
-                                    $visibleDeals
-                                    as $deal
-                                )
-
-                                    <div
-                                        class="rf-deal"
-                                        title="{{
-                                            $deal['name']
-                                        }}"
-                                    >
-
-                                        @if (
-                                            $deal['url']
-                                            ?? null
-                                        )
-
-                                            <a
-                                                href="{{
-                                                    $deal[
-                                                        'url'
-                                                    ]
-                                                }}"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                class="rf-stage"
-                                            >
-                                                {{
-                                                    $deal[
-                                                        'stage'
-                                                    ]
-                                                }}
-                                            </a>
-
-                                        @else
-
-                                            <span
-                                                class="rf-stage"
-                                            >
-                                                {{
-                                                    $deal[
-                                                        'stage'
-                                                    ]
-                                                }}
-                                            </span>
-
-                                        @endif
-
-
-                                    </div>
-
-                                @endforeach
-
-                                @if (
-                                    $hiddenDealCount > 0
-                                )
-
-                                    <div
-                                        class="rf-more-stages"
-                                        title="{{
-                                            $hiddenStagesTitle
-                                        }}"
-                                    >
-                                        +{{ $hiddenDealCount }}
-                                        {{
-                                            $hiddenDealCount === 1
-                                                ? 'etapa'
-                                                : 'etapas'
-                                        }}
-                                    </div>
-
-                                @endif
-
-                            </div>
-
-                        @else
-
-                            <div class="rf-empty">
-                                Sem negócio associado
-                            </div>
-
-                        @endif
-
-                    </div>
-
-
-                    {{-- ACOMPANHAMENTO --}}
-                    <div
-                        class="rf-col-followup">
-
-                        <div class="rf-section-label">
-                            Acompanhamento
-                        </div>
-
-                        <div
-                            style="
-                                display:flex;
-                                align-items:center;
-                                flex-wrap:wrap;
-                            "
-                        >
-
-                            <div
-                                class="
-                                    rf-work-badge
-                                    {{ $workClass }}
-                                "
-                            >
-                                {{
-                                    $this
-                                        ->workStatusLabel(
-                                            $currentWorkStatus
-                                        )
-                                }}
-                            </div>
-
-                            @if (
-                                $currentWorkStatus === 'waiting'
-                                && $hubSpotLead
-                                    ?->last_task_due_at
-                                    ?->isPast()
-                            )
-
-                                <span class="rf-overdue-badge">
-                                    Atrasado
-                                </span>
-
-                            @endif
-
-                        </div>
-
-
-                        <div class="rf-work-context">
-                            {{
-                                $this->workContext(
-                                    $hubSpotLead
-                                )
-                            }}
-                        </div>
-
-
-                        @if ($hubSpotLead)
-
-                            <div
-                                @if (
-                                    $hubSpotRefreshPending
-                                )
-                                    wire:poll.2s="$refresh"
-                                @endif
-                                class="
-                                    rf-sync-state
-                                    {{ $hubSpotSyncClass }}
-                                "
-                                title="{{
-                                    $hubSpotSyncedAt
-                                        ?->format(
-                                            'd/m/Y H:i:s'
-                                        )
-                                    ?? 'Nunca sincronizado'
-                                }}"
-                            >
-                                <span class="rf-sync-dot"></span>
-
-                                <span>
-                                    {{
-                                        $hubSpotSyncLabel
-                                    }}
-                                </span>
-
-                                <button
-                                    type="button"
-                                    wire:click="
-                                        verifyHubSpotNow(
-                                            {{ $lead->id }}
-                                        )
-                                    "
-                                    wire:loading.attr="
-                                        disabled
-                                    "
-                                    wire:target="
-                                        verifyHubSpotNow(
-                                            {{ $lead->id }}
-                                        )
-                                    "
-                                    @disabled(
-                                        $hubSpotRefreshPending
-                                    )
-                                    class="
-                                        rf-sync-refresh
-                                    "
-                                    title="{{
-                                        $hubSpotRefreshPending
-                                            ? 'Verificando no HubSpot...'
-                                            : 'Verificar agora no HubSpot'
-                                    }}"
-                                    aria-label="
-                                        Verificar agora no HubSpot
-                                    "
-                                >
-                                    @if (
-                                        $hubSpotRefreshPending
-                                    )
-                                        <span
-                                            class="
-                                                animate-pulse
-                                            "
-                                        >
-                                            …
-                                        </span>
-                                    @else
-                                        ↻
-                                    @endif
-                                </button>
-                            </div>
-
-                        @endif
-
-
-                        @if ($reprospectingInfo)
-
-                            <div
-                                class="
-                                    rf-work-context
-                                    {{
-                                        $reprospectingInfo[
-                                            'eligible'
-                                        ]
-                                            ? 'text-emerald-300'
-                                            : 'text-amber-300'
-                                    }}
-                                "
-                                style="
-                                    margin-top:6px;
-                                    font-weight:700;
-                                "
-                            >
-                                {{
-                                    $reprospectingInfo[
-                                        'message'
-                                    ]
-                                }}
-                            </div>
-
-                        @endif
-
-
-                        @if (
-                            $hubSpotLead
-                                ?->last_task_due_at
-                        )
-
-                            <div class="rf-work-date">
-
-                                Tarefa:
-                                {{
-                                    $hubSpotLead
-                                        ->last_task_due_at
-                                        ->format(
-                                            'd/m/Y H:i'
-                                        )
-                                }}
-
-                            </div>
-
-                        @elseif (
-                            $hubSpotLead
-                                ?->last_activity_at
-                        )
-
-                            <div class="rf-work-date">
-
-                                Última interação:
-                                {{
-                                    $hubSpotLead
-                                        ->last_activity_at
-                                        ->format(
-                                            'd/m/Y'
-                                        )
-                                }}
-
-                            </div>
-
-                        @endif
-
-                    </div>
-
-
-                    {{-- RESPONSAVEL --}}
-                    <div
-                        class="rf-col-owner">
-                        <span class="lv11-owner-avatar" aria-hidden="true">{{ $assignedUser ? mb_strtoupper(mb_substr($assignedUser->name, 0, 2)) : '—' }}</span>
-
-                        <div class="rf-section-label">
-                            Responsável
-                        </div>
-
-
-                        @if (
-                            $this->isCommercialManager()
-                        )
-
-                            <select
-                                wire:key="
-                                    owner-rf-{{ $lead->id }}-{{
-                                        $assignedUser?->id
-                                        ?? 'none'
-                                    }}
-                                "
-                                wire:change="
-                                    assignOwner(
-                                        {{ $lead->id }},
-                                        $event.target.value
-                                    )
-                                "
-                                class="rf-owner-select"
-                            >
-
-                                <option
-                                    value=""
-                                    @selected(
-                                        $assignedUser
-                                        === null
-                                    )
-                                >
-                                    Sem responsável
-                                </option>
-
-                                @foreach (
-                                    $this->salesUsers
-                                    as $salesUser
-                                )
-
-                                    <option
-                                        value="{{
-                                            $salesUser->id
-                                        }}"
-                                        @selected(
-                                            $assignedUser?->id
-                                            === $salesUser->id
-                                        )
-                                    >
-                                        {{
-                                            $salesUser->name
-                                        }}
-                                    </option>
-
-                                @endforeach
-
-                            </select>
-
-                        @else
-
-                            <div class="rf-owner-name">
-                                {{
-                                    $assignedUser?->name
-                                    ?? 'Sem responsável'
-                                }}
-                            </div>
-
-                        @endif
-
-
-                        @if (
-                            $this->isCommercialManager()
-                            && $assignedUser === null
-                        )
-
-                            <button
-                                type="button"
-                                wire:click="
-                                    claimLead(
-                                        {{ $lead->id }}
-                                    )
-                                "
-                                wire:loading.attr="disabled"
-                                wire:target="
-                                    claimLead(
-                                        {{ $lead->id }}
-                                    )
-                                "
-                                class="rf-claim"
-                            >
-                                Assumir lead
-                            </button>
-
-                        @elseif (
-                            $assignedUser !== null
-                        )
-
-                            <div class="rf-owner-helper">
-                                Carteira de
-                                {{ $assignedUser->name }}
-                            </div>
-
-                        @endif
-
-                    </div>
-
-
-                                        {{-- Próximo passo comercial: coluna compacta, somente leitura. --}}
-                    <div class="lv12-next-step">
-                        <strong>{{ $leadPrimaryAction }}</strong>
-                        @if ($hubSpotLead?->last_task_due_at)
-                            <time datetime="{{ $hubSpotLead->last_task_due_at->toIso8601String() }}">
-                                {{ $hubSpotLead->last_task_due_at->format('d/m/Y') }}
-                            </time>
-                        @endif
-                    </div>
-
-{{-- ACOES --}}
-                    <div
-                        class="rf-col-action">
-
-                        <div class="rf-section-label">
-                            Próxima ação
-                        </div>
-
-                        @if ($hubSpotLead)
-
-                            <div
-                                class="
-                                    rf-next-action
-                                    rf-next-action-main
-                                    {{
-                                        $leadIsOverdue
-                                            ? 'is-overdue'
-                                            : ''
-                                    }}
-                                    {{
-                                        $leadIsDueToday
-                                            ? 'is-today'
-                                            : ''
-                                    }}
-                                "
-                            >
-
-                                <span>
-                                    {{
-                                        $leadIsOverdue
-                                            ? 'Ação atrasada'
-                                            : (
-                                                $leadIsDueToday
-                                                    ? 'Ação para hoje'
-                                                    : 'Próximo passo'
-                                            )
-                                    }}
-                                </span>
-
-                                <strong>
-                                    {{ $leadPrimaryAction }}
-                                </strong>
-
-                            </div>
-
-                        @endif
-
-                        @if (
-                            $hubSpotLead
-                                ?->last_task_due_at
-                        )
-
-                            <div class="rf-mini-note">
-
-                                {{
-                                    $hubSpotLead
-                                        ->last_task_due_at
-                                        ->isPast()
-                                            ? 'Vencida em '
-                                            : 'Prevista para '
-                                }}
-
-                                {{
-                                    $hubSpotLead
-                                        ->last_task_due_at
-                                        ->format(
-                                            'd/m/Y H:i'
-                                        )
-                                }}
-
-                            </div>
-
-                        @endif
-
-
-                        <div class="rf-actions">
-
-                            <a
-                                href="{{
-                                    route(
-                                        'companies.show',
-                                        $lead
-                                    )
-                                }}"
-                                wire:navigate
-                                class="
-                                    rf-btn
-                                    rf-btn-primary
-                                "
-                            >
-<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                                <span class="lv12-visually-hidden">Abrir dossiê</span>
-</a>
-
-
+                        <div class="lv23-actions" aria-label="Ações comerciais de {{ $lead->corporate_name }}">
+                            <a href="{{ route('companies.show', $lead) }}" wire:navigate title="Abrir dossiê completo">Dossiê ↗</a>
                             @if ($hubSpotActionUrl)
-
-                                <a
-                                    href="{{
-                                        $hubSpotActionUrl
-                                    }}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="
-                                        rf-btn
-                                        rf-btn-secondary
-                                    "
-                                >
-<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14 21 3M13 3h8v8"/><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/></svg>
-                                    <span class="lv12-visually-hidden">HubSpot ↗</span>
-</a>
-
+                                <a href="{{ $hubSpotActionUrl }}" target="_blank" rel="noopener noreferrer"
+                                   class="lv23-hubspot" title="Abrir no HubSpot">HubSpot ↗</a>
                             @endif
-
-
-</div>
-
-
-                        @if (
-                            $reprospectingInfo
-                            && $reprospectingInfo[
-                                'eligible'
-                            ]
-                            && $hubSpotLead
-                        )
-
-                            <button
-                                type="button"
-                                wire:click="
-                                    resumeLead(
-                                        {{ $hubSpotLead->id }}
-                                    )
-                                "
-                                wire:confirm="
-                                    Retomar este lead no HubSpot?
-                                "
-                                wire:loading.attr="disabled"
-                                wire:target="
-                                    resumeLead(
-                                        {{ $hubSpotLead->id }}
-                                    )
-                                "
-                                class="
-                                    rf-btn
-                                    rf-btn-reprospect
-                                "
-                                style="margin-top:6px"
-                            >
-                                Retomar lead
-                            </button>
-
-                        @endif
-
-
-                        @if (
-                            $scoreReasons !== []
-                        )
-
-                            <div
-                                class="rf-mini-note"
-                                title="{{
-                                    collect(
-                                        $scoreReasons
-                                    )
-                                        ->map(
-                                            fn ($reason) =>
-                                                $reason[
-                                                    'label'
-                                                ]
-                                                .' +'
-                                                .$reason[
-                                                    'points'
-                                                ]
-                                        )
-                                        ->implode(
-                                            ' · '
-                                        )
-                                }}"
-                            >
-                                @foreach (
-                                    array_slice(
-                                        $scoreReasons,
-                                        0,
-                                        2
-                                    )
-                                    as $reason
-                                )
-
-                                    <span>
-                                        {{
-                                            $reason[
-                                                'label'
-                                            ]
-                                        }}
-                                        +{{
-                                            $reason[
-                                                'points'
-                                            ]
-                                        }}
-                                    </span>
-
-                                    @if (! $loop->last)
-                                        ·
-                                    @endif
-
-                                @endforeach
-                            </div>
-
-                        @endif
-
+                            @if ($this->isCommercialManager() && $assignedUser === null)
+                                <button type="button" wire:click="claimLead({{ $lead->id }})"
+                                        wire:loading.attr="disabled" title="Atribuir este lead a mim">Assumir lead</button>
+                            @endif
+                            @if ($reprospectingInfo)
+                                <small class="lv23-reprospecting-hint">{{ $reprospectingInfo['message'] ?? '' }}</small>
+                                @if (($reprospectingInfo['eligible'] ?? false) && $hubSpotLead)
+                                    <button type="button" wire:click="resumeLead({{ $hubSpotLead->id }})"
+                                            wire:confirm="Retomar este lead no HubSpot?" wire:loading.attr="disabled">Retomar lead</button>
+                                @endif
+                            @endif
+                        </div>
                     </div>
 
-                                    </div>
-                </article>
+                    </article>
 
 
             @empty

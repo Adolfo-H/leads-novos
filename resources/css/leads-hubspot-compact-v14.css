@@ -1,12 +1,12 @@
 /* ExportControl Prospector — Leads V14: compact real-time HubSpot health. */
 
 .leads-rf.leads-v13 .lv14-hubspot-status {
-    position: fixed;
-    z-index: 110;
-    top: 5px;
-    right: 194px;
+    position: relative;
+    z-index: 20;
+    top: auto;
+    right: auto;
     width: 225px;
-    max-width: calc(100vw - 230px);
+    max-width: 100%;
     min-width: 0;
     color: #d6edfb;
     font-family: inherit;

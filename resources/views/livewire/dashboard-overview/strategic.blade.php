@@ -1,310 +1,400 @@
 {{--
-    ExportControl Prospector / Dashboard Estratégico V5
-    Dados reais do sistema; sem cifras financeiras ou tendências inventadas.
-    A seção antiga da base empresarial permanece no Blade pai.
+    EXPORTCONTROL — Dashboard Estratégico V26 — layout fiel à referência, dados reais.
+    Dados: serviços reais V23, sem valores fictícios nem tendências inferidas.
+    Parent: resources/views/livewire/dashboard-overview.blade.php.
+    Este componente não altera o explorer, as permissões ou a sidebar.
 --}}
 @php
-    $dsNumber = static fn ($value): string => number_format((int) $value, 0, ',', '.');
+    $ds25Number = static fn ($value): string => number_format((int) $value, 0, ',', '.');
 @endphp
 
-<div class="ds-v5" aria-label="Visão geral comercial">
-    <header class="ds-v5-hero">
-        <img
-            class="ds-v5-globe"
-            src="{{ asset('images/dashboard/globe-hero.webp') }}"
-            alt=""
-            aria-hidden="true"
-            loading="eager"
-        >
-
-        <div class="ds-v5-hero-copy">
+<div class="ds25 ds26" aria-label="Visão estratégica da operação comercial">
+    <header class="ds25-hero ds26-hero">
+        <img class="ds25-globe" src="{{ asset('images/dashboard/globe-hero.webp') }}"
+             alt="" aria-hidden="true" loading="eager">
+        <div class="ds26-orbit" aria-hidden="true"></div>
+        <div class="ds25-hero-shade" aria-hidden="true"></div>
+        <div class="ds25-hero-content">
             <h1>Dashboard estratégico</h1>
-            <p>Visão geral de inteligência comercial e exportação para gerar novas oportunidades.</p>
+            <p>Transforme dados em oportunidades reais de exportação.</p>
+        </div>
+        <div class="ds26-hero-motto" aria-hidden="true">
+            <span>MAIS MERCADOS</span>
+            <span>MAIS OPORTUNIDADES</span>
+            <span>MAIS RESULTADOS</span>
         </div>
     </header>
 
     @if ($manager && $commercial !== null && $strategic !== null)
         @php
-            $dsCards = [
+            // A mesma origem de dados utilizada pelos links do Dashboard V23.
+            $ds25MetricsService = app(\App\Services\DashboardLeadMetricsV23Service::class);
+            $ds25Metrics = $ds25MetricsService->snapshot();
+            $ds25Deals = $this->myHubSpotStageSummary;
+            $ds25Stages = $ds25Deals['stages'] ?? [];
+            $ds25FirstStages = array_slice($ds25Stages, 0, 7);
+            $ds25RemainingStages = array_slice($ds25Stages, 7);
+            $ds25StageMax = max([1, ...array_map(static fn (array $stage): int => (int) ($stage['value'] ?? 0), $ds25FirstStages)]);
+            $ds25CrmWithoutCnpj = \App\Models\HubSpotCompany::query()
+                ->whereNull('company_id')
+                ->whereHas('deals', fn ($query) => $query->where('is_closed', false))
+                ->count();
+            $ds25Ids = $ds25MetricsService->leadCompanyIds();
+            $ds25MyLeads = \Illuminate\Support\Facades\DB::table('company_lead_work_states')
+                ->whereIn('company_id', $ds25Ids)
+                ->where('assigned_user_id', auth()->id())
+                ->count();
+
+            // Novo = sem HubSpot/atividade, seguindo exatamente o filtro de Leads V15.
+            // Usar o serviço evita indicadores diferentes entre Dashboard e Leads.
+            $ds25NewQuery = \App\Models\Company::query()
+                ->select('companies.*')
+                ->leftJoin('company_sdr_scores as sdr', 'sdr.company_id', '=', 'companies.id')
+                ->leftJoin('company_hubspot_leads as work', 'work.company_id', '=', 'companies.id')
+                ->where(function ($query): void {
+                    $query->where('sdr.is_eligible', true)
+                        ->orWhereNotNull('work.hubspot_deal_id');
+                });
+            $ds25NewCount = app(\App\Services\LeadCrmSituationService::class)
+                ->apply($ds25NewQuery, 'new')->count('companies.id');
+
+            // Metricas derivadas dos MESMOS IDs que alimentam os atalhos do V23.
+            // Sem atribuição local = sem responsável no Prospector.
+            $ds26AssignedIds = \Illuminate\Support\Facades\DB::table('company_lead_work_states')
+                ->whereNotNull('assigned_user_id')
+                ->whereIn('company_id', $ds25Ids)
+                ->pluck('company_id')->map(static fn ($id): int => (int) $id)->all();
+            $ds26UnassignedDealIds = array_values(array_diff(
+                $ds25MetricsService->withDealCompanyIds(),
+                $ds26AssignedIds
+            ));
+            $ds26UnassignedDealCount = count($ds26UnassignedDealIds);
+            // Apenas prioridades altas dentro do mesmo recorte de 90 dias do dashboard.
+            $ds26HighStaleCount = \Illuminate\Support\Facades\DB::table('company_sdr_scores')
+                ->whereIn('company_id', $ds25MetricsService->staleCompanyIds())
+                ->where('priority', 'high')
+                ->where('is_eligible', true)
+                ->count();
+
+            $ds25Cards = [
                 [
-                    'label' => 'Leads em operação',
-                    'value' => $commercial['active_total'],
-                    'detail' => '',
-                    'icon' => 'activity',
-                    'tone' => 'teal',
-                    'href' => route('leads.index', ['dashboardView' => 'active']),
-                    'hint' => 'Empresas elegíveis pelo score SDR ou com negócio HubSpot vinculado, com acompanhamento ativo. Indicador de toda a equipe.',
+                    'title' => 'Leads cadastrados', 'value' => $ds25Metrics['leads'],
+                    'detail' => 'Empresas disponíveis para atuação comercial', 'icon' => 'activity',
+                    'tone' => 'teal', 'url' => route('leads.index', ['dashboardView' => 'all']),
+                    'description' => 'Empresas elegíveis ou com negócios identificados no HubSpot.',
                 ],
                 [
-                    'label' => 'Leads sem responsável',
-                    'value' => $commercial['unassigned_total'],
-                    'detail' => '',
-                    'icon' => 'company',
-                    'tone' => 'blue',
-                    'href' => route('leads.index', ['owner' => 'unassigned', 'dashboardView' => 'active']),
-                    'hint' => 'Leads ativos ainda sem vendedor atribuído no Prospector.',
+                    'title' => 'Leads sem responsável', 'value' => $ds25Metrics['unassigned'],
+                    'detail' => 'Distribua e aumente a produtividade do time', 'icon' => 'company',
+                    'tone' => 'blue', 'url' => route('leads.index', ['dashboardView' => 'all', 'owner' => 'unassigned']),
+                    'description' => 'Leads da base sem responsável atribuído no Prospector.',
                 ],
                 [
-                    'label' => 'Leads com negócio HubSpot',
-                    'value' => $commercial['opportunities_total'],
-                    'detail' => '',
-                    'icon' => 'check',
-                    'tone' => 'mint',
-                    'href' => route('leads.index', ['dashboardView' => 'with_deal']),
-                    'hint' => 'Empresas ativas com ID de negócio HubSpot vinculado. Não é a quantidade de negócios distintos.',
+                    'title' => 'Leads com negócio HubSpot', 'value' => $ds25Metrics['with_deal'],
+                    'detail' => 'Empresas com negócio identificado no CRM', 'icon' => 'check',
+                    'tone' => 'mint', 'url' => route('leads.index', ['dashboardView' => 'with_deal']),
+                    'description' => 'Empresas vinculadas a pelo menos um negócio, não quantidade de negócios.',
                 ],
             ];
 
-            $dsPipeline = $this->myHubSpotStageSummary;
-            $dsPipelineBars = $dsPipeline['stages'] ?? [];
-            $dsPipelineMax = max([1, ...array_column($dsPipelineBars, 'value')]);
-            $dsUfMax = max([1, ...array_column($s['states'], 'total')]);
-
-            $dsAlerts = [
+            // Ações rápidas: números do Prospector, cada uma com destino filtrado.
+            $ds25Actions = [
                 [
-                    'title' => 'Follow-ups atrasados',
-                    'description' => 'Retornos comerciais fora do prazo',
-                    'value' => $commercial['overdue_total'],
-                    'tone' => 'danger',
-                    'symbol' => '!',
-                    'url' => route('leads.index', ['workStatus' => 'waiting', 'followUp' => 'overdue']),
+                    'title' => 'Leads sem responsável', 'detail' => 'Distribua os leads entre os membros da equipe',
+                    'value' => $ds25Metrics['unassigned'], 'tone' => 'danger', 'icon' => 'company',
+                    'url' => route('leads.index', ['dashboardView' => 'all', 'owner' => 'unassigned']),
                 ],
                 [
-                    'title' => 'Leads sem responsável',
-                    'description' => '',
-                    'value' => $commercial['unassigned_total'],
-                    'tone' => 'warning',
-                    'symbol' => '△',
-                    'url' => route('leads.index', ['owner' => 'unassigned']),
+                    'title' => 'Contatos parados há 90 dias', 'detail' => 'Reative oportunidades sem interação recente',
+                    'value' => $ds25Metrics['stale90'], 'tone' => 'blue', 'icon' => 'refresh',
+                    'url' => route('leads.index', ['dashboardView' => 'stale90']),
                 ],
                 [
-                    'title' => 'Contatos parados',
-                    'description' => 'Leads sem interação no prazo operacional',
-                    'value' => $commercial['stale_total'],
-                    'tone' => 'blue',
-                    'symbol' => '↗',
-                    'url' => route('leads.management'),
+                    'title' => 'Novos para prospectar', 'detail' => 'Empresas ainda sem presença comercial no HubSpot',
+                    'value' => $ds25NewCount, 'tone' => 'teal', 'icon' => 'plus',
+                    'url' => route('leads.index', ['crmSituation' => 'new']),
+                ],
+                [
+                    'title' => 'CRM sem CNPJ', 'detail' => 'Identificação fiscal pendente',
+                    'value' => $ds25CrmWithoutCnpj, 'tone' => 'violet', 'icon' => 'activity',
+                    'url' => route('leads.index', ['hubSpotOnly' => 1]),
+                ],
+                [
+                    'title' => 'Aguardando retorno', 'detail' => 'Leads que precisam de acompanhamento',
+                    'value' => $commercial['waiting_total'], 'tone' => 'amber', 'icon' => 'activity',
+                    'url' => route('leads.index', ['workStatus' => 'waiting']),
                 ],
             ];
+
+            // Prioridades comerciais: evitar períodos fictícios e números de mockup.
+            $ds25Priorities = [
+                [
+                    'title' => 'Follow-ups atrasados', 'detail' => 'Tarefas abertas cujo vencimento já passou',
+                    'value' => $ds25Metrics['overdue'], 'tone' => 'danger', 'symbol' => '!',
+                    'url' => route('leads.index', ['dashboardView' => 'overdue']),
+                ],
+                [
+                    'title' => 'Leads aguardando contato', 'detail' => 'Empresas ainda não abordadas no CRM',
+                    'value' => $ds25NewCount, 'tone' => 'amber', 'symbol' => '+',
+                    'url' => route('leads.index', ['crmSituation' => 'new']),
+                ],
+                [
+                    'title' => 'Negócios sem responsável local', 'detail' => 'Empresas com negócio e sem dono no Prospector',
+                    'value' => $ds26UnassignedDealCount, 'tone' => 'blue', 'symbol' => '♙',
+                    'url' => route('leads.index', ['dashboardView' => 'with_deal', 'owner' => 'unassigned']),
+                ],
+                [
+                    'title' => 'Alta prioridade sem atividade recente', 'detail' => 'Leads de prioridade alta parados há 90 dias',
+                    'value' => $ds26HighStaleCount, 'tone' => 'teal', 'symbol' => '★',
+                    'url' => route('leads.index', ['dashboardView' => 'stale90', 'priority' => 'high']),
+                ],
+            ];
+
+            $ds25StateNames = [
+                'AC' => 'Acre', 'AL' => 'Alagoas', 'AM' => 'Amazonas',
+                'AP' => 'Amapá', 'BA' => 'Bahia', 'CE' => 'Ceará',
+                'DF' => 'Distrito Federal', 'ES' => 'Espírito Santo',
+                'GO' => 'Goiás', 'MA' => 'Maranhão', 'MG' => 'Minas Gerais',
+                'MS' => 'Mato Grosso do Sul', 'MT' => 'Mato Grosso',
+                'PA' => 'Pará', 'PB' => 'Paraíba', 'PE' => 'Pernambuco',
+                'PI' => 'Piauí', 'PR' => 'Paraná', 'RJ' => 'Rio de Janeiro',
+                'RN' => 'Rio Grande do Norte', 'RO' => 'Rondônia',
+                'RR' => 'Roraima', 'RS' => 'Rio Grande do Sul',
+                'SC' => 'Santa Catarina', 'SE' => 'Sergipe',
+                'SP' => 'São Paulo', 'TO' => 'Tocantins',
+            ];
+            $ds25StatesMap = $this->stateMapCounts;
+            $ds25TotalEstablishments = max(1, (int) $s['establishments']);
+            $dsMapTooltips = [];
+            foreach ($ds25StateNames as $ds25Code => $ds25Name) {
+                $ds25Count = (int) ($ds25StatesMap[$ds25Code] ?? 0);
+                $dsMapTooltips[$ds25Code] = [
+                    'name' => $ds25Name,
+                    'total' => $ds25Number($ds25Count),
+                    'unit' => $ds25Count === 1 ? 'estabelecimento' : 'estabelecimentos',
+                    'percentage' => number_format($ds25Count / $ds25TotalEstablishments * 100, 1, ',', '.').'%',
+                ];
+            }
+            $ds25StateMax = max([1, ...array_map(static fn (array $row): int => (int) $row['total'], $s['states'])]);
         @endphp
 
-        <section class="ds-v5-kpis" aria-label="Indicadores estratégicos">
-            @foreach ($dsCards as $card)
-                <a
-                    href="{{ $card['href'] }}"
-                    wire:navigate
-                    title="{{ $card['hint'] }}"
-                    class="ds-v5-kpi ds-v5-kpi--{{ $card['tone'] }}"
-                >
-                    <span class="ds-v5-kpi-icon" aria-hidden="true">
+        <section class="ds25-kpis" aria-label="Indicadores da operação comercial">
+            @foreach ($ds25Cards as $card)
+                <a class="ds25-kpi ds25-kpi--{{ $card['tone'] }}"
+                   href="{{ $card['url'] }}" wire:navigate title="{{ $card['description'] }}">
+                    <span class="ds25-kpi-icon" aria-hidden="true">
                         @include('livewire.dashboard-overview.icon', ['name' => $card['icon']])
                     </span>
-                    <span class="ds-v5-kpi-body">
-                        <span class="ds-v5-kpi-title">{{ $card['label'] }}</span>
-                        <strong class="ds-v5-kpi-value">{{ $dsNumber($card['value']) }}</strong>
-
+                    <span class="ds25-kpi-info">
+                        <span class="ds25-kpi-title">{{ $card['title'] }}</span>
+                        <strong class="ds25-kpi-number">{{ $ds25Number($card['value']) }}</strong>
+                        <span class="ds25-kpi-detail">{{ $card['detail'] }}</span>
                     </span>
+                    <span class="ds25-kpi-arrow" aria-hidden="true">›</span>
                 </a>
             @endforeach
         </section>
 
-        <div class="ds-v5-grid ds-v5-grid--top">
-            <section class="ds-v5-panel" aria-labelledby="ds-v6-deals-title">
-                <header class="ds-v5-panel-head">
-                    <div>
-                        <h2 id="ds-v6-deals-title">Meus negócios por etapa</h2>
-                        <p>Etapas do HubSpot ligadas às empresas da minha carteira.</p>
-                    </div>
-                    <span class="ds-v5-quiet-chip">
-                        {{ $dsNumber($dsPipeline['total'] ?? 0) }} negócios
+        <div class="ds25-layout ds25-layout-main">
+            <section class="ds25-panel ds25-deals" aria-labelledby="ds25-deals-title"
+                     x-data="{showOtherStages: false}">
+                <div class="ds25-panel-heading">
+                    <span class="ds25-panel-symbol ds25-symbol-teal" aria-hidden="true">
+                        @include('livewire.dashboard-overview.icon', ['name' => 'activity'])
                     </span>
-                </header>
+                    <div class="ds25-panel-heading-copy">
+                        <h2 id="ds25-deals-title">Meus negócios por etapa</h2>
+                        <p>Acompanhe os seus negócios em todas as etapas do HubSpot.</p>
+                    </div>
+                    <span class="ds25-counter" title="Todas as etapas e datas disponíveis">{{ $ds25Number($ds25Deals['total'] ?? 0) }} negócios · todas as datas</span>
+                </div>
 
-                @if ($dsPipelineBars !== [])
-                    <div class="ds-v5-chart ds-v6-chart" aria-label="Distribuição real dos meus negócios por etapa do HubSpot">
-                        <div class="ds-v5-chart-y" aria-hidden="true">
-                            <span>{{ $dsNumber($dsPipelineMax) }}</span>
-                            <span>{{ $dsNumber(round($dsPipelineMax * .75)) }}</span>
-                            <span>{{ $dsNumber(round($dsPipelineMax * .5)) }}</span>
-                            <span>{{ $dsNumber(round($dsPipelineMax * .25)) }}</span>
-                            <span>0</span>
-                        </div>
-                        <div class="ds-v5-chart-plot ds-v6-chart-plot"
-                             style="--ds-stage-columns: {{ count($dsPipelineBars) }}">
-                            @foreach ($dsPipelineBars as $bar)
-                                <a href="{{ route('leads.index', ['owner' => 'mine', 'dashboardStage' => $bar['label'] === 'Outras etapas' ? '__others__' : $bar['label']]) }}"
-                                   wire:navigate
-                                   class="ds-v5-chart-column ds-v10-chart-link"
-                                   aria-label="Ver empresas dos meus negócios na etapa {{ $bar['label'] }}"
-                                   title="Abrir empresas da etapa {{ $bar['label'] }} ({{ $dsNumber($bar['value']) }} negócios)">
-                                    <strong class="ds-v5-chart-value">{{ $dsNumber($bar['value']) }}</strong>
-                                    <div class="ds-v5-chart-bar-wrap">
-                                        <span class="ds-v5-chart-bar ds-v5-chart-bar--{{ $bar['tone'] }}"
-                                              style="height: {{ max(4, round($bar['value'] / $dsPipelineMax * 100)) }}%"></span>
-                                    </div>
-                                    <span class="ds-v5-chart-label">{{ $bar['label'] }}</span>
-                                </a>
-                            @endforeach
-                        </div>
+                @if ($ds25FirstStages !== [])
+                    <div class="ds25-stages" aria-label="Etapas dos meus negócios no HubSpot">
+                        @foreach ($ds25FirstStages as $stage)
+                            @php
+                                $ds25Value = (int) ($stage['value'] ?? 0);
+                                $ds25Ratio = $ds25StageMax > 0 ? $ds25Value / $ds25StageMax * 100 : 0;
+                                $ds25Color = ['teal', 'blue', 'violet', 'steel', 'mint', 'azure', 'plum'][$loop->index % 7];
+                            @endphp
+                            <a href="{{ route('leads.index', ['dashboardStage' => $stage['label']]) }}" wire:navigate
+                               class="ds25-stage ds25-stage--{{ $ds25Color }}"
+                               aria-label="Ver negócios na etapa {{ $stage['label'] }}: {{ $ds25Number($ds25Value) }}"
+                               title="{{ $stage['label'] }} · {{ $ds25Number($ds25Value) }} negócios">
+                                <strong class="ds25-stage-quantity">{{ $ds25Number($ds25Value) }}</strong>
+                                <span class="ds25-stage-column"><span style="height: {{ max(5, round($ds25Ratio)) }}%"></span></span>
+                                <span class="ds25-stage-label">{{ $stage['label'] }}</span>
+                            </a>
+                        @endforeach
                     </div>
+
+                    @if ($ds25RemainingStages !== [])
+                        <div class="ds25-extra-stages">
+                            <div class="ds25-extra-stages-head">
+                                <div class="ds25-extra-stages-info">
+                                    <span class="ds25-extra-stages-dot" aria-hidden="true"></span>
+                                    <span>Outras etapas do funil</span>
+                                    <span class="ds25-extra-stages-total">{{ count($ds25RemainingStages) }}</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="ds25-stage-expand"
+                                    x-on:click="showOtherStages = !showOtherStages"
+                                    x-bind:aria-expanded="showOtherStages ? 'true' : 'false'"
+                                    aria-controls="ds25-other-stages"
+                                >
+                                    <span x-text="showOtherStages ? 'Recolher etapas' : 'Mostrar {{ count($ds25RemainingStages) }} etapas'"></span>
+                                    <svg
+                                        class="ds25-stage-chevron"
+                                        x-bind:class="{ 'is-open': showOtherStages }"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="15"
+                                        height="15"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        aria-hidden="true"
+                                    >
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div
+                                id="ds25-other-stages"
+                                class="ds25-other-stages"
+                                x-show="showOtherStages"
+                                x-transition.opacity.duration.150ms
+                                x-cloak
+                            >
+                                @foreach ($ds25RemainingStages as $stage)
+                                    <a
+                                        href="{{ route('leads.index', ['dashboardStage' => $stage['label']]) }}"
+                                        wire:navigate
+                                        class="ds25-other-stage-item"
+                                        aria-label="Ver negócios na etapa {{ $stage['label'] }}: {{ $ds25Number($stage['value']) }}"
+                                    >
+                                        <span class="ds25-other-stage-dot" aria-hidden="true"></span>
+                                        <span class="ds25-other-stage-name">{{ $stage['label'] }}</span>
+                                        <strong class="ds25-other-stage-count">{{ $ds25Number($stage['value']) }}</strong>
+                                        <span class="ds25-other-stage-arrow" aria-hidden="true">↗</span>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 @else
-                    <div class="ds-v6-empty">
-                        Nenhum negócio do HubSpot identificado nas empresas atribuídas à sua carteira.
-                        Confira os vínculos e os responsáveis dos leads.
-                    </div>
+                    <div class="ds25-empty">Nenhum negócio foi identificado para seu responsável do HubSpot. Confira a atribuição no CRM.</div>
                 @endif
             </section>
 
-            <section class="ds-v5-panel" aria-labelledby="ds-v5-top-title">
-                <header class="ds-v5-panel-head">
-                    <div>
-                        <h2 id="ds-v5-top-title">Top oportunidades por CNAE</h2>
-                        <p>Atividades com mais empresas elegíveis para prospecção.</p>
+            <section class="ds25-panel ds25-actions" aria-labelledby="ds25-actions-title">
+                <div class="ds25-panel-heading">
+                    <span class="ds25-panel-symbol ds25-symbol-blue" aria-hidden="true">
+                        @include('livewire.dashboard-overview.icon', ['name' => 'plus'])
+                    </span>
+                    <div class="ds25-panel-heading-copy">
+                        <h2 id="ds25-actions-title">Ações rápidas</h2>
+                        <p>Atalhos para o que mais importa na rotina comercial.</p>
                     </div>
-                    <a class="ds-v5-panel-button" href="{{ route('leads.index') }}" wire:navigate>Ver leads <span aria-hidden="true">→</span></a>
-                </header>
-                <div class="ds-v5-ranking">
-                    <div class="ds-v5-ranking-head" aria-hidden="true">
-                        <span>#</span><span>CNAE / Atividade</span><span>Empresas</span>
-                    </div>
-                    @forelse ($strategic['cnaes'] as $leader)
-                        <div class="ds-v5-rank-row">
-                            <span class="ds-v5-rank-num ds-v5-rank-num--{{ min($loop->iteration, 5) }}">{{ $loop->iteration }}</span>
-                            <span class="ds-v5-rank-name" title="{{ $leader['description'] }}">
-                                <strong>{{ \Illuminate\Support\Str::limit($leader['description'], 47) }}</strong>
-                                <small>CNAE {{ $leader['code'] }}</small>
-                            </span>
-                            <strong class="ds-v5-rank-count">{{ $dsNumber($leader['companies']) }}</strong>
-                        </div>
-                    @empty
-                        <p class="ds-v5-empty">Nenhuma atividade com leads elegíveis encontrada. O ranking aparecerá após a qualificação.</p>
-                    @endforelse
                 </div>
-                <p class="ds-v5-note"></p>
+
+                <div class="ds25-actions-list">
+                    @foreach ($ds25Actions as $action)
+                        <a href="{{ $action['url'] }}" wire:navigate class="ds25-action ds25-action--{{ $action['tone'] }}">
+                            <span class="ds25-action-icon" aria-hidden="true">
+                                @include('livewire.dashboard-overview.icon', ['name' => $action['icon']])
+                            </span>
+                            <span class="ds25-action-copy">
+                                <strong>{{ $action['title'] }}</strong>
+                                <small>{{ $action['detail'] }}</small>
+                            </span>
+                            <strong class="ds25-action-number">{{ $ds25Number($action['value']) }}</strong>
+                            <span class="ds25-action-arrow" aria-hidden="true">›</span>
+                        </a>
+                    @endforeach
+                </div>
             </section>
         </div>
 
-        <div class="ds-v5-grid ds-v5-grid--bottom">
-            <section class="ds-v5-panel" aria-labelledby="ds-v5-uf-title">
-                <header class="ds-v5-panel-head">
-                    <div>
-                        <h2 id="ds-v5-uf-title">Concentração por estado</h2>
-                        <p>Distribuição dos estabelecimentos cadastrados.</p>
+        <div class="ds25-layout ds25-layout-bottom">
+            <section class="ds25-panel ds25-map-panel" aria-labelledby="ds25-map-title">
+                <div class="ds25-panel-heading">
+                    <span class="ds25-panel-symbol ds25-symbol-blue" aria-hidden="true">
+                        @include('livewire.dashboard-overview.icon', ['name' => 'pin'])
+                    </span>
+                    <div class="ds25-panel-heading-copy">
+                        <h2 id="ds25-map-title">Concentração por estado</h2>
+                        <p>Distribuição dos estabelecimentos cadastrados na base.</p>
                     </div>
-                    <button type="button" class="ds-v5-panel-button" x-on:click="dashboardTab = 'base'">Ver base <span aria-hidden="true">→</span></button>
-                </header>
-                @php
-                    // Mapeia TODOS os estados; o ranking ao lado continua mostrando o Top 5.
-                    $dsUfNames = [
-                        'AC' => 'Acre',
-                        'AL' => 'Alagoas',
-                        'AM' => 'Amazonas',
-                        'AP' => 'Amapá',
-                        'BA' => 'Bahia',
-                        'CE' => 'Ceará',
-                        'DF' => 'Distrito Federal',
-                        'ES' => 'Espírito Santo',
-                        'GO' => 'Goiás',
-                        'MA' => 'Maranhão',
-                        'MG' => 'Minas Gerais',
-                        'MS' => 'Mato Grosso do Sul',
-                        'MT' => 'Mato Grosso',
-                        'PA' => 'Pará',
-                        'PB' => 'Paraíba',
-                        'PE' => 'Pernambuco',
-                        'PI' => 'Piauí',
-                        'PR' => 'Paraná',
-                        'RJ' => 'Rio de Janeiro',
-                        'RN' => 'Rio Grande do Norte',
-                        'RO' => 'Rondônia',
-                        'RR' => 'Roraima',
-                        'RS' => 'Rio Grande do Sul',
-                        'SC' => 'Santa Catarina',
-                        'SE' => 'Sergipe',
-                        'SP' => 'São Paulo',
-                        'TO' => 'Tocantins',
-                    ];
-                    $dsRawStates = $this->stateMapCounts;
-                    $dsTotalEstablishments = max(1, (int) $s['establishments']);
-                    $dsMapTooltips = [];
-                    foreach ($dsUfNames as $dsUfCode => $dsUfName) {
-                        $dsCount = (int) ($dsRawStates[$dsUfCode] ?? 0);
-                        $dsMapTooltips[$dsUfCode] = [
-                            'name' => $dsUfName,
-                            'total' => $dsNumber($dsCount),
-                            'unit' => $dsCount === 1 ? 'estabelecimento' : 'estabelecimentos',
-                            'percentage' => number_format($dsCount * 100 / $dsTotalEstablishments, 1, ',', '.').'%',
-                        ];
-                    }
-                @endphp
-                <div class="ds-v5-geo">
+                    <button type="button" class="ds25-panel-link" x-on:click="dashboardTab = 'base'">Ver base <span aria-hidden="true">→</span></button>
+                </div>
+                <div class="ds25-map-content">
                     @include('livewire.dashboard-overview.map-interactive-v7', ['dsMapTooltips' => $dsMapTooltips])
-                    <div class="ds-v5-states">
+                    <div class="ds25-states">
                         @forelse ($s['states'] as $state)
                             @php
-                                $dsPct = $s['establishments'] > 0
-                                    ? round($state['total'] / $s['establishments'] * 100, 1)
-                                    : 0;
-                                $dsRelative = round($state['total'] / $dsUfMax * 100);
+                                $ds25StatePercent = $s['establishments'] > 0
+                                    ? ($state['total'] / $s['establishments'] * 100) : 0;
+                                $ds25StateWidth = round($state['total'] / $ds25StateMax * 100);
                             @endphp
-                            <button
-                                type="button"
-                                class="ds-v5-state"
-                                wire:click="openExplorer('state', '{{ $state['code'] }}')"
-                                wire:loading.attr="disabled"
-                                @disabled(! $manager)
-                            >
-                                <span class="ds-v5-state-idx">{{ $loop->iteration }}</span>
-                                <span class="ds-v5-state-code">{{ $state['code'] === '__unknown__' ? '—' : $state['code'] }}</span>
-                                <strong>{{ $dsNumber($state['total']) }}</strong>
-                                <span class="ds-v5-state-percentage">{{ number_format($dsPct, 1, ',', '.') }}%</span>
-                                <span class="ds-v5-state-track" aria-hidden="true"><i style="width: {{ $dsRelative }}%"></i></span>
+                            <button type="button" class="ds25-state" wire:click="openExplorer('state', '{{ $state['code'] }}')"
+                                    wire:loading.attr="disabled" title="{{ $state['code'] }}: {{ $ds25Number($state['total']) }} estabelecimentos ({{ number_format($ds25StatePercent, 1, ',', '.') }}%)">
+                                <span class="ds26-state-rank" aria-hidden="true">{{ $loop->iteration }}</span>
+                                <span class="ds25-state-uf">{{ $state['code'] }}</span>
+                                <strong>{{ $ds25Number($state['total']) }}</strong>
+                                <span class="ds25-state-pct">{{ number_format($ds25StatePercent, 1, ',', '.') }}%</span>
+                                <span class="ds25-state-track"><i style="width: {{ $ds25StateWidth }}%"></i></span>
                             </button>
                         @empty
-                            <p class="ds-v5-empty">Importe estabelecimentos para visualizar a distribuição.</p>
+                            <p class="ds25-empty">Ainda não há estabelecimentos com UF cadastrada.</p>
                         @endforelse
                     </div>
                 </div>
             </section>
 
-            <section class="ds-v5-panel" aria-label="Atenção operacional" aria-labelledby="ds-v5-risks-title">
-                <header class="ds-v5-panel-head">
-                    <div>
-                        <h2 id="ds-v5-risks-title">Riscos e oportunidades</h2>
-                        <p>Pendências comerciais reais que precisam de acompanhamento.</p>
+            <section class="ds25-panel ds25-priorities" aria-labelledby="ds25-priorities-title">
+                <div class="ds25-panel-heading">
+                    <span class="ds25-panel-symbol ds25-symbol-amber" aria-hidden="true">!</span>
+                    <div class="ds25-panel-heading-copy">
+                        <h2 id="ds25-priorities-title">Prioridades comerciais</h2>
+                        <p>Foque no que pode gerar mais resultados nos próximos dias.</p>
                     </div>
-                    <a class="ds-v5-panel-button" href="{{ route('leads.management') }}" wire:navigate>Ver todos <span aria-hidden="true">→</span></a>
-                </header>
-                <div class="ds-v5-alert-list">
-                    @foreach ($dsAlerts as $alert)
-                        <a href="{{ $alert['url'] }}" wire:navigate class="ds-v5-alert ds-v5-alert--{{ $alert['tone'] }}">
-                            <span class="ds-v5-alert-icon" aria-hidden="true">{{ $alert['symbol'] }}</span>
-                            <span class="ds-v5-alert-label">{{ $alert['title'] }}</span>
-                            <span class="ds-v5-alert-description">{{ $alert['description'] }}</span>
-                            <strong class="ds-v5-alert-qty">{{ $dsNumber($alert['value']) }}</strong>
-                            <span class="ds-v5-alert-arrow" aria-hidden="true">›</span>
+                    <a href="{{ route('leads.index', ['dashboardView' => 'all']) }}" wire:navigate class="ds25-panel-link">Ver todos <span aria-hidden="true">→</span></a>
+                </div>
+                <div class="ds25-priorities-list">
+                    @foreach ($ds25Priorities as $item)
+                        <a href="{{ $item['url'] }}" wire:navigate class="ds25-priority ds25-priority--{{ $item['tone'] }}">
+                            <span class="ds25-priority-icon" aria-hidden="true">{{ $item['symbol'] }}</span>
+                            <span class="ds25-priority-copy">
+                                <strong>{{ $item['title'] }}</strong>
+                                <small>{{ $item['detail'] }}</small>
+                            </span>
+                            <strong class="ds25-priority-number">{{ $ds25Number($item['value']) }}</strong>
+                            <span class="ds25-priority-arrow" aria-hidden="true">›</span>
                         </a>
                     @endforeach
                 </div>
-                <p class="ds-v5-note"></p>
+
             </section>
         </div>
 
-        <footer class="ds-v5-footer ds-v5-footer--minimal">
-            <span>
-                Base consultada em {{ $s['consulted_at'] }}
-                <span class="ds-v5-live-dot" aria-hidden="true"></span>
-                Dados locais
-                <button type="button" wire:click="refreshSummary" wire:loading.attr="disabled" title="Atualizar indicadores" aria-label="Atualizar indicadores">↻</button>
-            </span>
+        <footer class="ds25-footer">
+            <span>Indicadores consultados em {{ $s['consulted_at'] }}</span>
+            <span class="ds25-footer-dot" aria-hidden="true"></span>
+            <span>Dados locais</span>
+            <button type="button" class="ds26-footer-refresh" wire:click="refreshSummary" wire:loading.attr="disabled" title="Atualizar indicadores" aria-label="Atualizar indicadores">↻</button>
         </footer>
     @else
-        <section class="ds-v5-seller">
+        <section class="ds25-seller">
             <div>
-                <h2>Sua carteira comercial</h2>
-                <p>Os dados gerenciais são restritos aos gestores. Acesse seus leads e acompanhe os retornos.</p>
+                <h2>Minha fila de leads</h2>
+                <p>Abra os leads atribuídos a você para acompanhar os próximos contatos.</p>
             </div>
-            <a href="{{ route('leads.index') }}" wire:navigate>Minha fila de leads →</a>
+            <a href="{{ route('leads.index', ['owner' => 'mine']) }}" wire:navigate>Ver minha carteira →</a>
         </section>
     @endif
 </div>

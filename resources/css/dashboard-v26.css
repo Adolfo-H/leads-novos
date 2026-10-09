@@ -1,0 +1,310 @@
+/* ExportControl Dashboard V26 — exclusivamente visual, sem regras globais de SVG/inputs. */
+.ec-overview.ec-strategic-v4{max-width:1660px;width:100%;margin:0 auto;padding:10px clamp(14px,1.65vw,26px) 19px}
+.ec-overview.ec-strategic-v4 .ds25.ds26{display:flex;flex-direction:column;gap:14px;min-width:0;padding:0;color:#ecf7ff}
+.ec-strategic-v4 .ds26 :is(h1,h2,p){margin:0}
+.ec-strategic-v4 .ds26 :is(a,button):focus-visible{outline:2px solid #59e5df;outline-offset:3px}
+
+/* Hero panorâmico; globo verdadeiro e texto lateral da referência. */
+.ec-strategic-v4 .ds26 .ds25-hero.ds26-hero{position:relative;isolation:isolate;width:100%;height:135px;min-height:135px;display:flex;align-items:center;justify-content:space-between;padding:15px 18px;overflow:hidden;border:0;border-radius:0;background:linear-gradient(93deg,#041d33 0%,#082c47 60%,#02192b 100%)}
+.ec-strategic-v4 .ds26 .ds25-hero .ds25-globe{z-index:-2;top:-176px;right:14%;width:580px;height:580px;max-width:none;opacity:.9;object-fit:contain;filter:saturate(1.06) brightness(1.05);-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 22%,#000 79%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0%,#000 22%,#000 79%,transparent 100%)}
+.ec-strategic-v4 .ds26 .ds25-hero .ds25-hero-shade{z-index:-1;background:linear-gradient(90deg,#031b31 0%,rgba(3,26,46,.87) 36%,rgba(4,27,47,.04) 74%,#041e35 100%)}
+.ec-strategic-v4 .ds26 .ds26-orbit{position:absolute;z-index:-1;pointer-events:none;right:15%;top:-128px;width:470px;height:295px;border:1px dotted rgba(67,196,229,.2);border-radius:50%;transform:rotate(-19deg)}
+.ec-strategic-v4 .ds26 .ds25-hero-content{flex:1;z-index:2;max-width:62%;min-width:0}
+.ec-strategic-v4 .ds26 .ds25-hero h1{color:#fff;font-size:clamp(27px,2.48vw,36px);line-height:1.13;letter-spacing:-.042em;font-weight:800}
+.ec-strategic-v4 .ds26 .ds25-hero p{margin-top:5px;color:#a4c5e0;font-size:clamp(12px,.96vw,14px);line-height:1.45}
+.ec-strategic-v4 .ds26 .ds26-hero-motto{z-index:2;display:flex;flex-direction:column;gap:3px;min-width:157px;margin-left:auto;padding-left:15px;border-left:2px solid #26d9d3;font-size:10px;font-weight:670;line-height:1.2;letter-spacing:.11em;color:#94c1e2}
+.ec-strategic-v4 .ds26 .ds25-hero-update.ds26-update{position:absolute;z-index:3;bottom:8px;right:8px;display:grid;place-items:center;min-width:26px;width:26px;height:26px;min-height:26px;padding:0;border:1px solid rgba(69,158,201,.31);border-radius:7px;background:rgba(4,38,64,.68);color:#73e2da;opacity:.78}
+.ec-strategic-v4 .ds26 .ds26-update svg{display:block;width:14px;height:14px}
+.ec-strategic-v4 .ds26 .ds26-update:hover{opacity:1}
+
+/* KPIs: ícones visíveis, texto respirado, setas e gradientes. Sem % fictício. */
+.ec-strategic-v4 .ds26 .ds25-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ec-strategic-v4 .ds26 .ds25-kpi{min-width:0;min-height:117px;display:grid;grid-template-columns:57px minmax(0,1fr) 15px;align-items:center;gap:13px;padding:16px 14px;border:1px solid rgba(53,216,208,.48);border-radius:11px;background:linear-gradient(140deg,#043544,#05283c 90%);box-shadow:inset 0 1px 0 #ffffff08,0 9px 20px #0000000d;transition:transform .15s,border-color .15s}
+.ec-strategic-v4 .ds26 .ds25-kpi::before{height:0;opacity:0}
+.ec-strategic-v4 .ds26 .ds25-kpi::after{opacity:.015}
+.ec-strategic-v4 .ds26 .ds25-kpi--blue{background:linear-gradient(130deg,#082f55,#06243f 90%);border-color:rgba(61,144,222,.43)}
+.ec-strategic-v4 .ds26 .ds25-kpi--mint{background:linear-gradient(130deg,#053e45,#062939 90%);border-color:rgba(47,199,190,.43)}
+.ec-strategic-v4 .ds26 .ds25-kpi:hover{transform:translateY(-2px);border-color:var(--ds25-accent)}
+.ec-strategic-v4 .ds26 .ds25-kpi-icon{display:grid;place-items:center;width:54px;height:54px;flex-basis:54px;border-radius:12px;border:1px solid color-mix(in srgb,var(--ds25-accent) 47%,transparent);background:color-mix(in srgb,var(--ds25-accent) 13%,transparent)}
+.ec-strategic-v4 .ds26 .ds25-kpi-icon svg{width:25px;height:25px}
+.ec-strategic-v4 .ds26 .ds25-kpi-info{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.ec-strategic-v4 .ds26 .ds25-kpi-title{font-size:13px;font-weight:710;color:#d9f1ff}
+.ec-strategic-v4 .ds26 .ds25-kpi-number{font-size:clamp(28px,2.5vw,37px);line-height:1;margin:8px 0 7px;letter-spacing:-.038em;font-weight:830;color:#fff}
+.ec-strategic-v4 .ds26 .ds25-kpi-detail{font-size:10.5px;line-height:1.35;color:#8fb8d5}
+.ec-strategic-v4 .ds26 .ds25-kpi-arrow{position:static;align-self:end;margin:0 0 7px auto;font-size:25px;line-height:1;color:var(--ds25-accent)}
+
+/* Painéis 58/42, cabeçalhos e dimensões próximas ao mockup. */
+.ec-strategic-v4 .ds26 .ds25-layout{display:grid;grid-template-columns:minmax(0,1.43fr) minmax(0,1fr);gap:14px;align-items:stretch;min-width:0}
+.ec-strategic-v4 .ds26 .ds25-panel{min-width:0;display:flex;flex-direction:column;border:1px solid rgba(52,136,182,.35);border-radius:11px;padding:15px 17px 12px;background:linear-gradient(165deg,#082c4a 0%,#06243d 100%);box-shadow:inset 0 1px 0 #ffffff07}
+.ec-strategic-v4 .ds26 .ds25-layout-main>.ds25-panel{min-height:310px;height:auto}
+.ec-strategic-v4 .ds26 .ds25-layout-bottom>.ds25-panel{min-height:258px;height:auto}
+.ec-strategic-v4 .ds26 .ds25-panel-heading{display:flex;align-items:flex-start;gap:11px;min-height:47px;margin:0 0 11px}
+.ec-strategic-v4 .ds26 .ds25-panel-symbol{flex:0 0 32px;width:32px;height:32px;border:0;background:none;color:#52b8ff}
+.ec-strategic-v4 .ds26 .ds25-panel-symbol svg{display:block;width:23px;height:23px}
+.ec-strategic-v4 .ds26 .ds25-symbol-teal{color:#36dcd3}
+.ec-strategic-v4 .ds26 .ds25-symbol-amber{color:#61b8ff}
+.ec-strategic-v4 .ds26 .ds25-panel-heading-copy{flex:1;min-width:0}
+.ec-strategic-v4 .ds26 .ds25-panel-heading h2{color:#eff9ff;font-size:clamp(16px,1.23vw,19px);line-height:1.2;letter-spacing:-.02em;font-weight:750}
+.ec-strategic-v4 .ds26 .ds25-panel-heading p{color:#8cb5d2;font-size:10.7px;margin-top:4px;line-height:1.4}
+.ec-strategic-v4 .ds26 .ds25-panel-link,.ec-strategic-v4 .ds26 .ds25-counter{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:0 0 auto;padding:6px 10px;min-height:29px;border:1px solid rgba(66,140,184,.44);border-radius:7px;background:rgba(11,45,73,.85);color:#d3f4ff;font-size:10.5px;font-weight:670;text-decoration:none;white-space:nowrap}
+.ec-strategic-v4 .ds26 .ds25-panel-link:hover{border-color:#36d9cf;color:#fff}
+
+/* Negócios do HubSpot — sete etapas, mais etapas sob expansão. */
+.ec-strategic-v4 .ds26 .ds25-stages{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:clamp(5px,.8vw,12px);min-height:216px;padding:7px 5px 0;align-items:end;background:repeating-linear-gradient(to bottom,rgba(104,164,200,.14) 0 1px,transparent 1px 43px)}
+.ec-strategic-v4 .ds26 .ds25-stage{--ds25-bar-top:#3fddd3;--ds25-bar-bottom:#209ba8;min-width:0;height:213px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px;text-align:center}
+.ec-strategic-v4 .ds26 .ds25-stage--blue{--ds25-bar-top:#61baff;--ds25-bar-bottom:#287bd7}
+.ec-strategic-v4 .ds26 .ds25-stage--violet{--ds25-bar-top:#b89cfb;--ds25-bar-bottom:#765ddc}
+.ec-strategic-v4 .ds26 .ds25-stage--steel{--ds25-bar-top:#c5def1;--ds25-bar-bottom:#86accf}
+.ec-strategic-v4 .ds26 .ds25-stage--mint{--ds25-bar-top:#4adbd0;--ds25-bar-bottom:#18a2b1}
+.ec-strategic-v4 .ds26 .ds25-stage--azure{--ds25-bar-top:#56c3ff;--ds25-bar-bottom:#277fc9}
+.ec-strategic-v4 .ds26 .ds25-stage--plum{--ds25-bar-top:#a58cfc;--ds25-bar-bottom:#7360d4}
+.ec-strategic-v4 .ds26 .ds25-stage-quantity{font-size:11.8px;color:#fff;font-variant-numeric:tabular-nums;font-weight:790}
+.ec-strategic-v4 .ds26 .ds25-stage-column{width:100%;height:141px;display:flex;align-items:end;justify-content:center;border-bottom:1px solid rgba(79,155,200,.36)}
+.ec-strategic-v4 .ds26 .ds25-stage-column>span{display:block;width:min(62px,83%);border-radius:5px 5px 0 0;background:linear-gradient(to bottom,var(--ds25-bar-top),var(--ds25-bar-bottom))}
+.ec-strategic-v4 .ds26 .ds25-stage-label{width:100%;height:44px;display:grid;place-items:start center;line-height:1.17;font-size:10px;font-weight:600;color:#d5e9f8;overflow:visible;overflow-wrap:break-word}
+.ec-strategic-v4 .ds26 .ds25-extra-stages{margin-top:5px}
+.ec-strategic-v4 .ds26 .ds25-stage-expand{min-height:24px;padding:3px 9px;border-radius:6px;font-size:10px}
+.ec-strategic-v4 .ds26 .ds25-other-stages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:6px}
+
+/* Ações rápidas: cinco linhas, ícone, contexto e contador. */
+.ec-strategic-v4 .ds26 .ds25-actions .ds25-panel-heading{margin-bottom:5px}
+.ec-strategic-v4 .ds26 .ds25-actions-list{display:flex;flex-direction:column;gap:0;min-width:0}
+.ec-strategic-v4 .ds26 .ds25-action{--ds25-act-color:#4bded5;display:grid;grid-template-columns:38px minmax(0,1fr) auto 14px;gap:10px;align-items:center;min-height:49px;padding:5px 0;border:0;border-bottom:1px solid rgba(58,128,164,.25);border-radius:0;background:transparent}
+.ec-strategic-v4 .ds26 .ds25-action:last-child{border-bottom:0}
+.ec-strategic-v4 .ds26 .ds25-action:hover{background:rgba(70,167,199,.08)}
+.ec-strategic-v4 .ds26 .ds25-action--danger{--ds25-act-color:#f57e94}
+.ec-strategic-v4 .ds26 .ds25-action--blue{--ds25-act-color:#72b4fb}
+.ec-strategic-v4 .ds26 .ds25-action--violet{--ds25-act-color:#ac98ef}
+.ec-strategic-v4 .ds26 .ds25-action--amber{--ds25-act-color:#ffcb68}
+.ec-strategic-v4 .ds26 .ds25-action-icon{display:grid;place-items:center;width:37px;height:37px;border-radius:9px;background:color-mix(in srgb,var(--ds25-act-color) 14%,transparent);color:var(--ds25-act-color)}
+.ec-strategic-v4 .ds26 .ds25-action-icon svg{width:19px;height:19px}
+.ec-strategic-v4 .ds26 .ds25-action-copy{min-width:0;display:flex;flex-direction:column;gap:2px}
+.ec-strategic-v4 .ds26 .ds25-action-copy strong{font-size:11.6px;line-height:1.2;color:#f3faff;font-weight:730}
+.ec-strategic-v4 .ds26 .ds25-action-copy small{font-size:10.2px;color:#86b5d1;line-height:1.25}
+.ec-strategic-v4 .ds26 .ds25-action-number{font-size:18px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.ec-strategic-v4 .ds26 .ds25-action-arrow{font-size:19px;color:#a0d3ef}
+
+/* Mapa SVG original: 27 estados continuam interativos. */
+.ec-strategic-v4 .ds26 .ds25-map-panel .ds25-panel-heading{margin-bottom:2px}
+.ec-strategic-v4 .ds26 .ds25-map-content{display:grid;grid-template-columns:minmax(0,39%) minmax(0,1fr);gap:10px;align-items:center;flex:1;min-height:184px}
+.ec-strategic-v4 .ds26 .ds25-map-content .ds-v5-map.ds-v7-map-interactive{display:block;width:100%;max-width:238px;height:207px;max-height:207px;margin:0 auto;overflow:visible}
+.ec-strategic-v4 .ds26 .ds25-map-content .ds-v7-map-svg{width:100%;height:100%;max-width:100%;max-height:100%}
+.ec-strategic-v4 .ds26 .ds25-states{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ec-strategic-v4 .ds26 .ds25-state{display:grid;width:100%;grid-template-columns:22px 25px 55px 44px minmax(0,1fr);align-items:center;gap:7px;padding:4px 0;border:none;background:transparent;color:#e7f7ff;text-align:left;font-size:10px;cursor:pointer}
+.ec-strategic-v4 .ds26 .ds25-state:hover{color:#60f2e3}
+.ec-strategic-v4 .ds26 .ds26-state-rank{display:grid;place-items:center;width:21px;height:21px;border-radius:50%;background:rgba(62,153,211,.27);color:#d8efff;font-weight:800;font-size:10px}
+.ec-strategic-v4 .ds26 .ds25-state-uf{font-size:10px;font-weight:760}
+.ec-strategic-v4 .ds26 .ds25-state strong{font-size:10px;font-weight:770;text-align:right}
+.ec-strategic-v4 .ds26 .ds25-state-pct{color:#a0c2d9;font-size:10px;text-align:right}
+.ec-strategic-v4 .ds26 .ds25-state-track{height:8px;min-width:0;border-radius:20px;background:rgba(50,116,158,.33)}
+.ec-strategic-v4 .ds26 .ds25-state-track i{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,#28c9c2,#3ce0d1)}
+
+/* Quatro prioridades comerciais reais. */
+.ec-strategic-v4 .ds26 .ds25-priorities .ds25-panel-heading{margin-bottom:4px}
+.ec-strategic-v4 .ds26 .ds25-priorities-list{display:flex;flex-direction:column;gap:0;min-width:0}
+.ec-strategic-v4 .ds26 .ds25-priority{--ds25-alert:#62bcff;display:grid;grid-template-columns:38px minmax(0,1fr) auto 13px;min-height:46px;align-items:center;gap:10px;padding:6px 0;border:0;border-bottom:1px solid rgba(62,120,161,.23);background:transparent;border-radius:0}
+.ec-strategic-v4 .ds26 .ds25-priority:last-child{border-bottom:0}
+.ec-strategic-v4 .ds26 .ds25-priority:hover{background:rgba(58,156,186,.07)}
+.ec-strategic-v4 .ds26 .ds25-priority--danger{--ds25-alert:#ff7185}
+.ec-strategic-v4 .ds26 .ds25-priority--amber{--ds25-alert:#ffc95e}
+.ec-strategic-v4 .ds26 .ds25-priority--blue{--ds25-alert:#68bbff}
+.ec-strategic-v4 .ds26 .ds25-priority--teal{--ds25-alert:#42ded0}
+.ec-strategic-v4 .ds26 .ds25-priority-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:9px;background:color-mix(in srgb,var(--ds25-alert) 15%,transparent);color:var(--ds25-alert);font-size:18px;font-weight:800}
+.ec-strategic-v4 .ds26 .ds25-priority-copy{min-width:0;display:flex;flex-direction:column;gap:3px}
+.ec-strategic-v4 .ds26 .ds25-priority-copy strong{color:var(--ds25-alert);font-size:10.9px;font-weight:800;line-height:1.2}
+.ec-strategic-v4 .ds26 .ds25-priority-copy small{color:#97bbd7;font-size:10px;line-height:1.2}
+.ec-strategic-v4 .ds26 .ds25-priority-number{color:#fff;font-size:18px;font-weight:790;font-variant-numeric:tabular-nums}
+.ec-strategic-v4 .ds26 .ds25-priority-arrow{font-size:18px;color:#9acee8}
+.ec-strategic-v4 .ds26 .ds25-footer{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap;padding:0 4px;color:#86aac5;font-size:10px}
+.ec-strategic-v4 .ds26 .ds26-footer-refresh{background:transparent;border:0;color:#42dcd1;font-size:21px;cursor:pointer;padding:0 3px}
+
+/* Responsividade mantendo a identidade da marca. */
+@media(max-width:1180px){.ec-strategic-v4 .ds26 .ds25-layout{grid-template-columns:1fr}.ec-strategic-v4 .ds26 .ds25-layout-main>.ds25-panel,.ec-strategic-v4 .ds26 .ds25-layout-bottom>.ds25-panel{min-height:0}}
+@media(max-width:850px){.ec-strategic-v4 .ds26 .ds25-kpis{grid-template-columns:1fr}.ec-strategic-v4 .ds26 .ds25-kpi{min-height:95px}.ec-strategic-v4 .ds26 .ds26-hero-motto{display:none}.ec-strategic-v4 .ds26 .ds25-hero .ds25-globe{right:-145px;opacity:.40}.ec-strategic-v4 .ds26 .ds25-hero-content{max-width:95%}}
+@media(max-width:600px){.ec-overview.ec-strategic-v4{padding:10px 11px 20px}.ec-strategic-v4 .ds26 .ds25-hero.ds26-hero{height:auto;min-height:122px;padding:15px}.ec-strategic-v4 .ds26 .ds25-hero h1{font-size:26px}.ec-strategic-v4 .ds26 .ds25-panel{padding:12px 10px}.ec-strategic-v4 .ds26 .ds25-panel-heading h2{font-size:15px}.ec-strategic-v4 .ds26 .ds25-counter{display:none}.ec-strategic-v4 .ds26 .ds25-stage{height:190px}.ec-strategic-v4 .ds26 .ds25-stage-column{height:116px}.ec-strategic-v4 .ds26 .ds25-stage-label{font-size:8px}.ec-strategic-v4 .ds26 .ds25-map-content{grid-template-columns:1fr}.ec-strategic-v4 .ds26 .ds25-map-content .ds-v5-map.ds-v7-map-interactive{height:175px;max-height:175px}}
+@media(prefers-reduced-motion:reduce){.ec-strategic-v4 .ds26 *{animation:none!important;transition:none!important}}
+
+/* EC_DASHBOARD_ETAPAS_V27_BEGIN */
+
+.ec-strategic-v4 .ds26 .ds25-extra-stages {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(83, 150, 185, .23);
+}
+
+.ec-strategic-v4 .ds26 .ds25-extra-stages-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.ec-strategic-v4 .ds26 .ds25-extra-stages-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: #c7dfee;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.ec-strategic-v4 .ds26 .ds25-extra-stages-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #35d4c9;
+    box-shadow: 0 0 0 4px rgba(53, 212, 201, .10);
+}
+
+.ec-strategic-v4 .ds26 .ds25-extra-stages-total {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 21px;
+    height: 21px;
+    padding: 0 5px;
+    border-radius: 6px;
+    color: #71eee0;
+    background: rgba(43, 195, 185, .12);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+.ec-strategic-v4 .ds26 .ds25-stage-expand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 34px;
+    padding: 7px 13px;
+    border: 1px solid rgba(52, 193, 195, .32);
+    border-radius: 9px;
+    background: rgba(40, 160, 166, .10);
+    color: #70eee1;
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1.3;
+    cursor: pointer;
+    transition: background 160ms ease,
+                border-color 160ms ease,
+                color 160ms ease;
+}
+
+.ec-strategic-v4 .ds26 .ds25-stage-expand:hover,
+.ec-strategic-v4 .ds26 .ds25-stage-expand:focus-visible {
+    border-color: rgba(66, 224, 213, .74);
+    background: rgba(46, 201, 190, .20);
+    color: #e8fffb;
+}
+
+.ec-strategic-v4 .ds26 .ds25-stage-chevron {
+    flex-shrink: 0;
+    transition: transform 180ms ease;
+}
+
+.ec-strategic-v4 .ds26 .ds25-stage-chevron.is-open {
+    transform: rotate(180deg);
+}
+
+.ec-strategic-v4 .ds26 .ds25-other-stages {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 12px;
+    padding-bottom: 3px;
+}
+
+.ec-strategic-v4 .ds26 .ds25-other-stages a.ds25-other-stage-item {
+    display: grid;
+    grid-template-columns: 7px minmax(0, 1fr) auto 16px;
+    align-items: center;
+    gap: 10px;
+    min-height: 55px;
+    padding: 10px 13px;
+    border: 1px solid rgba(77, 142, 184, .28);
+    border-radius: 11px;
+    background: linear-gradient(
+        110deg,
+        rgba(17, 69, 102, .72),
+        rgba(10, 43, 72, .72)
+    );
+    color: #e9f6fe;
+    text-decoration: none;
+    transition: border-color 150ms ease,
+                background 150ms ease,
+                transform 150ms ease;
+}
+
+.ec-strategic-v4 .ds26 .ds25-other-stages a.ds25-other-stage-item:hover,
+.ec-strategic-v4 .ds26 .ds25-other-stages a.ds25-other-stage-item:focus-visible {
+    border-color: rgba(63, 225, 210, .58);
+    background: linear-gradient(
+        110deg,
+        rgba(22, 89, 112, .87),
+        rgba(10, 54, 82, .87)
+    );
+    transform: translateY(-1px);
+}
+
+.ec-strategic-v4 .ds26 .ds25-other-stage-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #42d8ca;
+}
+
+.ec-strategic-v4 .ds26 .ds25-other-stage-name {
+    min-width: 0;
+    color: #d9edfa;
+    font-size: 11.5px;
+    font-weight: 620;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.ec-strategic-v4 .ds26 .ds25-other-stage-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    min-height: 25px;
+    padding: 3px 7px;
+    border: 1px solid rgba(88, 174, 199, .19);
+    border-radius: 7px;
+    background: rgba(34, 113, 156, .18);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.ec-strategic-v4 .ds26 .ds25-other-stage-arrow {
+    color: #72bfda;
+    font-size: 17px;
+    line-height: 1;
+}
+
+@media (max-width: 650px) {
+    .ec-strategic-v4 .ds26 .ds25-other-stages {
+        grid-template-columns: 1fr;
+    }
+
+    .ec-strategic-v4 .ds26 .ds25-extra-stages-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .ec-strategic-v4 .ds26 .ds25-stage-expand {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ec-strategic-v4 .ds26 .ds25-stage-chevron,
+    .ec-strategic-v4 .ds26 .ds25-other-stages a.ds25-other-stage-item {
+        transition: none;
+    }
+}
+
+/* EC_DASHBOARD_ETAPAS_V27_END */

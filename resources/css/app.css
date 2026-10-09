@@ -3728,9 +3728,6 @@ body.ec-dashboard-mode {
         right: auto;
     }
 
-    .ec-dashboard-cards {
-        grid-template-columns: 1fr;
-    }
 
     .ec-dashboard-structure-modern {
         grid-template-columns: 1fr;
@@ -5722,9 +5719,6 @@ body.ec-dashboard-mode {
 
 /* Cards */
 
-.ec-dashboard-card-heading span {
-    font-size: 10px;
-}
 
 .ec-dashboard-card-heading small {
     margin-top: 4px;
@@ -8972,12 +8966,6 @@ button:disabled {
 
 @media (max-width: 760px) {
 
-    .ec-companies-page {
-        padding:
-            18px
-            15px
-            42px;
-    }
 
     .ec-companies-hero {
         min-height: 190px;

@@ -1,0 +1,470 @@
+/* EXPORTCONTROL / Leads V16. Ajustes isolados no layout já aprovado. */
+.leads-rf.leads-v16 .rf-stage-strip {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    min-height: 49px;
+    padding: 6px 12px;
+    overflow: hidden;
+    border: 1px solid #245478;
+    background: #082b48;
+    border-radius: 12px;
+}
+.leads-rf.leads-v16 .rf-stage-strip-heading {
+    flex: 0 0 205px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 7px;
+    width: 205px;
+    min-width: 205px;
+    min-height: 35px;
+    padding: 0 12px 0 0;
+    border-right: 1px solid #295779;
+    border-bottom: 0;
+}
+.leads-rf.leads-v16 .rf-stage-strip-list {
+    display: flex !important;
+    flex: 1 1 auto;
+    gap: 7px;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap !important;
+    min-height: 37px;
+    max-width: 100%;
+    padding: 1px 0 3px;
+    scrollbar-width: thin;
+    scrollbar-color: #2d6487 transparent;
+}
+.leads-rf.leads-v16 .rf-stage-strip-chip {
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    height: 31px !important;
+    min-height: 31px !important;
+    max-height: 31px !important;
+    min-width: 93px;
+    padding: 0 10px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+    border-width: 1px !important;
+    border-radius: 8px !important;
+    line-height: 1.2 !important;
+    transform: none !important;
+    transition: background .12s ease,border-color .12s ease,color .12s ease;
+}
+.leads-rf.leads-v16 .rf-stage-strip-chip > span,
+.leads-rf.leads-v16 .rf-stage-strip-chip > strong {
+    line-height: 1.2 !important;
+    display: inline-block !important;
+    margin: 0 !important;
+    flex: 0 0 auto;
+}
+.leads-rf.leads-v16 .rf-stage-strip-chip.is-active {
+    border-width: 1px !important;
+    outline: 1px solid #6ae2d2;
+    outline-offset: -2px;
+    box-shadow: inset 0 0 0 1px rgba(94, 220, 203, .10);
+    transform: none !important;
+}
+.leads-rf.leads-v16 .rf-stage-strip-clear {
+    min-height: 22px !important;
+    margin-top: 4px !important;
+    padding: 1px 6px !important;
+    font-size: 10px !important;
+}
+.leads-rf.leads-v16 .rf-list-legend { display:none !important; }
+
+/* Resumo compacto: somente as três ações principais do V15. */
+.leads-rf.leads-v16 .lv15-summary { margin-bottom: 0; }
+
+/* Ações dos leads: dossiê, controles e HubSpot sem menu de três pontos. */
+.leads-rf.leads-v16 .lv13-actions {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 5px !important;
+    min-width: 0;
+}
+.leads-rf.leads-v16 .lv13-actions > a:not(.lv16-hubspot-link),
+.leads-rf.leads-v16 .lv13-actions > button,
+.leads-rf.leads-v16 .lv16-hubspot-link {
+    border: 1px solid transparent !important;
+    border-radius: 8px !important;
+    height: 27px !important;
+    min-height: 27px !important;
+    padding: 0 5px !important;
+    color: #a9cde7 !important;
+    background: transparent !important;
+    line-height: 1 !important;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background .16s, color .16s, border-color .16s;
+}
+.leads-rf.leads-v16 .lv13-actions > a:hover,
+.leads-rf.leads-v16 .lv13-actions > button:hover {
+    color: #57e2d5 !important;
+    background: #123f60 !important;
+    border-color: #285f80 !important;
+}
+.leads-rf.leads-v16 .lv16-detail-toggle {
+    display: inline-flex !important;
+    gap: 3px;
+    width: auto !important;
+    min-width: 65px;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px !important;
+    font-weight: 650;
+    cursor: pointer;
+}
+.leads-rf.leads-v16 .lv16-detail-toggle[aria-expanded="true"] {
+    background: #123f60 !important;
+    border-color: #2c7596 !important;
+    color: #6adad7 !important;
+}
+.leads-rf.leads-v16 .lv16-detail-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.leads-rf.leads-v16 .lv16-hubspot-link {
+    display: inline-flex !important;
+    width: auto !important;
+    min-width: 26px;
+    max-width: 78px;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    color: #68d6e0 !important;
+    font-size: 10px;
+}
+.leads-rf.leads-v16 .lv16-hubspot-caption { font-size: 9px; font-weight: 650; }
+.leads-rf.leads-v16 .lv16-no-hubspot { display:inline-flex; min-width:24px; justify-content:center; color: #6589a2; }
+.leads-rf.leads-v16 .lv13-actions svg { display:block; width:14px; height:14px; flex:0 0 14px; }
+
+/* O detalhamento permanece completo, porém com hierarquia visual limpa. */
+.leads-rf.leads-v16 .lv13-details.lv16-details {
+    display:grid !important;
+    grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+    gap: 13px 20px !important;
+    padding: 15px 21px !important;
+    border: 1px solid #2a5e7b !important;
+    border-top: 0 !important;
+    border-radius: 0 0 10px 10px;
+    background: linear-gradient(165deg, #103451, #082740 90%) !important;
+}
+.leads-rf.leads-v16 .lv13-details.lv16-details[x-cloak],
+.leads-rf.leads-v16 .lv13-details.lv16-details[style*="display: none"] { display:none !important; }
+.leads-rf.leads-v16 .lv16-details-heading {
+    grid-column:1 / -1 !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    gap:12px;
+    border-bottom:1px solid #28546e;
+    padding:0 0 10px;
+    margin-bottom:2px;
+}
+.leads-rf.leads-v16 .lv16-details-heading div { min-width:0; display:flex; flex-direction:column; gap:3px; }
+.leads-rf.leads-v16 .lv16-details-heading strong { color:#e9f7ff; font-size:13px; }
+.leads-rf.leads-v16 .lv16-details-heading span { color:#8aacc6; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.leads-rf.leads-v16 .lv16-details-heading button { flex:0 0 auto; border:1px solid #31617e; border-radius:8px; background:#0a2b46; color:#b7d6e8; padding:6px 10px; font-size:10px; cursor:pointer; }
+.leads-rf.leads-v16 .lv16-details-heading button:hover { color:#60dace; border-color:#4ca7ac; }
+.leads-rf.leads-v16 .lv16-details > .rf-col-company,
+.leads-rf.leads-v16 .lv16-details > .rf-col-score { padding:0 !important; }
+.leads-rf.leads-v16 .lv16-details > :is(.rf-col-company,.rf-col-score,.rf-col-commercial,.rf-col-crm,.rf-col-followup,.rf-col-owner,.rf-col-action,.lv12-next-step) {
+    min-width:0 !important;
+}
+.leads-rf.leads-v16 .lv16-details .rf-next-action-main { padding:7px 9px; }
+.leads-rf.leads-v16 .lv16-details .rf-actions { flex-wrap:wrap; }
+
+@media (max-width:1250px) {
+    .leads-rf.leads-v16 .lv13-details.lv16-details { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+    .leads-rf.leads-v16 .lv13-actions { gap:1px !important; }
+    .leads-rf.leads-v16 .lv16-hubspot-caption { display:none; }
+    .leads-rf.leads-v16 .lv16-detail-toggle { min-width:55px; }
+}
+@media (max-width:850px) {
+    .leads-rf.leads-v16 .rf-stage-strip { flex-direction:column; align-items:stretch; }
+    .leads-rf.leads-v16 .rf-stage-strip-heading { flex:0 0 auto; width:100%; min-width:0; border-right:0; border-bottom:1px solid #295779; padding:0 0 8px; }
+}
+@media (max-width:620px) {
+    .leads-rf.leads-v16 .lv13-details.lv16-details { grid-template-columns:1fr !important; gap:9px !important; padding:12px !important; }
+    .leads-rf.leads-v16 .lv16-details-heading span { max-width:180px; }
+}
+@media (prefers-reduced-motion:reduce) {
+    .leads-rf.leads-v16 .lv16-detail-toggle svg,
+    .leads-rf.leads-v16 .rf-stage-strip-chip { transition:none !important; }
+}
+
+/* LEADS_V17_CORRECTIONS
+   Correções isoladas: Pipeline estável, ações sem sobreposição, horas de tarefas.
+   Aplicadas DEPOIS do CSS V13 e dos ajustes V16. */
+
+/* 1. O cabeçalho do Pipeline não cresce quando a etapa é selecionada. */
+.leads-rf.leads-v13.leads-v16 .rf-stage-strip {
+    display:flex!important;
+    align-items:center!important;
+    flex-direction:row!important;
+    gap:10px!important;
+    height:48px!important;
+    min-height:48px!important;
+    padding:5px 10px!important;
+    overflow:hidden!important;
+}
+.leads-rf.leads-v13.leads-v16 .rf-stage-strip-heading {
+    display:flex!important;
+    flex:0 0 150px!important;
+    width:150px!important;
+    min-width:150px!important;
+    max-width:150px!important;
+    height:37px!important;
+    min-height:37px!important;
+    max-height:37px!important;
+    padding:0 9px 0 0!important;
+    margin:0!important;
+    border-right:1px solid #2b597b!important;
+    border-bottom:0!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:flex-start!important;
+    gap:2px!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+}
+.leads-rf.leads-v13.leads-v16 .rf-stage-strip-heading strong {
+    font-size:10px!important;
+    line-height:1.2!important;
+    white-space:nowrap!important;
+}
+.leads-rf.leads-v13.leads-v16 .rf-stage-strip-heading span {
+    font-size:8px!important;
+    line-height:1.15!important;
+    white-space:nowrap!important;
+}
+.leads-rf.leads-v13.leads-v16 .rf-stage-strip-list {
+    min-width:0!important;
+    min-height:35px!important;
+    max-height:35px!important;
+    display:flex!important;
+    flex:1 1 auto!important;
+    align-items:center!important;
+    gap:7px!important;
+    padding:1px 0!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    flex-wrap:nowrap!important;
+}
+.leads-rf.leads-v13.leads-v16 .rf-stage-strip-list > .rf-stage-strip-chip {
+    display:inline-flex!important;
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-height:29px!important;
+    height:29px!important;
+    max-height:29px!important;
+    padding:0 10px!important;
+    margin:0!important;
+    gap:7px!important;
+    border-width:1px!important;
+    border-style:solid!important;
+    box-sizing:border-box!important;
+    border-radius:8px!important;
+    font-size:9px!important;
+    line-height:1!important;
+    font-weight:600!important;
+    white-space:nowrap!important;
+    transform:none!important;
+}
+.leads-rf.leads-v13.leads-v16 .rf-stage-strip-list > .rf-stage-strip-chip:is(:hover,.is-active) {
+    border-color:#51d5cd!important;
+    transform:none!important;
+}
+.leads-rf.leads-v13.leads-v16 .rf-stage-strip-list > .rf-stage-strip-chip > :is(span,strong) {
+    margin:0!important;
+    padding-top:0!important;
+    padding-bottom:0!important;
+    line-height:1.15!important;
+    white-space:nowrap!important;
+}
+.leads-rf.leads-v13.leads-v16 .lv17-stage-clear,
+.leads-rf.leads-v13.leads-v16 .lv17-stage-clear-slot {
+    display:inline-flex!important;
+    flex:0 0 52px!important;
+    width:52px!important;
+    min-width:52px!important;
+    max-width:52px!important;
+    height:28px!important;
+    min-height:28px!important;
+    box-sizing:border-box!important;
+    margin:0!important;
+    padding:0 4px!important;
+    align-items:center!important;
+    justify-content:center!important;
+}
+.leads-rf.leads-v13.leads-v16 .lv17-stage-clear {
+    background:#0c3553!important;
+    color:#5be0d5!important;
+    border:1px solid #2d6b80!important;
+    border-radius:7px!important;
+    font-size:9px!important;
+    line-height:1.1!important;
+    cursor:pointer;
+}
+.leads-rf.leads-v13.leads-v16 .lv17-stage-clear:focus-visible {
+    outline:2px solid #55e1d1;
+    outline-offset:2px;
+}
+.leads-rf.leads-v13.leads-v16 .lv17-stage-clear-slot {visibility:hidden!important;}
+
+/* 2. Restaurar espaço real para três ações; V13 usava width e flex-basis 23px. */
+@media (min-width:981px) {
+    .leads-rf.leads-v13.leads-v16 .lv13-list-head,
+    .leads-rf.leads-v13.leads-v16 .lv13-lead-line {
+        grid-template-columns:
+          23px minmax(182px,2fr) 82px minmax(114px,1.1fr)
+          minmax(100px,1fr) minmax(116px,1.12fr)
+          minmax(112px,1fr) 155px!important;
+        min-width:1040px!important;
+        gap:8px!important;
+    }
+}
+.leads-rf.leads-v13.leads-v16 .lv13-actions.lv17-actions {
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    flex-wrap:nowrap!important;
+    gap:5px!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+}
+.leads-rf.leads-v13.leads-v16 .lv13-actions.lv17-actions > a:not(.lv17-action-hubspot) {
+    flex:0 0 26px!important;
+    width:26px!important;
+    min-width:26px!important;
+    max-width:26px!important;
+    height:28px!important;
+    min-height:28px!important;
+    padding:0!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    font-size:0!important;
+    line-height:1!important;
+}
+.leads-rf.leads-v13.leads-v16 .lv13-actions.lv17-actions > button.lv17-action-detail {
+    display:inline-flex!important;
+    flex:0 0 77px!important;
+    width:77px!important;
+    min-width:77px!important;
+    max-width:77px!important;
+    height:28px!important;
+    min-height:28px!important;
+    padding:0 7px!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:4px!important;
+    font-size:10px!important;
+    font-weight:700!important;
+    line-height:1!important;
+    letter-spacing:0!important;
+    text-overflow:clip!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+}
+.leads-rf.leads-v13.leads-v16 .lv13-actions.lv17-actions > button.lv17-action-detail > span {
+    display:inline!important;
+    flex:0 0 auto!important;
+    font-size:10px!important;
+    line-height:1!important;
+    font-weight:700!important;
+    white-space:nowrap!important;
+}
+.leads-rf.leads-v13.leads-v16 .lv13-actions.lv17-actions > a.lv17-action-hubspot {
+    display:inline-flex!important;
+    flex:0 0 42px!important;
+    width:42px!important;
+    min-width:42px!important;
+    max-width:42px!important;
+    height:28px!important;
+    min-height:28px!important;
+    padding:0!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:2px!important;
+    overflow:hidden!important;
+    font-size:9px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+}
+.leads-rf.leads-v13.leads-v16 .lv13-actions.lv17-actions .lv16-hubspot-caption {
+    display:inline!important;
+    font-size:8px!important;
+    line-height:1!important;
+    font-weight:700!important;
+    white-space:nowrap!important;
+}
+.leads-rf.leads-v13.leads-v16 .lv13-actions.lv17-actions svg {
+    display:block!important;
+    flex:0 0 13px!important;
+    width:13px!important;
+    min-width:13px!important;
+    max-width:13px!important;
+    height:13px!important;
+    min-height:13px!important;
+    max-height:13px!important;
+}
+.leads-rf.leads-v13.leads-v16 .lv13-actions.lv17-actions > :is(a,button):is(:hover,:focus-visible) {
+    background:#104666!important;
+    border-color:#326b8c!important;
+    color:#69e3dd!important;
+}
+@media (min-width:981px) and (max-width:1180px) {
+    .leads-rf.leads-v13.leads-v16 .lv13-list-head,
+    .leads-rf.leads-v13.leads-v16 .lv13-lead-line { min-width:1010px!important; }
+    .leads-rf.leads-v13.leads-v16 .lv13-actions.lv17-actions { gap:2px!important; }
+}
+@media (max-width:850px) {
+    .leads-rf.leads-v13.leads-v16 .rf-stage-strip {
+        height:auto!important;
+        min-height:48px!important;
+        flex-direction:column!important;
+        align-items:stretch!important;
+        gap:4px!important;
+    }
+    .leads-rf.leads-v13.leads-v16 .rf-stage-strip-heading {
+        flex:0 0 auto!important;
+        width:100%!important;
+        max-width:100%!important;
+        height:auto!important;
+        border-right:0!important;
+        border-bottom:1px solid #2b597b!important;
+        padding-bottom:5px!important;
+    }
+    .leads-rf.leads-v13.leads-v16 .lv17-stage-clear,
+    .leads-rf.leads-v13.leads-v16 .lv17-stage-clear-slot {align-self:flex-end!important;}
+    .leads-rf.leads-v13.leads-v16 .lv13-actions.lv17-actions {
+        justify-content:flex-start!important;
+        max-width:170px!important;
+    }
+}
+
+/* 3. Separar claramente vencidas (hora passada) das pendências de hoje. */
+.leads-rf.leads-v16 .lv17-due-caption {
+    display:block!important;
+    font-size:10px!important;
+    line-height:1.25!important;
+    font-weight:500!important;
+    color:#98b9d2!important;
+    margin-top:2px!important;
+}
+@media (prefers-reduced-motion:reduce) {
+    .leads-rf.leads-v13.leads-v16 .rf-stage-strip-list > .rf-stage-strip-chip,
+    .leads-rf.leads-v13.leads-v16 .lv13-actions.lv17-actions > :is(a,button) {
+        transition:none!important;
+    }
+}

@@ -24,9 +24,9 @@ it('preserves the original filters and workflows', function (): void {
     $view = file_get_contents(resource_path('views/pages/leads/⚡index.blade.php'));
     $css = file_get_contents(resource_path('css/leads-hubspot-compact-v14.css'));
 
-    expect($view)->toContain('wire:model.live="workStatus"')
+    expect($view)->toContain('wire:model.live="crmSituation"')
         ->toContain('wire:model.live="owner"')
-        ->toContain('wire:model.live="crm"')
+        ->not->toContain('wire:model.live="crm"')
         ->toContain('wire:click="applyHubSpotOnlyView"')
         ->toContain('wire:click="clearFilters"')
         ->toContain('wire:click="exportExcel"')
