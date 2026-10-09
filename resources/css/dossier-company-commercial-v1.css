@@ -1,0 +1,244 @@
+/*
+ * ExportControl Prospector - Dossiê Comercial V1
+ * Escopo: apenas .ec-dossier-page (outras telas não são alteradas).
+ * Layout baseado na referência aprovada: topo compacto, cards, histórico
+ * à esquerda, CRM à direita e seis fatores do ICP no rodapé.
+ */
+.ec-dossier-page {
+    max-width: 1536px;
+    gap: 13px;
+    padding-top: 20px;
+    padding-bottom: 42px;
+}
+
+.ec-dossier-page .ec-dossier-hero {
+    display: grid;
+    grid-template-columns: 60px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    padding: 2px 0 0;
+}
+
+.ec-dossier-page .ec-dossier-company-mark {
+    display: grid;
+    place-items: center;
+    width: 60px;
+    height: 60px;
+    border: 1px solid color-mix(in srgb, var(--ec-primary) 24%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--ec-primary) 12%, var(--ec-surface));
+    color: var(--ec-primary);
+}
+.ec-dossier-company-mark svg { width: 30px; height: 30px; }
+.ec-dossier-page .ec-dossier-title { font-size: clamp(19px, 1.6vw, 25px); }
+.ec-dossier-page .ec-dossier-title-row { margin-top: 5px; }
+.ec-dossier-page .ec-dossier-tabs {
+    position: relative !important;
+    top: auto !important;
+    z-index: 1 !important;
+    box-shadow: none;
+    max-width: 100%;
+}
+
+/* Cabeçalho e pesquisa na mesma faixa */
+.ec-commercial-v2 .ec-commercial-intro-layout {
+    display: grid;
+    grid-template-columns: minmax(245px, .90fr) minmax(0, 2fr);
+    align-items: stretch;
+    overflow: hidden;
+    border: 1px solid var(--ec-border-soft);
+    border-radius: 13px;
+    background: linear-gradient(135deg, var(--ec-surface-soft), var(--ec-surface));
+}
+.ec-commercial-v2 .ec-commercial-intro-layout > .ec-section-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+    padding: 16px 18px;
+}
+.ec-commercial-v2 .ec-commercial-intro-layout .ec-section-title { font-size: 15px; }
+.ec-commercial-v2 .ec-commercial-intro-layout .ec-section-description {
+    font-size: 11px; line-height: 1.45;
+}
+.ec-commercial-v2 .ec-commercial-intro-layout .ec-section-hint {
+    font-size: 10px; line-height: 1.35;
+}
+.ec-commercial-v2 .ec-commercial-intro-layout > div:last-child {
+    margin: 0 !important;
+    border: 0 !important;
+    border-left: 1px solid var(--ec-border-soft) !important;
+    border-radius: 0;
+    background: transparent !important;
+}
+.ec-commercial-v2 .ec-commercial-intro-layout > div:last-child > div {
+    min-height: 100%;
+    padding: 14px 16px;
+}
+
+/* Quatro cards existentes, sem alturas artificiais */
+.ec-commercial-v2 .ec-intelligence-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 12px;
+    margin-top: 12px;
+}
+.ec-commercial-v2 .ec-intelligence-card {
+    min-width: 0;
+    min-height: 0;
+    padding: 15px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--ec-border-soft);
+    background: linear-gradient(145deg, var(--ec-surface-soft), var(--ec-surface));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+}
+.ec-commercial-v2 .ec-intelligence-card:hover { transform: none; }
+.ec-commercial-v2 .ec-intelligence-top { gap: 10px; }
+.ec-commercial-v2 .ec-intelligence-value { margin-top: 10px; font-size: 14px; }
+.ec-commercial-v2 .ec-intelligence-caption { font-size: 11px; line-height: 1.4; }
+.ec-commercial-v2 .ec-score-value { font-size: 27px; }
+.ec-commercial-v2 .ec-intelligence-card :is(button, a) { max-width: 100%; }
+
+/* Histórico à esquerda; CRM e negócios à direita */
+.ec-commercial-v2 .ec-commercial-workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.63fr) minmax(330px, 1fr);
+    gap: 12px;
+    align-items: start;
+    margin-top: 12px;
+}
+.ec-commercial-v2 .ec-commercial-history {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+}
+.ec-commercial-v2 .ec-commercial-crm {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+}
+.ec-commercial-v2 .ec-commercial-extras {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+}
+.ec-commercial-v2 .ec-commercial-workspace:not(:has(.ec-commercial-crm details)) {
+    grid-template-columns: minmax(0, 1fr);
+}
+.ec-commercial-v2 .ec-commercial-workspace:not(:has(.ec-commercial-crm details))
+.ec-commercial-history { grid-column: 1 / -1; }
+
+.ec-commercial-v2 .ec-commercial-history > section,
+.ec-commercial-v2 .ec-commercial-crm > details,
+.ec-commercial-v2 .ec-commercial-icp > details {
+    margin-top: 0 !important;
+    overflow: hidden;
+    border: 1px solid var(--ec-border-soft) !important;
+    border-radius: 12px;
+    background: linear-gradient(145deg, var(--ec-surface-soft), var(--ec-surface)) !important;
+}
+.ec-commercial-v2 .ec-commercial-history > section,
+.ec-commercial-v2 .ec-commercial-crm > details { min-height: 100%; }
+.ec-commercial-v2 .ec-commercial-history > section > div:first-child { padding: 14px 16px; }
+.ec-commercial-v2 .ec-commercial-history .ec-field-label { font-size: 10px; }
+.ec-commercial-v2 .ec-commercial-history .ec-show-more-bar { background: transparent; }
+
+/* CRM: informação legível e negócios empilhados */
+.ec-commercial-v2 .ec-commercial-crm > details > summary,
+.ec-commercial-v2 .ec-commercial-icp > details > summary {
+    padding: 14px 16px;
+    color: var(--ec-text) !important;
+    background: color-mix(in srgb, var(--ec-surface-soft) 80%, transparent);
+    border-bottom: 1px solid var(--ec-border-soft);
+}
+.ec-commercial-v2 .ec-commercial-crm > details > div { padding: 14px 16px; }
+.ec-commercial-v2 .ec-commercial-crm > details > div > .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px;
+}
+.ec-commercial-v2 .ec-commercial-crm .ec-field-label { font-size: 9px; }
+.ec-commercial-v2 .ec-commercial-crm > details > div > div .mt-4.grid {
+    grid-template-columns: minmax(0,1fr) !important;
+    gap: 9px;
+}
+.ec-commercial-v2 .ec-commercial-crm .truncate { white-space: normal; overflow-wrap: anywhere; }
+.ec-commercial-v2 .ec-commercial-crm a { max-width: 100%; }
+
+/* ICP em faixa horizontal, com os 6 critérios preservados */
+.ec-commercial-v2 .ec-commercial-icp { margin-top: 12px; }
+.ec-commercial-v2 .ec-commercial-icp > details > div { padding: 14px 16px; }
+.ec-commercial-v2 .ec-commercial-icp .space-y-3 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px 12px;
+}
+.ec-commercial-v2 .ec-commercial-icp .space-y-3 > div {
+    margin: 0 !important;
+    padding: 10px 12px;
+    grid-template-columns: minmax(105px, .8fr) minmax(0, 1.5fr) auto !important;
+    gap: 8px;
+    border-radius: 8px;
+}
+.ec-commercial-v2 .ec-commercial-icp .space-y-3 > div > div {
+    min-width: 0;
+    font-size: 11px;
+    line-height: 1.45;
+}
+.ec-commercial-v2 .ec-commercial-icp .space-y-3 > div > div:last-child {
+    text-align: right;
+    white-space: nowrap;
+}
+.ec-commercial-v2 .ec-commercial-icp details > summary { list-style: none; }
+.ec-commercial-v2 .ec-commercial-icp details > summary::-webkit-details-marker { display: none; }
+
+@media (max-width: 1350px) {
+    .ec-commercial-v2 .ec-intelligence-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .ec-commercial-v2 .ec-commercial-workspace {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .ec-commercial-v2 .ec-commercial-history,
+    .ec-commercial-v2 .ec-commercial-crm,
+    .ec-commercial-v2 .ec-commercial-extras {
+        grid-column: 1 / -1;
+        grid-row: auto;
+    }
+}
+@media (max-width: 1050px) {
+    .ec-commercial-v2 .ec-commercial-intro-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .ec-commercial-v2 .ec-commercial-intro-layout > div:last-child {
+        border-left: 0 !important;
+        border-top: 1px solid var(--ec-border-soft) !important;
+    }
+    .ec-commercial-v2 .ec-commercial-icp .space-y-3 {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+@media (max-width: 660px) {
+    .ec-dossier-page { padding: 16px 12px 30px; }
+    .ec-dossier-page .ec-dossier-hero {
+        grid-template-columns: 48px minmax(0, 1fr);
+        align-items: center;
+        gap: 10px;
+    }
+    .ec-dossier-page .ec-dossier-company-mark { width: 48px; height: 48px; }
+    .ec-dossier-page .ec-dossier-company-mark svg { width: 26px; height: 26px; }
+    .ec-dossier-page .ec-dossier-hero > a { grid-column: 1 / -1; width: 100%; }
+    .ec-commercial-v2 .ec-intelligence-grid { grid-template-columns: minmax(0, 1fr); }
+    .ec-commercial-v2 .ec-commercial-crm > details > div > .grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+    .ec-commercial-v2 .ec-commercial-icp .space-y-3 > div {
+        grid-template-columns: minmax(0, 1fr) auto !important;
+    }
+    .ec-commercial-v2 .ec-commercial-icp .space-y-3 > div > div:nth-child(2) {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+}

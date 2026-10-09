@@ -6,9 +6,10 @@
         "
         x-cloak
         x-transition.opacity.duration.120ms
-        class="ec-dossier-tab-panel"
+        class="ec-dossier-tab-panel ec-commercial-v2"
     >
 
+        <div class="ec-commercial-intro-layout">
         <div class="ec-section-heading">
 
             <div>
@@ -564,6 +565,8 @@
 
         </div>
 
+
+        </div> {{-- fecha faixa inteligência/pesquisa --}}
 
         @error('exportResearch')
 
@@ -2080,12 +2083,16 @@
 
         </div>
 
+        <div class="ec-commercial-workspace">
+            <div class="ec-commercial-history">
         @include(
             'partials.company-commercial-timeline',
             [
                 'company' => $company,
             ]
         )
+            </div>
+            <div class="ec-commercial-extras">
 
 
         {{-- RESUMO DA PESQUISA DE EXPORTAÇÃO --}}
@@ -2712,6 +2719,8 @@
         @endif
 
 
+            </div> {{-- fim dos extras de exportação --}}
+            <div class="ec-commercial-crm">
         @if ($company->crmCheck)
 
             @php
@@ -2722,7 +2731,7 @@
                     $this->crmReprospecting;
             @endphp
 
-            <details
+            <details open
                 class="
                     mt-4 overflow-hidden rounded-xl
                     border border-white/5
@@ -3320,9 +3329,13 @@
         @endif
 
 
+            </div> {{-- fim do CRM --}}
+        </div> {{-- fim do workspace --}}
+
+        <div class="ec-commercial-icp">
         @if ($company->icpScore)
 
-            <details class="mt-4 overflow-hidden rounded-xl border border-white/5 bg-[var(--ec-surface-soft)]">
+            <details open class="mt-4 overflow-hidden rounded-xl border border-white/5 bg-[var(--ec-surface-soft)]">
 
                 <summary
                     class="
@@ -3472,4 +3485,5 @@
 
         @endif
 
+        </div> {{-- fecha painel ICP --}}
     </section>

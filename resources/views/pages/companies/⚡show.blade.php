@@ -2384,6 +2384,14 @@ new class extends Component
     {{-- CABEÇALHO DA EMPRESA --}}
     <section class="ec-dossier-hero">
 
+        <div class="ec-dossier-company-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round">
+                <path d="M4 21h16M7 21V8l5-4 5 4v13M4 21V11h3M17 11h3v10" />
+                <path d="M10 10h1m2 0h1m-4 4h1m2 0h1m-3 7v-4h2v4" />
+            </svg>
+        </div>
+
         <div class="min-w-0">
 
             <div class="ec-page-kicker">
