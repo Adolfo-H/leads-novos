@@ -30,6 +30,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
 });
 
+// Central de Contatos: apenas gestores autenticados.
+Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function () {
+    Route::livewire('/contatos', 'pages::contacts.index')
+        ->name('contacts.index');
+});
+
 require __DIR__.'/settings.php';
 
 /*

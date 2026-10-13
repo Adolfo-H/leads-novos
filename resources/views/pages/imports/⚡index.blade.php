@@ -14,6 +14,12 @@ new class extends Component
 {
     public string $input = '';
 
+    public string $search = '';
+
+    public string $statusFilter = 'all';
+
+    public int $historyLimit = 3;
+
     #[Url(as: 'batch')]
     public ?int $batchId = null;
 
@@ -49,6 +55,9 @@ new class extends Component
 
         $this->batchId = $batch->id;
 
+        $this->search = '';
+        $this->statusFilter = 'all';
+
         $this->input = '';
 
         unset(
@@ -65,6 +74,9 @@ new class extends Component
             ->findOrFail($batchId);
 
         $this->batchId = $batch->id;
+
+        $this->search = '';
+        $this->statusFilter = 'all';
 
         unset(
             $this->currentBatch,
@@ -128,6 +140,23 @@ new class extends Component
             $this->currentProcessedCount,
             $this->recentBatches,
         );
+    }
+
+    public function showMoreHistory(): void
+    {
+        $this->historyLimit = min(100, max(3, $this->historyLimit) + 10);
+        unset($this->recentBatches);
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->search = mb_substr($this->search, 0, 120);
+        unset($this->currentItems);
+    }
+
+    public function updatedStatusFilter(): void
+    {
+        unset($this->currentItems);
     }
 
     #[Computed]
@@ -302,11 +331,35 @@ new class extends Component
             return collect();
         }
 
+        $allowedStatuses = [
+            'ready', 'queued', 'processing', 'completed',
+            'existing', 'duplicate', 'invalid', 'failed', 'pending',
+        ];
+
         return ImportItem::query()
-            ->where(
-                'import_batch_id',
-                $this->batchId
+            ->where('import_batch_id', $this->batchId)
+            ->when(
+                in_array($this->statusFilter, $allowedStatuses, true),
+                fn ($query) => $query->where('status', $this->statusFilter)
             )
+            ->when(trim($this->search) !== '', function ($query): void {
+                $text = mb_strtolower(trim($this->search));
+                $like = '%'.$text.'%';
+                $normalized = preg_replace('/[^A-Z0-9]/', '', mb_strtoupper($this->search));
+
+                $query->where(function ($inner) use ($like, $normalized): void {
+                    $inner
+                        ->whereRaw('LOWER(raw_cnpj) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(normalized_cnpj) LIKE ?', [$like])
+                        ->orWhereHas('company', function ($companyQuery) use ($like): void {
+                            $companyQuery->whereRaw('LOWER(corporate_name) LIKE ?', [$like]);
+                        });
+
+                    if (is_string($normalized) && $normalized !== '') {
+                        $inner->orWhere('normalized_cnpj', 'like', '%'.$normalized.'%');
+                    }
+                });
+            })
             ->with([
                 'company.establishments',
                 'company.icpScore',
@@ -322,7 +375,7 @@ new class extends Component
     {
         return ImportBatch::query()
             ->latest()
-            ->limit(10)
+            ->limit(max(3, min(100, $this->historyLimit)))
             ->get();
     }
 
@@ -702,8 +755,7 @@ new class extends Component
 };
 ?>
 
-<div class="ecim-page" x-data="{}">
-
+<div class="ecimv2 ecim-page" x-data="{}">
     @php
         $batch = $this->currentBatch;
         $recentBatches = $this->recentBatches;
@@ -716,20 +768,14 @@ new class extends Component
         $completed = (int) ($counts['completed'] ?? 0);
         $failed = (int) ($counts['failed'] ?? 0);
         $pending = (int) ($counts['pending'] ?? 0);
-
-        $busy = $queued + $processing > 0;
-
-        $enrichmentTotal =
-            $ready + $queued + $processing + $completed + $failed;
-
+        $busy = ($queued + $processing) > 0;
+        $enrichmentTotal = $ready + $queued + $processing + $completed + $failed;
         $finished = $completed + $failed;
-
         $progress = $enrichmentTotal > 0
-            ? min(100, (int) round($finished / $enrichmentTotal * 100))
+            ? min(100, (int) round($finished * 100 / $enrichmentTotal))
             : 0;
 
-        $format = static fn ($value): string =>
-            number_format((int) $value, 0, ',', '.');
+        $format = static fn ($value): string => number_format((int) $value, 0, ',', '.');
 
         $batchLabel = match (true) {
             $busy => 'Enriquecendo',
@@ -740,402 +786,244 @@ new class extends Component
             $batch !== null && (int) $batch->total_rows > 0 => 'Validação concluída',
             default => 'Lote sem itens',
         };
-
         $batchTone = match (true) {
             $busy => 'info',
-            $ready > 0 || $pending > 0 || $failed > 0 => 'warning',
+            $ready > 0 || $pending > 0 => 'warning',
+            $failed > 0 => 'danger',
             $completed > 0 => 'success',
             default => 'neutral',
         };
+        $hasMoreHistory = $this->historyLimit < 100 && \App\Models\ImportBatch::query()->count() > $recentBatches->count();
     @endphp
 
-    <header class="ecim-header">
-        <div>
-            <span class="ecim-eyebrow">ENTRADA DE DADOS</span>
+    <header class="ecimv2-page-head">
+        <div class="ecimv2-head-copy">
+            <span class="ecimv2-kicker">ENTRADA DE DADOS</span>
             <h1>Importações</h1>
             <p>Valide os CNPJs, enriqueça os cadastros e acompanhe os resultados.</p>
         </div>
-
-        <div class="ecim-header-actions">
-            <a class="ecim-button ecim-secondary" href="#ecim-history">
-                Histórico
+        <div class="ecimv2-head-actions">
+            <a class="ecimv2-btn ecimv2-btn-outline" href="#ecimv2-history">
+                <x-import-icon name="clock" /> Histórico
             </a>
-
             <button
                 type="button"
-                class="ecim-button ecim-primary"
-                x-on:click="$refs.composer.open = true; $nextTick(() => { $refs.cnpjs.focus(); })"
+                class="ecimv2-btn ecimv2-btn-primary"
+                x-on:click="$refs.composer.open = true; $nextTick(() => { $refs.cnpjInput.focus(); $refs.composer.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); })"
             >
-                <span aria-hidden="true">+</span>
-                Nova importação
+                <x-import-icon name="plus" /> Nova importação
             </button>
         </div>
     </header>
 
     @if (session('success'))
-        <div class="ecim-notice" data-tone="success" role="status">
-            {{ session('success') }}
+        <div class="ecimv2-notice" data-tone="success" role="status">
+            <x-import-icon name="check-circle" /> {{ session('success') }}
         </div>
     @endif
 
-    <div class="ecim-layout">
-
-        <div class="ecim-main">
-
-            <details
-                class="ecim-panel ecim-composer"
-                x-ref="composer"
-                wire:ignore.self
-                wire:key="ecim-composer-{{ $batchId ?? 'new' }}"
-                @if (! $batch) open @endif
-            >
-                <summary class="ecim-composer-toggle">
-                    <span>
+    <div class="ecimv2-columns">
+        <div class="ecimv2-main">
+            <details class="ecimv2-card ecimv2-composer" x-ref="composer" wire:ignore.self open>
+                <summary class="ecimv2-composer-summary">
+                    <span class="ecimv2-heading-icon" data-tone="teal">
+                        <x-import-icon name="file-plus" />
+                    </span>
+                    <span class="ecimv2-composer-heading">
                         <strong>Nova importação</strong>
                         <small>Cole uma lista para validar e criar um lote.</small>
                     </span>
-
-                    <span class="ecim-chevron" aria-hidden="true">⌄</span>
+                    <span class="ecimv2-summary-chevron"><x-import-icon name="chevron-down" /></span>
                 </summary>
 
-                <form wire:submit="process" class="ecim-form" novalidate>
-                    <label for="ecim-input">Lista de CNPJs</label>
-
-                    <p class="ecim-help" id="ecim-input-help">
-                        Separe por linha, vírgula ou ponto e vírgula.
-                        Com ou sem pontuação.
-                    </p>
-
-                    <textarea
-                        id="ecim-input"
-                        x-ref="cnpjs"
-                        wire:model="input"
-                        rows="6"
-                        maxlength="1000000"
-                        spellcheck="false"
-                        autocapitalize="off"
-                        autocomplete="off"
-                        aria-describedby="ecim-input-help{{ $errors->has('input') ? ' ecim-input-error' : '' }}"
-                        aria-invalid="{{ $errors->has('input') ? 'true' : 'false' }}"
-                        wire:loading.attr="disabled"
-                        wire:target="process"
-                        placeholder="11.222.333/0001-81"
-                    ></textarea>
-
-                    @error('input')
-                        <p id="ecim-input-error" class="ecim-error" role="alert">
-                            {{ $message }}
-                        </p>
-                    @enderror
-
-                    <div class="ecim-form-actions">
-                        <span>
-                            Esta etapa valida a lista.
-                            O enriquecimento é iniciado separadamente.
-                        </span>
-
+                <form wire:submit="process" class="ecimv2-entry-form" novalidate>
+                    <label class="ecimv2-sr-only" for="ecimv2-cnpjs">Lista de CNPJs</label>
+                    <div class="ecimv2-entry-zone" data-invalid="{{ $errors->has('input') ? 'true' : 'false' }}">
+                        <div class="ecimv2-upload-icon"><x-import-icon name="cloud-upload" /></div>
+                        <div class="ecimv2-input-column">
+                            <textarea
+                                id="ecimv2-cnpjs"
+                                x-ref="cnpjInput"
+                                wire:model="input"
+                                rows="2"
+                                maxlength="1000000"
+                                spellcheck="false"
+                                autocomplete="off"
+                                autocapitalize="off"
+                                aria-describedby="ecimv2-input-help{{ $errors->has('input') ? ' ecimv2-error' : '' }}"
+                                aria-invalid="{{ $errors->has('input') ? 'true' : 'false' }}"
+                                wire:loading.attr="disabled"
+                                wire:target="process"
+                                placeholder="Cole sua lista de CNPJs aqui"
+                            ></textarea>
+                            <p id="ecimv2-input-help">Separe por linha, vírgula ou ponto e vírgula. Com ou sem pontuação.</p>
+                        </div>
                         <button
                             type="submit"
-                            class="ecim-button ecim-primary"
+                            class="ecimv2-btn ecimv2-btn-primary ecimv2-submit"
                             wire:loading.attr="disabled"
                             wire:target="process,openBatch,queueCurrentBatch,refreshCurrentBatch"
                         >
-                            <span wire:loading.remove wire:target="process">
-                                Processar CNPJs
-                            </span>
-                            <span wire:loading wire:target="process">
-                                Validando...
-                            </span>
+                            <span wire:loading.remove wire:target="process">Processar CNPJs <x-import-icon name="arrow-right" /></span>
+                            <span wire:loading wire:target="process">Validando...</span>
                         </button>
                     </div>
+                    @error('input')
+                        <p id="ecimv2-error" class="ecimv2-input-error" role="alert">{{ $message }}</p>
+                    @enderror
+                    <p class="ecimv2-entry-help">Primeiro os CNPJs são validados. Depois você pode iniciar o enriquecimento dos registros prontos.</p>
                 </form>
             </details>
 
             @if ($batch)
-
-                <section
-                    class="ecim-panel"
-                    wire:key="ecim-result-{{ $batch->id }}"
-                    aria-labelledby="ecim-result-title"
-                >
-                    <header class="ecim-panel-head">
-                        <div>
-                            <span class="ecim-eyebrow">LOTE SELECIONADO</span>
-
-                            <h2 id="ecim-result-title">
-                                Resultado do lote #{{ $batch->id }}
-                            </h2>
-
-                            <p>
-                                {{ $batch->created_at?->format('d/m/Y H:i') ?? 'Data não informada' }}
-                                ·
-                                {{
-                                    $batch->source_type === 'prospecting'
-                                        ? 'Motor de prospecção'
-                                        : (
-                                            $batch->source_type === 'manual'
-                                                ? 'Importação manual'
-                                                : $batch->source_type
-                                        )
-                                }}
-                            </p>
+                <section class="ecimv2-card ecimv2-batch" wire:key="ecimv2-batch-{{ $batch->id }}" aria-labelledby="ecimv2-batch-title">
+                    <header class="ecimv2-batch-heading">
+                        <span class="ecimv2-heading-icon" data-tone="sky"><x-import-icon name="file-text" /></span>
+                        <div class="ecimv2-batch-title-group">
+                            <div class="ecimv2-title-line">
+                                <h2 id="ecimv2-batch-title">Resultado do lote #{{ $batch->id }}</h2>
+                                <time datetime="{{ $batch->created_at?->toIso8601String() }}">{{ $batch->created_at?->format('d/m/Y H:i') ?? 'Sem data' }}</time>
+                                <span class="ecimv2-source-tag">{{ $batch->source_type === 'prospecting' ? 'Prospecção' : ($batch->source_type === 'manual' ? 'Manual' : $batch->source_type) }}</span>
+                            </div>
+                            <span class="ecimv2-kicker ecimv2-result-kicker">LOTE SELECIONADO</span>
                         </div>
-
-                        <span class="ecim-badge" data-tone="{{ $batchTone }}">
+                        <span class="ecimv2-status" data-tone="{{ $batchTone }}">
+                            @if ($batchTone === 'success') <x-import-icon name="check-circle" />
+                            @elseif ($batchTone === 'danger') <x-import-icon name="alert-triangle" />
+                            @else <x-import-icon name="clock" /> @endif
                             {{ $batchLabel }}
                         </span>
                     </header>
 
-                    <dl class="ecim-totals">
+                    <dl class="ecimv2-stat-grid">
                         @foreach ([
-                            ['Total', $batch->total_rows, 'neutral'],
-                            ['Válidos', $batch->valid_rows, 'success'],
-                            ['Já cadastrados', $batch->existing_rows, 'info'],
-                            ['Duplicados', $batch->duplicate_rows, 'warning'],
-                            ['Inválidos', $batch->invalid_rows, 'danger'],
-                        ] as [$label, $value, $tone])
-                            <div data-tone="{{ $tone }}">
-                                <dt>{{ $label }}</dt>
-                                <dd>{{ $format($value) }}</dd>
+                            ['Total', $batch->total_rows, 'sky', 'file-text'],
+                            ['Válidos', $batch->valid_rows, 'teal', 'check-circle'],
+                            ['Já cadastrados', $batch->existing_rows, 'blue', 'user-round'],
+                            ['Duplicados', $batch->duplicate_rows, 'pink', 'copy'],
+                            ['Inválidos', $batch->invalid_rows, 'rose', 'alert-triangle'],
+                        ] as [$label, $value, $tone, $icon])
+                            <div class="ecimv2-stat" data-tone="{{ $tone }}">
+                                <span class="ecimv2-stat-icon"><x-import-icon :name="$icon" /></span>
+                                <div>
+                                    <dt>{{ $label }}</dt>
+                                    <dd>{{ $format($value) }}</dd>
+                                </div>
                             </div>
                         @endforeach
                     </dl>
 
-                    <div
-                        class="ecim-processing"
-                        @if ($busy) wire:poll.2s="refreshCurrentBatch" @endif
-                    >
-                        <div class="ecim-processing-head">
+                    <div class="ecimv2-processing" @if ($busy) wire:poll.2s="refreshCurrentBatch" @endif>
+                        <div class="ecimv2-processing-head">
                             <div>
                                 <h3>Enriquecimento cadastral</h3>
-                                <p>
-                                    Consulta dos dados empresariais,
-                                    perfil ICP e verificação no CRM.
-                                </p>
+                                <p>Consulta dos dados empresariais, perfil ICP e verificação no CRM.</p>
                             </div>
-
-                            <div class="ecim-inline-actions">
+                            <div class="ecimv2-action-row">
                                 <button
                                     type="button"
-                                    class="ecim-button ecim-secondary"
+                                    class="ecimv2-btn ecimv2-btn-outline ecimv2-btn-small"
                                     wire:click="refreshCurrentBatch"
                                     wire:loading.attr="disabled"
-                                    wire:target="process,openBatch,queueCurrentBatch,refreshCurrentBatch"
+                                    wire:target="refreshCurrentBatch,queueCurrentBatch,process,openBatch"
                                 >
-                                    Atualizar
+                                    <x-import-icon name="refresh-cw" /> Atualizar
                                 </button>
-
                                 @if ($ready > 0)
                                     <button
                                         type="button"
-                                        class="ecim-button ecim-primary"
+                                        class="ecimv2-btn ecimv2-btn-primary ecimv2-btn-small"
                                         wire:click="queueCurrentBatch"
                                         wire:loading.attr="disabled"
-                                        wire:target="process,openBatch,queueCurrentBatch,refreshCurrentBatch"
+                                        wire:target="refreshCurrentBatch,queueCurrentBatch,process,openBatch"
                                     >
-                                        <span
-                                            wire:loading.remove
-                                            wire:target="queueCurrentBatch"
-                                        >
-                                            Iniciar enriquecimento ({{ $format($ready) }})
-                                        </span>
-                                        <span
-                                            wire:loading
-                                            wire:target="queueCurrentBatch"
-                                        >
-                                            Enfileirando...
-                                        </span>
+                                        <span wire:loading.remove wire:target="queueCurrentBatch">Iniciar enriquecimento ({{ $format($ready) }})</span>
+                                        <span wire:loading wire:target="queueCurrentBatch">Enfileirando...</span>
                                     </button>
                                 @endif
                             </div>
                         </div>
 
                         @if ($enrichmentTotal > 0)
-                            <div class="ecim-progress-text">
-                                <span>
-                                    {{ $format($finished) }}
-                                    de
-                                    {{ $format($enrichmentTotal) }}
-                                    finalizados
-                                </span>
-                                <strong>{{ $progress }}%</strong>
-                            </div>
-
-                            <div
-                                class="ecim-progress"
-                                role="progressbar"
-                                aria-label="Progresso do enriquecimento cadastral"
-                                aria-valuemin="0"
-                                aria-valuemax="100"
-                                aria-valuenow="{{ $progress }}"
-                            >
+                            <div class="ecimv2-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $progress }}" aria-label="Progresso do enriquecimento">
                                 <span style="width: {{ $progress }}%"></span>
                             </div>
-
-                            <dl class="ecim-processing-counts">
-                                <div>
-                                    <dt>Aguardando início</dt>
-                                    <dd>{{ $format($ready) }}</dd>
-                                </div>
-                                <div>
-                                    <dt>Na fila</dt>
-                                    <dd>{{ $format($queued) }}</dd>
-                                </div>
-                                <div>
-                                    <dt>Processando</dt>
-                                    <dd>{{ $format($processing) }}</dd>
-                                </div>
-                                <div>
-                                    <dt>Concluídos</dt>
-                                    <dd>{{ $format($completed) }}</dd>
-                                </div>
-                                <div>
-                                    <dt>Falhas</dt>
-                                    <dd class="{{ $failed > 0 ? 'ecim-error' : '' }}">
-                                        {{ $format($failed) }}
-                                    </dd>
-                                </div>
+                            <div class="ecimv2-progress-label"><span>{{ $format($finished) }} de {{ $format($enrichmentTotal) }} finalizados</span><strong>{{ $progress }}%</strong></div>
+                            <dl class="ecimv2-stage-grid">
+                                @foreach ([
+                                    ['Aguardando início', $ready, 'clock', 'neutral'],
+                                    ['Na fila', $queued, 'hourglass', 'neutral'],
+                                    ['Processando', $processing, 'refresh-cw', 'info'],
+                                    ['Concluídos', $completed, 'check-circle', 'success'],
+                                    ['Falhas', $failed, 'alert-triangle', 'danger'],
+                                ] as [$label, $value, $icon, $tone])
+                                    <div class="ecimv2-stage" data-tone="{{ $tone }}">
+                                        <span class="ecimv2-stage-icon"><x-import-icon :name="$icon" /></span>
+                                        <div><dt>{{ $label }}</dt><dd>{{ $format($value) }}</dd></div>
+                                    </div>
+                                @endforeach
                             </dl>
-
-                            @if ($failed > 0)
-                                <p class="ecim-warning">
-                                    O progresso inclui {{ $format($failed) }}
-                                    registro(s) finalizado(s) com falha.
-                                    Confira os alertas abaixo.
-                                </p>
-                            @endif
                         @else
-                            <p class="ecim-help">
-                                Nenhum registro disponível para enriquecimento neste lote.
-                            </p>
+                            <p class="ecimv2-empty-small">Nenhum registro disponível para enriquecimento neste lote.</p>
                         @endif
-
+                        @if ($failed > 0)
+                            <p class="ecimv2-inline-warning"><x-import-icon name="alert-triangle" /> {{ $format($failed) }} registro(s) finalizaram com falha. Consulte os alertas na tabela.</p>
+                        @endif
                         @if ($pending > 0)
-                            <p class="ecim-warning">
-                                {{ $format($pending) }}
-                                registro(s) ainda com status pendente.
-                            </p>
+                            <p class="ecimv2-inline-warning">{{ $format($pending) }} registro(s) ainda aguardam validação.</p>
                         @endif
                     </div>
                 </section>
 
-                @php
-                    $intelligence = $this->currentIntelligenceCounts;
-                @endphp
-
-                <section
-                    class="ecim-panel"
-                    aria-labelledby="ecim-intelligence-title"
-                >
-                    <header class="ecim-panel-head">
-                        <div>
-                            <h2 id="ecim-intelligence-title">
-                                Inteligência comercial do lote
-                            </h2>
-                            <p>
-                                {{
-                                    $busy || $ready > 0 || $pending > 0
-                                        ? 'Resultados parciais, conforme o processamento avança.'
-                                        : 'Classificações disponíveis nos registros vinculados às empresas.'
-                                }}
-                            </p>
+                <section class="ecimv2-card ecimv2-list-card" aria-labelledby="ecimv2-items-title" wire:key="ecimv2-items-{{ $batch->id }}">
+                    <header class="ecimv2-list-head">
+                        <span class="ecimv2-heading-icon" data-tone="teal"><x-import-icon name="list-checks" /></span>
+                        <div class="ecimv2-list-copy">
+                            <h2 id="ecimv2-items-title">CNPJs do lote</h2>
+                            <p>Exibindo {{ $format($items->count()) }} registro(s). A busca consulta o lote inteiro; são exibidos até 100 resultados.</p>
                         </div>
-                    </header>
-
-                    <div class="ecim-intelligence-grid">
-                        <section aria-label="Situação no CRM">
-                            <h3>Situação no CRM</h3>
-
-                            <dl class="ecim-breakdown">
-                                @foreach ([
-                                    'clients' => 'Clientes',
-                                    'opportunities' => 'Oportunidades',
-                                    'prospected' => 'Prospectados',
-                                    'known' => 'Conhecidos',
-                                    'new' => 'Novos',
-                                ] as $key => $label)
-                                    <div>
-                                        <dt>{{ $label }}</dt>
-                                        <dd>{{ $format($intelligence[$key] ?? 0) }}</dd>
-                                    </div>
-                                @endforeach
-                            </dl>
-                        </section>
-
-                        <section aria-label="Perfil ICP">
-                            <h3>Perfil ICP</h3>
-
-                            <dl class="ecim-breakdown">
-                                @foreach ([
-                                    'icp_a' => 'ICP A',
-                                    'icp_b' => 'ICP B',
-                                    'icp_c' => 'ICP C',
-                                    'icp_d' => 'ICP D',
-                                ] as $key => $label)
-                                    <div>
-                                        <dt>{{ $label }}</dt>
-                                        <dd>{{ $format($intelligence[$key] ?? 0) }}</dd>
-                                    </div>
-                                @endforeach
-                            </dl>
-                        </section>
-                    </div>
-
-                    <p class="ecim-footnote">
-                        Contagem por registro do lote.
-                        Elegibilidade para pesquisa não significa exportação
-                        comprovada nem pesquisa concluída.
-                    </p>
-                </section>
-
-                <section
-                    class="ecim-panel"
-                    aria-labelledby="ecim-items-title"
-                    wire:key="ecim-items-{{ $batch->id }}"
-                >
-                    <header class="ecim-panel-head">
-                        <div>
-                            <h2 id="ecim-items-title">CNPJs do lote</h2>
-                            <p>
-                                Exibindo {{ $format($items->count()) }}
-                                de {{ $format($batch->total_rows) }} registros.
-                                Limite atual: 100 registros.
-                            </p>
+                        <div class="ecimv2-filters">
+                            <label class="ecimv2-search-wrap">
+                                <x-import-icon name="search" />
+                                <span class="ecimv2-sr-only">Buscar no lote</span>
+                                <input type="search" wire:model.live.debounce.350ms="search" placeholder="Buscar no lote..." autocomplete="off" />
+                            </label>
+                            <label class="ecimv2-select-wrap">
+                                <span class="ecimv2-sr-only">Filtrar por status de processamento</span>
+                                <select wire:model.live="statusFilter">
+                                    <option value="all">Todos os status</option>
+                                    <option value="ready">Pronto</option>
+                                    <option value="queued">Na fila</option>
+                                    <option value="processing">Processando</option>
+                                    <option value="completed">Concluído</option>
+                                    <option value="existing">Já cadastrado</option>
+                                    <option value="duplicate">Duplicado</option>
+                                    <option value="invalid">Inválido</option>
+                                    <option value="failed">Falhou</option>
+                                    <option value="pending">Pendente</option>
+                                </select>
+                                <x-import-icon name="chevron-down" />
+                            </label>
                         </div>
-
-                        <span
-                            class="ecim-live-status"
-                            wire:loading.delay
-                            wire:target="openBatch,queueCurrentBatch"
-                        >
-                            Atualizando...
-                        </span>
                     </header>
 
                     @if ((int) $batch->total_rows > 100)
-                        <p class="ecim-limit-note">
-                            A lista exibe os primeiros 100 registros.
-                            Os indicadores acima consideram o lote inteiro.
-                        </p>
+                        <p class="ecimv2-limit-info">O lote tem {{ $format($batch->total_rows) }} registros. Os indicadores consideram todos; a tabela mostra até 100 por pesquisa.</p>
                     @endif
-
-                    <div class="ecim-table-scroll">
-                        <table class="ecim-table">
-                            <caption class="ecim-sr">
-                                Empresas, classificação comercial e alertas do lote selecionado
-                            </caption>
-
+                    <div class="ecimv2-table-scroll">
+                        <table class="ecimv2-table">
+                            <caption class="ecimv2-sr-only">Empresas do lote, indicadores, estado de processamento e alertas</caption>
                             <thead>
                                 <tr>
-                                    <th scope="col">Empresa / CNPJ</th>
-                                    <th scope="col">Unidades</th>
-                                    <th scope="col">ICP</th>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Empresa</th>
+                                    <th scope="col">CNPJ</th>
+                                    <th scope="col">Status ICP</th>
                                     <th scope="col">CRM</th>
                                     <th scope="col">Processamento</th>
-                                    <th scope="col">Alertas</th>
+                                    <th scope="col">Ações e alertas</th>
                                 </tr>
                             </thead>
-
                             <tbody>
                                 @forelse ($items as $item)
                                     @php
@@ -1144,12 +1032,9 @@ new class extends Component
                                         $crm = $company?->crmCheck;
                                         $alerts = $this->itemAlerts($item);
                                         $cnpj = $item->normalized_cnpj;
-
-                                        $displayCnpj =
-                                            $cnpj && \App\Support\Cnpj::isWellFormed($cnpj)
-                                                ? \App\Support\Cnpj::format($cnpj)
-                                                : (string) $item->raw_cnpj;
-
+                                        $displayCnpj = $cnpj && \App\Support\Cnpj::isWellFormed($cnpj)
+                                            ? \App\Support\Cnpj::format($cnpj)
+                                            : (string) $item->raw_cnpj;
                                         $itemTone = match ((string) $item->status) {
                                             'completed' => 'success',
                                             'processing', 'queued' => 'info',
@@ -1157,14 +1042,12 @@ new class extends Component
                                             'ready', 'pending', 'duplicate' => 'warning',
                                             default => 'neutral',
                                         };
-
                                         $crmTone = match ($crm?->status) {
                                             'client' => 'success',
                                             'opportunity' => 'warning',
                                             'prospected' => 'info',
                                             default => 'neutral',
                                         };
-
                                         $icpTone = match ($icp?->grade) {
                                             'A' => 'success',
                                             'B' => 'info',
@@ -1173,248 +1056,160 @@ new class extends Component
                                             default => 'neutral',
                                         };
                                     @endphp
-
-                                    <tr wire:key="ecim-item-{{ $item->id }}">
-                                        <td class="ecim-company-cell">
-                                            <span class="ecim-row-number">
-                                                Linha {{ $item->row_number }}
-                                            </span>
-
+                                    <tr wire:key="ecimv2-item-{{ $item->id }}">
+                                        <td data-label="Linha" class="ecimv2-index">{{ $item->row_number }}</td>
+                                        <td data-label="Empresa" class="ecimv2-company-name" title="{{ $company?->corporate_name ?: 'Sem empresa vinculada' }}">
                                             @if ($company)
-                                                <a
-                                                    class="ecim-company-name"
-                                                    href="{{ route('companies.show', $company) }}"
-                                                    wire:navigate
-                                                >
-                                                    {{ $company->corporate_name }}
-                                                </a>
-
-                                                <span class="ecim-cnpj">
-                                                    {{ $displayCnpj }}
-                                                </span>
+                                                <a href="{{ route('companies.show', $company) }}" wire:navigate>{{ $company->corporate_name }}</a>
                                             @else
-                                                <strong class="ecim-cnpj">
-                                                    {{ $displayCnpj }}
-                                                </strong>
-
-                                                <span class="ecim-muted">
-                                                    Sem cadastro vinculado
-                                                </span>
+                                                <span>Sem cadastro vinculado</span>
                                             @endif
                                         </td>
-
-                                        <td data-label="Unidades">
-                                            <strong>
-                                                {{
-                                                    $company
-                                                        ? $format($company->establishments->count())
-                                                        : '—'
-                                                }}
-                                            </strong>
-                                        </td>
-
-                                        <td data-label="ICP">
+                                        <td data-label="CNPJ" class="ecimv2-cnpj">{{ $displayCnpj }}</td>
+                                        <td data-label="Status ICP">
                                             @if ($icp)
-                                                <span
-                                                    class="ecim-badge"
-                                                    data-tone="{{ $icpTone }}"
-                                                >
-                                                    {{ $icp->grade }}
-                                                    · {{ $icp->score }}/100
-                                                </span>
+                                                <span class="ecimv2-pill" data-tone="{{ $icpTone }}"><strong>{{ $icp->grade }}</strong>&nbsp;{{ $icp->score }}/100</span>
                                             @else
-                                                <span class="ecim-muted">
-                                                    Não calculado
-                                                </span>
+                                                <span class="ecimv2-muted">Não calculado</span>
                                             @endif
                                         </td>
-
                                         <td data-label="CRM">
-                                            <span
-                                                class="ecim-badge"
-                                                data-tone="{{ $crmTone }}"
-                                            >
-                                                {{ $this->crmStatusLabel($crm?->status) }}
-                                            </span>
-
-                                            @if ((bool) data_get($crm?->metadata, 'crm_conflict', false))
-                                                <span class="ecim-warning">
-                                                    Divergência CRM
-                                                </span>
-                                            @endif
+                                            <span class="ecimv2-pill" data-tone="{{ $crmTone }}">{{ $this->crmStatusLabel($crm?->status) }}</span>
                                         </td>
-
-                                        <td data-label="Processamento">
-                                            <span
-                                                class="ecim-badge"
-                                                data-tone="{{ $itemTone }}"
-                                            >
-                                                {{ $this->statusLabel((string) $item->status) }}
-                                            </span>
-
+                                        <td data-label="Processamento"><span class="ecimv2-pill" data-tone="{{ $itemTone }}">{{ $this->statusLabel((string) $item->status) }}</span></td>
+                                        <td data-label="Ações" class="ecimv2-actions-cell">
                                             @if ($company)
-                                                <a
-                                                    class="ecim-dossier"
-                                                    href="{{ route('companies.show', $company) }}"
-                                                    wire:navigate
-                                                    aria-label="Abrir dossiê de {{ $company->corporate_name }}"
-                                                >
-                                                    Abrir dossiê ↗
+                                                <a class="ecimv2-dossier-link" href="{{ route('companies.show', $company) }}" wire:navigate title="Abrir dossiê e inteligência comercial da empresa">
+                                                    <x-import-icon name="search" /> Abrir dossiê <x-import-icon name="arrow-right" />
                                                 </a>
+                                            @else
+                                                <span class="ecimv2-muted">Aguardando cadastro</span>
+                                            @endif
+                                            @if (count($alerts) > 0)
+                                                <details class="ecimv2-alerts" wire:ignore.self>
+                                                    <summary>Alertas ({{ count($alerts) }}) <x-import-icon name="chevron-down" /></summary>
+                                                    <div class="ecimv2-alert-list">
+                                                        @foreach ($alerts as $alert)
+                                                            <section class="ecimv2-alert" data-tone="{{ $alert['type'] }}">
+                                                                <strong>{{ $alert['label'] }}</strong>
+                                                                <p>{{ $alert['detail'] ?: 'Sem detalhes adicionais.' }}</p>
+                                                            </section>
+                                                        @endforeach
+                                                    </div>
+                                                </details>
+                                            @else
+                                                <span class="ecimv2-muted ecimv2-no-alerts">Sem alertas</span>
                                             @endif
                                         </td>
-
-                                        <td class="ecim-alerts-cell" data-label="Alertas">
-                                            @forelse ($alerts as $alert)
-                                                <details
-                                                    wire:ignore.self
-                                                    class="ecim-item-alert"
-                                                    data-tone="{{ $alert['type'] }}"
-                                                    wire:key="ecim-alert-{{ $item->id }}-{{ md5($alert['type'] . '|' . $alert['label']) }}"
-                                                    @if (in_array($alert['type'], ['danger', 'warning'], true)) open @endif
-                                                >
-                                                    <summary>{{ $alert['label'] }}</summary>
-                                                    <p>
-                                                        {{ $alert['detail'] ?: 'Sem detalhes adicionais.' }}
-                                                    </p>
-                                                </details>
-                                            @empty
-                                                <span class="ecim-muted">
-                                                    Sem alertas
-                                                </span>
-                                            @endforelse
-                                        </td>
                                     </tr>
-
                                 @empty
-                                    <tr>
-                                        <td colspan="6" class="ecim-empty">
-                                            <strong>Nenhum registro neste lote.</strong>
-                                        </td>
-                                    </tr>
+                                    <tr><td colspan="7" class="ecimv2-empty-table">Nenhum CNPJ encontrado para os filtros selecionados.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
-
-                    <footer class="ecim-table-footer">
-                        Os nomes das empresas abrem seus dossiês.
-                        Clique em um alerta para ver os detalhes.
-                    </footer>
+                    <footer class="ecimv2-table-footer">Acesse o dossiê para consultar os dados e as evidências disponíveis. Os alertas explicam falhas, bloqueios ou informações pendentes.</footer>
                 </section>
 
+                @php $intelligence = $this->currentIntelligenceCounts; @endphp
+                <details class="ecimv2-card ecimv2-intelligence">
+                    <summary>
+                        <span class="ecimv2-heading-icon" data-tone="sky"><x-import-icon name="bar-chart" /></span>
+                        <span><strong>Inteligência comercial do lote</strong><small>Detalhamento das classificações do CRM e do perfil ICP</small></span>
+                        <x-import-icon name="chevron-down" />
+                    </summary>
+                    <div class="ecimv2-intelligence-columns">
+                        <section>
+                            <h3>Situação no CRM</h3>
+                            <dl>
+                                @foreach (['clients' => 'Clientes', 'opportunities' => 'Oportunidades', 'prospected' => 'Prospectados', 'known' => 'Conhecidos', 'new' => 'Novos'] as $key => $label)
+                                    <div><dt>{{ $label }}</dt><dd>{{ $format($intelligence[$key] ?? 0) }}</dd></div>
+                                @endforeach
+                            </dl>
+                        </section>
+                        <section>
+                            <h3>Perfil ICP</h3>
+                            <dl>
+                                @foreach (['icp_a' => 'ICP A', 'icp_b' => 'ICP B', 'icp_c' => 'ICP C', 'icp_d' => 'ICP D'] as $key => $label)
+                                    <div><dt>{{ $label }}</dt><dd>{{ $format($intelligence[$key] ?? 0) }}</dd></div>
+                                @endforeach
+                            </dl>
+                        </section>
+                    </div>
+                    <p class="ecimv2-note">São contagens por registro do lote. Elegibilidade para pesquisa de exportação não significa exportação comprovada.</p>
+                </details>
             @else
-
-                <section class="ecim-panel ecim-welcome">
-                    <span class="ecim-welcome-icon" aria-hidden="true">↓</span>
-
-                    <h2>
-                        {{ $batchId ? 'Lote não encontrado' : 'Tudo começa com uma lista de CNPJs' }}
-                    </h2>
-
-                    <p>
-                        {{
-                            $batchId
-                                ? 'Selecione outro lote no histórico ou crie uma nova importação.'
-                                : 'Cole a lista acima para validar os registros. Depois, inicie o enriquecimento dos CNPJs disponíveis.'
-                        }}
-                    </p>
-
-                    <ol class="ecim-steps">
-                        <li>
-                            <span>01</span>
-                            <strong>Validar lista</strong>
-                            <small>
-                                Identificar registros válidos, duplicados e inválidos.
-                            </small>
-                        </li>
-                        <li>
-                            <span>02</span>
-                            <strong>Enriquecer dados</strong>
-                            <small>
-                                Iniciar o processamento dos registros prontos.
-                            </small>
-                        </li>
-                        <li>
-                            <span>03</span>
-                            <strong>Conferir resultados</strong>
-                            <small>
-                                Abrir os dossiês e revisar os alertas.
-                            </small>
-                        </li>
-                    </ol>
+                <section class="ecimv2-card ecimv2-empty-state">
+                    <span class="ecimv2-heading-icon" data-tone="teal"><x-import-icon name="list-checks" /></span>
+                    <h2>{{ $batchId ? 'Lote não encontrado' : 'Tudo começa com uma lista de CNPJs' }}</h2>
+                    <p>{{ $batchId ? 'Escolha um lote no histórico ou crie uma nova importação.' : 'Cole seus CNPJs acima e valide a lista. Em seguida, inicie o enriquecimento dos registros disponíveis.' }}</p>
+                    <div class="ecimv2-start-steps">
+                        <div><strong>01 · Validar</strong><span>CNPJs válidos, duplicados e inválidos</span></div>
+                        <div><strong>02 · Enriquecer</strong><span>Consultar dados e identificar empresas</span></div>
+                        <div><strong>03 · Analisar</strong><span>ICP, CRM, alertas e dossiês</span></div>
+                    </div>
                 </section>
-
             @endif
         </div>
 
-        <aside
-            class="ecim-history ecim-panel"
-            id="ecim-history"
-            aria-labelledby="ecim-history-title"
-        >
-            <header class="ecim-panel-head">
-                <div>
-                    <h2 id="ecim-history-title">Importações recentes</h2>
-                    <p>Últimos {{ $recentBatches->count() }} lotes da base.</p>
+        <aside class="ecimv2-side">
+            <section class="ecimv2-card ecimv2-history" id="ecimv2-history" aria-labelledby="ecimv2-history-title">
+                <header>
+                    <h2 id="ecimv2-history-title">Importações recentes</h2>
+                    <p>Últimos lotes da base.</p>
+                </header>
+                <div class="ecimv2-history-items">
+                    @forelse ($recentBatches as $recent)
+                        @php
+                            $recentTone = match ((string) $recent->status) {
+                                'completed' => 'success',
+                                'processing', 'queued' => 'info',
+                                'failed' => 'danger',
+                                default => 'neutral',
+                            };
+                        @endphp
+                        <button
+                            class="ecimv2-history-row"
+                            type="button"
+                            wire:click="openBatch({{ $recent->id }})"
+                            wire:loading.attr="disabled"
+                            wire:target="process,openBatch,queueCurrentBatch,refreshCurrentBatch"
+                            wire:key="ecimv2-history-{{ $recent->id }}"
+                            aria-current="{{ (int) $batchId === (int) $recent->id ? 'true' : 'false' }}"
+                        >
+                            <span class="ecimv2-history-top"><strong>Lote #{{ $recent->id }}</strong><span>{{ $format($recent->total_rows) }} CNPJs</span></span>
+                            <time datetime="{{ $recent->created_at?->toIso8601String() }}">{{ $recent->created_at?->format('d/m/Y H:i') ?? 'Sem data' }}</time>
+                            <span class="ecimv2-history-bottom"><span class="ecimv2-pill" data-tone="{{ $recentTone }}">{{ $this->statusLabel((string) $recent->status) }}</span><span>{{ $recent->source_type === 'prospecting' ? 'Prospecção' : ($recent->source_type === 'manual' ? 'Manual' : $recent->source_type) }}</span></span>
+                            <x-import-icon name="chevron-right" />
+                        </button>
+                    @empty
+                        <p class="ecimv2-history-empty">Ainda não há importações registradas.</p>
+                    @endforelse
                 </div>
-            </header>
+                @if ($hasMoreHistory)
+                    <button type="button" class="ecimv2-more-history" wire:click="showMoreHistory" wire:loading.attr="disabled" wire:target="showMoreHistory">Ver mais lotes <x-import-icon name="arrow-right" /></button>
+                @endif
+            </section>
 
-            <div class="ecim-history-list">
-                @forelse ($recentBatches as $recent)
-                    @php
-                        $recentTone = match ((string) $recent->status) {
-                            'completed' => 'success',
-                            'processing', 'queued' => 'info',
-                            'failed' => 'danger',
-                            default => 'neutral',
-                        };
-                    @endphp
+            <section class="ecimv2-card ecimv2-help-card" aria-labelledby="ecimv2-tips-title">
+                <h2 id="ecimv2-tips-title"><span class="ecimv2-bulb"><x-import-icon name="lightbulb" /></span> Dicas de importação</h2>
+                <ul>
+                    <li><x-import-icon name="check-circle" /><span>Aceita CNPJs com ou sem pontuação.</span></li>
+                    <li><x-import-icon name="check-circle" /><span>Separe por linha, vírgula ou ponto e vírgula.</span></li>
+                    <li><x-import-icon name="check-circle" /><span>O enriquecimento é iniciado depois da validação.</span></li>
+                    <li><x-import-icon name="check-circle" /><span>Acompanhe os status enquanto a fila processa.</span></li>
+                    <li><x-import-icon name="check-circle" /><span>Após a conclusão, acesse o dossiê da empresa.</span></li>
+                </ul>
+            </section>
 
-                    <button
-                        type="button"
-                        wire:click="openBatch({{ $recent->id }})"
-                        wire:loading.attr="disabled"
-                        wire:target="process,openBatch,queueCurrentBatch,refreshCurrentBatch"
-                        wire:key="ecim-history-{{ $recent->id }}"
-                        class="ecim-history-item"
-                        aria-current="{{ (int) $batchId === (int) $recent->id ? 'true' : 'false' }}"
-                    >
-                        <span class="ecim-history-top">
-                            <strong>Lote #{{ $recent->id }}</strong>
-                            <span>{{ $format($recent->total_rows) }} CNPJs</span>
-                        </span>
-
-                        <time datetime="{{ $recent->created_at?->toIso8601String() }}">
-                            {{ $recent->created_at?->format('d/m/Y H:i') ?? 'Data não informada' }}
-                        </time>
-
-                        <span class="ecim-history-bottom">
-                            <span class="ecim-badge" data-tone="{{ $recentTone }}">
-                                {{ $this->statusLabel((string) $recent->status) }}
-                            </span>
-
-                            <span>
-                                {{
-                                    $recent->source_type === 'prospecting'
-                                        ? 'Prospecção'
-                                        : (
-                                            $recent->source_type === 'manual'
-                                                ? 'Manual'
-                                                : $recent->source_type
-                                        )
-                                }}
-                            </span>
-                        </span>
-                    </button>
-
-                @empty
-                    <p class="ecim-history-empty">
-                        Nenhuma importação realizada.
-                    </p>
-                @endforelse
-            </div>
+            <section class="ecimv2-card ecimv2-help-card ecimv2-limit-card" aria-labelledby="ecimv2-limits-title">
+                <h2 id="ecimv2-limits-title"><span class="ecimv2-info"><x-import-icon name="info" /></span> Limites e informações</h2>
+                <ul>
+                    <li><x-import-icon name="plus" /><span>A tabela exibe até 100 registros por busca.</span></li>
+                    <li><x-import-icon name="plus" /><span>Listas grandes podem levar mais tempo para processar.</span></li>
+                    <li><x-import-icon name="plus" /><span>Em caso de falha, confira os alertas e tente novamente.</span></li>
+                </ul>
+            </section>
         </aside>
-
     </div>
 </div>

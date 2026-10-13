@@ -45,6 +45,8 @@ new class extends Component
 
     public string $roleError = '';
 
+    public string $queueSearch = '';
+
     /**
      * @return Collection<int, User>
      */
@@ -122,6 +124,24 @@ new class extends Component
         $this->assertCommercialManager();
 
         $this->distributionSellerIds = [];
+    }
+
+    public function openLeadQueue(): void
+    {
+        $this->assertCommercialManager();
+
+        $term = trim($this->queueSearch);
+
+        $params = [];
+
+        if ($term !== '') {
+            $params['search'] = $term;
+        }
+
+        $this->redirect(
+            route('leads.index', $params),
+            navigate: true
+        );
     }
 
     public function autoDistribute(
@@ -290,7 +310,7 @@ new class extends Component
 };
 ?>
 
-<div class="ecgm-page" wire:poll.visible.30s="$refresh">
+<div class="ecgm-page ecgm-v2" wire:poll.visible.30s="$refresh">
 
     <div
         class="ecgm-page-loading"
@@ -473,7 +493,14 @@ new class extends Component
                 OPERAÇÃO COMERCIAL
             </span>
 
-            <h1>Gestão Comercial</h1>
+            <div class="ecgm-v2-title">
+                <span class="ecgm-v2-title-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 20V12h4v8M10 20V4h4v16M16 20V8h4v12M2 20h20" />
+                    </svg>
+                </span>
+                <h1>Gestão Comercial</h1>
+            </div>
 
             <p>
                 Acompanhe a equipe, priorize os retornos
@@ -490,38 +517,61 @@ new class extends Component
         </a>
     </header>
 
-    <section
-        class="ecgm-metrics"
-        aria-label="Indicadores da operação"
-    >
+<section class="ecgm-metrics" aria-label="Indicadores da operação">
         @foreach ($metrics as [$key, $label, $caption, $tone, $filters])
             @if ($filters !== null)
-                <a
-                    class="ecgm-metric"
-                    data-tone="{{ $tone }}"
-                    href="{{ route('leads.index', $filters) }}"
-                    wire:navigate
-                >
-                    <span>{{ $label }}</span>
-                    <strong>{{ $number($summary[$key]) }}</strong>
-                    <small>{{ $caption }}</small>
+                <a class="ecgm-metric" data-tone="{{ $tone }}"
+                   href="{{ route('leads.index', $filters) }}" wire:navigate>
+                    <span class="ecgm-v2-metric-icon" aria-hidden="true">
+                        @include('partials.commercial-management-icon', ['name' => $key])
+                    </span>
+                    <span class="ecgm-v2-metric-body">
+                        <span class="ecgm-v2-metric-label">{{ $label }}</span>
+                        <strong>{{ $number($summary[$key]) }}</strong>
+                        <small>{{ $caption }}</small>
+                    </span>
+                    <span class="ecgm-v2-metric-arrow" aria-hidden="true">›</span>
                 </a>
             @else
-                <div
-                    class="ecgm-metric"
-                    data-tone="{{ $tone }}"
-                >
-                    <span>{{ $label }}</span>
-                    <strong>{{ $number($summary[$key]) }}</strong>
-                    <small>{{ $caption }}</small>
+                <div class="ecgm-metric" data-tone="{{ $tone }}">
+                    <span class="ecgm-v2-metric-icon" aria-hidden="true">
+                        @include('partials.commercial-management-icon', ['name' => $key])
+                    </span>
+                    <span class="ecgm-v2-metric-body">
+                        <span class="ecgm-v2-metric-label">{{ $label }}</span>
+                        <strong>{{ $number($summary[$key]) }}</strong>
+                        <small>{{ $caption }}</small>
+                    </span>
                 </div>
             @endif
         @endforeach
     </section>
 
-    @include(
-        'partials.commercial-attention-queue'
-    )
+    {{-- A fila continua acessível, mas não ocupa toda a tela ao entrar na Gestão. --}}
+    <details class="ecgm-v2-attention-drawer">
+        <summary>
+            <span class="ecgm-v2-attention-intro">
+                <span class="ecgm-v2-attention-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3 2.8 19a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L12 3Z" />
+                        <path d="M12 9v5m0 3h.01" />
+                    </svg>
+                </span>
+                <span>
+                    <strong>{{ $number($summary['attention_total']) }} pendência(s) exigem atenção</strong>
+                    <small>Fila gerencial: {{ count($attentionQueue) }} empresas prioritárias exibidas</small>
+                </span>
+            </span>
+            <span class="ecgm-v2-attention-cta">
+                Ver prioridades
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" />
+                </svg>
+            </span>
+        </summary>
+
+        @include('partials.commercial-attention-queue')
+    </details>
 
 
     <section
@@ -607,7 +657,9 @@ new class extends Component
 
                     <div class="ecgm-seller-card-head">
 
-                        <div>
+                        <div class="ecgm-v2-seller-identity">
+                            <span class="ecgm-v2-avatar" aria-hidden="true">{{ \Illuminate\Support\Str::initials((string) $seller['name'], true) }}</span>
+                            <div>
 
                             <strong>
                                 {{ $seller['name'] }}
@@ -624,6 +676,7 @@ new class extends Component
                                 na carteira
                             </span>
 
+                            </div>
                         </div>
 
                         @if (
@@ -818,6 +871,7 @@ new class extends Component
                         @foreach ($columns as [$key, $label, $filters])
                             <th scope="col">{{ $label }}</th>
                         @endforeach
+                        <th scope="col" class="ecgm-v2-actions-col">Ações</th>
                     </tr>
                 </thead>
 
@@ -825,6 +879,9 @@ new class extends Component
                     @forelse ($sellers as $seller)
                         <tr wire:key="ecgm-seller-{{ $seller['user_id'] }}">
                             <th scope="row">
+                                <div class="ecgm-v2-table-user">
+                                    <span class="ecgm-v2-avatar" aria-hidden="true">{{ \Illuminate\Support\Str::initials((string) $seller['name'], true) }}</span>
+                                    <div>
                                 <a
                                     href="{{
                                         route(
@@ -840,6 +897,8 @@ new class extends Component
                                 </a>
 
                                 <small>{{ $seller['email'] }}</small>
+                                    </div>
+                                </div>
                             </th>
 
                             @foreach ($columns as [$key, $label, $filters])
@@ -869,10 +928,17 @@ new class extends Component
                                     </a>
                                 </td>
                             @endforeach
+                            <td data-label="Ações" class="ecgm-v2-table-actions">
+                                <a class="ecgm-v2-table-action"
+                                   href="{{ route('leads.index', ['owner' => (string) $seller['user_id']]) }}"
+                                   wire:navigate>
+                                    Ver fila <span aria-hidden="true">→</span>
+                                </a>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="ecgm-empty">
+                            <td colspan="9" class="ecgm-empty">
                                 Nenhuma carteira atribuída.
                             </td>
                         </tr>
@@ -1032,6 +1098,7 @@ new class extends Component
                                 wire:model.live="distributionSellerIds"
                             >
 
+                            <span class="ecgm-v2-avatar ecgm-v2-participant-avatar" aria-hidden="true">{{ \Illuminate\Support\Str::initials((string) $participant->name, true) }}</span>
                             <span>
                                 <strong>{{ $participant->name }}</strong>
                                 <small>{{ $participant->email }}</small>
@@ -1162,9 +1229,12 @@ new class extends Component
                             class="ecgm-role-row"
                             wire:key="ecgm-role-{{ $commercialUser->id }}-{{ $commercialUser->commercial_role }}"
                         >
-                            <div>
-                                <strong>{{ $commercialUser->name }}</strong>
-                                <small>{{ $commercialUser->email }}</small>
+                            <div class="ecgm-v2-role-identity">
+                                <span class="ecgm-v2-avatar" aria-hidden="true">{{ \Illuminate\Support\Str::initials((string) $commercialUser->name, true) }}</span>
+                                <span>
+                                    <strong>{{ $commercialUser->name }}</strong>
+                                    <small>{{ $commercialUser->email }}</small>
+                                </span>
                             </div>
 
                             <div

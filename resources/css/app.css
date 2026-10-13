@@ -1,5 +1,7 @@
 @import './final-workspaces.css';
 @import './imports-workspace.css';
+@import './contacts-workspace.css';
+@import './contacts-ux-v2.css';
 @import './company-list-workspace.css';
 @import './company-create-workspace.css';
 @import './company-dossier.css';
@@ -8,12 +10,15 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
 @import './prospecting-workspace.css';
+@import './prospecting-workspace-v2.css';
 @import './leads-workspace.css';
 @import './commercial-management.css';
 @import './app-shell-v2.css';
 @import './dashboard-strategic-v5.css';
 @import './dashboard-my-deals-v6.css';
 @import './dashboard-map-v7.css';
+@import './company-list-redesign-v26.css';
+@import './commercial-management-v2.css';
 
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -18041,3 +18046,4 @@ body:not(.dark)
 @import './dashboard-v25.css';
 @import './dashboard-v26.css';
 @import './dossier-company-commercial-v1.css';
+@import './imports-screen-v2.css';

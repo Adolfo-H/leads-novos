@@ -31,6 +31,7 @@ new class extends Component
 {
     use WithPagination;
 
+    #[Url]
     public string $search = '';
 
     public string $priority = '';

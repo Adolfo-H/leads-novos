@@ -1,0 +1,168 @@
+/* Central de Contatos | ExportControl. Escopo exclusivo .ecc-page. */
+.ecc-page {
+  --ecc-bg:#061b30; --ecc-card:#092743; --ecc-deep:#051b30; --ecc-surface:#0d3150;
+  --ecc-line:#17496c; --ecc-line-soft:#123b56; --ecc-text:#f0f7ff;
+  --ecc-muted:#91b6d0; --ecc-accent:#24d7c6; --ecc-accent-soft:#0e4c50;
+  --ecc-blue:#70bfff; --ecc-danger:#ff8793; --ecc-good:#52ebbf;
+  width:100%; max-width:1810px; margin:0 auto; padding:18px clamp(12px,2vw,30px) 44px;
+  color:var(--ecc-text); font-size:13px; line-height:1.48; min-width:0;
+}
+.ecc-page *, .ecc-page *::before, .ecc-page *::after {box-sizing:border-box}
+.ecc-page [x-cloak] {display:none!important}
+.ecc-page :is(h1,h2,h3,p) {margin:0}
+.ecc-page :is(input,select,button,textarea) {font:inherit}
+.ecc-page button {cursor:pointer}
+.ecc-page button:disabled {opacity:.44;cursor:not-allowed}
+.ecc-page :is(button,input,textarea,select,a,summary):focus-visible {outline:2px solid var(--ecc-accent); outline-offset:3px}
+.ecc-page a {text-decoration:none;color:var(--ecc-blue)}
+.ecc-page a:hover {color:var(--ecc-accent)}
+.ecc-page .ecc-sr {position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden;white-space:nowrap}
+.ecc-page .ecc-header {display:flex; align-items:center; justify-content:space-between; gap:16px; padding:8px 0 17px}
+.ecc-page .ecc-eyebrow {font-size:10px; color:var(--ecc-accent);letter-spacing:.13em;font-weight:700}
+.ecc-page h1 {font-size:clamp(26px,2.2vw,33px);font-weight:750;line-height:1.2;letter-spacing:-.045em;margin:4px 0 8px}
+.ecc-page .ecc-header p {font-size:13px;color:var(--ecc-muted);max-width:700px}
+.ecc-page .ecc-actions {display:flex;gap:9px;flex-wrap:wrap}
+.ecc-page .ecc-btn {border-radius:9px;border:1px solid var(--ecc-line);background:#0b2b47;color:var(--ecc-text);padding:10px 14px;min-height:39px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:650;font-size:12px;white-space:nowrap}
+.ecc-page .ecc-btn:hover {background:#103958;border-color:#2c8099}
+.ecc-page .ecc-btn-primary {background:linear-gradient(115deg,#23cfc1,#45ead6);border-color:transparent;color:#032833}
+.ecc-page .ecc-btn-primary:hover {background:#8af0e2;color:#032833}
+.ecc-page .ecc-btn-ghost {background:transparent;border-color:#226082;color:#cae5f5}
+.ecc-page .ecc-btn-outline {background:transparent;border-color:#226b8a}
+.ecc-page .ecc-btn-small {min-height:32px;padding:5px 9px;font-size:11px}
+.ecc-page .ecc-btn-full {width:100%;margin-top:13px}
+.ecc-page .ecc-topline {display:flex;align-items:center;gap:8px 15px;flex-wrap:wrap;background:#07223b;border:1px solid var(--ecc-line-soft);padding:10px 15px;border-radius:10px;margin-bottom:14px;color:var(--ecc-muted);font-size:11px}
+.ecc-page .ecc-topline strong {color:var(--ecc-text);font-size:13px}
+.ecc-page .ecc-source-help {margin-left:auto;position:relative}
+.ecc-page .ecc-source-help summary {color:var(--ecc-accent);cursor:pointer;font-weight:650}
+.ecc-page .ecc-source-help p {position:absolute;right:0;top:25px;z-index:5;width:min(320px,80vw);padding:14px;background:#08233d;color:#bad6e6;border:1px solid var(--ecc-line);box-shadow:0 18px 35px #0009;border-radius:9px}
+.ecc-page .ecc-notice {padding:11px 14px;border:1px solid #167d69;background:#10483f;color:#baffeb;border-radius:9px;margin-bottom:12px}
+.ecc-page .ecc-notice-error {background:#442c3b;color:#ffc2c9;border-color:#9b4b63}
+.ecc-page .ecc-segments {display:flex;gap:8px;flex-wrap:wrap;margin:3px 0 14px}
+.ecc-page .ecc-segments button {border:1px solid var(--ecc-line);border-radius:8px;background:#09263f;color:#aed0e3;min-height:35px;padding:7px 12px;font-size:12px;font-weight:600;white-space:nowrap}
+.ecc-page .ecc-segments button.is-active {background:#0a4a51;color:#73fff0;border-color:var(--ecc-accent);box-shadow:inset 0 -2px 0 var(--ecc-accent)}
+.ecc-page .ecc-segments button:hover {border-color:#36baa9;color:#eaf9ff}
+.ecc-page .ecc-layout {display:grid;grid-template-columns:minmax(245px,300px) minmax(310px,1fr) minmax(288px,335px);gap:13px;align-items:start;min-width:0}
+.ecc-page .ecc-panel {background:linear-gradient(160deg,#0a2a47,#08243d 62%,#09253e);border:1px solid var(--ecc-line);border-radius:13px;min-width:0;overflow:hidden;box-shadow:0 9px 22px #00101f22}
+.ecc-page .ecc-panel-title {padding:16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ecc-line-soft)}
+.ecc-page .ecc-panel-title h2,.ecc-page .ecc-people-heading h2,.ecc-page .ecc-inspector-head h2 {font-size:15px;font-weight:700}
+.ecc-page .ecc-panel-title p,.ecc-page .ecc-people-heading p {font-size:11px;color:var(--ecc-muted);margin-top:3px}
+.ecc-page .ecc-count,.ecc-page .ecc-pill {padding:3px 8px;background:#103c54;border-radius:99px;color:#7de5de;font-size:11px;font-weight:650}
+.ecc-page .ecc-search-wrap {display:flex;align-items:center;gap:8px;margin:12px;border:1px solid #226080;background:#061d32;border-radius:8px;padding:0 10px}
+.ecc-page .ecc-search-wrap>span {font-size:23px;color:var(--ecc-muted)}
+.ecc-page :is(input,select,textarea) {background:#061f37;border:1px solid #246084;border-radius:8px;color:#e8f6fe;min-width:0;outline:0}
+.ecc-page :is(input,select,textarea)::placeholder {color:#749cba;opacity:1}
+.ecc-page :is(input,select,textarea):focus {border-color:var(--ecc-accent);box-shadow:0 0 0 2px #20cdb524}
+.ecc-page .ecc-search-wrap input {width:100%;height:40px;border:0;background:transparent;font-size:12px;box-shadow:none}
+.ecc-page .ecc-search-wrap button {background:transparent;border:0;color:#86baca;font-size:20px}
+.ecc-page .ecc-directory-list {padding:4px 7px 8px;max-height:min(620px,68vh);overflow:auto;scrollbar-color:#23577a transparent}
+.ecc-page .ecc-directory-list.is-loading {opacity:.65}
+.ecc-page .ecc-company-card {width:100%;display:flex;align-items:center;text-align:left;gap:9px;padding:12px 10px;background:transparent;color:var(--ecc-text);border:1px solid transparent;border-radius:9px;min-width:0}
+.ecc-page .ecc-company-card:hover {background:#103755}
+.ecc-page .ecc-company-card.is-selected {border-color:#18a99c;background:#0d3d50;box-shadow:inset 3px 0 0 var(--ecc-accent)}
+.ecc-page .ecc-company-avatar {height:37px;width:37px;flex:0 0 37px;display:grid;place-items:center;border:1px solid #17638a;background:#0c4772;color:#b9e9ff;border-radius:10px;font-size:18px;font-weight:700}
+.ecc-page .ecc-company-description {flex:1;min-width:0}
+.ecc-page .ecc-company-description strong {display:block;font-size:12px;font-weight:700;line-height:1.4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ecc-page .ecc-company-description small {display:block;color:var(--ecc-muted);font-size:10px;margin-top:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ecc-page .ecc-source-mark {flex-shrink:0;color:#ffa68c;font-size:10px;background:#572e31;padding:4px 6px;border-radius:5px}
+.ecc-page .ecc-source-mark.is-receita {background:#0c4a48;color:#54f1db}
+.ecc-page .ecc-pager {display:flex;justify-content:center;align-items:center;gap:10px;border-top:1px solid var(--ecc-line-soft);padding:12px;color:var(--ecc-muted);font-size:11px}
+.ecc-page .ecc-pager button {background:#0b3453;color:var(--ecc-text);border:1px solid var(--ecc-line);width:31px;height:29px;border-radius:7px}
+.ecc-page .ecc-people {min-height:550px}
+.ecc-page .ecc-selected-company {display:flex;align-items:center;gap:13px;padding:19px 18px;background:linear-gradient(90deg,#0d3c55,#092844);border-bottom:1px solid var(--ecc-line)}
+.ecc-page .ecc-selected-company-icon {height:49px;width:49px;flex:0 0 49px;display:grid;place-items:center;border:1px solid #198c96;border-radius:11px;font-size:24px;font-weight:700;background:#0a515b;color:#a0fff4}
+.ecc-page .ecc-selected-copy {min-width:0;flex:1}
+.ecc-page .ecc-selected-copy h2 {font-size:17px;font-weight:750;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
+.ecc-page .ecc-selected-copy p {font-size:11px;color:var(--ecc-muted);margin-top:4px}
+.ecc-page .ecc-status {background:#19455b;color:#d4ecff;padding:5px 8px;border:1px solid #2c6384;border-radius:7px;font-size:10px;white-space:nowrap}
+.ecc-page .ecc-status.is-client {background:#095443;border-color:#11987f;color:#8bf5d7}
+.ecc-page .ecc-selected-links {display:flex;gap:7px 14px;flex-wrap:wrap;padding:11px 17px;border-bottom:1px solid var(--ecc-line-soft);font-size:10px;color:#adc9df}
+.ecc-page .ecc-selected-links a {color:var(--ecc-accent)}
+.ecc-page .ecc-people-heading {display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 17px 9px}
+.ecc-page .ecc-person-filters {padding:9px 15px 14px;display:grid;grid-template-columns:minmax(150px,1fr) minmax(100px,130px) minmax(122px,155px);gap:8px}
+.ecc-page .ecc-person-filters :is(input,select) {min-height:36px;padding:7px 9px;width:100%;font-size:11px}
+.ecc-page .ecc-people-list {padding:0 10px 12px;max-height:min(620px,68vh);overflow:auto;scrollbar-color:#245779 transparent}
+.ecc-page .ecc-person-card {width:100%;display:flex;align-items:center;text-align:left;gap:10px;padding:12px 11px;border:1px solid transparent;border-bottom-color:#12405b;background:transparent;color:var(--ecc-text);border-radius:7px;min-width:0}
+.ecc-page .ecc-person-card:hover {background:#0d3758}
+.ecc-page .ecc-person-card.is-selected {background:#0a4059;border-color:#2ba99f;box-shadow:inset 3px 0 0 var(--ecc-accent)}
+.ecc-page .ecc-person-avatar {flex:0 0 38px;width:38px;height:38px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(140deg,#1264a5,#2585b9);color:white;border:1px solid #3597d3;font-weight:750;font-size:15px}
+.ecc-page .ecc-person-content {min-width:0;flex:1}
+.ecc-page .ecc-person-content strong,.ecc-page .ecc-person-content small {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ecc-page .ecc-person-content strong {font-size:13px;font-weight:700}
+.ecc-page .ecc-person-content small {font-size:10px;color:var(--ecc-muted);margin-top:3px}
+.ecc-page .ecc-person-right {display:flex;align-items:flex-end;flex-direction:column;gap:5px}
+.ecc-page .ecc-origin {display:inline-flex;border:1px solid #39617f;border-radius:5px;padding:3px 6px;color:#a4d1f0;background:#12334d;font-size:10px;white-space:nowrap}
+.ecc-page .ecc-origin.is-hubspot {color:#ffb394;background:#402e3a;border-color:#9d5a4c}
+.ecc-page .ecc-mini-channels {color:#b9deee;font-size:12px;white-space:nowrap}
+.ecc-page .ecc-whats-yes {color:#4df0be!important}
+.ecc-page .ecc-inspector {position:sticky;top:75px}
+.ecc-page .ecc-inspector-head {display:flex;justify-content:space-between;align-items:center;gap:9px;padding:16px;border-bottom:1px solid var(--ecc-line-soft)}
+.ecc-page .ecc-inspector-tabs {display:flex;gap:2px;border-bottom:1px solid var(--ecc-line);padding:0 9px}
+.ecc-page .ecc-inspector-tabs button {flex:1;background:transparent;color:#9fbdd3;border:0;border-bottom:2px solid transparent;font-size:11px;padding:12px 5px}
+.ecc-page .ecc-inspector-tabs button.is-active {color:var(--ecc-accent);border-bottom-color:var(--ecc-accent);font-weight:700}
+.ecc-page .ecc-inspector-body {max-height:660px;overflow:auto;padding:14px;scrollbar-color:#256487 transparent}
+.ecc-page .ecc-person-profile {display:flex;align-items:center;gap:12px;padding:6px 0 16px;border-bottom:1px solid var(--ecc-line-soft);margin-bottom:13px}
+.ecc-page .ecc-person-avatar-large {height:55px;width:55px;flex-basis:55px;font-size:24px}
+.ecc-page .ecc-person-profile h3 {font-size:15px;color:#f4fbff;margin:0 0 5px;line-height:1.4}
+.ecc-page .ecc-person-profile p {color:var(--ecc-muted);font-size:11px;margin-bottom:7px}
+.ecc-page .ecc-field {padding:11px 0;border-bottom:1px solid #15445c;display:grid;gap:4px;overflow-wrap:anywhere}
+.ecc-page .ecc-field>span,.ecc-page .ecc-receita-card div span {color:var(--ecc-muted);font-size:10px}
+.ecc-page .ecc-field strong {font-size:12px}
+.ecc-page .ecc-field a {font-size:12px;overflow-wrap:anywhere}
+.ecc-page .ecc-field small {font-size:10px;color:#a5c6d7;line-height:1.4}
+.ecc-page .ecc-small-link {display:inline-block;margin-top:3px}
+.ecc-page .ecc-verify-actions {display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.ecc-page .ecc-verify-actions button {border:1px solid #316785;color:#bddbed;background:#09304f;padding:4px 7px;border-radius:5px;font-size:10px}
+.ecc-page .ecc-verify-actions button.is-active {border-color:#4aecc6;background:#0f5348;color:#83ffda}
+.ecc-page .ecc-verify-actions button.is-no {border-color:#ff8f9f;background:#532d3c;color:#ffd0d7}
+.ecc-page .ecc-note {border:1px solid var(--ecc-line);background:#0b3450;border-radius:9px;padding:11px;margin-top:12px}
+.ecc-page .ecc-note strong {font-size:11px}
+.ecc-page .ecc-note p {margin-top:6px;color:#bbd1e4;font-size:11px;white-space:pre-line}
+.ecc-page .ecc-inspector-body>h3 {font-size:14px;margin-bottom:7px}
+.ecc-page .ecc-help {font-size:11px;color:var(--ecc-muted);line-height:1.6;margin-bottom:13px!important}
+.ecc-page .ecc-receita-card,.ecc-page .ecc-deal {margin:0 0 10px;border:1px solid var(--ecc-line);background:#0a314c;border-radius:9px;padding:12px;overflow-wrap:anywhere}
+.ecc-page .ecc-receita-card>strong,.ecc-page .ecc-deal>strong {display:block;font-size:12px;margin-bottom:5px}
+.ecc-page .ecc-receita-card>small,.ecc-page .ecc-deal small {display:block;font-size:10px;color:var(--ecc-muted)}
+.ecc-page .ecc-receita-card div {margin-top:8px;font-size:11px}
+.ecc-page .ecc-receita-phone>small {display:block;margin-top:4px;color:#a2cade}
+.ecc-page .ecc-empty {padding:25px 18px;color:var(--ecc-muted);line-height:1.7;font-size:12px;text-align:center}
+.ecc-page .ecc-empty p {margin-top:6px;color:var(--ecc-muted)}
+.ecc-page .ecc-welcome {min-height:370px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:13px;text-align:center;padding:28px}
+.ecc-page .ecc-welcome>span {display:grid;place-items:center;width:70px;height:70px;border-radius:24px;border:1px solid #257b8a;color:var(--ecc-accent);font-size:40px}
+.ecc-page .ecc-welcome h2 {font-size:20px}
+.ecc-page .ecc-welcome p {max-width:320px;color:var(--ecc-muted);font-size:12px}
+.ecc-page .ecc-modal-mask {position:fixed;inset:0;z-index:100;background:#000b;display:grid;place-items:center;padding:14px}
+.ecc-page .ecc-modal {background:#0a2944;border:1px solid #25718c;border-radius:14px;box-shadow:0 25px 90px #000b;max-height:95vh;overflow:auto;width:min(530px,100%)}
+.ecc-page .ecc-modal header {display:flex;justify-content:space-between;gap:14px;padding:20px 21px;border-bottom:1px solid var(--ecc-line)}
+.ecc-page .ecc-modal header h2 {font-size:20px;margin:5px 0}
+.ecc-page .ecc-modal header p {font-size:11px;color:var(--ecc-muted)}
+.ecc-page .ecc-modal header button {width:32px;height:32px;background:transparent;border:1px solid var(--ecc-line);color:var(--ecc-text);border-radius:7px;font-size:22px}
+.ecc-page .ecc-modal form {display:grid;gap:13px;padding:20px}
+.ecc-page .ecc-modal label {display:grid;gap:6px;color:#c5dfed;font-size:12px}
+.ecc-page .ecc-modal :is(input,textarea) {padding:9px 11px;width:100%}
+.ecc-page .ecc-modal .ecc-form-grid {display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ecc-page .ecc-modal footer {display:flex;justify-content:flex-end;gap:10px;margin-top:9px}
+.ecc-page .ecc-error {color:var(--ecc-danger);font-size:11px}
+@media(max-width:1310px){
+  .ecc-page .ecc-layout {grid-template-columns:minmax(240px,300px) minmax(300px,1fr)}
+  .ecc-page .ecc-inspector {position:static;grid-column:1 / -1}
+  .ecc-page .ecc-inspector-body {max-height:470px}
+}
+@media(max-width:870px){
+  .ecc-page .ecc-header {flex-direction:column;align-items:stretch}
+  .ecc-page .ecc-layout {grid-template-columns:1fr}
+  .ecc-page .ecc-directory-list,.ecc-page .ecc-people-list {max-height:460px}
+  .ecc-page .ecc-person-filters {grid-template-columns:1fr 1fr}
+  .ecc-page .ecc-person-filters input {grid-column:1/-1}
+  .ecc-page .ecc-inspector {grid-column:auto}
+  .ecc-page .ecc-selected-company {flex-wrap:wrap}
+  .ecc-page .ecc-source-help {margin-left:0}
+}
+@media(max-width:520px){
+  .ecc-page {padding:12px 9px 28px}
+  .ecc-page .ecc-btn {padding:8px 10px}
+  .ecc-page .ecc-selected-links {gap:8px}
+  .ecc-page .ecc-person-right {max-width:68px}
+  .ecc-page .ecc-modal .ecc-form-grid {grid-template-columns:1fr}
+  .ecc-page .ecc-actions {justify-content:stretch}
+}
+@media(prefers-reduced-motion:reduce){.ecc-page * {transition:none!important;scroll-behavior:auto!important}}

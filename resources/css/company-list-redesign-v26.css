@@ -1,0 +1,232 @@
+/* REDESIGN_EMPRESAS_V26_1 — somente /empresas; reutiliza os dados existentes.
+   A lista continua com os mesmos filtros, 20 por pagina e sete colunas. */
+
+.eccl-page.eccl-v26 {
+    width: 100%;
+    max-width: none;
+    padding: 10px 0 32px;
+    color: var(--ec-text, #e8f4ff);
+}
+
+/* Cabecalho empresarial, com ilustracao ja existente no projeto. */
+.eccl-v26 .eccl-header {
+    position: relative;
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 139px;
+    margin: 0 0 14px;
+    padding: 24px 20px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: linear-gradient(95deg, #031b30 0%, #05243c 56%, #052740 100%);
+}
+.eccl-v26 .eccl-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: url('/images/dashboard/globe-hero.webp') no-repeat right 18% center / auto 360px;
+    opacity: .24;
+    pointer-events: none;
+}
+.eccl-v26 .eccl-header::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(90deg, #031b30 0%, #031b30da 45%, #031b3099 76%, #031b3033);
+    pointer-events: none;
+}
+.eccl-v26 .eccl-header > * { position: relative; z-index: 1; }
+.eccl-v26 .eccl-eyebrow {
+    color: #42d8cd;
+    font-size: 10px;
+    font-weight: 780;
+    letter-spacing: .14em;
+}
+.eccl-v26 .eccl-header h1 {
+    color: #f2fbff;
+    font-size: clamp(27px, 2.6vw, 36px);
+    font-weight: 790;
+    letter-spacing: -.035em;
+}
+.eccl-v26 .eccl-header p {
+    color: #a0bed3;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.eccl-v26 .eccl-primary {
+    min-height: 42px;
+    padding: 10px 18px;
+    background: #45d0bf;
+    color: #04292d;
+    border-color: #45d0bf;
+    border-radius: 9px;
+    font-weight: 760;
+}
+.eccl-v26 .eccl-primary:hover {
+    background: #70e5d5;
+    border-color: #70e5d5;
+}
+
+/* Separacao visual entre filtros existentes e resultados existentes. */
+.eccl-v26 .eccl-panel {
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+    background: transparent;
+}
+.eccl-v26 .eccl-toolbar,
+.eccl-v26 .eccl-v26-results-panel {
+    overflow: hidden;
+    border: 1px solid #215477;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #092d4b, #082740);
+    box-shadow: 0 7px 22px #00152525;
+}
+.eccl-v26 .eccl-toolbar {
+    padding: 17px 18px 18px;
+    margin-bottom: 14px;
+}
+.eccl-v26 .eccl-toolbar-title { margin-bottom: 13px; }
+.eccl-v26 .eccl-toolbar-title h2 {
+    font-size: 14px;
+    font-weight: 780;
+    color: #f4fbff;
+}
+.eccl-v26 .eccl-filters {
+    grid-template-columns: minmax(240px, 2.5fr) minmax(95px, .8fr) minmax(160px, 1.05fr) minmax(165px, 1.1fr);
+    column-gap: 13px;
+    row-gap: 12px;
+}
+.eccl-v26 .eccl-field label { color: #a6c8e0; font-size: 11px; }
+.eccl-v26 .eccl-field input,
+.eccl-v26 .eccl-field select {
+    min-height: 43px;
+    border: 1px solid #27628a;
+    background: #06223b;
+    color: #e8f5ff;
+    border-radius: 8px;
+    font-size: 12px;
+}
+.eccl-v26 .eccl-field input:hover,
+.eccl-v26 .eccl-field select:hover { border-color: #3983a6; }
+.eccl-v26 .eccl-field input:focus,
+.eccl-v26 .eccl-field select:focus { border-color: #41d6ca; box-shadow: 0 0 0 3px #2bd4c925; }
+.eccl-v26 .eccl-search svg { color: #55d9cf; }
+.eccl-v26 .eccl-active-filters { margin-top: 14px; }
+
+/* Area de resultados: destaque no total, tabela legivel e paginacao. */
+.eccl-v26 .eccl-v26-results-panel { background: #082840; }
+.eccl-v26 .eccl-results-head {
+    padding: 15px 19px 7px;
+    color: #b1d0e3;
+}
+.eccl-v26 .eccl-results-head strong {
+    color: #f3fbff;
+    font-size: 21px;
+    font-weight: 780;
+}
+.eccl-v26 .eccl-context {
+    margin: 0;
+    padding: 0 19px 14px;
+    color: #91b3cd;
+    font-size: 11px;
+}
+.eccl-v26 .eccl-table-scroll { background: #082840; }
+.eccl-v26 .eccl-table {
+    width: 100%;
+    min-width: 1060px;
+}
+.eccl-v26 .eccl-table th {
+    padding-top: 13px;
+    padding-bottom: 13px;
+    color: #99c1db;
+    border-color: #275371;
+    background: #0e3655;
+    font-size: 10px;
+    letter-spacing: .055em;
+}
+.eccl-v26 .eccl-table td {
+    padding: 12px 13px;
+    border-color: #24506c;
+    font-size: 12px;
+    line-height: 1.45;
+}
+.eccl-v26 .eccl-table tbody tr:nth-child(odd) { background: #08263f; }
+.eccl-v26 .eccl-table tbody tr:nth-child(even) { background: #0c3453; }
+.eccl-v26 .eccl-table tbody tr:hover { background: #124160; }
+.eccl-v26 .eccl-company-name {
+    color: #f1fbff;
+    font-size: 12px;
+    font-weight: 770;
+    line-height: 1.35;
+}
+.eccl-v26 .eccl-company-name:hover { color: #67ebdf; }
+.eccl-v26 .eccl-cnpj { color: #ecf7ff; font-weight: 670; }
+.eccl-v26 .eccl-subtext { color: #99bbd2; margin-top: 3px; font-size: 10px; }
+.eccl-v26 .eccl-units { margin-top: 4px; color: #a1c7df; }
+.eccl-v26 .eccl-city { color: #e2f3fc; font-weight: 590; }
+.eccl-v26 .eccl-uf { color: #9cc5da; margin-top: 3px; }
+.eccl-v26 .eccl-cnae-code { color: #f1f9ff; font-weight: 700; }
+.eccl-v26 .eccl-source { color: #9cbed4; }
+.eccl-v26 .eccl-active {
+    color: #76e4c9;
+    background: #0a403a;
+    border-color: #166d61;
+}
+.eccl-v26 .eccl-open {
+    min-height: 34px;
+    border: 1px solid #227ea1;
+    background: #06283f;
+    color: #55e1d3;
+    border-radius: 7px;
+    font-weight: 710;
+}
+.eccl-v26 .eccl-open:hover { color: #f6ffff; background: #105170; border-color: #48cfca; }
+.eccl-v26 .eccl-pagination {
+    padding: 13px 18px;
+    border-top: 1px solid #235271;
+    color: #a2c9df;
+    font-size: 11px;
+}
+.eccl-v26 .eccl-pagination strong { color: #e5f5fc; font-weight: 760; }
+.eccl-v26 .eccl-pagination button {
+    background: #082d49;
+    color: #deeffd;
+    border: 1px solid #295879;
+    border-radius: 7px;
+}
+.eccl-v26 .eccl-pagination button[aria-current="page"] {
+    color: #042c2c;
+    border-color: #43d5c7;
+    background: #44d7c8;
+}
+.eccl-v26 a:focus-visible,
+.eccl-v26 button:focus-visible { outline: 2px solid #52e9da; outline-offset: 2px; }
+
+@media (max-width: 1100px) {
+    .eccl-v26 .eccl-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .eccl-v26 .eccl-search-field { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+    .eccl-v26 .eccl-header { min-height: 126px; padding: 18px 13px; gap: 12px; }
+    .eccl-v26 .eccl-header::before { background-position: right -190px center; opacity: .17; }
+    .eccl-v26 .eccl-header h1 { font-size: 27px; }
+    .eccl-v26 .eccl-header p { font-size: 11px; }
+    .eccl-v26 .eccl-toolbar { padding: 14px; }
+    .eccl-v26 .eccl-filters { grid-template-columns: 1fr 1fr; }
+    .eccl-v26 .eccl-field:last-child { grid-column: 1 / -1; }
+    .eccl-v26 .eccl-field input, .eccl-v26 .eccl-field select { font-size: 16px; }
+    .eccl-v26 .eccl-table tbody tr { background: #082b46; }
+    .eccl-v26 .eccl-table tbody tr:nth-child(even) { background: #0d3553; }
+    .eccl-v26 .eccl-table td, .eccl-v26 .eccl-table td:first-child { padding: 0; }
+    .eccl-v26 .eccl-results-head { padding: 14px 14px 6px; }
+    .eccl-v26 .eccl-context { padding: 0 14px 12px; }
+    .eccl-v26 .eccl-pagination { padding: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .eccl-v26 * { transition-duration: .01ms !important; }
+}

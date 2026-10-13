@@ -4,6 +4,7 @@ use App\Models\Company;
 use App\Models\Establishment;
 use App\Support\Cnpj;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -18,6 +19,13 @@ new class extends Component
     public string $type = '';
 
     public string $status = '';
+
+    #[On('companies-topbar-search')]
+    public function companiesTopbarSearch(string $term): void
+    {
+        $this->search = trim(mb_substr($term, 0, 120));
+        $this->resetPage();
+    }
 
     public function updatedSearch(): void
     {
@@ -229,7 +237,7 @@ new class extends Component
 };
 ?>
 
-<div class="eccl-page">
+<div class="eccl-page eccl-v26">
     @php
         $records = $this->companies;
         $ufs = $this->states;
@@ -342,6 +350,7 @@ new class extends Component
             @endif
         </div>
 
+        <div class="eccl-v26-results-panel">
         <div class="eccl-results-head">
             <div role="status" aria-live="polite" aria-atomic="true">
                 <strong>{{ number_format($records->total(), 0, ',', '.') }}</strong>
@@ -514,5 +523,6 @@ new class extends Component
                 </nav>
             @endif
         </footer>
+        </div>
     </section>
 </div>
