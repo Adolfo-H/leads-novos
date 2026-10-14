@@ -237,73 +237,8 @@
 
         </div>
 
-                    @if (request()->routeIs('dashboard') && auth()->user()?->isCommercialManager())
-                <form
-                    class="ds-v5-topbar-search"
-                    role="search"
-                    x-data="{ term: '' }"
-                    x-on:submit.prevent="window.Livewire?.dispatch('dashboard-global-search', { term: term })"
-                >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                        <circle cx="11" cy="11" r="7"></circle>
-                        <path d="m16 16 5 5"></path>
-                    </svg>
-                    <input x-model="term" type="search" maxlength="120"
-                        aria-label="Pesquisar empresas por nome ou CNPJ"
-                        placeholder="Buscar empresas, CNPJ...">
-                    <kbd>Enter</kbd>
-                </form>
-            @endif
-
-        {{-- Busca na barra superior: mesma aparência do Dashboard. --}}
-        @if (request()->routeIs('leads.management') && auth()->user()?->isCommercialManager())
-            <form
-                class="ds-v5-topbar-search"
-                role="search"
-                method="GET"
-                action="{{ route('leads.index') }}"
-                data-ecmg-topbar-search="v255"
-            >
-                <svg viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="1.8"
-                     aria-hidden="true">
-                    <circle cx="11" cy="11" r="7"></circle>
-                    <path d="m16 16 5 5"></path>
-                </svg>
-                <input type="search" name="search" maxlength="120"
-                       aria-label="Pesquisar empresas por nome ou CNPJ"
-                       placeholder="Buscar empresas, CNPJ...">
-                <kbd>Enter</kbd>
-            </form>
-        @endif
-
-            {{-- Empresas: mesmo campo visual do Dashboard, filtrando a lista existente. --}}
-            @if (request()->routeIs('companies.index') && auth()->user()?->isCommercialManager())
-                <form class="ds-v5-topbar-search" role="search"
-                      data-eccl-topbar-search="v261"
-                      x-data="{ term: '' }"
-                      x-on:submit.prevent="window.Livewire?.dispatch('companies-topbar-search', { term: term })">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                         stroke-width="1.8" aria-hidden="true">
-                        <circle cx="11" cy="11" r="7"></circle>
-                        <path d="m16 16 5 5"></path>
-                    </svg>
-                    <input x-model="term" type="search" maxlength="120"
-                           aria-label="Pesquisar empresas por razão social, CNPJ, fantasia ou município"
-                           placeholder="Buscar empresas, CNPJ...">
-                    <kbd>Enter</kbd>
-                </form>
-            @endif
-
-@if (request()->routeIs('leads.index'))
-            <form class="lv13-topbar-search" role="search"
-                  x-data="{ term: '' }"
-                  x-on:submit.prevent="window.Livewire?.dispatch('leads-topbar-search', { term: term })">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
-                <input type="search" x-model="term" maxlength="120" placeholder="Buscar empresa, CNPJ, setor..." aria-label="Pesquisar leads pela barra superior">
-                <kbd>Enter</kbd>
-            </form>
-        @endif
+                    {{-- EC_GLOBAL_COMPANY_SEARCH_V1: único campo compartilhado (Desktop). --}}
+        <x-global-company-search />
 
         <flux:spacer />
 
@@ -525,6 +460,12 @@
         </flux:dropdown>
 
     </flux:header>
+
+    {{-- EC_GLOBAL_COMPANY_SEARCH_V1: busca disponível também no mobile. --}}
+    <div class="ec-global-search-mobile-row lg:hidden">
+        <x-global-company-search :mobile="true" />
+    </div>
+
 
 
     {{ $slot }}

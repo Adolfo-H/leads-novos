@@ -57,7 +57,7 @@ it('searches real companies from topbar without modifying filters or pagination'
 it('keeps existing list behavior and links without added modules', function (): void {
     $view = file_get_contents(resource_path('views/pages/companies/⚡index.blade.php'));
     $css = file_get_contents(resource_path('css/company-list-redesign-v26.css'));
-    $sidebar = file_get_contents(resource_path('views/layouts/app/sidebar.blade.php'));
+    $globalSearch = file_get_contents(resource_path('views/components/global-company-search.blade.php'));
 
     expect($view)
         ->toContain('eccl-v26-results-panel')
@@ -68,5 +68,5 @@ it('keeps existing list behavior and links without added modules', function (): 
         ->toContain('->paginate(')
         ->toContain('route(\'companies.show\', $company)')
         ->and($css)->toContain('REDESIGN_EMPRESAS_V26_1')
-        ->and($sidebar)->toContain('companies-topbar-search');
+        ->and($globalSearch)->toContain('companies-topbar-search');
 });

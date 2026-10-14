@@ -1,0 +1,109 @@
+/*
+|--------------------------------------------------------------------------
+| PROSPECTOR EXPORTCONTROL — BUSCA GLOBAL V1
+| Mesmo design do Dashboard, herdado pelo layout para todos os módulos.
+| Não depende da classe de rota ec-dashboard-mode: telas novas também exibem.
+|--------------------------------------------------------------------------
+*/
+
+body.ec-app-body .ec-global-search,
+body.ec-app-body.ec-dashboard-mode .ec-global-search.ds-v5-topbar-search {
+    display: flex;
+    align-items: center;
+    flex: 1 1 400px;
+    gap: 10px;
+    width: auto;
+    max-width: 470px;
+    min-width: 140px;
+    height: 37px;
+    margin-left: 28px;
+    padding: 0 13px;
+    border: 1px solid var(--ec-border, #1b4b70);
+    border-radius: 9px;
+    background: var(--ec-surface-soft, #0b2a47);
+    color: var(--ec-text-muted, #8eafc8);
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+body.ec-app-body .ec-global-search svg {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+}
+
+body.ec-app-body .ec-global-search input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    outline: none;
+    box-shadow: none;
+    color: var(--ec-text, #f2f9ff);
+    background: transparent;
+    font: inherit;
+    font-size: 12px;
+}
+
+body.ec-app-body .ec-global-search input::placeholder {
+    color: var(--ec-text-muted, #88a9c4);
+    opacity: 1;
+}
+
+body.ec-app-body .ec-global-search kbd {
+    flex: 0 0 auto;
+    padding: 2px 5px;
+    border: 1px solid var(--ec-border, #1a4d72);
+    border-radius: 5px;
+    background: var(--ec-surface, #103657);
+    color: var(--ec-text-muted, #779bb7);
+    font-family: inherit;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+body.ec-app-body .ec-global-search:focus-within {
+    border-color: var(--ec-primary, #3bdad0);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--ec-primary, #3bdad0) 13%, transparent);
+}
+
+/* O modo escuro mantém o navy exato da referência usada no Dashboard V5. */
+html.dark body.ec-app-body .ec-global-search {
+    background: #0b2a47;
+    border-color: #1b4b70;
+}
+
+/* Desktop: os demais controles mantêm espaço mesmo em notebooks estreitos. */
+@media (min-width: 1024px) and (max-width: 1200px) {
+    body.ec-app-body .ec-global-search.ec-global-search--desktop {
+        max-width: 345px;
+        margin-left: 15px;
+    }
+}
+
+/* Mobile: o cabeçalho é compacto; a busca ocupa uma faixa própria. */
+.ec-global-search-mobile-row {
+    padding: 9px 14px 11px;
+    border-bottom: 1px solid var(--ec-border-soft, rgba(91, 158, 211, .17));
+    background: var(--ec-topbar, #062443);
+}
+
+body.ec-app-body .ec-global-search.ec-global-search--mobile,
+body.ec-app-body.ec-dashboard-mode .ec-global-search.ds-v5-topbar-search.ec-global-search--mobile {
+    display: flex !important;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    margin: 0;
+}
+
+@media (min-width: 1024px) {
+    .ec-global-search-mobile-row {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.ec-app-body .ec-global-search {
+        transition: none;
+    }
+}

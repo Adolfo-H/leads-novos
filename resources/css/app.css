@@ -2,6 +2,7 @@
 @import './imports-workspace.css';
 @import './contacts-workspace.css';
 @import './contacts-ux-v2.css';
+@import './contacts-reference-v3.css';
 @import './company-list-workspace.css';
 @import './company-create-workspace.css';
 @import './company-dossier.css';
@@ -15,6 +16,7 @@
 @import './commercial-management.css';
 @import './app-shell-v2.css';
 @import './dashboard-strategic-v5.css';
+@import './global-company-search.css';
 @import './dashboard-my-deals-v6.css';
 @import './dashboard-map-v7.css';
 @import './company-list-redesign-v26.css';
