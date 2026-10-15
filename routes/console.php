@@ -128,3 +128,10 @@ Artisan::command(
 Schedule::command('hubspot:tunnel-health-refresh')
     ->everyMinute()
     ->withoutOverlapping();
+
+/* EC_EMAIL_CAMPAIGNS_V1_SCHEDULE */
+// Com CAMPAIGN_MAIL_LIVE_ENABLED=false não há envios reais.
+Schedule::command('campaigns:tick')->everyMinute()->withoutOverlapping();
+// IMAP é somente leitura e fica desabilitado até a configuração de Python.
+Schedule::command('campaigns:sync-replies')->everyFiveMinutes()->withoutOverlapping();
+/* EC_EMAIL_CAMPAIGNS_V1_SCHEDULE_END */

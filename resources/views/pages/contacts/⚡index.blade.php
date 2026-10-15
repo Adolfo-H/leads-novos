@@ -469,6 +469,31 @@ new class extends Component
         session()->flash('contacts_success', 'Confirmação de WhatsApp atualizada.');
     }
 
+    // EC_EMAIL_CAMPAIGNS_V1_CONTACT_ACTION
+    public function createCampaignFromSelected(): void
+    {
+        $keys = [];
+        $selected = $this->checkedContactKeys;
+        foreach ($this->contactIndex->items() as $row) {
+            if (in_array((string) $row->source_key, $selected, true)
+                && filter_var((string) $row->email, FILTER_VALIDATE_EMAIL) !== false) {
+                $keys[] = (string) $row->source_key;
+            }
+        }
+        $keys = array_values(array_unique($keys));
+        if ($keys === []) {
+            $this->addError('recipients', 'Selecione nesta página contatos com e-mail válido.');
+            return;
+        }
+        $limit = max(1, (int) config('campaign_mail.max_recipients', 100));
+        if (count($keys) > $limit) {
+            $this->addError('recipients', 'A seleção excede o limite por campanha.');
+            return;
+        }
+        session()->put('campaign_mail_selected', $keys);
+        $this->redirect(route('campaigns.index'), navigate: true);
+    }
+
     public function exportSelectedCsv(): \Symfony\Component\HttpFoundation\StreamedResponse
     {
         $selected = array_values(array_filter($this->contactIndex->items(),
@@ -741,10 +766,10 @@ new class extends Component
                             title="Selecionar a página">{{ $allPageSelected ? '☑' : '□' }}</button>
                     <span><strong>{{ count($selectedKeys) }}</strong> selecionado(s)</span>
                     @if ($selectedEmails !== [])
-                        <a class="ecc3-button ecc3-button-mini" href="mailto:?bcc={{ rawurlencode(implode(',', $selectedEmails)) }}"
-                           title="Abre seu aplicativo de e-mail; não dispara mensagens pelo servidor">✉ Enviar e-mail</a>
+                        <button type="button" class="ecc3-button ecc3-button-mini" wire:click="createCampaignFromSelected"
+                            title="Criar campanha no Prospector com os contatos selecionados">✉ Criar campanha</button>
                     @else
-                        <button type="button" class="ecc3-button ecc3-button-mini" disabled title="Selecione contatos com e-mail">✉ Enviar e-mail</button>
+                        <button type="button" class="ecc3-button ecc3-button-mini" disabled title="Selecione contatos com e-mail">✉ Criar campanha</button>
                     @endif
                     @if ($singleSelectedWhatsapp)
                         <a href="{{ $singleSelectedWhatsapp }}" target="_blank" rel="noopener noreferrer"

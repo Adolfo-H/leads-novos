@@ -18,6 +18,7 @@
                 'prospecting.*',
                 'companies.*',
                 'contacts.*',
+                'campaigns.*',
                 'imports.*',
                 'leads.*',
                 'profile.edit',
@@ -157,6 +158,16 @@
                     >
                         Contatos
                     </flux:sidebar.item>
+                    {{-- EC_EMAIL_CAMPAIGNS_V1_NAV --}}
+                    <flux:sidebar.item
+                        icon="envelope"
+                        :href="route('campaigns.index')"
+                        :current="request()->routeIs('campaigns.*')"
+                        wire:navigate
+                        class="ec-nav-item"
+                    >
+                        Campanhas de E-mail
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             @endif
 
@@ -210,6 +221,7 @@
             request()->routeIs('prospecting.*') => 'Motor de prospecção',
             request()->routeIs('companies.*') => 'Empresas',
             request()->routeIs('contacts.*') => 'Contatos',
+            request()->routeIs('campaigns.*') => 'Campanhas',
             request()->routeIs('imports.*') => 'Importações',
             request()->routeIs(
                 'profile.edit',

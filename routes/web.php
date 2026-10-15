@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CampaignUnsubscribeController;
 use App\Http\Controllers\HubSpotWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +36,19 @@ Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function ()
     Route::livewire('/contatos', 'pages::contacts.index')
         ->name('contacts.index');
 });
+
+/* EC_EMAIL_CAMPAIGNS_V1_ROUTES */
+// Os dados comerciais e o envio são exclusivos de gestores autorizados.
+Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function () {
+    Route::livewire('/campanhas', 'pages::campaigns.index')->name('campaigns.index');
+});
+
+// Link individual e com HMAC; GET só exibe confirmação. POST realiza descadastro.
+Route::get('/email/descadastro/{token}', [CampaignUnsubscribeController::class, 'show'])
+    ->middleware('throttle:10,1')->name('campaigns.unsubscribe');
+Route::post('/email/descadastro/{token}', [CampaignUnsubscribeController::class, 'store'])
+    ->middleware('throttle:10,1')->name('campaigns.unsubscribe.store');
+/* EC_EMAIL_CAMPAIGNS_V1_ROUTES_END */
 
 require __DIR__.'/settings.php';
 
