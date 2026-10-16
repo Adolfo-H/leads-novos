@@ -12,7 +12,7 @@ return [
     'tracked_test_to' => env('CAMPAIGN_TRACKED_TEST_TO', ''),
     // Conservadores: alterar só depois de aprovar limites com o administrador do SMTP.
     'per_hour' => (int) env('CAMPAIGN_MAIL_PER_HOUR', 10),
-    'per_day' => (int) env('CAMPAIGN_MAIL_PER_DAY', 30),
+    'per_day' => (int) env('CAMPAIGN_MAIL_PER_DAY', 500),
     'per_tick' => (int) env('CAMPAIGN_MAIL_PER_TICK', 1),
     'max_recipients' => (int) env('CAMPAIGN_MAIL_MAX_RECIPIENTS', 100),
     'queue' => env('CAMPAIGN_MAIL_QUEUE', 'campaigns'),

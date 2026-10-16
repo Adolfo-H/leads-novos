@@ -798,6 +798,8 @@ new class extends Component
                     <p>Este indicador usa o histórico do banco. Não testa a conexão com o servidor em tempo real nem envia e-mails.</p>
                 </div>
             </section>
+                        {{-- EC_CAMPAIGN_QUEUE_LAB_V2 --}}
+            <livewire:campaign-queue-lab />
             <section class="ecm2-context-card ecm2-context-help"><strong>Segurança do envio</strong><p>Limites por hora e dia, aprovação explícita e descadastro. Aceitação SMTP não comprova entrega ou leitura.</p></section>
         </aside>
     </div>

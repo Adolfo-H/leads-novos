@@ -21,7 +21,7 @@ final class CampaignDispatcher
         }
 
         $hour = max(1, min(100, (int) config('campaign_mail.per_hour', 10)));
-        $day = max(1, min(500, (int) config('campaign_mail.per_day', 30)));
+        $day = max(1, min(500, (int) config('campaign_mail.per_day', 500)));
         $tick = max(1, min(5, (int) config('campaign_mail.per_tick', 1)));
 
         /** @var list<int> $reserved */
@@ -33,8 +33,11 @@ final class CampaignDispatcher
                 return [];
             }
 
-            $hourUsed = EmailCampaignRecipient::query()->where('reserved_at', '>=', now()->subHour())->count();
-            $dayUsed = EmailCampaignRecipient::query()->where('reserved_at', '>=', now()->startOfDay())->count();
+            // Comparações e gravação em UTC: o PostgreSQL usa UTC, sem deslocamentos artificiais.
+            // São limites GLOBAIS entre todas as campanhas, não por campanha.
+            $utcNow = now('UTC');
+            $hourUsed = EmailCampaignRecipient::query()->where('reserved_at', '>=', $utcNow->copy()->subHour())->count();
+            $dayUsed = EmailCampaignRecipient::query()->where('reserved_at', '>=', $utcNow->copy()->subDay())->count();
             $available = min($tick, max(0, $hour - $hourUsed), max(0, $day - $dayUsed));
             if ($available === 0) {
                 return [];
@@ -49,7 +52,7 @@ final class CampaignDispatcher
             foreach ($ids as $id) {
                 $updated = EmailCampaignRecipient::query()
                     ->whereKey((int) $id)->where('status', 'pending')
-                    ->update(['status' => 'reserved', 'reserved_at' => now()]);
+                    ->update(['status' => 'reserved', 'reserved_at' => $utcNow]);
                 if ($updated > 0) {
                     $result[] = (int) $id;
                 }
@@ -60,6 +63,7 @@ final class CampaignDispatcher
 
         foreach ($reserved as $id) {
             SendEmailCampaignRecipient::dispatch($id)
+                ->onConnection('redis')
                 ->onQueue((string) config('campaign_mail.queue', 'campaigns'));
         }
 

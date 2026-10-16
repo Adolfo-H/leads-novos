@@ -180,6 +180,38 @@ services:
         stop_grace_period: 11m
         restart: unless-stopped
 
+    campaigns-worker:
+        profiles:
+            - background
+        build:
+            context: ./vendor/laravel/sail/runtimes/8.5
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP:-1000}'
+        image: sail-8.5/app
+        environment:
+            WWWUSER: '${WWWUSER:-1000}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            - pgsql
+            - redis
+        command:
+            - php
+            - artisan
+            - queue:work
+            - redis
+            - '--queue=${CAMPAIGN_MAIL_QUEUE:-campaigns}'
+            - --sleep=2
+            - --tries=1
+            - --timeout=120
+            - --max-time=3600
+        stop_grace_period: 3m
+        restart: unless-stopped
+
     scheduler:
         profiles:
             - background
