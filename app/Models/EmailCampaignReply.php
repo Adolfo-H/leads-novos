@@ -10,11 +10,12 @@ class EmailCampaignReply extends Model
     protected $fillable = [
         'email_campaign_id', 'email_campaign_recipient_id', 'mailbox',
         'uid_validity', 'imap_uid', 'from_email', 'subject', 'received_at',
+        'body_text', 'body_loaded_at',
     ];
 
     protected function casts(): array
     {
-        return ['received_at' => 'datetime'];
+        return ['received_at' => 'datetime', 'body_text' => 'encrypted', 'body_loaded_at' => 'datetime'];
     }
 
     /** @return BelongsTo<EmailCampaign, $this> */

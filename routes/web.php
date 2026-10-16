@@ -41,6 +41,10 @@ Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function ()
 // Os dados comerciais e o envio são exclusivos de gestores autorizados.
 Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function () {
     Route::livewire('/campanhas', 'pages::campaigns.index')->name('campaigns.index');
+    // CAMPANHAS_V6 — paginas independentes, todas restritas aos gestores.
+    Route::livewire('/campanhas/respostas', 'pages::campaigns.replies')->name('campaigns.replies');
+    Route::livewire('/campanhas/fila', 'pages::campaigns.queue')->name('campaigns.queue');
+    Route::livewire('/campanhas/configuracoes', 'pages::campaigns.settings')->name('campaigns.settings');
 });
 
 // Link individual e com HMAC; GET só exibe confirmação. POST realiza descadastro.

@@ -12,6 +12,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Str;
 
 function campaignQueueHealthFixture(string $status, ?string $timestamp = null): EmailCampaignRecipient
 {
@@ -31,6 +32,7 @@ function campaignQueueHealthFixture(string $status, ?string $timestamp = null): 
         'normalized_email' => 'nao-enviar@example.invalid',
         'status' => $status,
         'reserved_at' => $status === 'reserved' ? $timestamp : null,
+        'reservation_token' => $status === 'reserved' ? (string) Str::uuid() : null,
         'attempted_at' => $status === 'sending' ? $timestamp : null,
     ]);
 }
@@ -91,7 +93,7 @@ it('does not send a reserved email if campaign is paused', function (): void {
     $recipient = campaignQueueHealthFixture('reserved', CarbonImmutable::now('UTC')->format('Y-m-d H:i:s'));
     $recipient->campaign->update(['status' => 'paused']);
 
-    (new SendEmailCampaignRecipient((int) $recipient->id))->handle(
+    (new SendEmailCampaignRecipient((int) $recipient->id, (string) $recipient->reservation_token))->handle(
         app(CampaignDispatcher::class),
         app(CampaignContent::class),
         app(UnsubscribeToken::class),
@@ -108,7 +110,7 @@ it('does not send a reserved email if campaign was canceled', function (): void 
     $recipient = campaignQueueHealthFixture('reserved', CarbonImmutable::now('UTC')->format('Y-m-d H:i:s'));
     $recipient->campaign->update(['status' => 'canceled']);
 
-    (new SendEmailCampaignRecipient((int) $recipient->id))->handle(
+    (new SendEmailCampaignRecipient((int) $recipient->id, (string) $recipient->reservation_token))->handle(
         app(CampaignDispatcher::class),
         app(CampaignContent::class),
         app(UnsubscribeToken::class),
@@ -126,7 +128,7 @@ it('does not dispatch or send when commercial sending is disabled', function ():
     $recipient = campaignQueueHealthFixture('reserved', CarbonImmutable::now('UTC')->format('Y-m-d H:i:s'));
     $recipient->campaign->update(['status' => 'running']);
 
-    (new SendEmailCampaignRecipient((int) $recipient->id))->handle(
+    (new SendEmailCampaignRecipient((int) $recipient->id, (string) $recipient->reservation_token))->handle(
         app(CampaignDispatcher::class),
         app(CampaignContent::class),
         app(UnsubscribeToken::class),
@@ -146,7 +148,7 @@ it('ignores the second attempt when a queued job is delivered twice', function (
     Mail::fake();
     $recipient = campaignQueueHealthFixture('reserved', CarbonImmutable::now('UTC')->format('Y-m-d H:i:s'));
     $recipient->campaign->update(['status' => 'running']);
-    $job = new SendEmailCampaignRecipient((int) $recipient->id);
+    $job = new SendEmailCampaignRecipient((int) $recipient->id, (string) $recipient->reservation_token);
 
     $job->handle(app(CampaignDispatcher::class), app(CampaignContent::class), app(UnsubscribeToken::class));
     $job->handle(app(CampaignDispatcher::class), app(CampaignContent::class), app(UnsubscribeToken::class));

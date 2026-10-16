@@ -1,0 +1,21 @@
+/* ExportControl · Monitoramento de devolucoes DSN V7 */
+.ecm7-bounces{margin-top:24px;padding:24px;border:1px solid rgba(84,155,188,.25);border-radius:18px;background:linear-gradient(150deg,rgba(9,39,64,.95),rgba(5,30,51,.96));color:#e4f4fb}
+.ecm7-bounces-heading{display:flex;gap:15px;justify-content:space-between;align-items:flex-start}
+.ecm7-bounces-heading h2{font-size:21px;font-weight:750;margin:5px 0 7px}
+.ecm7-bounces-heading p{font-size:13px;line-height:1.65;color:#a6c4d5;margin:0;max-width:640px}
+.ecm7-bounces-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:21px 0}
+.ecm7-bounces-stats>div{display:grid;gap:6px;padding:17px;border-radius:12px;background:rgba(11,56,86,.65);border:1px solid rgba(85,165,190,.18)}
+.ecm7-bounces-stats small{color:#a9c4d2;font-size:12px}
+.ecm7-bounces-stats strong{font-size:28px;color:#f4fbff;font-variant-numeric:tabular-nums}
+.ecm7-bounces-stats span{color:#8cafc2;font-size:11px;line-height:1.4}
+.ecm7-bounces-list{overflow-x:auto;border:1px solid rgba(110,174,192,.2);border-radius:12px}
+.ecm7-bounces table{border-collapse:collapse;width:100%;min-width:680px;text-align:left;font-size:13px}
+.ecm7-bounces th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;background:rgba(13,58,88,.75);color:#b4d1e0;padding:12px 15px;font-weight:650}
+.ecm7-bounces td{padding:14px 15px;border-top:1px solid rgba(95,159,188,.15);vertical-align:middle;overflow-wrap:anywhere;color:#d7e9f4}
+.ecm7-bounces td strong{display:block;font-weight:650}
+.ecm7-bounces td small{display:block;color:#99b7ca;margin-top:5px}
+.ecm7-bounce-tag{display:inline-block;font-size:11px;font-weight:700;padding:5px 9px;border-radius:100px;background:#153e56;color:#c5e5f2}
+.ecm7-bounce-invalid{color:#ffced2;background:#633039}.ecm7-bounce-temporary{color:#ffe1a0;background:#674f27}.ecm7-bounce-permanent_other{color:#d8e2fa;background:#34496f}
+.ecm7-bounces td.ecm7-bounces-empty{text-align:center;padding:28px 15px;color:#a5c6d4}
+.ecm7-bounces-footnote{font-size:12px;color:#9cbccc;line-height:1.6;margin:15px 0 0}
+@media(max-width:760px){.ecm7-bounces{padding:16px}.ecm7-bounces-heading{flex-wrap:wrap}.ecm7-bounces-stats{grid-template-columns:1fr}}

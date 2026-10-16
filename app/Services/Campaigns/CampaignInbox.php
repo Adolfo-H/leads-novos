@@ -32,6 +32,17 @@ final class CampaignInbox
             $matched = 0;
             foreach ($batch['messages'] as $message) {
                 $uid = (int) ($message['uid'] ?? 0);
+                // EC_CAMPAIGNS_V7_DSN: antes dos filtros de auto-resposta.
+                // DSNs chegam normalmente de MAILER-DAEMON e não do cliente.
+                if ($uid > 0 && is_array($message['bounce'] ?? null)) {
+                    app(CampaignBounceProcessor::class)->record(
+                        $mailbox, $validity, $uid, $message['bounce'],
+                        is_string($message['received_at'] ?? null) ? $message['received_at'] : null,
+                    );
+
+                    // Um DSN nunca deve contar como resposta de um cliente.
+                    continue;
+                }
                 $from = CampaignAudience::normalizedEmail((string) ($message['from_email'] ?? ''));
                 if ($uid < 1 || filter_var($from, FILTER_VALIDATE_EMAIL) === false) {
                     continue;

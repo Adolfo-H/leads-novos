@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Campaigns\CampaignAudience;
 use App\Services\Campaigns\CampaignContent;
 use App\Services\Campaigns\CampaignManager;
+use App\Services\Campaigns\CampaignPilot;
 use App\Services\Campaigns\CampaignImapHealth;
 use App\Services\Campaigns\CampaignTrackedTest;
 use Illuminate\Database\Eloquent\Collection;
@@ -156,6 +157,30 @@ new class extends Component
             ->latest('received_at')->limit(30)->get();
     }
 
+    // EC_CAMPAIGNS_PILOT_V5: somente endereços explícitos, sem liberar envio comercial.
+    #[Computed]
+    public function pilotHistory(): Collection
+    {
+        $this->assertManager();
+
+        return EmailCampaignTestMessage::query()
+            ->where('email_campaign_id', $this->selectedCampaignId ?? 0)
+            ->where('status', 'like', 'pilot_%')
+            ->latest('id')
+            ->limit(5)
+            ->get();
+    }
+
+    public function queuePilot(int $campaignId, CampaignPilot $pilot): void
+    {
+        $user = $this->assertManager();
+        $campaign = EmailCampaign::query()->findOrFail($campaignId);
+        $total = $pilot->queue($user, $campaign);
+        unset($this->pilotHistory);
+        session()->flash('campaign_success', $total > 0
+            ? $total.' caixa(s) autorizada(s) adicionada(s) à fila piloto.'
+            : 'Este rascunho já possui testes piloto para todos os endereços autorizados.');
+    }
     // EC_CAMPAIGN_IMAP_MONITOR_V1: monitoramento local sem leitura de mensagens.
     #[Computed]
     public function imapHealth(): array
@@ -458,6 +483,10 @@ new class extends Component
                 <span class="ecm2-dot"></span>
                 {{ $canStart ? 'Envios reais habilitados' : 'Modo seguro · disparos bloqueados' }}
             </span>
+            {{-- EC_CAMPAIGNS_UX_V62_ROOT --}}
+            @if ($screen === 'detail')
+                <a href="#ecm7-context" class="ecm7-jump" aria-label="Ir para detalhes e ações da campanha">Ações e detalhes ↓</a>
+            @endif
             <button type="button" class="ecm2-btn ecm2-btn-primary" wire:click="newCampaign">
                 <span aria-hidden="true">＋</span> Nova campanha
             </button>
@@ -470,6 +499,9 @@ new class extends Component
     @error('campaign') <div class="ecm2-notice is-error" role="alert">{{ $message }}</div> @enderror
     @error('recipients') <div class="ecm2-notice is-error" role="alert">{{ $message }}</div> @enderror
     @error('lawfulBasisConfirmed') <div class="ecm2-notice is-error" role="alert">{{ $message }}</div> @enderror
+
+    {{-- EC_CAMPAIGN_V6_NAV --}}
+    @include('campaigns.module-nav')
 
     <section class="ecm2-stats" aria-label="Indicadores reais das campanhas">
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-blue">▤</span><div><small>Rascunhos</small><strong>{{ number_format($counts['drafts'], 0, ',', '.') }}</strong><span>Aguardando preparação</span></div></div>
@@ -705,7 +737,8 @@ new class extends Component
             @endif
         </main>
 
-        <aside class="ecm2-context" aria-label="Ações e informações da campanha">
+        <aside id="ecm7-context" class="ecm2-context" aria-label="Ações e informações da campanha">
+            <div class="ecm7-context-heading"><strong>Detalhes e ações</strong><span>Operação e configurações desta campanha</span></div>
             @if ($screen === 'composer')
                 <section class="ecm2-context-card"><header><h2>Checklist da campanha</h2><span class="ecm2-number">{{ (int) $hasAudience + (int) $hasContent }}/2</span></header>
                     <div class="ecm2-check {{ $hasAudience ? 'is-done' : '' }}"><span>{{ $hasAudience ? '✓' : '○' }}</span><div><strong>Destinatários</strong><small>{{ count($audienceKeys) }} contato(s) selecionado(s)</small></div><button type="button" wire:click="goToComposerStep('audience')" aria-label="Editar destinatários">Editar</button></div>
@@ -766,11 +799,48 @@ new class extends Component
                     <div class="ecm2-check"><span>3</span><div><strong>Revise e salve</strong><small>Sem disparar ao salvar</small></div></div>
                 </section>
             @endif
+            <details class="ecm6-advanced"><summary>Configuração, piloto e diagnósticos avançados</summary>
+                <div class="ecm6-advanced-content">
             <section class="ecm2-context-card ecm2-server-card"><header><h2>Configuração de envio</h2></header>
                 <div class="ecm2-service-line"><span aria-hidden="true">✉</span><div><strong>SMTP · {{ config('campaign_mail.mailer') }}</strong><small>{{ config('campaign_mail.from_address') }}</small></div><span class="ecm2-service-state {{ $mailEnabled ? 'is-ready' : '' }}">{{ $mailEnabled ? 'Habilitado' : 'Desabilitado' }}</span></div>
                 <div class="ecm2-service-line"><span aria-hidden="true">↩</span><div><strong>IMAP · Respostas</strong><small>Leitura de novas mensagens</small></div><span class="ecm2-service-state {{ config('campaign_mail.imap_enabled') ? 'is-ready' : '' }}">{{ config('campaign_mail.imap_enabled') ? 'Habilitado' : 'Desabilitado' }}</span></div>
                 <p>Estes indicadores mostram a configuração do sistema, não são testes de conexão em tempo real.</p>
             </section>
+            {{-- EC_CAMPAIGNS_PILOT_V5 --}}
+            @if ($screen === 'detail' && $selected && $selected->status === 'draft')
+                <section class="ecm2-context-card ecm5-pilot-card" data-ec-pilot-v5>
+                    <header><h2 class="ecm5-pilot-title">✉ Piloto seguro V5</h2><span class="ecm2-number">Até 3 caixas</span></header>
+                    <p class="ecm5-pilot-note">Teste a fila Redis e a identificação de respostas IMAP. Usa somente a lista autorizada, nunca os destinatários comerciais da campanha.</p>
+                    <div class="ecm5-pilot-targets">{{ config('campaign_mail.pilot_allowlist') ?: 'Defina CAMPAIGN_PILOT_ALLOWLIST no .env' }}</div>
+                    @if (config('campaign_mail.pilot_enabled') && ! config('campaign_mail.live_enabled'))
+                        <button type="button" class="ecm5-pilot-action" wire:click="queuePilot({{ $selected->id }})"
+                                wire:confirm="Enviar um piloto somente para os e-mails autorizados na configuração?"
+                                wire:loading.attr="disabled" wire:target="queuePilot">
+                            Adicionar piloto à fila
+                        </button>
+                    @else
+                        <p class="ecm5-pilot-disabled">Desativado por padrão. Exige CAMPAIGN_PILOT_ENABLED=true e CAMPAIGN_MAIL_LIVE_ENABLED=false.</p>
+                    @endif
+                    @foreach ($this->pilotHistory as $pilotTest)
+                        <div class="ecm5-pilot-status" wire:key="pilot-v5-{{ $pilotTest->id }}">
+                            <strong>{{ $pilotTest->test_to }}</strong>
+                            <span>
+                                {{ match ((string) $pilotTest->status) {
+                                    'pilot_queued' => 'Aguardando fila',
+                                    'pilot_sending' => 'Em processamento',
+                                    'pilot_smtp_accepted' => 'Aceito pelo SMTP',
+                                    'pilot_blocked' => 'Bloqueado',
+                                    'pilot_queue_error' => 'Erro de fila',
+                                    'pilot_uncertain' => 'Resultado incerto',
+                                    default => 'Em análise',
+                                } }}
+                                @if ($pilotTest->replied_at) · Respondeu @endif
+                            </span>
+                        </div>
+                    @endforeach
+                </section>
+            @endif
+            {{-- EC_CAMPAIGNS_PILOT_V5_END --}}
             {{-- EC_CAMPAIGN_IMAP_MONITOR_V1 --}}
             <section class="ecm2-context-card ecm2-imap-health" data-imap-monitor>
                 <header><h2>Monitoramento IMAP</h2>
@@ -801,6 +871,8 @@ new class extends Component
                         {{-- EC_CAMPAIGN_QUEUE_LAB_V2 --}}
             <livewire:campaign-queue-lab />
             <section class="ecm2-context-card ecm2-context-help"><strong>Segurança do envio</strong><p>Limites por hora e dia, aprovação explícita e descadastro. Aceitação SMTP não comprova entrega ou leitura.</p></section>
+                </div>
+            </details>
         </aside>
     </div>
     <footer class="ecm2-footer"><span aria-hidden="true">●</span> Dados locais · SMTP individual · IMAP por cabeçalhos · Sem métricas fictícias de abertura</footer>

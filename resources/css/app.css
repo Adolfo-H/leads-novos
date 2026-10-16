@@ -5,6 +5,11 @@
 @import './campaigns-workspace.css';
 @import './campaigns-queue-lab.css';
 @import './campaigns-workspace-v2.css';
+@import './campaigns-v6.css';
+@import './campaigns-ux-v62.css';
+/* EC_CAMPAIGNS_V7_CSS */
+@import './campaigns-bounces-v7.css';
+@import './campaigns-pilot-v5.css';
 @import './contacts-reference-v3.css';
 @import './company-list-workspace.css';
 @import './company-create-workspace.css';

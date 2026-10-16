@@ -157,7 +157,7 @@ it('sends approved recipients with Message-ID and unsubscribe token, only once',
     app(CampaignDispatcher::class)->tick();
     $recipient = $campaign->recipients()->firstOrFail();
     Mail::fake();
-    $job = new SendEmailCampaignRecipient((int) $recipient->id);
+    $job = new SendEmailCampaignRecipient((int) $recipient->id, (string) $recipient->reservation_token);
     $job->handle(app(CampaignDispatcher::class), app(CampaignContent::class), app(UnsubscribeToken::class));
     $job->handle(app(CampaignDispatcher::class), app(CampaignContent::class), app(UnsubscribeToken::class));
 

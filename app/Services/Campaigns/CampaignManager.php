@@ -46,7 +46,6 @@ final class CampaignManager
                 'created_by' => $existing->created_by ?? $user->id,
             ]);
             $campaign->save();
-            // Recria somente snapshots do próprio rascunho. Jamais modifica o HubSpot.
             if ($existing !== null) {
                 $campaign->recipients()->delete();
             }
@@ -76,8 +75,9 @@ final class CampaignManager
         if (! config('campaign_mail.enabled') || ! config('campaign_mail.live_enabled')) {
             throw ValidationException::withMessages(['campaign' => 'Envios reais estão desabilitados. Configure CAMPAIGN_MAIL_ENABLED=true e CAMPAIGN_MAIL_LIVE_ENABLED=true após os testes.']);
         }
-        // Sem link público seguro, destinatários não conseguiriam exercer o descadastro.
-        $appUrl = (string) config('app.url');
+        // EC_CAMPAIGNS_V7_PUBLIC_URL: mantém todas as checagens HTTPS existentes;
+        // usa domínio externo configurado, sem trocar o APP_URL local.
+        $appUrl = app(CampaignUnsubscribeLink::class)->base() ?? '';
         $host = parse_url($appUrl, PHP_URL_HOST);
         if (parse_url($appUrl, PHP_URL_SCHEME) !== 'https'
             || ! is_string($host)
@@ -100,29 +100,66 @@ final class CampaignManager
     public function pause(User $user, EmailCampaign $campaign): void
     {
         abort_unless($user->isCommercialManager(), 403);
-        if ($campaign->status === 'running') {
-            $campaign->update(['status' => 'paused']);
-        }
+
+        DB::transaction(static function () use ($campaign): void {
+            $locked = EmailCampaign::query()->whereKey($campaign->getKey())
+                ->lockForUpdate()->first();
+            if ($locked === null || $locked->status !== 'running') {
+                return;
+            }
+
+            $locked->update(['status' => 'paused']);
+
+            // Libera apenas tentativas NÃO iniciadas. UUID antigo deixa de
+            // valer, então um job atrasado não pode enviar após retomar.
+            EmailCampaignRecipient::query()
+                ->where('email_campaign_id', $locked->id)
+                ->where('status', 'reserved')
+                ->update([
+                    'status' => 'pending',
+                    'reserved_at' => null,
+                    'reservation_token' => null,
+                ]);
+        });
     }
 
     public function resume(User $user, EmailCampaign $campaign): void
     {
         abort_unless($user->isCommercialManager(), 403);
+
         if ($campaign->status === 'paused') {
             if (! config('campaign_mail.enabled') || ! config('campaign_mail.live_enabled')) {
                 throw ValidationException::withMessages(['campaign' => 'Envios reais estão desabilitados.']);
             }
-            $campaign->update(['status' => 'running']);
+            // Condição atômica: não reabre campanha cancelada por outra sessão.
+            EmailCampaign::query()->whereKey($campaign->getKey())
+                ->where('status', 'paused')
+                ->update(['status' => 'running']);
         }
     }
 
     public function cancel(User $user, EmailCampaign $campaign): void
     {
         abort_unless($user->isCommercialManager(), 403);
-        if (in_array($campaign->status, ['draft', 'running', 'paused'], true)) {
-            $campaign->update(['status' => 'canceled']);
-            $campaign->recipients()->where('status', 'pending')->update(['status' => 'canceled']);
-        }
+
+        DB::transaction(static function () use ($campaign): void {
+            $locked = EmailCampaign::query()->whereKey($campaign->getKey())
+                ->lockForUpdate()->first();
+            if ($locked === null || ! in_array($locked->status, ['draft', 'running', 'paused'], true)) {
+                return;
+            }
+
+            $locked->update(['status' => 'canceled']);
+            EmailCampaignRecipient::query()
+                ->where('email_campaign_id', $locked->id)
+                ->whereIn('status', ['pending', 'reserved'])
+                ->update([
+                    'status' => 'canceled',
+                    'reservation_token' => null,
+                ]);
+            // 'sending' é tentativa já iniciada: não sobrescrever nem
+            // pressupor que o SMTP pode desfazer a mensagem.
+        });
     }
 
     /** Envio de teste é sempre forçado ao endereço configurado, nunca aos contatos selecionados. */
@@ -165,11 +202,10 @@ final class CampaignManager
             EmailCampaignSuppression::query()->firstOrCreate(
                 ['normalized_email' => $normal], ['reason' => $reason],
             );
-            // Nunca cancela envios já aceitos no SMTP.
             EmailCampaignRecipient::query()
                 ->where('normalized_email', $normal)
                 ->whereIn('status', ['pending', 'reserved'])
-                ->update(['status' => 'suppressed']);
+                ->update(['status' => 'suppressed', 'reservation_token' => null]);
         });
     }
 }

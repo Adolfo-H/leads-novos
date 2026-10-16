@@ -14,6 +14,7 @@ class EmailCampaignTestMessage extends Model
         'email_campaign_id', 'test_to', 'message_id', 'status',
         'attempted_at', 'sent_at', 'replied_at', 'reply_subject',
         'reply_uid_validity', 'reply_imap_uid', 'created_by',
+        'reply_body_text', 'reply_body_loaded_at',
     ];
 
     protected function casts(): array
@@ -22,6 +23,8 @@ class EmailCampaignTestMessage extends Model
             'attempted_at' => 'datetime',
             'sent_at' => 'datetime',
             'replied_at' => 'datetime',
+            'reply_body_text' => 'encrypted',
+            'reply_body_loaded_at' => 'datetime',
         ];
     }
 

@@ -35,9 +35,12 @@ final class CampaignQueueSimulator
      */
     public function report(int $requested = 50): array
     {
-        $hour = max(1, min(100, (int) config('campaign_mail.per_hour', 10)));
-        $day = max(1, min(500, (int) config('campaign_mail.per_day', 500)));
-        $tick = max(1, min(5, (int) config('campaign_mail.per_tick', 1)));
+        // CAMPANHAS_V6_SIM_POLICY: mesmo limite e janela usados pelo despachante.
+        $policyService = app(CampaignSendPolicy::class);
+        $policy = $policyService->effective();
+        $hour = max(1, min(100, $policy['hour']));
+        $day = max(1, min(500, $policy['day']));
+        $tick = max(1, min(5, $policy['tick']));
         $requested = max(1, min(500, $requested));
 
         $start = CarbonImmutable::now((string) config('app.timezone', 'UTC'))->startOfMinute();
@@ -55,6 +58,9 @@ final class CampaignQueueSimulator
         // Máximo 7 dias: nunca cria jobs nem acessa o SMTP.
         for ($minute = 0; $minute < 10080 && $remaining > 0; $minute++) {
             $instant = $start->addMinutes($minute);
+            if (! $policyService->windowOpen($policy, $instant)) {
+                continue;
+            }
             $calendarDay = $instant->toDateString();
             // >= cutoff no despachante inclui a reserva exatamente no limite.
             while ($hourHead < count($window) && $window[$hourHead] < $minute - 60) {

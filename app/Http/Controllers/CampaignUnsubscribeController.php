@@ -23,7 +23,8 @@ class CampaignUnsubscribeController extends Controller
         abort_if($recipient === null, 404);
         $manager->suppress($recipient->normalized_email);
 
-        return redirect()->route('campaigns.unsubscribe', ['token' => $token])
+        // EC_CAMPAIGNS_V7_RELATIVE_REDIRECT: mantém o host HTTPS público do túnel.
+        return redirect()->to(route('campaigns.unsubscribe', ['token' => $token], false))
             ->with('unsubscribed', true);
     }
 }

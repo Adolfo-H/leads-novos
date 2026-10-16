@@ -238,6 +238,20 @@ services:
         stop_grace_period: 11m
         restart: unless-stopped
 
+    # EC_CAMPAIGNS_V7_GATEWAY: somente a rota publica de descadastro.
+    # Sem "ports": acessivel apenas aos containers na rede sail.
+    campaigns-unsubscribe-gateway:
+        profiles:
+            - background
+        image: nginx:1.27-alpine
+        volumes:
+            - './docker/campaign-unsubscribe/nginx.conf:/etc/nginx/conf.d/default.conf:ro'
+        networks:
+            - sail
+        depends_on:
+            - laravel.test
+        restart: unless-stopped
+
     ngrok:
         profiles:
             - background
@@ -246,13 +260,13 @@ services:
             NGROK_AUTHTOKEN: '${NGROK_AUTHTOKEN}'
         command:
             - http
-            - laravel.test:80
+            - campaigns-unsubscribe-gateway:8080
             - --url
             - 'https://${NGROK_DOMAIN}'
         networks:
             - sail
         depends_on:
-            - laravel.test
+            - campaigns-unsubscribe-gateway
         restart: unless-stopped
 
     pgsql:

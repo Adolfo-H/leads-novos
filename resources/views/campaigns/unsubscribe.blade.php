@@ -14,7 +14,8 @@
         <p class="success">Pedido registrado. Este endereço foi retirado dos próximos disparos comerciais.</p>
     @else
         <p>Você pode cancelar o recebimento de futuros e-mails comerciais da ExportControl. O cancelamento não altera cadastros fiscais ou comunicações transacionais obrigatórias.</p>
-        <form method="POST" action="{{ route('campaigns.unsubscribe.store', ['token' => $token]) }}">
+        {{-- EC_CAMPAIGNS_V7_RELATIVE_FORM --}}
+        <form method="POST" action="{{ route('campaigns.unsubscribe.store', ['token' => $token], false) }}">
             @csrf
             <button class="action" type="submit">Confirmar descadastro</button>
         </form>

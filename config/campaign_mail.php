@@ -15,7 +15,12 @@ return [
     'per_day' => (int) env('CAMPAIGN_MAIL_PER_DAY', 500),
     'per_tick' => (int) env('CAMPAIGN_MAIL_PER_TICK', 1),
     'max_recipients' => (int) env('CAMPAIGN_MAIL_MAX_RECIPIENTS', 100),
+    // EC_CAMPAIGNS_V7_UNSUBSCRIBE_URL: dominio HTTPS do túnel; APP_URL local permanece inalterado.
+    'unsubscribe_base_url' => env('CAMPAIGN_UNSUBSCRIBE_BASE_URL', ''),
     'queue' => env('CAMPAIGN_MAIL_QUEUE', 'campaigns'),
+    // Piloto restrito a caixas individuais autorizadas; não libera campanhas reais.
+    'pilot_enabled' => (bool) env('CAMPAIGN_PILOT_ENABLED', false),
+    'pilot_allowlist' => env('CAMPAIGN_PILOT_ALLOWLIST', ''),
     'imap_enabled' => (bool) env('CAMPAIGN_IMAP_ENABLED', false),
     'imap_host' => env('IMAP_HOST', ''),
     'imap_port' => (int) env('IMAP_PORT', 993),

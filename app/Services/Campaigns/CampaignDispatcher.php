@@ -7,12 +7,16 @@ use App\Models\EmailCampaign;
 use App\Models\EmailCampaignRecipient;
 use App\Models\EmailCampaignSuppression;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 final class CampaignDispatcher
 {
     /**
-     * Libera somente poucos destinatários por execução, contabilizando
-     * reservas (não apenas envios), inclusive quando o worker estiver parado.
+     * Reserva destinatários sob uma trava GLOBAL no PostgreSQL, inclusive
+     * quando duas chamadas do agendador são disparadas ao mesmo tempo.
+     *
+     * Cada reserva recebe um UUID. Jobs antigos não podem utilizar uma reserva
+     * que tenha sido liberada por pausa, cancelamento ou alteração de estado.
      */
     public function tick(): int
     {
@@ -20,24 +24,38 @@ final class CampaignDispatcher
             return 0;
         }
 
-        $hour = max(1, min(100, (int) config('campaign_mail.per_hour', 10)));
-        $day = max(1, min(500, (int) config('campaign_mail.per_day', 500)));
-        $tick = max(1, min(5, (int) config('campaign_mail.per_tick', 1)));
+        // CAMPANHAS_V6_POLICY: ritmo global do Prospector com fallback seguro do ambiente.
+        $policyService = app(CampaignSendPolicy::class);
+        $policy = $policyService->effective();
+        if (! $policyService->windowOpen($policy)) {
+            return 0;
+        }
+        $hour = max(1, min(100, $policy['hour']));
+        $day = max(1, min(500, $policy['day']));
+        $tick = max(1, min(5, $policy['tick']));
 
-        /** @var list<int> $reserved */
+        /** @var list<array{id: int, token: string}> $reserved */
         $reserved = DB::transaction(static function () use ($hour, $day, $tick): array {
-            // Uma única lock de banco evita duas execuções simultâneas no mesmo servidor.
+            // Todas as execuções travam a MESMA linha, não apenas a campanha
+            // ativa. Isso serializa a verificação das cotas entre campanhas.
+            // A trava id=1 é independente das campanhas e criada pela migration V4.
+            $gate = DB::table('email_campaign_dispatch_gates')
+                ->where('id', 1)->lockForUpdate()->first();
+            if ($gate === null) {
+                return [];
+            }
+
             $campaign = EmailCampaign::query()
                 ->where('status', 'running')->orderBy('id')->lockForUpdate()->first();
             if ($campaign === null) {
                 return [];
             }
 
-            // Comparações e gravação em UTC: o PostgreSQL usa UTC, sem deslocamentos artificiais.
-            // São limites GLOBAIS entre todas as campanhas, não por campanha.
             $utcNow = now('UTC');
-            $hourUsed = EmailCampaignRecipient::query()->where('reserved_at', '>=', $utcNow->copy()->subHour())->count();
-            $dayUsed = EmailCampaignRecipient::query()->where('reserved_at', '>=', $utcNow->copy()->subDay())->count();
+            $hourUsed = EmailCampaignRecipient::query()
+                ->where('reserved_at', '>=', $utcNow->copy()->subHour())->count();
+            $dayUsed = EmailCampaignRecipient::query()
+                ->where('reserved_at', '>=', $utcNow->copy()->subDay())->count();
             $available = min($tick, max(0, $hour - $hourUsed), max(0, $day - $dayUsed));
             if ($available === 0) {
                 return [];
@@ -48,32 +66,42 @@ final class CampaignDispatcher
                 ->where('status', 'pending')
                 ->orderBy('id')->limit($available)
                 ->lockForUpdate()->pluck('id')->all();
+
             $result = [];
             foreach ($ids as $id) {
+                $token = (string) Str::uuid();
                 $updated = EmailCampaignRecipient::query()
                     ->whereKey((int) $id)->where('status', 'pending')
-                    ->update(['status' => 'reserved', 'reserved_at' => $utcNow]);
+                    ->update([
+                        'status' => 'reserved',
+                        'reserved_at' => $utcNow,
+                        'reservation_token' => $token,
+                    ]);
+
                 if ($updated > 0) {
-                    $result[] = (int) $id;
+                    $result[] = ['id' => (int) $id, 'token' => $token];
                 }
             }
 
             return $result;
         });
 
-        foreach ($reserved as $id) {
-            SendEmailCampaignRecipient::dispatch($id)
+        // Uma falha ao inserir na fila deixa a reserva para auditoria humana;
+        // nunca a libera automaticamente quando o broker pode tê-la aceitado.
+        foreach ($reserved as $item) {
+            SendEmailCampaignRecipient::dispatch($item['id'], $item['token'])
                 ->onConnection('redis')
                 ->onQueue((string) config('campaign_mail.queue', 'campaigns'));
         }
 
-        // Campanhas sem trabalho pendente não devem ficar eternamente "em andamento".
+        // Não altera status de envios incertos e não reprograma destinatários.
         EmailCampaign::query()->where('status', 'running')->get()->each(
             static function (EmailCampaign $campaign): void {
                 if (! EmailCampaignRecipient::query()
                     ->where('email_campaign_id', $campaign->id)
                     ->whereIn('status', ['pending', 'reserved', 'sending'])->exists()) {
-                    $campaign->update(['status' => 'completed', 'completed_at' => now()]);
+                    EmailCampaign::query()->whereKey($campaign->id)->where('status', 'running')
+                        ->update(['status' => 'completed', 'completed_at' => now('UTC')]);
                 }
             }
         );
@@ -86,7 +114,7 @@ final class CampaignDispatcher
         $blocked = EmailCampaignSuppression::query()
             ->where('normalized_email', $recipient->normalized_email)->exists();
         if ($blocked) {
-            $recipient->update(['status' => 'suppressed']);
+            $recipient->update(['status' => 'suppressed', 'reservation_token' => null]);
         }
 
         return $blocked;

@@ -12,6 +12,7 @@ import ssl
 import sys
 from email.header import decode_header, make_header
 from email.utils import parseaddr, parsedate_to_datetime
+from campaign_dsn import extract_dsn, MAX_DSN_BYTES  # EC_CAMPAIGNS_V7_DSN
 
 
 def decode(value):
@@ -100,6 +101,21 @@ def run():
                 "auto_submitted": str(message.get("Auto-Submitted", ""))[:80],
                 "received_at": iso_date,
             })
+            # DSN estruturado: somente multipart/report, ate 128 KiB.
+            # Nao ler corpo de mensagem pessoal, nem marcar como lida.
+            if (message.get_content_type().lower() == "multipart/report"
+                    and str(message.get_param("report-type", header="content-type") or "").lower() == "delivery-status"):
+                size_status, size_parts = imap.uid("FETCH", str(uid), "(RFC822.SIZE)")
+                raw_size = b" ".join(p for p in size_parts if isinstance(p, bytes)) if size_parts else b""
+                size_match = re.search(rb"RFC822.SIZE\s+(\d+)", raw_size)
+                if size_status == "OK" and size_match and int(size_match.group(1)) <= MAX_DSN_BYTES:
+                    full_status, full_parts = imap.uid("FETCH", str(uid), "(BODY.PEEK[])")
+                    if full_status == "OK" and full_parts:
+                        raw_dsn = next((p[1] for p in full_parts if isinstance(p, tuple) and isinstance(p[1], bytes)), None)
+                        if raw_dsn is not None and len(raw_dsn) <= MAX_DSN_BYTES:
+                            structured = extract_dsn(raw_dsn)
+                            if structured is not None:
+                                items[-1]["bounce"] = structured
             last_uid = uid
         return {"uidvalidity": uidvalidity, "last_uid": last_uid, "initialized": False, "messages": items}
 
