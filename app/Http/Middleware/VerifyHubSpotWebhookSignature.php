@@ -17,16 +17,8 @@ final class VerifyHubSpotWebhookSignature
         Request $request,
         Closure $next,
     ): Response {
-        $verify =
-            (bool) config(
-                'services.hubspot.webhook_verify_signature',
-                true
-            );
-
         if (
-            $verify
-            && ! $this
-                ->verifier
+            ! $this->verifier
                 ->valid(
                     $request
                 )

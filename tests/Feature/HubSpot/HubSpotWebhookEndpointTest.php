@@ -41,7 +41,6 @@ it(
 
             'services.hubspot.webhook_public_url' => $url,
 
-            'services.hubspot.webhook_verify_signature' => true,
         ]);
 
         $timestamp =
@@ -166,7 +165,6 @@ it(
 
             'services.hubspot.webhook_public_url' => 'http://localhost/webhooks/hubspot',
 
-            'services.hubspot.webhook_verify_signature' => true,
         ]);
 
         $body =
@@ -230,8 +228,6 @@ it(
             'services.hubspot.webhook_secret' => $secret,
 
             'services.hubspot.webhook_public_url' => $url,
-
-            'services.hubspot.webhook_verify_signature' => true,
 
             'services.hubspot.email_sync_enabled' => false,
         ]);

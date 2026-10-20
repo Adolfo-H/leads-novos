@@ -586,12 +586,10 @@ final class ExportResearchEntityMatcher
         }
 
         $emailDomain =
-            mb_strtolower(
-                trim(
-                    substr(
-                        $email,
-                        $at + 1
-                    )
+            $this->normalizeDomain(
+                substr(
+                    $email,
+                    $at + 1
                 )
             );
 
@@ -601,27 +599,57 @@ final class ExportResearchEntityMatcher
                 PHP_URL_HOST
             );
 
+        if (! is_string($host)) {
+            return false;
+        }
+
+        $host =
+            $this->normalizeDomain($host);
+
         if (
-            ! is_string($host)
-            || trim($host) === ''
+            $emailDomain === null
+            || $host === null
         ) {
             return false;
         }
 
-        $emailLabels =
-            $this->domainLabels(
-                $emailDomain
+        return $host === $emailDomain
+            || str_ends_with(
+                $host,
+                '.'.$emailDomain
+            )
+            || str_ends_with(
+                $emailDomain,
+                '.'.$host
+            );
+    }
+
+    private function normalizeDomain(
+        string $domain
+    ): ?string {
+        $domain =
+            rtrim(
+                mb_strtolower(
+                    trim($domain)
+                ),
+                '.'
             );
 
-        $urlLabels =
-            $this->domainLabels(
-                $host
-            );
+        if (
+            $domain === ''
+            || ! str_contains(
+                $domain,
+                '.'
+            )
+            || ! preg_match(
+                '/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(?:\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))+$/',
+                $domain
+            )
+        ) {
+            return null;
+        }
 
-        return array_intersect(
-            $emailLabels,
-            $urlLabels
-        ) !== [];
+        return $domain;
     }
 
     /**

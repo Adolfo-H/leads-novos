@@ -54,6 +54,43 @@ final class IcpScoringService
     public function calculate(
         Company $company
     ): CompanyIcpScore {
+        $result = $this->evaluate($company);
+
+        $icpScore = CompanyIcpScore::query()
+            ->updateOrCreate(
+                [
+                    'company_id' => $company->id,
+                ],
+                [
+                    'score' => $result['score'],
+                    'grade' => $result['grade'],
+                    'label' => $result['label'],
+                    'version' => self::VERSION,
+                    'factors' => $result['factors'],
+                    'calculated_at' => now(),
+                ]
+            );
+
+        $company->unsetRelation('icpScore');
+
+        $this->sdr->recalculate($company);
+
+        return $icpScore->refresh();
+    }
+
+    /**
+     * Avalia o ICP sem gravar o score nem recalcular o SDR.
+     *
+     * @return array{
+     *     score: int,
+     *     grade: string,
+     *     label: string,
+     *     factors: array<string, mixed>
+     * }
+     */
+    public function evaluate(
+        Company $company
+    ): array {
         $company->loadMissing([
             'establishments.cnaes',
         ]);
@@ -368,44 +405,12 @@ final class IcpScoringService
             $score
         );
 
-        $icpScore = CompanyIcpScore::query()
-            ->updateOrCreate(
-                [
-                    'company_id' => $company->id,
-                ],
-                [
-                    'score' => $score,
-
-                    'grade' => $grade,
-
-                    'label' => $this->label(
-                        $grade
-                    ),
-
-                    'version' => self::VERSION,
-
-                    'factors' => $factors,
-
-                    'calculated_at' => now(),
-                ]
-            );
-
-        /*
-         * O ICP acabou de mudar.
-         *
-         * Garantimos que o Score SDR leia
-         * o novo resultado, e não uma relação
-         * previamente carregada.
-         */
-        $company->unsetRelation(
-            'icpScore'
-        );
-
-        $this->sdr->recalculate(
-            $company
-        );
-
-        return $icpScore->refresh();
+        return [
+            'score' => $score,
+            'grade' => $grade,
+            'label' => $this->label($grade),
+            'factors' => $factors,
+        ];
     }
 
     /**

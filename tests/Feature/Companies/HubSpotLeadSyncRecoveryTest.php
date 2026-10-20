@@ -78,6 +78,7 @@ function useHubSpotRecoveryProvider(
 function hubSpotFoundResponse(
     string $companyId,
     array $deals = [],
+    string $matchedBy = 'name',
 ): array {
     return [
         'found' => true,
@@ -90,7 +91,7 @@ function hubSpotFoundResponse(
         'associated_deals_count' => count($deals),
         'deals' => $deals,
         'last_contacted_at' => null,
-        'matched_by' => 'name',
+        'matched_by' => $matchedBy,
         'matched_value' => 'Empresa',
         'external_url' => null,
         'metadata' => [],
@@ -125,7 +126,8 @@ it('recovers a remotely created company during a partial retry', function () {
 
     useHubSpotRecoveryProvider(
         hubSpotFoundResponse(
-            'company-123'
+            'company-123',
+            matchedBy: 'linked_hubspot_id',
         )
     );
 
@@ -175,7 +177,7 @@ it('recovers a remotely created company during a partial retry', function () {
     );
 });
 
-it('recovers an already created deal instead of creating a duplicate', function () {
+it('requires manual review instead of recovering an unlinked deal by name', function () {
     $company =
         hubSpotRecoveryCompany(
             '72222222',
@@ -206,7 +208,8 @@ it('recovers an already created deal instead of creating a duplicate', function 
                     'is_closed_won' => false,
                     'closed_at' => null,
                 ],
-            ]
+            ],
+            'linked_hubspot_id',
         )
     );
 
@@ -217,22 +220,18 @@ it('recovers an already created deal instead of creating a duplicate', function 
         ),
     ]);
 
-    $sync =
-        app(
+    expect(
+        fn () => app(
             HubSpotLeadSyncService::class
         )->sync(
             $company->fresh()
-        );
+        )
+    )->toThrow(RuntimeException::class);
 
-    expect(
-        $sync->hubspot_deal_id
-    )->toBe(
-        'deal-existing'
-    );
-
-    expect(
-        $sync->synced_at
-    )->not->toBeNull();
+    expect($company->hubSpotLead()->firstOrFail()->refresh()->hubspot_deal_id)
+        ->toBeNull()
+        ->and($company->hubSpotLead()->firstOrFail()->hubspot_deal_sync_status)
+        ->toBe('manual_review');
 
     Http::assertNotSent(
         fn (Request $request): bool => $request->method() === 'POST'

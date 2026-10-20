@@ -6,6 +6,8 @@ it('defines one dedicated campaign queue worker in the existing background profi
     $compose = file_get_contents(base_path('compose.yaml'));
 
     expect($compose)->not->toBeFalse();
+
+    $compose = str_replace(["\r\n", "\r"], "\n", (string) $compose);
     expect(substr_count($compose, '    campaigns-worker:'))->toBe(1);
 
     preg_match('/(?ms)^    campaigns-worker:\n(.*?)(?=^    [a-z][a-z0-9.-]*:|\z)/', $compose, $matches);

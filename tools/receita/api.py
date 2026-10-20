@@ -1,4 +1,6 @@
+import logging
 import os
+import time
 from pathlib import Path
 
 import duckdb
@@ -9,180 +11,98 @@ from group_query import (
     ReceitaDataFilesMissing,
     query_group,
 )
-
 from prospect_query import (
     DEFAULT_PRIORITY_CNAES,
     DEFAULT_PRIORITY_STATES,
     query_prospects,
+)
+from release_manifest import (
+    ReleaseValidationError,
+    validate_release,
 )
 
 
 DATA_DIR = Path(
     os.environ.get(
         "RECEITA_DATA_DIR",
-        "/app/fixtures",
+        "/real-data/processed/active",
     )
 )
 
+logger = logging.getLogger("receita.api")
 
 app = FastAPI(
     title="Prospector Receita Data",
-    version="0.2.0",
+    version="0.3.0",
 )
 
 
-def dataset_info() -> dict:
-    fixture = (
-        (
-            DATA_DIR
-            / "companies.parquet"
-        ).exists()
-
-        and
-
-        (
-            DATA_DIR
-            / "establishments.parquet"
-        ).exists()
+def safe_dataset_error(exception: ReleaseValidationError) -> HTTPException:
+    return HTTPException(
+        status_code=503,
+        detail={
+            "code": exception.code,
+            "message": "Dataset da Receita indisponível ou inválido.",
+        },
     )
 
-    company_parts = list(
-        (
-            DATA_DIR
-            / "companies"
-        ).glob(
-            "*.parquet"
-        )
-    )
 
-    establishment_parts = list(
-        (
-            DATA_DIR
-            / "establishments"
-        ).glob(
-            "*.parquet"
-        )
-    )
-
-    domains = (
-        DATA_DIR
-        / "domains"
-    )
-
-    real = (
-        bool(company_parts)
-        and bool(
-            establishment_parts
-        )
-        and (
-            domains
-            / "cnaes.parquet"
-        ).exists()
-        and (
-            domains
-            / "municipios.parquet"
-        ).exists()
-        and (
-            domains
-            / "naturezas.parquet"
-        ).exists()
-    )
-
+def dataset_info(manifest: dict) -> dict:
+    tables = manifest["tables"]
     return {
-        "available":
-            fixture or real,
-
-        "mode":
-            (
-                "real"
-                if real
-                else "fixture"
-                if fixture
-                else "unavailable"
-            ),
-
-        "period":
-            (
-                DATA_DIR.name
-                if real
-                else None
-            ),
-
-        "companies_parts":
-            len(
-                company_parts
-            ),
-
-        "establishments_parts":
-            len(
-                establishment_parts
-            ),
+        "available": True,
+        "mode": manifest["mode"],
+        "period": manifest["period"],
+        "dataset_version": manifest["dataset_version"],
+        "companies_parts": len(tables["companies"]["files"]),
+        "establishments_parts": len(
+            tables["establishments"]["files"]
+        ),
     }
 
 
 @app.get("/health")
 def health() -> dict:
-    dataset = dataset_info()
-
-    if not dataset[
-        "available"
-    ]:
-        raise HTTPException(
-            status_code=503,
-            detail=(
-                "Dataset da Receita "
-                "não está disponível."
-            ),
+    try:
+        manifest = validate_release(
+            DATA_DIR,
+            verify_samples=True,
         )
+    except ReleaseValidationError as exception:
+        raise safe_dataset_error(exception) from exception
 
     return {
-        "status":
-            "ok",
-
-        "duckdb":
-            duckdb.__version__,
-
-        "data_dir":
-            str(
-                DATA_DIR
-            ),
-
-        **dataset,
+        "status": "ok",
+        "duckdb": duckdb.__version__,
+        **dataset_info(manifest),
     }
 
 
 @app.get("/groups/{cnpj_root}")
-def get_group(
-    cnpj_root: str,
-) -> dict:
+def get_group(cnpj_root: str) -> dict:
     try:
-        return query_group(
-            cnpj_root,
-            DATA_DIR,
-        )
-
+        validate_release(DATA_DIR)
+        return query_group(cnpj_root, DATA_DIR)
     except ValueError as exception:
         raise HTTPException(
             status_code=422,
             detail=str(exception),
         ) from exception
-
     except CompanyNotFound as exception:
         raise HTTPException(
             status_code=404,
             detail=str(exception),
         ) from exception
-
-    except ReceitaDataFilesMissing as exception:
+    except (ReceitaDataFilesMissing, ReleaseValidationError) as exception:
+        if isinstance(exception, ReleaseValidationError):
+            raise safe_dataset_error(exception) from exception
         raise HTTPException(
             status_code=503,
-            detail=str(exception),
+            detail="Dataset da Receita indisponível.",
         ) from exception
 
 
-def csv_values(
-    value: str,
-) -> list[str]:
+def csv_values(value: str) -> list[str]:
     return [
         item.strip()
         for item in value.split(",")
@@ -194,47 +114,64 @@ def csv_values(
 def get_prospects(
     limit: int = 100,
     offset: int = 0,
-    states: str = ",".join(
-        DEFAULT_PRIORITY_STATES
-    ),
-    cnaes: str = ",".join(
-        DEFAULT_PRIORITY_CNAES
-    ),
+    states: str = ",".join(DEFAULT_PRIORITY_STATES),
+    cnaes: str = ",".join(DEFAULT_PRIORITY_CNAES),
     min_capital: float | None = None,
     size_codes: str = "",
+    dataset_version: str | None = None,
 ) -> dict:
+    started_at = time.perf_counter()
+    result: dict | None = None
     try:
-        return query_prospects(
+        result = query_prospects(
             data_dir=DATA_DIR,
-
-            states=csv_values(
-                states
-            ),
-
-            cnaes=csv_values(
-                cnaes
-            ),
-
+            states=csv_values(states),
+            cnaes=csv_values(cnaes),
             limit=limit,
-
             offset=offset,
-
             min_capital=min_capital,
-
-            size_codes=csv_values(
-                size_codes
-            ),
+            size_codes=csv_values(size_codes),
+            expected_dataset_version=dataset_version,
         )
-
     except ValueError as exception:
         raise HTTPException(
             status_code=422,
             detail=str(exception),
         ) from exception
-
+    except ReleaseValidationError as exception:
+        if exception.code == "dataset_version_changed":
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": exception.code,
+                    "message": "A competência ativa mudou durante a paginação.",
+                },
+            ) from exception
+        raise safe_dataset_error(exception) from exception
     except ReceitaDataFilesMissing as exception:
         raise HTTPException(
             status_code=503,
-            detail=str(exception),
+            detail="Dataset da Receita indisponível.",
         ) from exception
+    finally:
+        elapsed_ms = round(
+            (time.perf_counter() - started_at) * 1000,
+            2,
+        )
+        logger.info(
+            "receita_query query=prospects dataset_version=%s "
+            "rows_scanned=%s rows_returned=%s cursor=%s elapsed_ms=%s",
+            result["dataset_version"]
+            if result is not None
+            else "unavailable",
+            result["rows_scanned"]
+            if result is not None
+            else None,
+            result["count"]
+            if result is not None
+            else 0,
+            max(0, offset),
+            elapsed_ms,
+        )
 
+    return result

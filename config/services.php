@@ -121,11 +121,6 @@ return [
             'HUBSPOT_WEBHOOK_PUBLIC_URL'
         ),
 
-        'webhook_verify_signature' => (bool) env(
-            'HUBSPOT_WEBHOOK_VERIFY_SIGNATURE',
-            true
-        ),
-
         /*
          * Emails estão temporariamente bloqueados
          * até o HubSpot liberar

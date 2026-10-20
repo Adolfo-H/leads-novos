@@ -15,10 +15,11 @@ uses(RefreshDatabase::class);
 function queuedResearchCompany(
     string $crmStatus = 'not_found',
     string $grade = 'A',
+    string $cnpjRoot = '66778899',
 ): Company {
     $company =
         Company::query()->create([
-            'cnpj_root' => '66778899',
+            'cnpj_root' => $cnpjRoot,
 
             'corporate_name' => 'Empresa Pesquisa Background',
         ]);
@@ -402,6 +403,66 @@ it('recovers stale queued export research', function () {
                 === $company->id
             && $job->force
                 === false
+    );
+});
+
+it('does not let definitive failed researches starve a later recoverable item', function () {
+    Queue::fake();
+
+    foreach (range(1, 200) as $index) {
+        $company = queuedResearchCompany(
+            cnpjRoot: str_pad(
+                (string) (10000000 + $index),
+                8,
+                '0',
+                STR_PAD_LEFT
+            )
+        );
+        $intelligence = $company
+            ->exportIntelligence()
+            ->create([
+                'research_status' => 'failed',
+                'metadata' => [],
+            ]);
+
+        DB::table('company_export_intelligences')
+            ->where('id', $intelligence->id)
+            ->update([
+                'updated_at' => now()->subMinutes(30),
+            ]);
+    }
+
+    $recoverable = queuedResearchCompany(
+        cnpjRoot: '99887766',
+    );
+    $intelligence = $recoverable
+        ->exportIntelligence()
+        ->create([
+            'research_status' => 'queued',
+            'metadata' => [
+                'research_queue' => [
+                    'force' => false,
+                ],
+            ],
+        ]);
+
+    DB::table('company_export_intelligences')
+        ->where('id', $intelligence->id)
+        ->update([
+            'updated_at' => now()->subMinutes(30),
+        ]);
+
+    $recovered = app(
+        ExportResearchQueueService::class
+    )->recoverStale(
+        afterMinutes: 20,
+        limit: 1,
+    );
+
+    expect($recovered)->toBe(1);
+    Queue::assertPushed(
+        ResearchCompanyExports::class,
+        fn (ResearchCompanyExports $job): bool => $job->companyId === $recoverable->id
     );
 });
 

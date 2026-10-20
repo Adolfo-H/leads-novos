@@ -1,0 +1,37 @@
+# Relatório — Pacote 13 (integridade de campanhas)
+
+- Objetivo: preservar histórico de destinatários ao editar rascunhos, aplicar cotas na transição para envio, fortalecer segmentação e isolar falhas de parsing IMAP.
+- Arquivos alterados:
+  - `app/Services/Campaigns/CampaignManager.php`
+  - `app/Services/Campaigns/CampaignDispatcher.php`
+  - `app/Jobs/SendEmailCampaignRecipient.php`
+  - `app/Services/Campaigns/CampaignSegmentation.php`
+  - `app/Services/Campaigns/CampaignSequencePlanner.php`
+  - `app/Services/Campaigns/CampaignSequenceGuard.php`
+  - `app/Services/Campaigns/CampaignQueueSimulator.php`
+  - `app/Console/Commands/SimulateEmailCampaignQueue.php`
+  - `app/Console/Commands/SyncEmailCampaignReplies.php`
+  - `app/Models/EmailCampaignRecipient.php`
+  - `tools/email/imap_fetch.py`
+  - `tests/Feature/Campaigns/CampaignRolling24hLimit500Test.php`
+- Arquivos adicionados:
+  - `database/migrations/2026_10_20_130000_add_campaign_sequence_exclusion_timestamp.php`
+  - `tests/Feature/Campaigns/CampaignPackage13IntegrityTest.php`
+  - `tools/email/test_imap_fetch.py`
+- Mudanças:
+  - Edição de rascunho agora trava a linha global de cotas antes de campanha/destinatários, revalida o status `draft` sob lock e reconcilia destinatários por origem/e-mail normalizado. IDs, respostas, tentativas, status e vínculos existentes são preservados; removidos ficam cancelados quando ainda pendentes/reservados, sem apagar linhas históricas.
+  - A migration aditiva registra quando um destinatário foi removido de uma sequência. O planejador ignora essas linhas sem apagar o histórico, e o guard bloqueia follow-ups previamente preparados caso a mensagem original seja respondida, removida, rebatida ou suprimida.
+  - Dispatcher e workers seguem a ordem de trava `gate → campanha → destinatário`. A reserva continua limitada por tentativas já iniciadas mais reservas ainda não iniciadas; cada worker reconta `attempted_at` sob o gate global, na mesma transação em que grava `sending` e inicia a tentativa. Sem cota, o destinatário retorna a `pending`, sem SMTP.
+  - Segmentação manual exclui empresas ligadas diretamente a uma empresa fiscal marcada como cliente no CRM ou encontrada na lista central por raiz CNPJ/nome normalizado. A elegibilidade de contatos já enviados é filtrada no banco e o cursor continua até atingir o limite ou esgotar resultados.
+  - O leitor IMAP trata charset desconhecido com fallback, isola falhas de parsing por UID e inclui tipo/UID no diagnóstico. Falhas de FETCH continuam abortando o lote para não avançar o cursor após falha de conexão/leitura.
+  - `campaigns:simulate` permanece somente leitura e agora apresenta totais agregados de tentativas, respostas, bounces e opt-outs, além de incertos e reservas antigas; não expõe endereços nem agenda jobs.
+- Validações:
+  - Pint: PASS — 539 arquivos.
+  - PHPStan (`composer types:check`): PASS — sem erros.
+  - Suítes `tests/Feature/Campaigns` e `tests/Feature/Contacts`: PASS — 170 testes, 877 asserções.
+  - Testes Python IMAP sintéticos: PASS — 3 testes.
+  - `git diff --check`: PASS.
+- Migration: aditiva e validada apenas pela suíte de testes isolada. Não foi aplicada em banco operacional. Deve ser aplicada antes de disponibilizar a edição de rascunhos com a nova coluna.
+- Ações externas: nenhuma. Não houve acesso ao HubSpot/IMAP, disparo SMTP, envio comercial, alteração em produção ou recálculo em massa. Os testes de envio usam `Mail::fake()`, `Http::fake()` e filas faked.
+- Flags comerciais: nenhuma flag de produção foi habilitada ou alterada.
+- Riscos e aprovações pendentes: revisão e autorização para aplicar a migration em produção e homologação controlada da política de cotas. Não executar campanhas reais sem autorização explícita.

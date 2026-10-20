@@ -52,6 +52,14 @@ Ela possui job próprio, retry automático, proteção contra concorrência, rec
 
 Principais variáveis: HUBSPOT_ACCESS_TOKEN, HUBSPOT_BASE_URL, HUBSPOT_PORTAL_ID, HUBSPOT_LEAD_SYNC_ENABLED, HUBSPOT_LEAD_MIN_SCORE, HUBSPOT_LEAD_PIPELINE, HUBSPOT_LEAD_INITIAL_STAGE e HUBSPOT_LEAD_DISCARDED_STAGES.
 
+Diagnóstico agregado, somente leitura e sem iniciar sincronizações:
+
+```bash
+./vendor/bin/sail artisan hubspot:sync-audit
+```
+
+Criações de negócios com resultado remoto incerto ficam bloqueadas para retry automático e exigem conciliação manual. O identificador de operação é local; nenhuma propriedade de idempotência é presumida no portal.
+
 Nunca versione tokens ou credenciais.
 
 ## Segurança
@@ -67,6 +75,22 @@ Rotas internas utilizam autenticação e verificação de e-mail.
 O provedor padrão é Tavily.
 
 As configurações principais são TAVILY_API_KEY, TAVILY_BASE_URL, TAVILY_MAX_RESULTS, EXPORT_RESEARCH_ENABLED e EXPORT_RESEARCH_COOLDOWN_DAYS.
+
+## Scores ICP
+
+Auditoria agregada, somente leitura:
+
+```bash
+./vendor/bin/sail artisan icp:audit-scores
+```
+
+Prévia de recálculo, também somente leitura por padrão:
+
+```bash
+./vendor/bin/sail artisan icp:recalculate-affected --limit=25
+```
+
+O recálculo só grava com `--apply`, exige `--reason` e permanece sujeito à aprovação humana para dados reais. A prévia não recalcula scores SDR nem realiza chamadas externas.
 
 ## Qualidade
 

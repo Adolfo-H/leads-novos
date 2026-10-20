@@ -35,6 +35,7 @@ final class SimulateEmailCampaignQueue extends Command
         $this->line('Até 7 dias: '.$report['within_seven_days']);
         $this->line('Restantes após 7 dias: '.$report['remaining']);
         $this->line('Fila real (somente leitura): pendentes='.$actual['pending'].' reservados='.$actual['reserved'].' enviando='.$actual['sending'].' incertos='.$actual['uncertain']);
+        $this->line('Auditoria agregada: tentativas='.$actual['attempted'].' respostas='.$actual['replies'].' bounces='.$actual['bounces'].' opt-outs globais='.$actual['global_suppressions']);
         $this->line('Alertas reais: reservas antigas='.$actual['stale_reserved'].' envios sem conclusão='.$actual['stale_sending']);
         $this->warn('Cenário teórico: parte de uma fila virtual vazia e não considera concorrência, SMTP ou outras campanhas.');
         $this->info('Nenhum destinatário, e-mail, job, banco ou cursor IMAP foi alterado.');

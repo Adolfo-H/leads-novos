@@ -5,6 +5,7 @@ namespace App\Services\Campaigns;
 use App\Models\EmailCampaign;
 use App\Models\EmailCampaignRecipient;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Projeção virtual: NUNCA envia e-mail, agenda job, reserva destinatário nem salva no BD.
@@ -30,7 +31,7 @@ final class CampaignQueueSimulator
      *   completed:bool,
      *   completion_minutes:int|null,
      *   forecast_starts_at:string,
-     *   actual:array{pending:int,reserved:int,sending:int,sent:int,uncertain:int,suppressed:int,canceled:int,stale_reserved:int,stale_sending:int,drafts:int,running:int,paused:int}
+     *   actual:array{pending:int,reserved:int,sending:int,sent:int,uncertain:int,suppressed:int,replied:int,canceled:int,attempted:int,replies:int,bounces:int,global_suppressions:int,stale_reserved:int,stale_sending:int,drafts:int,running:int,paused:int}
      * }
      */
     public function report(int $requested = 50): array
@@ -132,7 +133,12 @@ final class CampaignQueueSimulator
                 'sent' => $count('sent'),
                 'uncertain' => $count('uncertain'),
                 'suppressed' => $count('suppressed'),
+                'replied' => $count('replied'),
                 'canceled' => $count('canceled'),
+                'attempted' => EmailCampaignRecipient::query()->whereNotNull('attempted_at')->count(),
+                'replies' => DB::table('email_campaign_replies')->count(),
+                'bounces' => DB::table('email_campaign_bounces')->count(),
+                'global_suppressions' => DB::table('email_campaign_suppressions')->count(),
                 'stale_reserved' => $staleReserved,
                 'stale_sending' => $staleSending,
                 'drafts' => EmailCampaign::query()->where('status', 'draft')->count(),

@@ -3,14 +3,18 @@
 namespace App\Services;
 
 use App\Contracts\CrmCompanyProvider;
+use App\Exceptions\HubSpotRequestFailed;
 use App\Models\Company;
 use App\Models\CompanyHubSpotLead;
 use App\Models\User;
 use App\Support\HubSpotHttpClient;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
@@ -468,18 +472,20 @@ final class HubSpotLeadSyncService
             /*
              * NEGÓCIO
              */
+            $dealWasKnown =
+                $sync->hubspot_deal_id !== null;
+
             if (
                 $sync->hubspot_deal_id
                 === null
             ) {
                 $sync->hubspot_deal_id =
-                    $this->createDeal(
+                    $this->createTrackedDeal(
+                        sync: $sync,
                         company: $company,
                         ownerId: $ownerId,
                         manual: $manual,
                     );
-
-                $sync->save();
 
             } elseif (
                 $manual
@@ -498,6 +504,7 @@ final class HubSpotLeadSyncService
                 fromId: $sync->hubspot_company_id,
                 toType: 'deals',
                 toId: $sync->hubspot_deal_id,
+                verifyExisting: $dealWasKnown,
             );
 
             foreach (
@@ -508,6 +515,7 @@ final class HubSpotLeadSyncService
                     fromId: $contactId,
                     toType: 'deals',
                     toId: $sync->hubspot_deal_id,
+                    verifyExisting: $dealWasKnown,
                 );
             }
 
@@ -801,6 +809,16 @@ final class HubSpotLeadSyncService
             $sync->hubspot_company_id
             === null
         ) {
+            if (
+                ($freshCrm['matched_by'] ?? null)
+                !== 'linked_hubspot_id'
+            ) {
+                throw new RuntimeException(
+                    'A empresa foi localizada sem um vínculo remoto '
+                    .'confiável. Sincronização encaminhada para revisão manual.'
+                );
+            }
+
             $sync->hubspot_company_id =
                 $externalId;
         }
@@ -861,38 +879,18 @@ final class HubSpotLeadSyncService
                 }
             }
 
-            if (count($matches) > 1) {
+            if ($matches !== []) {
+                $sync->forceFill([
+                    'hubspot_deal_sync_status' => 'manual_review',
+                    'hubspot_deal_sync_error_category' => count($matches) > 1
+                        ? 'multiple_unverified_deals'
+                        : 'unverified_remote_deal',
+                ])->save();
+
                 throw new RuntimeException(
-                    'Mais de um negócio compatível '
-                    .'foi encontrado no HubSpot. '
-                    .'Sincronização interrompida '
-                    .'para evitar duplicidade.'
+                    'Um negócio compatível foi localizado sem correlação remota '
+                    .'confiável. A sincronização exige revisão manual.'
                 );
-            }
-
-            if (count($matches) === 1) {
-                $match =
-                    $matches[0];
-
-                $sync->hubspot_deal_id =
-                    (string)
-                        $match['id'];
-
-                $stageId =
-                    $match[
-                        'stage_id'
-                    ]
-                    ?? null;
-
-                if (
-                    is_scalar($stageId)
-                    && trim(
-                        (string) $stageId
-                    ) !== ''
-                ) {
-                    $sync->deal_stage_id =
-                        (string) $stageId;
-                }
             }
         }
 
@@ -1056,6 +1054,135 @@ final class HubSpotLeadSyncService
             type: 'deals',
             properties: $properties,
         );
+    }
+
+    private function createTrackedDeal(
+        CompanyHubSpotLead $sync,
+        Company $company,
+        ?string $ownerId,
+        bool $manual,
+    ): string {
+        DB::transaction(function () use ($sync): void {
+            $locked = CompanyHubSpotLead::query()
+                ->whereKey($sync->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->hubspot_deal_id !== null) {
+                return;
+            }
+
+            if ($locked->hubspot_deal_sync_status === 'in_progress') {
+                $locked->forceFill([
+                    'hubspot_deal_sync_status' => 'remote_result_uncertain',
+                    'hubspot_deal_sync_error_category' => 'incomplete_prior_attempt',
+                ])->save();
+
+                return;
+            }
+
+            if ($locked->hubspot_deal_sync_status !== 'not_started') {
+                return;
+            }
+
+            $locked->forceFill([
+                'hubspot_deal_sync_status' => 'in_progress',
+                'hubspot_deal_operation_id' => $locked->hubspot_deal_operation_id
+                    ?? (string) Str::uuid(),
+                'hubspot_deal_sync_started_at' => now(),
+                'hubspot_deal_sync_completed_at' => null,
+                'hubspot_deal_sync_error_category' => null,
+            ])->save();
+        });
+
+        $sync->refresh();
+
+        if ($sync->hubspot_deal_id !== null) {
+            return $sync->hubspot_deal_id;
+        }
+
+        if ($sync->hubspot_deal_sync_status !== 'in_progress') {
+            throw new RuntimeException(
+                'A criação de negócio anterior não pode ser repetida automaticamente. '
+                .'O registro está aguardando revisão manual.'
+            );
+        }
+
+        try {
+            $dealId = $this->createDeal(
+                company: $company,
+                ownerId: $ownerId,
+                manual: $manual,
+            );
+        } catch (Throwable $exception) {
+            [$status, $category] =
+                $this->classifyDealCreationFailure($exception);
+
+            $state = $status === 409
+                || ($status !== null && $status >= 400 && $status < 500 && $status !== 429)
+                    ? 'manual_review'
+                    : 'remote_result_uncertain';
+
+            DB::transaction(function () use (
+                $sync,
+                $state,
+                $category,
+            ): void {
+                CompanyHubSpotLead::query()
+                    ->whereKey($sync->id)
+                    ->lockForUpdate()
+                    ->firstOrFail()
+                    ->forceFill([
+                        'hubspot_deal_sync_status' => $state,
+                        'hubspot_deal_sync_error_category' => $category,
+                    ])
+                    ->save();
+            });
+
+            $sync->refresh();
+
+            throw new RuntimeException(
+                $state === 'remote_result_uncertain'
+                    ? 'O resultado remoto da criação do negócio é incerto. '
+                        .'Nenhuma nova criação automática será tentada.'
+                    : 'A criação do negócio requer revisão manual antes de qualquer nova tentativa.',
+                previous: $exception,
+            );
+        }
+
+        $sync->forceFill([
+            'hubspot_deal_id' => $dealId,
+            'hubspot_deal_sync_status' => 'completed',
+            'hubspot_deal_sync_completed_at' => now(),
+            'hubspot_deal_sync_error_category' => null,
+        ])->save();
+
+        return $dealId;
+    }
+
+    /**
+     * @return array{0: int|null, 1: string}
+     */
+    private function classifyDealCreationFailure(
+        Throwable $exception
+    ): array {
+        if ($exception instanceof ConnectionException) {
+            return [null, 'connection'];
+        }
+
+        if ($exception instanceof HubSpotRequestFailed) {
+            $category = match (true) {
+                $exception->status === 409 => 'http_409',
+                $exception->status === 429 => 'http_429',
+                $exception->status >= 500 => 'http_5xx',
+                $exception->status >= 400 => 'http_4xx',
+                default => 'http_other',
+            };
+
+            return [$exception->status, $category];
+        }
+
+        return [null, 'invalid_or_unknown_response'];
     }
 
     private function resolveContact(
@@ -1490,7 +1617,20 @@ final class HubSpotLeadSyncService
         string $fromId,
         string $toType,
         string $toId,
+        bool $verifyExisting = false,
     ): void {
+        if (
+            $verifyExisting
+            && $this->associationExists(
+                fromType: $fromType,
+                fromId: $fromId,
+                toType: $toType,
+                toId: $toId,
+            )
+        ) {
+            return;
+        }
+
         $response =
             $this->client()
                 ->put(
@@ -1509,13 +1649,70 @@ final class HubSpotLeadSyncService
                     )
                 );
 
+        try {
+            $this->ensureSuccess(
+                $response,
+                'associar '
+                .$fromType
+                .' com '
+                .$toType
+            );
+        } catch (HubSpotRequestFailed $exception) {
+            if (
+                $exception->status === 409
+                && $this->associationExists(
+                    fromType: $fromType,
+                    fromId: $fromId,
+                    toType: $toType,
+                    toId: $toId,
+                )
+            ) {
+                return;
+            }
+
+            throw $exception;
+        }
+    }
+
+    private function associationExists(
+        string $fromType,
+        string $fromId,
+        string $toType,
+        string $toId,
+    ): bool {
+        $response = $this->client()
+            ->get(
+                $this->baseUrl()
+                .'/crm/v4/objects/'
+                .$fromType
+                .'/'
+                .rawurlencode($fromId)
+                .'/associations/'
+                .$toType
+            );
+
         $this->ensureSuccess(
             $response,
-            'associar '
-            .$fromType
-            .' com '
-            .$toType
+            'consultar associação'
         );
+
+        $results = $response->json('results');
+
+        if (! is_array($results)) {
+            return false;
+        }
+
+        foreach ($results as $result) {
+            if (
+                is_array($result)
+                && isset($result['toObjectId'])
+                && (string) $result['toObjectId'] === $toId
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -1868,17 +2065,9 @@ final class HubSpotLeadSyncService
             return;
         }
 
-        throw new RuntimeException(
-            'Erro ao '
-            .$operation
-            .' no HubSpot. HTTP '
-            .$response->status()
-            .': '
-            .mb_substr(
-                $response->body(),
-                0,
-                1000
-            )
+        throw new HubSpotRequestFailed(
+            status: $response->status(),
+            operation: $operation,
         );
     }
 }

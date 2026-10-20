@@ -58,6 +58,7 @@ it('previews companies without creating a batch before the final confirmation', 
             'count' => 1,
             'limit' => 50,
             'offset' => 0,
+            'dataset_version' => 'fixture-v1',
             'filters' => ['states' => ['MT'], 'cnaes' => ['4622200']],
         ]),
     ]);

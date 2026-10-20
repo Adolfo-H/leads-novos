@@ -1,10 +1,18 @@
+import json
+import logging
+import os
 from pathlib import Path
 import re
+import tempfile
 
 import duckdb
 
 from group_query import (
     ReceitaDataFilesMissing,
+)
+from release_manifest import (
+    ReleaseValidationError,
+    validate_release,
 )
 
 
@@ -35,6 +43,8 @@ PRIORITY_LEGAL_NATURES = [
     "2054",
     "2143",
 ]
+
+logger = logging.getLogger("receita.prospect_query")
 
 
 def normalize_states(
@@ -107,7 +117,19 @@ def query_prospects(
     offset: int = 0,
     min_capital: float | None = None,
     size_codes: list[str] | None = None,
+    expected_dataset_version: str | None = None,
 ) -> dict:
+    manifest = validate_release(data_dir)
+    if manifest["mode"] != "real":
+        raise ReceitaDataFilesMissing(
+            "Prospecção exige uma competência completa da Receita."
+        )
+    if (
+        expected_dataset_version is not None
+        and expected_dataset_version != manifest["dataset_version"]
+    ):
+        raise ReleaseValidationError("dataset_version_changed")
+
     states = normalize_states(
         states
         or DEFAULT_PRIORITY_STATES
@@ -239,14 +261,6 @@ def query_prospects(
 
     optional_conditions = []
 
-    parameters: list[object] = [
-        establishments_glob,
-        companies_glob,
-        *states,
-        *cnaes,
-        *cnaes,
-    ]
-
     if (
         min_capital is not None
         and min_capital > 0
@@ -258,12 +272,6 @@ def query_prospects(
                 0
             ) >= ?
             """
-        )
-
-        parameters.append(
-            float(
-                min_capital
-            )
         )
 
     if size_codes:
@@ -280,11 +288,6 @@ def query_prospects(
             )
             """
         )
-
-        parameters.extend(
-            size_codes
-        )
-
     optional_sql = ""
 
     if optional_conditions:
@@ -299,23 +302,9 @@ def query_prospects(
         WITH active_group_stats AS (
             SELECT
                 cnpj_root,
-
-                COUNT(*) AS
-                    active_establishments,
-
-                COUNT(
-                    DISTINCT state
-                ) AS
-                    active_states
-
+                active_establishments,
+                active_states
             FROM read_parquet(?)
-
-            WHERE
-                registration_status_code
-                    = '02'
-
-            GROUP BY
-                cnpj_root
         ),
 
         candidates AS (
@@ -543,21 +532,16 @@ def query_prospects(
 
             matched_cnae,
 
-            corporate_name
+            corporate_name,
+            cnpj_root,
+            cnpj
 
         LIMIT ?
         OFFSET ?
     """
 
-    #
-    # A query usa o parquet de estabelecimentos
-    # duas vezes:
-    #
-    # 1. estatística do grupo
-    # 2. seleção dos candidatos
-    #
     parameters = [
-        establishments_glob,
+        str(data_dir / "active_group_stats.parquet"),
 
         # Primeiro IN usado pelo CASE
         *cnaes,
@@ -603,8 +587,39 @@ def query_prospects(
     )
 
     connection = duckdb.connect()
+    profile_path: Path | None = None
+    rows_scanned: int | None = None
 
     try:
+        connection.execute("SET threads = 2")
+        connection.execute("SET memory_limit = '2GB'")
+        profile_getter = getattr(
+            connection,
+            "get_profiling_information",
+            None,
+        )
+        if callable(profile_getter):
+            try:
+                descriptor, profile_name = tempfile.mkstemp(
+                    prefix="receita-query-",
+                    suffix=".json",
+                )
+                os.close(descriptor)
+                profile_path = Path(profile_name)
+                connection.execute("PRAGMA enable_profiling='json'")
+                escaped_profile_path = str(profile_path).replace("'", "''")
+                connection.execute(
+                    f"SET profiling_output='{escaped_profile_path}'"
+                )
+            except (duckdb.Error, OSError) as exception:
+                if profile_path is not None:
+                    profile_path.unlink(missing_ok=True)
+                profile_path = None
+                logger.warning(
+                    "receita_query_profile unavailable error_type=%s",
+                    type(exception).__name__,
+                )
+
         rows = (
             connection.execute(
                 sql,
@@ -612,8 +627,32 @@ def query_prospects(
             )
             .fetchall()
         )
+        if profile_path is not None:
+            try:
+                raw_profile = profile_getter()
+                profile = (
+                    json.loads(raw_profile)
+                    if isinstance(raw_profile, str)
+                    else raw_profile
+                )
+                scanned = profile.get(
+                    "cumulative_rows_scanned"
+                )
+                if isinstance(scanned, int) and scanned >= 0:
+                    rows_scanned = scanned
+                else:
+                    logger.warning(
+                        "receita_query_profile missing_rows_scanned"
+                    )
+            except (duckdb.Error, AttributeError, TypeError, ValueError) as exception:
+                logger.warning(
+                    "receita_query_profile unavailable error_type=%s",
+                    type(exception).__name__,
+                )
     finally:
         connection.close()
+        if profile_path is not None:
+            profile_path.unlink(missing_ok=True)
 
     items = []
 
@@ -678,6 +717,12 @@ def query_prospects(
 
         "offset":
             offset,
+
+        "dataset_version":
+            manifest["dataset_version"],
+
+        "rows_scanned":
+            rows_scanned,
 
         "ranking":
             "balanced_icp_v1",

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Jobs\ResearchCompanyExports;
 use App\Models\Company;
 use App\Models\CompanyExportIntelligence;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -145,14 +146,16 @@ final class ExportResearchQueueService
         $researches =
             CompanyExportIntelligence::query()
                 ->with('company')
-                ->whereIn(
-                    'research_status',
-                    [
-                        'queued',
-                        'processing',
-                        'failed',
-                    ]
-                )
+                ->where(static function ($query): void {
+                    $query->whereIn(
+                        'research_status',
+                        ['queued', 'processing']
+                    )->orWhere(static function ($query): void {
+                        $query->where('research_status', 'failed')
+                            ->whereNotNull('metadata->research_queue->last_dispatch_error');
+                    });
+                })
+                ->whereHas('company')
                 ->where(
                     'updated_at',
                     '<=',
@@ -241,6 +244,13 @@ final class ExportResearchQueueService
                 $recovered++;
             }
         }
+
+        Log::info('export_research.recover_stale', [
+            'selected' => $researches->count(),
+            'recovered' => $recovered,
+            'limit' => $limit,
+            'age_minutes' => $afterMinutes,
+        ]);
 
         return $recovered;
     }

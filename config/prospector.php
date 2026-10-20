@@ -60,6 +60,33 @@ return [
         ),
     ],
 
+    'imports' => [
+        'max_rows' => (int) env(
+            'IMPORT_MAX_ROWS',
+            5000
+        ),
+
+        'dispatch_chunk_size' => (int) env(
+            'IMPORT_DISPATCH_CHUNK_SIZE',
+            50
+        ),
+
+        'dispatch_max_per_run' => (int) env(
+            'IMPORT_DISPATCH_MAX_PER_RUN',
+            500
+        ),
+
+        'ready_batches_per_run' => (int) env(
+            'IMPORT_READY_BATCHES_PER_RUN',
+            100
+        ),
+
+        'recovery_items_per_batch' => (int) env(
+            'IMPORT_RECOVERY_ITEMS_PER_BATCH',
+            100
+        ),
+    ],
+
     'export_research' => [
         /*
          * A pesquisa externa fica desligada

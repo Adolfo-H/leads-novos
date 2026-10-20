@@ -202,6 +202,8 @@ it('makes the next execution skip a root reserved by the previous run', function
 
                 'offset' => 0,
 
+                'dataset_version' => 'fixture-v1',
+
                 'filters' => [],
             ])
 
@@ -225,6 +227,8 @@ it('makes the next execution skip a root reserved by the previous run', function
                 'limit' => 50,
 
                 'offset' => 0,
+
+                'dataset_version' => 'fixture-v1',
 
                 'filters' => [],
             ]),

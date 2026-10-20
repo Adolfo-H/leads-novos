@@ -126,6 +126,7 @@ it('removes companies already known by the prospecting engine', function () {
             'count' => 3,
             'limit' => 50,
             'offset' => 0,
+            'dataset_version' => 'fixture-v1',
 
             'filters' => [
                 'states' => [
@@ -223,6 +224,7 @@ it('creates and dispatches a prospecting batch', function () {
             'count' => 1,
             'limit' => 50,
             'offset' => 0,
+            'dataset_version' => 'fixture-v1',
 
             'filters' => [
                 'states' => [
@@ -350,6 +352,7 @@ it('continues searching when the first page contains only known companies', func
                 'count' => 50,
                 'limit' => 50,
                 'offset' => 0,
+                'dataset_version' => 'fixture-v1',
                 'filters' => [],
             ])
             ->push([
@@ -359,6 +362,7 @@ it('continues searching when the first page contains only known companies', func
                 'count' => 1,
                 'limit' => 50,
                 'offset' => 50,
+                'dataset_version' => 'fixture-v1',
                 'filters' => [],
             ]),
     ]);
@@ -384,6 +388,16 @@ it('continues searching when the first page contains only known companies', func
     )->toBe('99999999');
 
     Http::assertSentCount(2);
+    Http::assertSent(
+        fn ($request): bool => str_contains(
+            $request->url(),
+            'offset=50'
+        )
+        && str_contains(
+            $request->url(),
+            'dataset_version=fixture-v1'
+        )
+    );
 });
 
 it('uses the stored cnpj root to remember previous prospecting', function () {
@@ -433,6 +447,7 @@ it('uses the stored cnpj root to remember previous prospecting', function () {
             'count' => 1,
             'limit' => 50,
             'offset' => 0,
+            'dataset_version' => 'fixture-v1',
             'filters' => [],
         ]),
     ]);

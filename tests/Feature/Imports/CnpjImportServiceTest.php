@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ImportBatch;
 use App\Services\CnpjImportService;
 use App\Support\Cnpj;
 
@@ -120,4 +121,28 @@ it('stores the cnpj root for valid imported items', function () {
     expect(
         $invalidItem->cnpj_root
     )->toBeNull();
+});
+
+it('rejects an import above its configured row limit before creating a batch', function () {
+    config([
+        'prospector.imports.max_rows' => 1,
+    ]);
+
+    $service = app(
+        CnpjImportService::class
+    );
+
+    expect(
+        fn () => $service->import([
+            'invalid-1',
+            'invalid-2',
+        ])
+    )->toThrow(
+        InvalidArgumentException::class,
+        'O lote excede o limite de 1 registros por importação.'
+    );
+
+    expect(
+        ImportBatch::query()->count()
+    )->toBe(0);
 });

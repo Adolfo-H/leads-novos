@@ -250,6 +250,18 @@ it('creates company contacts deal owner and initial task for a manual opportunit
             }
 
             if (
+                $method === 'GET'
+                && str_contains(
+                    $url,
+                    '/associations/'
+                )
+            ) {
+                return Http::response([
+                    'results' => [],
+                ]);
+            }
+
+            if (
                 $method === 'PUT'
                 && str_contains(
                     $url,
@@ -546,6 +558,18 @@ it('recovers an existing initial task instead of creating a duplicate', function
                             'id' => 'task-existing',
                         ],
                     ],
+                ]);
+            }
+
+            if (
+                $method === 'GET'
+                && str_contains(
+                    $url,
+                    '/associations/'
+                )
+            ) {
+                return Http::response([
+                    'results' => [],
                 ]);
             }
 

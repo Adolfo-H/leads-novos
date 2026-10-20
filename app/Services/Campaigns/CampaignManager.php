@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
+use LogicException;
 
 final class CampaignManager
 {
@@ -33,8 +34,28 @@ final class CampaignManager
             throw ValidationException::withMessages(['recipients' => 'Todos os endereços selecionados estão bloqueados para campanhas.']);
         }
 
-        return DB::transaction(static function () use ($user, $fields, $candidates, $existing): EmailCampaign {
-            $campaign = $existing ?? new EmailCampaign;
+        $existingId = $existing?->getKey();
+
+        return DB::transaction(static function () use ($user, $fields, $candidates, $existingId): EmailCampaign {
+            $gate = DB::table('email_campaign_dispatch_gates')
+                ->where('id', 1)
+                ->lockForUpdate()
+                ->first();
+            if ($gate === null) {
+                throw new LogicException('Campaign dispatch quota gate is missing.');
+            }
+
+            $campaign = $existingId === null
+                ? new EmailCampaign
+                : EmailCampaign::query()
+                    ->whereKey($existingId)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+            if ($existingId !== null && $campaign->status !== 'draft') {
+                throw ValidationException::withMessages(['campaign' => 'Somente rascunhos podem ser editados.']);
+            }
+
             $campaign->fill([
                 'name' => trim($fields['name']),
                 'subject' => trim($fields['subject']),
@@ -43,24 +64,81 @@ final class CampaignManager
                 'from_address' => (string) config('campaign_mail.from_address'),
                 'from_name' => (string) config('campaign_mail.from_name'),
                 'reply_to' => (string) config('campaign_mail.reply_to'),
-                'created_by' => $existing->created_by ?? $user->id,
+                'created_by' => $campaign->created_by ?? $user->id,
             ]);
             $campaign->save();
-            if ($existing !== null) {
-                $campaign->recipients()->delete();
-            }
+
+            $existingRecipients = EmailCampaignRecipient::query()
+                ->where('email_campaign_id', $campaign->id)
+                ->lockForUpdate()
+                ->get();
+            $byStableKey = $existingRecipients->keyBy(
+                static fn (EmailCampaignRecipient $recipient): string => (string) $recipient->source_key
+                    ."\0".$recipient->normalized_email
+            );
+            $byEmail = $existingRecipients->keyBy('normalized_email');
+            $selectedIds = [];
+
             foreach ($candidates as $candidate) {
-                EmailCampaignRecipient::query()->create([
-                    'email_campaign_id' => $campaign->id,
-                    'source_key' => $candidate['source_key'],
-                    'email' => $candidate['email'],
-                    'normalized_email' => $candidate['normalized_email'],
-                    'contact_name' => $candidate['contact_name'],
-                    'company_name' => $candidate['company_name'],
-                    'job_title' => $candidate['job_title'],
-                    'status' => $candidate['suppressed'] ? 'suppressed' : 'pending',
-                ]);
+                $recipient = $byStableKey->get(
+                    $candidate['source_key']."\0".$candidate['normalized_email']
+                ) ?? $byEmail->get($candidate['normalized_email']);
+
+                if ($recipient === null) {
+                    $recipient = EmailCampaignRecipient::query()->create([
+                        'email_campaign_id' => $campaign->id,
+                        'source_key' => $candidate['source_key'],
+                        'email' => $candidate['email'],
+                        'normalized_email' => $candidate['normalized_email'],
+                        'contact_name' => $candidate['contact_name'],
+                        'company_name' => $candidate['company_name'],
+                        'job_title' => $candidate['job_title'],
+                        'status' => $candidate['suppressed'] ? 'suppressed' : 'pending',
+                    ]);
+                } else {
+                    $attributes = [
+                        'source_key' => $candidate['source_key'],
+                        'email' => $candidate['email'],
+                        'normalized_email' => $candidate['normalized_email'],
+                        'contact_name' => $candidate['contact_name'],
+                        'company_name' => $candidate['company_name'],
+                        'job_title' => $candidate['job_title'],
+                    ];
+
+                    if (! $candidate['suppressed']) {
+                        $attributes['excluded_from_sequences_at'] = null;
+                    }
+
+                    if (
+                        $candidate['suppressed']
+                        && in_array($recipient->status, ['pending', 'reserved'], true)
+                    ) {
+                        $attributes['status'] = 'suppressed';
+                        $attributes['reserved_at'] = null;
+                        $attributes['reservation_token'] = null;
+                    }
+
+                    $recipient->forceFill($attributes)->save();
+                }
+
+                $selectedIds[] = $recipient->id;
             }
+
+            $removedRecipients = EmailCampaignRecipient::query()
+                ->where('email_campaign_id', $campaign->id)
+                ->whereNotIn('id', $selectedIds);
+            $removedRecipients->whereNull('excluded_from_sequences_at')
+                ->update(['excluded_from_sequences_at' => now('UTC')]);
+
+            EmailCampaignRecipient::query()
+                ->where('email_campaign_id', $campaign->id)
+                ->whereNotIn('id', $selectedIds)
+                ->whereIn('status', ['pending', 'reserved'])
+                ->update([
+                    'status' => 'canceled',
+                    'reserved_at' => null,
+                    'reservation_token' => null,
+                ]);
 
             return $campaign;
         });
@@ -69,32 +147,49 @@ final class CampaignManager
     public function start(User $user, EmailCampaign $campaign, bool $lawfulBasisConfirmed): void
     {
         abort_unless($user->isCommercialManager(), 403);
-        if (! $lawfulBasisConfirmed) {
-            throw ValidationException::withMessages(['lawfulBasisConfirmed' => 'Confirme a base legal e a política de descadastro antes de iniciar.']);
-        }
-        if (! config('campaign_mail.enabled') || ! config('campaign_mail.live_enabled')) {
-            throw ValidationException::withMessages(['campaign' => 'Envios reais estão desabilitados. Configure CAMPAIGN_MAIL_ENABLED=true e CAMPAIGN_MAIL_LIVE_ENABLED=true após os testes.']);
-        }
-        // EC_CAMPAIGNS_V7_PUBLIC_URL: mantém todas as checagens HTTPS existentes;
-        // usa domínio externo configurado, sem trocar o APP_URL local.
-        $appUrl = app(CampaignUnsubscribeLink::class)->base() ?? '';
-        $host = parse_url($appUrl, PHP_URL_HOST);
-        if (parse_url($appUrl, PHP_URL_SCHEME) !== 'https'
-            || ! is_string($host)
-            || in_array(mb_strtolower($host), ['localhost', '127.0.0.1', '0.0.0.0'], true)) {
-            throw ValidationException::withMessages(['campaign' => 'Configure APP_URL com HTTPS público para garantir o funcionamento do descadastro.']);
-        }
-        if ($campaign->status !== 'draft') {
-            throw ValidationException::withMessages(['campaign' => 'Somente rascunhos podem iniciar novos disparos.']);
-        }
-        if (! $campaign->recipients()->where('status', 'pending')->exists()) {
-            throw ValidationException::withMessages(['campaign' => 'Não há destinatários habilitados.']);
-        }
+        DB::transaction(static function () use ($user, $campaign, $lawfulBasisConfirmed): void {
+            $gate = DB::table('email_campaign_dispatch_gates')
+                ->where('id', 1)
+                ->lockForUpdate()
+                ->first();
+            if ($gate === null) {
+                throw new LogicException('Campaign dispatch quota gate is missing.');
+            }
 
-        $campaign->forceFill([
-            'status' => 'running', 'approved_by' => $user->id,
-            'approved_at' => now(), 'started_at' => now(),
-        ])->save();
+            $locked = EmailCampaign::query()
+                ->whereKey($campaign->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (! $lawfulBasisConfirmed) {
+                throw ValidationException::withMessages(['lawfulBasisConfirmed' => 'Confirme a base legal e a política de descadastro antes de iniciar.']);
+            }
+            if (! config('campaign_mail.enabled') || ! config('campaign_mail.live_enabled')) {
+                throw ValidationException::withMessages(['campaign' => 'Envios reais estão desabilitados. Configure CAMPAIGN_MAIL_ENABLED=true e CAMPAIGN_MAIL_LIVE_ENABLED=true após os testes.']);
+            }
+
+            // EC_CAMPAIGNS_V7_PUBLIC_URL: usa domínio externo configurado sem trocar APP_URL local.
+            $appUrl = app(CampaignUnsubscribeLink::class)->base() ?? '';
+            $host = parse_url($appUrl, PHP_URL_HOST);
+            if (parse_url($appUrl, PHP_URL_SCHEME) !== 'https'
+                || ! is_string($host)
+                || in_array(mb_strtolower($host), ['localhost', '127.0.0.1', '0.0.0.0'], true)) {
+                throw ValidationException::withMessages(['campaign' => 'Configure APP_URL com HTTPS público para garantir o funcionamento do descadastro.']);
+            }
+            if ($locked->status !== 'draft') {
+                throw ValidationException::withMessages(['campaign' => 'Somente rascunhos podem iniciar novos disparos.']);
+            }
+            if (! $locked->recipients()->where('status', 'pending')->exists()) {
+                throw ValidationException::withMessages(['campaign' => 'Não há destinatários habilitados.']);
+            }
+
+            $locked->forceFill([
+                'status' => 'running',
+                'approved_by' => $user->id,
+                'approved_at' => now(),
+                'started_at' => now(),
+            ])->save();
+        });
     }
 
     public function pause(User $user, EmailCampaign $campaign): void

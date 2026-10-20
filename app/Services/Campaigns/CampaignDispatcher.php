@@ -8,6 +8,7 @@ use App\Models\EmailCampaignRecipient;
 use App\Models\EmailCampaignSuppression;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use LogicException;
 
 final class CampaignDispatcher
 {
@@ -42,7 +43,7 @@ final class CampaignDispatcher
             $gate = DB::table('email_campaign_dispatch_gates')
                 ->where('id', 1)->lockForUpdate()->first();
             if ($gate === null) {
-                return [];
+                throw new LogicException('Campaign dispatch quota gate is missing.');
             }
 
             $campaign = EmailCampaign::query()
@@ -53,9 +54,21 @@ final class CampaignDispatcher
 
             $utcNow = now('UTC');
             $hourUsed = EmailCampaignRecipient::query()
-                ->where('reserved_at', '>=', $utcNow->copy()->subHour())->count();
+                ->where(static function ($query) use ($utcNow): void {
+                    $query->where('attempted_at', '>=', $utcNow->copy()->subHour())
+                        ->orWhere(static function ($query) use ($utcNow): void {
+                            $query->where('status', 'reserved')
+                                ->where('reserved_at', '>=', $utcNow->copy()->subHour());
+                        });
+                })->count();
             $dayUsed = EmailCampaignRecipient::query()
-                ->where('reserved_at', '>=', $utcNow->copy()->subDay())->count();
+                ->where(static function ($query) use ($utcNow): void {
+                    $query->where('attempted_at', '>=', $utcNow->copy()->subDay())
+                        ->orWhere(static function ($query) use ($utcNow): void {
+                            $query->where('status', 'reserved')
+                                ->where('reserved_at', '>=', $utcNow->copy()->subDay());
+                        });
+                })->count();
             $available = min($tick, max(0, $hour - $hourUsed), max(0, $day - $dayUsed));
             if ($available === 0) {
                 return [];

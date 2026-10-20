@@ -1,0 +1,35 @@
+# Relatório — Pacote 12 (HubSpot)
+
+- Branch/commit antes: `main`, `5b43e22`.
+- Objetivo: impedir duplicação após resposta remota incerta, tornar a recuperação conservadora e auditar webhooks/sincronizações.
+- Arquivos adicionados:
+  - `app/Exceptions/HubSpotRequestFailed.php`
+  - `app/Console/Commands/AuditHubSpotSyncState.php`
+  - `database/migrations/2026_10_20_120000_add_hubspot_deal_sync_state_to_company_leads.php`
+  - `tests/Feature/HubSpot/HubSpotSyncUncertainResultTest.php`
+  - `tests/Feature/HubSpot/HubSpotSyncAuditCommandTest.php`
+  - `tests/Feature/HubSpot/HubSpotWebhookSignatureAndRetryTest.php`
+- Arquivos alterados:
+  - `app/Models/CompanyHubSpotLead.php`
+  - `app/Services/HubSpotLeadSyncService.php`
+  - `tests/Feature/Companies/HubSpotLeadSyncRecoveryTest.php`
+  - `tests/Feature/HubSpot/HubSpotManualOpportunitySyncTest.php`
+  - `README.md`
+- Mudanças:
+  - Migration aditiva com estado `not_started`, `in_progress`, `completed`, `remote_result_uncertain` e `manual_review`, ID local único de operação e timestamps; registros legados com Deal remoto são preparados como `completed`.
+  - Intenção local do Deal é persistida antes do POST. Resposta 409/4xx, conexão, 429, 5xx e respostas inválidas recebem classificação; falhas incertas/manual-review bloqueiam criação automática posterior.
+  - Deal criado tem ID e estado `completed` persistidos antes de qualquer associação. Retentativas consultam associações antes de novos PUTs.
+  - Recuperação de empresa não adota correspondência por nome/domínio sem vínculo remoto confirmado; Deal associado sem correlação local validada exige revisão manual.
+  - Erros HTTP não armazenam corpo da resposta; `hubspot:sync-audit` apresenta contagens agregadas, duplicidades locais e classes/filas de jobs falhos, sem iniciar sincronizações.
+  - Webhook já existente mantém assinatura v3, janela de timestamp e deduplicação por chave; foram reforçados os testes para timestamp expirado, entrega repetida e bloqueio do gateway público nginx.
+- Migração: aditiva e não aplicada no banco operacional. Os testes a aplicaram no banco de testes isolado.
+- Testes direcionados: PASS — 13 testes, 59 asserções; testes de recuperação/manual de oportunidade e webhook também passaram.
+- Pint: PASS — 537 arquivos.
+- PHPStan: PASS — sem erros.
+- Pest: PASS — 129 testes, 528 asserções em `tests/Feature/HubSpot` e `tests/Feature/Security`.
+- `git diff --check`: PASS.
+- Ações externas realizadas: nenhuma. Todos os requests de escrita HubSpot foram simulados com `Http::fake`; nenhum envio ou acesso ao portal ocorreu.
+- Flags/ações que requerem aprovação humana: aplicar migration em banco operacional; conciliar Deal com estado incerto/manual; habilitar sincronização real; configurar qualquer correlação remota, se existir e tiver sido validada no portal.
+- Como reverter: reverter código e testes deste pacote; a migration tem `down()` simétrico, mas rollback operacional só após revisão e autorização.
+- Riscos e pontos pendentes: validar em homologação a resposta/forma do endpoint de leitura de associações; conciliação de resultados incertos permanece manual por desenho. Configuração nginx existente segue bloqueando `/webhooks/hubspot` no gateway público de descadastro.
+- Recomendação: prosseguir ao Pacote 13; manter sincronização HubSpot real desativada até aprovação humana.

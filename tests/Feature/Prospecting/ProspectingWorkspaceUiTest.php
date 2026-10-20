@@ -73,6 +73,7 @@ it('renders the real preview while keeping it separate from CRM validation', fun
             'count' => 1,
             'limit' => 50,
             'offset' => 0,
+            'dataset_version' => 'fixture-v1',
             'filters' => ['states' => ['MT'], 'cnaes' => ['4622200']],
         ]),
     ]);

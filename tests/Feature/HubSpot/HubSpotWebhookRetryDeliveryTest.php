@@ -37,7 +37,6 @@ it('uses a HubSpot retry to recover a previously failed event', function () {
 
         'services.hubspot.webhook_public_url' => $url,
 
-        'services.hubspot.webhook_verify_signature' => true,
     ]);
 
     $timestamp =

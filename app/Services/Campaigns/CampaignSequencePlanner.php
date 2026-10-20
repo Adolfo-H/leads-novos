@@ -50,6 +50,7 @@ final class CampaignSequencePlanner
             $ready = [];
             $originals = EmailCampaignRecipient::query()->where('email_campaign_id', $source->id)
                 ->where('status', 'sent')->whereNull('replied_at')
+                ->whereNull('excluded_from_sequences_at')
                 ->where('sent_at', '<=', now('UTC')->subDays((int) $plan->delay_days))
                 ->orderBy('id')->limit($limit + 1)->get();
             foreach ($originals as $original) {

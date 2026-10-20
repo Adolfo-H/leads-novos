@@ -55,7 +55,18 @@ class RecoverStaleImports extends Command
                 }
             )
             ->orderBy('id')
-            ->limit(100)
+            ->limit(
+                max(
+                    1,
+                    min(
+                        500,
+                        (int) config(
+                            'prospector.imports.ready_batches_per_run',
+                            100
+                        )
+                    )
+                )
+            )
             ->get();
 
         $recovered = 0;
@@ -65,6 +76,10 @@ class RecoverStaleImports extends Command
                 $queue->recoverStale(
                     $batch,
                     afterMinutes: $minutes,
+                    limit: (int) config(
+                        'prospector.imports.recovery_items_per_batch',
+                        100
+                    ),
                 );
         }
 

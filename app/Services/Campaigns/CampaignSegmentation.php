@@ -27,7 +27,8 @@ final class CampaignSegmentation
             ->leftJoin('companies as c', 'c.id', '=', 'm.company_id')
             ->selectRaw("('manual:' || CAST(m.id AS VARCHAR)) AS source_key")
             ->selectRaw('m.name AS person_name, m.email AS email, c.corporate_name AS company_name, m.job_title AS job_title')
-            ->selectRaw("'' AS lifecycle, 'manual' AS origin")
+            ->selectRaw("CASE WHEN EXISTS (SELECT 1 FROM company_crm_checks cc WHERE cc.company_id = c.id AND cc.status = 'client') OR EXISTS (SELECT 1 FROM customer_registry_entries cre WHERE cre.enabled = true AND ((cre.cnpj_root IS NOT NULL AND cre.cnpj_root = c.cnpj_root) OR (cre.cnpj_root IS NULL AND cre.normalized_name = c.normalized_name))) THEN 'customer' ELSE '' END AS lifecycle")
+            ->selectRaw("'manual' AS origin")
             ->whereNotNull('m.email')->where('m.email', '<>', '');
         $receita = ReceitaContactChannels::withEmail()
             ->selectRaw("('receita:' || CAST(e.uuid AS VARCHAR)) AS source_key")
@@ -49,25 +50,22 @@ final class CampaignSegmentation
         }
         $excludeCustomers = ($filters['exclude_customers'] ?? true) !== false && ($filters['exclude_customers'] ?? '1') !== '0';
         if ($excludeCustomers) {
-            $query->where(static function (Builder $query): void {
-                $query->where('origin', 'manual')
-                    ->orWhereRaw("LOWER(COALESCE(lifecycle, '')) <> 'customer'");
-            });
+            $query->whereRaw("LOWER(COALESCE(lifecycle, '')) <> 'customer'");
         }
         $query->whereNotExists(static function (Builder $sub): void {
             $sub->selectRaw('1')->from('email_campaign_suppressions as s')
                 ->whereRaw('s.normalized_email = LOWER(TRIM(contacts.email))');
         });
-        $items = $query->orderBy('origin')->orderBy('source_key')->limit($max + 1)->get();
+        $query->whereNotExists(static function (Builder $sub): void {
+            $sub->selectRaw('1')->from('email_campaign_recipients as r')
+                ->whereRaw('r.normalized_email = LOWER(TRIM(contacts.email))')
+                ->whereIn('r.status', ['sent', 'sending', 'reserved', 'uncertain']);
+        });
         $used = [];
         $rows = [];
-        foreach ($items as $item) {
+        foreach ($query->orderBy('origin')->orderBy('source_key')->cursor() as $item) {
             $email = CampaignAudience::normalizedEmail((string) $item->email);
             if (! filter_var($email, FILTER_VALIDATE_EMAIL) || isset($used[$email])) {
-                continue;
-            }
-            // Evita repetição de disparos: quem já foi aceito pelo SMTP deve ser tratado por follow-up específico.
-            if (DB::table('email_campaign_recipients')->where('normalized_email', $email)->whereIn('status', ['sent', 'sending', 'reserved', 'uncertain'])->exists()) {
                 continue;
             }
             $used[$email] = true;

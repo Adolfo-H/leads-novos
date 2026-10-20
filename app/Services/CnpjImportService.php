@@ -18,6 +18,25 @@ final class CnpjImportService
         string $sourceType = 'manual',
         ?string $filename = null,
     ): ImportBatch {
+        $maxRows = max(
+            1,
+            min(
+                10000,
+                (int) config(
+                    'prospector.imports.max_rows',
+                    5000
+                )
+            )
+        );
+
+        if (count($values) > $maxRows) {
+            throw new \InvalidArgumentException(
+                'O lote excede o limite de '
+                .$maxRows
+                .' registros por importação.'
+            );
+        }
+
         return DB::transaction(function () use (
             $values,
             $userId,

@@ -26,6 +26,7 @@ final class ProspectingEngineService
      *     discovered_count: int,
      *     known_count: int,
      *     new_count: int,
+     *     dataset_version: string|null,
      *     filters: array<string, mixed>
      * }
      */
@@ -68,6 +69,7 @@ final class ProspectingEngineService
         $seenRoots = [];
 
         $lastFilters = [];
+        $datasetVersion = null;
 
         /*
          * Memória do próprio motor:
@@ -93,7 +95,13 @@ final class ProspectingEngineService
                     cnaes: $cnaes,
                     minCapital: $minCapital,
                     sizeCodes: $sizeCodes,
+                    datasetVersion: $datasetVersion,
                 );
+
+            $datasetVersion =
+                $pageResult[
+                    'dataset_version'
+                ];
 
             $lastFilters =
                 $pageResult[
@@ -203,6 +211,7 @@ final class ProspectingEngineService
                 'discovered_count' => 0,
                 'known_count' => 0,
                 'new_count' => 0,
+                'dataset_version' => $datasetVersion,
                 'filters' => $lastFilters,
             ];
         }
@@ -281,6 +290,8 @@ final class ProspectingEngineService
             'new_count' => count(
                 $newItems
             ),
+
+            'dataset_version' => $datasetVersion,
 
             'filters' => $lastFilters,
         ];

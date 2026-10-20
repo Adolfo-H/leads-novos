@@ -1,0 +1,30 @@
+# Relatório — Pacote 11 (ICP)
+
+- Branch/commit antes: `main`, `5b43e22`.
+- Objetivo: auditar versões de ICP e permitir prévia/recálculo controlado de scores desatualizados.
+- Arquivos adicionados:
+  - `app/Console/Commands/AuditIcpScoreVersions.php`
+  - `app/Console/Commands/RecalculateIcpAffected.php`
+  - `tests/Feature/Companies/IcpScoreControlledRecalculationTest.php`
+- Arquivos alterados:
+  - `app/Services/IcpScoringService.php`
+  - `README.md`
+  - `docs/prospector-pacotes-11-17/scripts/auditar_icp.php`
+  - `docs/prospector-pacotes-11-17/scripts/auditar_hubspot.php`
+- Mudanças:
+  - `IcpScoringService::evaluate()` calcula o resultado sem gravar ICP nem recalcular SDR; `calculate()` persiste o mesmo resultado e mantém o comportamento existente.
+  - `icp:audit-scores` relata somente totais agregados e aceita formato `table` ou `json`.
+  - `icp:recalculate-affected` é dry-run por padrão, limita a amostra, exige `--apply` e `--reason` para gravar, registra auditoria sem dados pessoais e usa transação por empresa.
+  - Candidatos de versão antiga são `v1`/`v2`; versões desconhecidas ficam excluídas sem `--include-unknown`. Scores `v3` só entram quando há atualização cadastral `2`/`02` posterior ao cálculo.
+- Migrações: nenhuma.
+- Testes adicionados: dry-run sem mutação de ICP/SDR, aplicação limitada e idempotente, proteção de `v3`, auditoria agregada e ausência de HTTP externo.
+- Pint: PASS — 531 arquivos.
+- PHPStan: PASS — sem erros.
+- Pest: PASS — 168 testes, 657 asserções (`tests/Feature/Companies` e `tests/Feature/Integrity`).
+- `git diff --check`: PASS.
+- Auditoria de dados: o script read-only `auditar_icp.php` não foi executado porque não confirmei que a conexão local estivesse isolada de dados operacionais.
+- Ações externas realizadas: nenhuma. Não houve recálculo em massa, chamada HubSpot, e-mail, alteração ou migração de produção.
+- Flags/ações que requerem aprovação humana: `icp:recalculate-affected --apply`; inclusão de versão desconhecida; auditoria read-only ligada a banco real, caso se deseje relatório de totais operacionais.
+- Como reverter: reverter somente os arquivos de código/teste/documentação deste pacote por Git, preservando mudanças independentes. Nenhum dado foi alterado pelo agente.
+- Riscos e pendências: executar a auditoria agregada apenas após confirmar a conexão/dataset; revisar a amostra dry-run e aprovar explicitamente qualquer recálculo real.
+- Recomendação: prosseguir ao Pacote 12; não aplicar recálculos em banco real sem autorização.

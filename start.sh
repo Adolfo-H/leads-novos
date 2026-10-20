@@ -52,13 +52,124 @@ env_value()
     printf '%s' "$value"
 }
 
+rotate_log_file()
+{
+    local file="$1"
+    local max_bytes=10485760
+    local size=0
+
+    if [ ! -f "$file" ]; then
+        return
+    fi
+
+    size="$(wc -c < "$file")"
+
+    if [ "$size" -lt "$max_bytes" ]; then
+        return
+    fi
+
+    rm -f "${file}.5"
+
+    for index in 4 3 2 1; do
+        if [ -f "${file}.${index}" ]; then
+            mv "${file}.${index}" "${file}.$((index + 1))"
+        fi
+    done
+
+    mv "$file" "${file}.1"
+}
+
+report_service()
+{
+    local service="$1"
+    local ids=""
+    local id=""
+    local status=""
+
+    ids="$(docker compose --profile background ps -q "$service")"
+
+    if [ -z "$ids" ]; then
+        printf '  %-34s %s\n' "$service" "não iniciado"
+        return
+    fi
+
+    while IFS= read -r id; do
+        [ -z "$id" ] && continue
+
+        status="$(
+            docker inspect \
+                --format '{{.State.Status}}{{if .State.Health}} (health: {{.State.Health.Status}}){{end}}' \
+                "$id"
+        )"
+
+        printf '  %-34s %s\n' "$service" "$status"
+    done <<< "$ids"
+}
+
+start_service_if_absent()
+{
+    local service="$1"
+    local replicas="${2:-1}"
+    local ids=""
+
+    ids="$(docker compose --profile background ps -q "$service")"
+
+    if [ -n "$ids" ]; then
+        printf '     %s já está em execução; sem alterar suas réplicas.\n' "$service"
+        return
+    fi
+
+    if [ "$replicas" -gt 1 ]; then
+        docker compose --profile background up -d --no-recreate \
+            --scale "${service}=${replicas}" \
+            "$service"
+        return
+    fi
+
+    docker compose --profile background up -d --no-recreate "$service"
+}
+
+wait_for_service_health()
+{
+    local service="$1"
+    local ids=""
+    local id=""
+    local health=""
+
+    for attempt in $(seq 1 60); do
+        ids="$(docker compose ps -q "$service")"
+        id="$(printf '%s\n' "$ids" | head -n 1)"
+
+        if [ -n "$id" ]; then
+            health="$(
+                docker inspect \
+                    --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-healthcheck{{end}}' \
+                    "$id"
+            )"
+
+            if [ "$health" = "healthy" ]; then
+                return 0
+            fi
+        fi
+
+        sleep 1
+    done
+
+    echo "ERRO: serviço ${service} não ficou saudável (estado: ${health:-ausente})."
+    return 1
+}
+
 
 # STARTUP_SAFE_V20_1: nunca interromper workers nem recriar serviços
 # com dados/filas ativos durante uma inicialização de rotina.
 echo "1/7  Preservando workers e scheduler ativos..."
-echo "2/7  Subindo Laravel sem recriar contêineres..."
+echo "2/7  Subindo dependências e Laravel sem recriar contêineres..."
 
 docker compose up -d --no-recreate laravel.test
+
+if ! docker compose up -d --no-recreate receita-data; then
+    echo "AVISO: não foi possível iniciar receita-data; a aplicação Laravel continuará disponível."
+fi
 
 APP_CONTAINER="$(docker compose ps -q laravel.test | head -n 1)"
 
@@ -70,26 +181,12 @@ fi
 
 echo "3/7  Aguardando Laravel..."
 
-READY=0
+wait_for_service_health pgsql
+wait_for_service_health redis
+wait_for_service_health laravel.test
 
-for ATTEMPT in $(seq 1 45)
-do
-    if docker exec --user sail --workdir /var/www/html \
-        "$APP_CONTAINER" php artisan about >/dev/null 2>&1
-    then
-        READY=1
-        break
-    fi
-
-    sleep 1
-done
-
-
-if [ "$READY" != "1" ]; then
-    echo ""
-    echo "ERRO: Laravel não ficou disponível."
-    exit 1
-fi
+docker exec --user sail --workdir /var/www/html \
+    "$APP_CONTAINER" php artisan about >/dev/null
 
 
 echo "4/7  Limpando somente artefatos compilados..."
@@ -104,31 +201,18 @@ done
 
 echo "5/7  Iniciando fila e scheduler..."
 
-docker compose \
-    --profile background \
-    up -d --no-recreate \
-    queue-worker \
-    scheduler
+start_service_if_absent queue-worker
+start_service_if_absent scheduler
 
 
 echo "     Iniciando workers HubSpot prioritarios..."
 
-docker compose \
-    --profile background \
-    up -d --no-recreate \
-    --scale hubspot-webhook-worker=2 \
-    --scale hubspot-realtime-worker=2 \
-    hubspot-webhook-worker \
-    hubspot-realtime-worker \
-    hubspot-bulk-worker
+start_service_if_absent hubspot-webhook-worker 2
+start_service_if_absent hubspot-realtime-worker 2
+start_service_if_absent hubspot-bulk-worker
 
 
-echo "     Testando workers prioritarios..."
-
-docker exec --user sail --workdir /var/www/html \
-    "$APP_CONTAINER" php artisan hubspot:health-ping \
-    >/dev/null 2>&1 \
-    || true
+echo "     Heartbeats de workers são enviados pelo scheduler."
 
 
 NGROK_TOKEN="$(
@@ -148,7 +232,7 @@ if \
     [ -n "$NGROK_TOKEN" ] \
     && [ -n "$NGROK_DOMAIN" ]
 then
-    echo "     Iniciando túnel de webhooks..."
+    echo "     Iniciando túnel público de descadastro..."
 
     docker compose \
         --profile background \
@@ -169,6 +253,7 @@ then
     echo "     Frontend já está rodando."
 else
     mkdir -p storage/logs
+    rotate_log_file storage/logs/vite-dev.log
 
     docker exec \
         -d --user sail --workdir /var/www/html \
@@ -180,29 +265,27 @@ else
 fi
 
 
-echo "7/7  Iniciando conferência do HubSpot..."
+echo "7/7  Verificando opção de conferência inicial do HubSpot..."
 
 STARTUP_ENABLED="$(
     env_value \
         HUBSPOT_STARTUP_SYNC_ENABLED \
-        "true"
+        "false"
 )"
 
 STARTUP_LIMIT="$(
     env_value \
         HUBSPOT_STARTUP_SYNC_LIMIT \
-        "0"
+        "100"
 )"
 
+STARTUP_LIMIT_VALID=1
 
 if ! [[ "$STARTUP_LIMIT" =~ ^[0-9]+$ ]]
 then
-    STARTUP_LIMIT=0
-fi
-
-
-if [ "$STARTUP_LIMIT" -lt 1 ]; then
-    STARTUP_LIMIT=0
+    STARTUP_LIMIT_VALID=0
+elif [ "$STARTUP_LIMIT" -lt 1 ] || [ "$STARTUP_LIMIT" -gt 100 ]; then
+    STARTUP_LIMIT_VALID=0
 fi
 
 
@@ -211,7 +294,9 @@ if \
     || [ "$STARTUP_ENABLED" = "1" ]
 then
 
-    if grep -qE \
+    if [ "$STARTUP_LIMIT_VALID" != "1" ]; then
+        echo "     Conferência inicial ignorada: limite deve estar entre 1 e 100."
+    elif grep -qE \
         '^HUBSPOT_ACCESS_TOKEN=.+$' \
         .env 2>/dev/null
     then
@@ -237,6 +322,7 @@ echo (int) \Illuminate\Support\Facades\Queue::connection("redis")->size("hubspot
             echo "     Atualização inicial do HubSpot já está em execução."
         else
             mkdir -p storage/logs
+            rotate_log_file storage/logs/hubspot-startup-sync.log
 
             docker exec -d --user sail --workdir /var/www/html \
                 "$APP_CONTAINER" sh -lc \
@@ -259,11 +345,31 @@ else
     echo "     Conferência inicial desativada."
 fi
 
-
 echo ""
 echo "================================================"
 echo " PROJETO INICIADO"
 echo "================================================"
+echo "Saúde dos serviços:"
+report_service laravel.test
+report_service pgsql
+report_service redis
+report_service receita-data
+report_service queue-worker
+report_service scheduler
+report_service hubspot-webhook-worker
+report_service hubspot-realtime-worker
+report_service hubspot-bulk-worker
+report_service campaigns-worker
+report_service campaigns-unsubscribe-gateway
+report_service ngrok
+echo "Espaço livre no host:"
+df -h "$ROOT"
+
+if [ -n "$(docker compose ps -q receita-data)" ]; then
+    echo "Espaço livre no volume Receita:"
+    docker compose exec -T receita-data df -h /real-data
+fi
+
 echo ""
 echo "Aplicação:"
 echo "  http://localhost"
@@ -275,10 +381,10 @@ echo "Scheduler:"
 echo "  automático"
 echo ""
 echo "HubSpot:"
-echo "  atualização inicial condicionada à fila Bulk"
-echo "  depois continua a cada 5 minutos"
+echo "  atualização inicial desligada por padrão"
+echo "  health-ping agendado: hubspot:health-ping"
 echo ""
-echo "Acompanhar conferência inicial:"
+echo "Se a conferência inicial estiver explicitamente habilitada:"
 echo ""
 echo "  tail -f storage/logs/hubspot-startup-sync.log"
 echo ""

@@ -1,5 +1,12 @@
+x-logging: &default-logging
+    driver: json-file
+    options:
+        max-size: '10m'
+        max-file: '5'
+
 services:
     laravel.test:
+        logging: *default-logging
         build:
             context: ./vendor/laravel/sail/runtimes/8.5
             dockerfile: Dockerfile
@@ -22,20 +29,34 @@ services:
         networks:
             - sail
         depends_on:
-            - pgsql
-            - redis
-            - mailpit
+            pgsql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            mailpit:
+                condition: service_started
+        healthcheck:
+            test:
+                - CMD
+                - php
+                - -r
+                - '$$context = stream_context_create(["http" => ["ignore_errors" => true, "timeout" => 2]]); file_get_contents("http://127.0.0.1/up", false, $$context); exit(isset($$http_response_header[0]) && str_contains($$http_response_header[0], " 200 ") ? 0 : 1);'
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 30s
     receita-data:
+        logging: *default-logging
         build:
             context: ./tools/receita
             dockerfile: Dockerfile
         ports:
             - '127.0.0.1:${FORWARD_RECEITA_DATA_PORT:-8091}:8000'
         environment:
-            RECEITA_DATA_DIR: '/real-data/processed/${RECEITA_DATA_PERIOD:-2026-08}'
+            RECEITA_DATA_DIR: '${RECEITA_DATA_DIR:-/real-data/processed/active}'
             RFB_WEBDAV_BASE: '${RFB_WEBDAV_BASE:-https://arquivos.receitafederal.gov.br/public.php/webdav}'
             RFB_CNPJ_PATH: '${RFB_CNPJ_PATH:-Dados/Cadastros/CNPJ}'
-            RFB_SHARE_TOKEN: '${RFB_SHARE_TOKEN:-gn672Ad4CF8N6TK}'
+            RFB_SHARE_TOKEN: '${RFB_SHARE_TOKEN:-}'
         volumes:
             - './tools/receita:/app'
             - './tools/receita/fixtures:/data:ro'
@@ -54,6 +75,7 @@ services:
             start_period: 5s
 
     queue-worker:
+        logging: *default-logging
         profiles:
             - background
         build:
@@ -70,8 +92,10 @@ services:
         networks:
             - sail
         depends_on:
-            - pgsql
-            - redis
+            pgsql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
         command:
             - php
             - artisan
@@ -85,6 +109,7 @@ services:
         restart: unless-stopped
 
     hubspot-webhook-worker:
+        logging: *default-logging
         profiles:
             - background
         build:
@@ -101,8 +126,10 @@ services:
         networks:
             - sail
         depends_on:
-            - pgsql
-            - redis
+            pgsql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
         command:
             - php
             - artisan
@@ -117,6 +144,7 @@ services:
         restart: unless-stopped
 
     hubspot-realtime-worker:
+        logging: *default-logging
         profiles:
             - background
         build:
@@ -133,8 +161,10 @@ services:
         networks:
             - sail
         depends_on:
-            - pgsql
-            - redis
+            pgsql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
         command:
             - php
             - artisan
@@ -149,6 +179,7 @@ services:
         restart: unless-stopped
 
     hubspot-bulk-worker:
+        logging: *default-logging
         profiles:
             - background
         build:
@@ -165,8 +196,10 @@ services:
         networks:
             - sail
         depends_on:
-            - pgsql
-            - redis
+            pgsql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
         command:
             - php
             - artisan
@@ -181,6 +214,7 @@ services:
         restart: unless-stopped
 
     campaigns-worker:
+        logging: *default-logging
         profiles:
             - background
         build:
@@ -197,8 +231,10 @@ services:
         networks:
             - sail
         depends_on:
-            - pgsql
-            - redis
+            pgsql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
         command:
             - php
             - artisan
@@ -213,6 +249,7 @@ services:
         restart: unless-stopped
 
     scheduler:
+        logging: *default-logging
         profiles:
             - background
         build:
@@ -229,8 +266,10 @@ services:
         networks:
             - sail
         depends_on:
-            - pgsql
-            - redis
+            pgsql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
         command:
             - php
             - artisan
@@ -241,6 +280,7 @@ services:
     # EC_CAMPAIGNS_V7_GATEWAY: somente a rota publica de descadastro.
     # Sem "ports": acessivel apenas aos containers na rede sail.
     campaigns-unsubscribe-gateway:
+        logging: *default-logging
         profiles:
             - background
         image: nginx:1.27-alpine
@@ -249,10 +289,20 @@ services:
         networks:
             - sail
         depends_on:
-            - laravel.test
+            laravel.test:
+                condition: service_healthy
+        healthcheck:
+            test:
+                - CMD-SHELL
+                - nginx -t && kill -0 1
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 5s
         restart: unless-stopped
 
     ngrok:
+        logging: *default-logging
         profiles:
             - background
         image: ngrok/ngrok:latest
@@ -266,10 +316,12 @@ services:
         networks:
             - sail
         depends_on:
-            - campaigns-unsubscribe-gateway
+            campaigns-unsubscribe-gateway:
+                condition: service_healthy
         restart: unless-stopped
 
     pgsql:
+        logging: *default-logging
         image: 'postgres:18-alpine'
         ports:
             - '127.0.0.1:${FORWARD_DB_PORT:-5432}:5432'
@@ -292,9 +344,12 @@ services:
                 - '${DB_DATABASE:-laravel}'
                 - '-U'
                 - '${DB_USERNAME:-root}'
+            interval: 10s
             retries: 3
             timeout: 5s
+            start_period: 10s
     redis:
+        logging: *default-logging
         image: 'redis:alpine'
         ports:
             - '127.0.0.1:${FORWARD_REDIS_PORT:-6379}:6379'
@@ -307,9 +362,12 @@ services:
                 - CMD
                 - redis-cli
                 - ping
+            interval: 10s
             retries: 3
             timeout: 5s
+            start_period: 5s
     mailpit:
+        logging: *default-logging
         image: 'axllent/mailpit:latest'
         ports:
             - '127.0.0.1:${FORWARD_MAILPIT_PORT:-1025}:1025'

@@ -16,6 +16,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use LogicException;
 use Throwable;
 
 /**
@@ -42,13 +43,20 @@ class SendEmailCampaignRecipient implements ShouldQueue
     ): void {
         /** @var EmailCampaignRecipient|null $recipient */
         $recipient = DB::transaction(function () use ($dispatcher): ?EmailCampaignRecipient {
+            $gate = DB::table('email_campaign_dispatch_gates')
+                ->where('id', 1)
+                ->lockForUpdate()
+                ->first();
+            if ($gate === null) {
+                throw new LogicException('Campaign dispatch quota gate is missing.');
+            }
+
             $candidate = EmailCampaignRecipient::query()->find($this->recipientId);
             if ($candidate === null) {
                 return null;
             }
 
-            // Ordem fixa de locks em relação ao Manager/Dispatcher:
-            // primeiro a campanha, depois o destinatário.
+            // The global gate serializes quota checks before campaign/recipient locks.
             $campaign = EmailCampaign::query()
                 ->whereKey($candidate->email_campaign_id)
                 ->lockForUpdate()->first();
@@ -100,8 +108,30 @@ class SendEmailCampaignRecipient implements ShouldQueue
             // CAMPANHAS_V6_SEND_WINDOW: um job reservado no fim da janela
             // nao pode comecar o SMTP fora do horario configurado.
             $sendPolicy = app(CampaignSendPolicy::class);
-            if (! $sendPolicy->windowOpen($sendPolicy->effective())) {
+            $policy = $sendPolicy->effective();
+            if (! $sendPolicy->windowOpen($policy)) {
                 $row->update(['status' => 'pending', 'reserved_at' => null, 'reservation_token' => null]);
+
+                return null;
+            }
+
+            $utcNow = now('UTC');
+            $hourLimit = max(1, min(100, $policy['hour']));
+            $dayLimit = max(1, min(500, $policy['day']));
+            $hourAttempts = EmailCampaignRecipient::query()
+                ->whereNotNull('attempted_at')
+                ->where('attempted_at', '>=', $utcNow->copy()->subHour())
+                ->count();
+            $dayAttempts = EmailCampaignRecipient::query()
+                ->whereNotNull('attempted_at')
+                ->where('attempted_at', '>=', $utcNow->copy()->subDay())
+                ->count();
+            if ($hourAttempts >= $hourLimit || $dayAttempts >= $dayLimit) {
+                $row->update([
+                    'status' => 'pending',
+                    'reserved_at' => null,
+                    'reservation_token' => null,
+                ]);
 
                 return null;
             }
@@ -110,7 +140,7 @@ class SendEmailCampaignRecipient implements ShouldQueue
             // impede novas reservas, mas não desfaz uma tentativa já iniciada.
             $row->update([
                 'status' => 'sending',
-                'attempted_at' => now('UTC'),
+                'attempted_at' => $utcNow,
                 'attempts' => $row->attempts + 1,
                 'reservation_token' => null,
             ]);

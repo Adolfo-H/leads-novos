@@ -42,6 +42,7 @@ it('does not reset the global 500-recipient limit at midnight', function (): voi
                 'normalized_email' => $email,
                 'status' => 'sent',
                 'reserved_at' => $reservedAt,
+                'attempted_at' => $reservedAt,
             ];
         }
         EmailCampaignRecipient::query()->insert($rows);

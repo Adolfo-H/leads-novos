@@ -119,6 +119,34 @@ it('accepts a corporate website matching the company email domain', function () 
     )->toBeTrue();
 });
 
+it('rejects a lookalike domain that only shares label text', function () {
+    $matcher =
+        new ExportResearchEntityMatcher;
+
+    $company =
+        new Company([
+            'cnpj_root' => '49213747',
+
+            'corporate_name' => 'RAIZEN CENTRO-SUL PAULISTA S.A',
+        ]);
+
+    $company->setRelation(
+        'matrix',
+        new Establishment([
+            'email' => 'fiscal@exemplo.com.br',
+        ])
+    );
+
+    expect(
+        $matcher->matches(
+            company: $company,
+            title: 'Informações corporativas',
+            content: 'Conteúdo institucional sobre atividades comerciais.',
+            url: 'https://outro-exemplo.com.br/exportacao',
+        )
+    )->toBeFalse();
+});
+
 it('rejects Itaipu collision even when generic agricultural terms are present', function () {
     $matcher =
         new ExportResearchEntityMatcher;

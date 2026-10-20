@@ -51,13 +51,22 @@ class SyncEmailCampaignReplies extends Command
             }
             /** @var mixed $batch */
             $batch = json_decode($process->getOutput(), true, 512, JSON_THROW_ON_ERROR);
-            if (! is_array($batch) || ! isset($batch['uidvalidity'], $batch['last_uid'], $batch['initialized'], $batch['messages']) || ! is_array($batch['messages'])) {
+            if (! is_array($batch) || ! isset($batch['uidvalidity'], $batch['last_uid'], $batch['initialized'], $batch['messages']) || ! is_array($batch['messages'])
+                || (isset($batch['message_errors']) && ! is_array($batch['message_errors']))) {
                 $this->error('Formato de resposta IMAP inválido.');
 
                 return self::FAILURE;
             }
-            /** @var array{uidvalidity:string,last_uid:int,initialized:bool,messages:list<array<string,mixed>>} $batch */
+            /** @var array{uidvalidity:string,last_uid:int,initialized:bool,messages:list<array<string,mixed>>,message_errors?:list<array{uid:int,error_type:string}>} $batch */
             $count = $inbox->import($mailbox, $batch);
+            $messageErrors = $batch['message_errors'] ?? [];
+            if ($messageErrors !== []) {
+                $uids = implode(', ', array_map(
+                    static fn (array $error): string => (string) $error['uid'].' ('.$error['error_type'].')',
+                    $messageErrors,
+                ));
+                $this->warn('Cabeçalhos ignorados por erro de parsing — UID e tipo: '.$uids);
+            }
             if ($batch['initialized']) {
                 $this->line('Cursor IMAP inicializado. Mensagens antigas não foram lidas.');
             }

@@ -31,6 +31,7 @@ final class ProspectingDiscoveryService
      *     count: int,
      *     limit: int,
      *     offset: int,
+     *     dataset_version: string,
      *     filters: array<string, mixed>
      * }
      */
@@ -41,6 +42,7 @@ final class ProspectingDiscoveryService
         ?array $cnaes = null,
         ?float $minCapital = null,
         ?array $sizeCodes = null,
+        ?string $datasetVersion = null,
     ): array {
         $limit =
             max(
@@ -61,6 +63,10 @@ final class ProspectingDiscoveryService
             'limit' => $limit,
             'offset' => $offset,
         ];
+
+        if ($datasetVersion !== null) {
+            $query['dataset_version'] = $datasetVersion;
+        }
 
         if (
             $states !== null
@@ -145,6 +151,13 @@ final class ProspectingDiscoveryService
             );
         }
 
+        if ($response->status() === 409) {
+            throw new RuntimeException(
+                'A competência da Receita mudou durante '
+                .'a paginação; reinicie a descoberta.'
+            );
+        }
+
         if ($response->failed()) {
             throw new RuntimeException(
                 'Erro ao consultar motor de '
@@ -161,6 +174,20 @@ final class ProspectingDiscoveryService
             throw new RuntimeException(
                 'O motor de prospecção retornou '
                 .'uma resposta inválida.'
+            );
+        }
+
+        $responseDatasetVersion =
+            $data['dataset_version']
+            ?? null;
+
+        if (
+            ! is_string($responseDatasetVersion)
+            || $responseDatasetVersion === ''
+        ) {
+            throw new RuntimeException(
+                'O motor de prospecção não informou '
+                .'a versão da competência consultada.'
             );
         }
 
@@ -332,6 +359,8 @@ final class ProspectingDiscoveryService
                 $data['offset']
                 ?? $offset
             ),
+
+            'dataset_version' => $responseDatasetVersion,
 
             'filters' => is_array($filters)
                     ? $filters

@@ -92,8 +92,10 @@ class RunProspecting extends Command
             'count' => 0,
             'limit' => $pageSize,
             'offset' => $offset,
+            'dataset_version' => null,
             'filters' => [],
         ];
+        $datasetVersion = null;
 
         for (
             $page = 0;
@@ -121,7 +123,13 @@ class RunProspecting extends Command
                     sizeCodes: $this->csvOption(
                         'size-codes'
                     ),
+                    datasetVersion: $datasetVersion,
                 );
+
+            $datasetVersion =
+                $pageResult[
+                    'dataset_version'
+                ];
 
             $lastResult =
                 $pageResult;
@@ -191,6 +199,8 @@ class RunProspecting extends Command
             'limit' => $limit,
 
             'offset' => $offset,
+
+            'dataset_version' => $datasetVersion,
 
             'filters' => $lastResult[
                     'filters'
@@ -502,6 +512,10 @@ class RunProspecting extends Command
 
                     'offset' => $result[
                             'offset'
+                        ],
+
+                    'dataset_version' => $result[
+                            'dataset_version'
                         ],
 
                     'generated_at' => now()

@@ -69,6 +69,8 @@ it('previews and executes prospecting from the page', function () {
 
             'offset' => 0,
 
+            'dataset_version' => 'fixture-v1',
+
             'filters' => [
                 'states' => [
                     'MT',

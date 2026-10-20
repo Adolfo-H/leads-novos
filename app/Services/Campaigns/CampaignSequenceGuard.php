@@ -22,6 +22,7 @@ final class CampaignSequenceGuard
         $original = EmailCampaignRecipient::query()->find((int) $link->original_recipient_id);
         $ineligible = $original === null || $original->status !== 'sent'
             || $original->replied_at !== null
+            || $original->excluded_from_sequences_at !== null
             || DB::table('email_campaign_replies')->where('email_campaign_recipient_id', $link->original_recipient_id)->exists()
             || DB::table('email_campaign_bounces')->where('email_campaign_recipient_id', $link->original_recipient_id)->exists()
             || DB::table('email_campaign_suppressions')->where('normalized_email', $candidate->normalized_email)->exists();

@@ -16,6 +16,11 @@ class CompanyHubSpotLead extends Model
         'hubspot_company_id',
         'hubspot_contact_id',
         'hubspot_deal_id',
+        'hubspot_deal_sync_status',
+        'hubspot_deal_operation_id',
+        'hubspot_deal_sync_started_at',
+        'hubspot_deal_sync_completed_at',
+        'hubspot_deal_sync_error_category',
         'hubspot_task_id',
         'pipeline_id',
         'deal_stage_id',
@@ -44,6 +49,10 @@ class CompanyHubSpotLead extends Model
             'synced_at' => 'datetime',
 
             'status_synced_at' => 'datetime',
+
+            'hubspot_deal_sync_started_at' => 'datetime',
+
+            'hubspot_deal_sync_completed_at' => 'datetime',
 
             'metadata' => 'array',
         ];

@@ -1,0 +1,10 @@
+{
+  "projeto": "Prospector ExportControl",
+  "repositorio": "Adolfo-H/leads-novos",
+  "branch_base": "main",
+  "commit_base": "5b43e22fd330096706dd2e5529a48e2e80a46b75",
+  "escopo": "Pacotes 11–17; instruções para Codex + scripts read-only + validação, não patch já implementado",
+  "executa_operacoes_externas_automaticamente": false,
+  "quantidade_etapas": 7,
+  "arquivo_principal": "docs/prospector-pacotes-11-17/01_PROMPT_UNICO_PARA_CODEX.md"
+}

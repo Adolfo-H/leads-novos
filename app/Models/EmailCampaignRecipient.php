@@ -12,7 +12,7 @@ class EmailCampaignRecipient extends Model
         'email_campaign_id', 'source_key', 'email', 'normalized_email',
         'contact_name', 'company_name', 'job_title', 'status', 'attempts',
         'reserved_at', 'attempted_at', 'sent_at', 'replied_at',
-        'message_id', 'error_message', 'reservation_token',
+        'message_id', 'error_message', 'reservation_token', 'excluded_from_sequences_at',
     ];
 
     protected function casts(): array
@@ -22,6 +22,7 @@ class EmailCampaignRecipient extends Model
             'attempted_at' => 'datetime',
             'sent_at' => 'datetime',
             'replied_at' => 'datetime',
+            'excluded_from_sequences_at' => 'datetime',
         ];
     }
 

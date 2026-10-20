@@ -71,6 +71,7 @@ it('discovers new companies and creates a prospecting batch', function () {
             'limit' => 2,
 
             'offset' => 0,
+            'dataset_version' => 'fixture-v1',
 
             'filters' => [
                 'states' => [
@@ -185,6 +186,7 @@ it('only previews prospects when execute is not provided', function () {
             'limit' => 1,
 
             'offset' => 0,
+            'dataset_version' => 'fixture-v1',
 
             'filters' => [],
         ]),

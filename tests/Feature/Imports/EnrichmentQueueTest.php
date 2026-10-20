@@ -53,6 +53,73 @@ it('queues ready import items', function () {
     );
 });
 
+it('dispatches import rows in configured bounded chunks', function () {
+    Queue::fake();
+
+    config([
+        'prospector.imports.dispatch_chunk_size' => 1,
+        'prospector.imports.dispatch_max_per_run' => 2,
+    ]);
+
+    $cnpjs = [];
+    foreach (range(1, 5) as $index) {
+        $base = str_pad(
+            (string) (223334440000 + $index),
+            12,
+            '0',
+            STR_PAD_LEFT
+        );
+        $cnpjs[] = $base.Cnpj::calculateCheckDigits($base);
+    }
+
+    $batch = app(CnpjImportService::class)->import($cnpjs);
+    $queue = app(ImportQueueService::class);
+
+    expect($queue->dispatchReady($batch))->toBe(2);
+    expect($batch->items()->where('status', 'queued')->count())->toBe(2);
+    expect($batch->items()->where('status', 'ready')->count())->toBe(3);
+
+    expect($queue->dispatchReady($batch))->toBe(2);
+    expect($batch->items()->where('status', 'queued')->count())->toBe(4);
+    expect($batch->items()->where('status', 'ready')->count())->toBe(1);
+
+    expect($queue->dispatchReady($batch))->toBe(1);
+    expect($batch->items()->where('status', 'queued')->count())->toBe(5);
+    Queue::assertPushed(EnrichImportItem::class, 5);
+});
+
+it('continues dispatching ready import rows in later scheduled runs', function () {
+    Queue::fake();
+
+    config([
+        'prospector.imports.dispatch_chunk_size' => 1,
+        'prospector.imports.dispatch_max_per_run' => 1,
+    ]);
+
+    $cnpjs = [];
+    foreach (range(11, 13) as $index) {
+        $base = str_pad(
+            (string) (223334440000 + $index),
+            12,
+            '0',
+            STR_PAD_LEFT
+        );
+        $cnpjs[] = $base.Cnpj::calculateCheckDigits($base);
+    }
+
+    $batch = app(CnpjImportService::class)->import($cnpjs);
+    expect(app(ImportQueueService::class)->dispatchReady($batch))->toBe(1);
+
+    $this->artisan('imports:dispatch-ready')->assertSuccessful();
+    expect($batch->items()->where('status', 'queued')->count())->toBe(2);
+    expect($batch->items()->where('status', 'ready')->count())->toBe(1);
+
+    $this->artisan('imports:dispatch-ready')->assertSuccessful();
+    expect($batch->items()->where('status', 'queued')->count())->toBe(3);
+    expect($batch->items()->where('status', 'ready')->count())->toBe(0);
+    Queue::assertPushed(EnrichImportItem::class, 3);
+});
+
 it('enriches a queued cnpj into a company', function () {
     $provider =
         new class implements CnpjDataProvider

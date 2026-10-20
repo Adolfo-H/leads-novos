@@ -6,6 +6,7 @@ use App\Jobs\EnrichImportItem;
 use App\Models\ImportBatch;
 use App\Models\ImportItem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 final class ImportQueueService
@@ -13,24 +14,54 @@ final class ImportQueueService
     public function dispatchReady(
         ImportBatch $batch
     ): int {
-        $items = $batch
-            ->items()
-            ->where(
-                'status',
-                'ready'
-            )
-            ->get();
-
-        $dispatched = 0;
-
-        foreach ($items as $item) {
-            /** @var ImportItem $item */
-            if (
-                $this->dispatchItem(
-                    $item
+        $chunkSize = max(
+            1,
+            min(
+                500,
+                (int) config(
+                    'prospector.imports.dispatch_chunk_size',
+                    50
                 )
-            ) {
-                $dispatched++;
+            )
+        );
+        $maxPerRun = max(
+            1,
+            min(
+                5000,
+                (int) config(
+                    'prospector.imports.dispatch_max_per_run',
+                    500
+                )
+            )
+        );
+        $dispatched = 0;
+        $attempted = 0;
+        $lastId = 0;
+
+        while ($attempted < $maxPerRun) {
+            $items = $batch
+                ->items()
+                ->where('status', 'ready')
+                ->where('id', '>', $lastId)
+                ->orderBy('id')
+                ->limit(min(
+                    $chunkSize,
+                    $maxPerRun - $attempted
+                ))
+                ->get();
+
+            if ($items->isEmpty()) {
+                break;
+            }
+
+            foreach ($items as $item) {
+                /** @var ImportItem $item */
+                $lastId = $item->id;
+                $attempted++;
+
+                if ($this->dispatchItem($item)) {
+                    $dispatched++;
+                }
             }
         }
 
@@ -40,12 +71,21 @@ final class ImportQueueService
             ]);
         }
 
+        Log::info('imports.dispatch_ready', [
+            'import_batch_id' => $batch->id,
+            'attempted' => $attempted,
+            'dispatched' => $dispatched,
+            'dispatch_limit' => $maxPerRun,
+            'chunk_size' => $chunkSize,
+        ]);
+
         return $dispatched;
     }
 
     public function recoverStale(
         ImportBatch $batch,
         int $afterMinutes = 20,
+        ?int $limit = null,
     ): int {
         $afterMinutes = max(
             1,
@@ -56,6 +96,18 @@ final class ImportQueueService
             ->subMinutes(
                 $afterMinutes
             );
+
+        $limit = max(
+            1,
+            min(
+                1000,
+                $limit
+                    ?? (int) config(
+                        'prospector.imports.recovery_items_per_batch',
+                        100
+                    )
+            )
+        );
 
         $items = $batch
             ->items()
@@ -72,7 +124,7 @@ final class ImportQueueService
                 $cutoff
             )
             ->orderBy('id')
-            ->limit(100)
+            ->limit($limit)
             ->get();
 
         $recovered = 0;
@@ -94,6 +146,14 @@ final class ImportQueueService
                 $batch->id
             );
         }
+
+        Log::info('imports.recover_stale', [
+            'import_batch_id' => $batch->id,
+            'stale_items' => $items->count(),
+            'recovered' => $recovered,
+            'item_limit' => $limit,
+            'age_minutes' => $afterMinutes,
+        ]);
 
         return $recovered;
     }
