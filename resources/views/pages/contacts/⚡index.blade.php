@@ -5,9 +5,12 @@ use App\Models\CommercialContact;
 use App\Models\ContactPhoneVerification;
 use App\Models\HubSpotImportRun;
 use App\Services\Contacts\ContactDirectory;
+use App\Services\Contacts\ContactPeopleDirectory;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 new class extends Component
 {
@@ -21,20 +24,40 @@ new class extends Component
     public ?string $selectedKey = null;
 
     public int $companyPage = 1;
+
     public int $peoplePage = 1;
+
     public string $peopleSearch = '';
+
     public string $peopleOrigin = 'all';
+
     public string $whatsappFilter = 'all';
+
     public ?string $selectedPersonKey = null;
 
     public bool $formOpen = false;
+
     public ?int $editingContactId = null;
+
     public string $formName = '';
+
     public string $formJob = '';
+
     public string $formEmail = '';
+
     public string $formPhone = '';
+
     public string $formMobile = '';
+
     public string $formNotes = '';
+
+    // EC_PACKAGE18_CONTACTS_VISUAL_CLEAN: links legados ?filtro=fiscal voltam ao filtro geral.
+    public function mount(): void
+    {
+        if ($this->segment === 'fiscal') {
+            $this->segment = 'all';
+        }
+    }
 
     public function updatedSearchTerm(): void
     {
@@ -43,7 +66,7 @@ new class extends Component
 
     public function updatedSegment(): void
     {
-        if (! in_array($this->segment, ['all', 'clients', 'deals', 'without_people', 'hubspot', 'receita', 'orphan', 'manual', 'fiscal', 'unlinked', 'wa_yes', 'wa_unknown', 'with_email', 'with_phone'], true)) {
+        if (! in_array($this->segment, ['all', 'clients', 'deals', 'without_people', 'hubspot', 'receita', 'orphan', 'manual', 'unlinked', 'wa_yes', 'wa_unknown', 'with_email', 'with_phone'], true)) {
             $this->segment = 'all';
         }
         $this->resetDirectory();
@@ -96,7 +119,7 @@ new class extends Component
     }
 
     #[Computed]
-    public function directory(): \Illuminate\Pagination\LengthAwarePaginator
+    public function directory(): LengthAwarePaginator
     {
         return app(ContactDirectory::class)->companies($this->searchTerm, $this->segment, $this->companyPage);
     }
@@ -110,6 +133,7 @@ new class extends Component
             return 'orphan:0';
         }
         $first = $this->directory->items()[0] ?? null;
+
         return $first ? $first->directory_type.':'.$first->record_id : '';
     }
 
@@ -157,6 +181,7 @@ new class extends Component
         foreach ($detail['people']->items() as $item) {
             if ($item->source_key === $key) {
                 $this->selectedPersonKey = $key;
+
                 return;
             }
         }
@@ -180,6 +205,7 @@ new class extends Component
     {
         if (! $this->detail || $this->detail['kind'] === 'orphan') {
             $this->addError('contact', 'Escolha uma empresa antes de cadastrar.');
+
             return;
         }
         $this->resetForm();
@@ -252,7 +278,7 @@ new class extends Component
         $this->peoplePage = 1;
         $this->resetForm();
         $this->formOpen = false;
-        app(\App\Services\Contacts\ContactPeopleDirectory::class)->clearCachedTotals();
+        app(ContactPeopleDirectory::class)->clearCachedTotals();
         unset($this->detail, $this->directory, $this->summary, $this->contactIndex, $this->globalSummary);
         session()->flash('contacts_success', 'Contato salvo na base do Prospector. O HubSpot não foi alterado.');
     }
@@ -267,6 +293,7 @@ new class extends Component
         $digits = ContactDirectory::digits($source['phone']);
         if (strlen($digits) < 8 || strlen($digits) > 20) {
             $this->addError('contact', 'O número informado não permite registrar a verificação.');
+
             return;
         }
         if ($status === 'unknown') {
@@ -279,18 +306,23 @@ new class extends Component
                 ['whatsapp_status' => $status, 'verified_by' => auth()->id(), 'verified_at' => now()],
             );
         }
-        app(\App\Services\Contacts\ContactPeopleDirectory::class)->clearCachedTotals();
+        app(ContactPeopleDirectory::class)->clearCachedTotals();
         unset($this->detail, $this->contactIndex, $this->globalSummary);
         session()->flash('contacts_success', 'Verificação de WhatsApp atualizada.');
     }
 
     // --- Layout V3: lista unificada com filtros e inspetor lateral. ---
     public int $contactsPage = 1;
+
     public int $contactsPerPage = 12;
+
     public string $contactsSort = 'recent';
+
     /** @var list<string> */
     public array $checkedContactKeys = [];
+
     public bool $inspectorOpen = true;
+
     // Contadores pesados carregam depois da primeira pintura da listagem.
     public bool $totalsReady = false;
 
@@ -299,7 +331,9 @@ new class extends Component
         $this->totalsReady = true;
         unset($this->globalSummary);
     }
+
     public bool $companyChooserOpen = false;
+
     public string $companyChooserSearch = '';
 
     public function updatedContactsPerPage(): void
@@ -321,7 +355,7 @@ new class extends Component
     {
         if (! in_array($value, [
             'all', 'clients', 'deals', 'hubspot', 'manual', 'receita',
-            'fiscal', 'orphan', 'unlinked', 'wa_yes', 'wa_unknown',
+            'orphan', 'unlinked', 'wa_yes', 'wa_unknown',
             'with_email', 'with_phone', 'without_people',
         ], true)) {
             abort(422);
@@ -343,9 +377,9 @@ new class extends Component
     }
 
     #[Computed]
-    public function contactIndex(): \Illuminate\Pagination\LengthAwarePaginator
+    public function contactIndex(): LengthAwarePaginator
     {
-        return app(\App\Services\Contacts\ContactPeopleDirectory::class)->paginateForWorkspace(
+        return app(ContactPeopleDirectory::class)->paginateForWorkspace(
             $this->searchTerm,
             $this->segment,
             $this->peopleOrigin,
@@ -369,7 +403,7 @@ new class extends Component
             );
         }
 
-        return app(\App\Services\Contacts\ContactPeopleDirectory::class)->totalsCached();
+        return app(ContactPeopleDirectory::class)->totalsCached();
     }
 
     public function showGlobalPerson(string $sourceKey): void
@@ -406,7 +440,7 @@ new class extends Component
 
     public function startNewContactFromWorkspace(): void
     {
-        $index = app(\App\Services\Contacts\ContactPeopleDirectory::class);
+        $index = app(ContactPeopleDirectory::class);
         $active = collect($this->contactIndex->items())->first(
             fn (object $row): bool => (string) $row->source_key === $this->selectedPersonKey
         ) ?? ($this->contactIndex->items()[0] ?? null);
@@ -440,7 +474,7 @@ new class extends Component
             static fn (object $p): bool => $p->person_type === 'manual' && (int) $p->person_id === $id
         );
         abort_unless($row !== null, 403);
-        $context = app(\App\Services\Contacts\ContactPeopleDirectory::class)->companyContext($row);
+        $context = app(ContactPeopleDirectory::class)->companyContext($row);
         abort_unless($context !== null && preg_match('/^(local|hubspot):(\d+)$/D', $context, $m) === 1, 403);
         $this->selectedKey = $context;
         $this->editManualContact($id, app(ContactDirectory::class));
@@ -459,7 +493,7 @@ new class extends Component
             static fn (object $p): bool => $p->person_type === $type && (int) $p->person_id === $id
         );
         abort_unless($row !== null, 403);
-        $context = app(\App\Services\Contacts\ContactPeopleDirectory::class)->companyContext($row);
+        $context = app(ContactPeopleDirectory::class)->companyContext($row);
         if ($context === null && $type === 'hubspot') {
             $context = 'orphan:0';
         }
@@ -486,7 +520,7 @@ new class extends Component
                 ['whatsapp_status' => $status, 'verified_by' => auth()->id(), 'verified_at' => now()],
             );
         }
-        app(\App\Services\Contacts\ContactPeopleDirectory::class)->clearCachedTotals();
+        app(ContactPeopleDirectory::class)->clearCachedTotals();
         unset($this->contactIndex, $this->globalSummary, $this->detail);
         session()->flash('contacts_success', 'Confirmação de WhatsApp atualizada.');
     }
@@ -505,18 +539,20 @@ new class extends Component
         $keys = array_values(array_unique($keys));
         if ($keys === []) {
             $this->addError('recipients', 'Selecione nesta página contatos com e-mail válido.');
+
             return;
         }
         $limit = max(1, (int) config('campaign_mail.max_recipients', 100));
         if (count($keys) > $limit) {
             $this->addError('recipients', 'A seleção excede o limite por campanha.');
+
             return;
         }
         session()->put('campaign_mail_selected', $keys);
         $this->redirect(route('campaigns.index'), navigate: true);
     }
 
-    public function exportSelectedCsv(): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function exportSelectedCsv(): StreamedResponse
     {
         $selected = array_values(array_filter($this->contactIndex->items(),
             fn (object $row): bool => in_array((string) $row->source_key, $this->checkedContactKeys, true)
@@ -539,6 +575,7 @@ new class extends Component
                 // Proteção contra execução de fórmulas por programas de planilha.
                 $safe = array_map(static function (mixed $field): string {
                     $value = (string) ($field ?? '');
+
                     return preg_match('/^\s*[=+@\-]/u', $value) === 1 ? "'".$value : $value;
                 }, $fields);
                 fputcsv($out, $safe, ';', '"', '');
@@ -548,7 +585,6 @@ new class extends Component
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
     }
-
 };
 ?>
 @php
@@ -596,7 +632,6 @@ new class extends Component
         ['hubspot', 'HubSpot', $totals['hubspot']],
         ['manual', 'Cadastro manual', $totals['manual']],
         ['receita', 'Receita Federal', $totals['receita']],
-        ['fiscal', 'Com vínculo fiscal seguro', null],
     ];
     $conditions = [
         ['with_email', 'Com e-mail'],
@@ -618,11 +653,6 @@ new class extends Component
         </div>
         <div class="ecc3-heading-actions">
             <button type="button" class="ecc3-button ecc3-button-ghost ecc3-only-small" x-on:click="mobileFilters = !mobileFilters">☷ Filtros</button>
-            {{-- CONTACTS_RECEITA_V4_ACCESS: consulta estabelecimentos sem transformar Receita em pessoa --}}
-            <a href="{{ route('contacts.receita', ['q' => $searchTerm]) }}" wire:navigate
-               class="ecc3-button ecc3-button-ghost" title="Ver e-mails e telefones de matrizes e filiais da Receita">
-                ▣ Canais Receita
-            </a>
             <button type="button" class="ecc3-button ecc3-button-primary" wire:click="startNewContactFromWorkspace">
                 <span aria-hidden="true">＋</span> Novo contato
             </button>
@@ -733,7 +763,6 @@ new class extends Component
                     ['deals', 'Com negócios', 'deals'],
                     ['hubspot', 'HubSpot', 'hubspot'],
                     ['receita', 'Receita', 'receita'],
-                    ['fiscal', 'Vínculo fiscal', null],
                     ['unlinked', 'Sem vínculo', 'unlinked'],
                 ] as [$code, $label, $countKey])
                     <button type="button" class="ecc3-chip {{ $segment === $code ? 'is-active' : '' }}"

@@ -57,10 +57,12 @@ it('opens the newest existing campaign as soon as manager enters the module', fu
     ]);
 
     Livewire::actingAs($manager)->test('pages::campaigns.index')
-        ->assertSet('screen', 'detail')
+        ->assertSet('screen', 'overview')
         ->assertSet('selectedCampaignId', $latest->id)
         ->assertSet('detailTab', 'overview')
         ->assertSee('Campanha mais recente')
+        // EC_SIMPLE_CAMPAIGNS_WORKSPACE_TEST: detalhes só após escolha explícita.
+        ->call('openCampaign', $latest->id)
         ->assertSee('Ações rápidas')
         ->assertSee('Na fila')
         ->call('openCampaign', $old->id)
@@ -112,7 +114,12 @@ it('shows only true stored SMTP acceptance counts and never fabricates delivered
         ]);
     }
 
+    // EC_SIMPLE_UX_DETAILS_EXPLICIT_OPEN_V1: os números completos são
+    // exibidos ao escolher uma campanha, não na visão inicial.
     Livewire::actingAs($manager)->test('pages::campaigns.index')
+        ->assertSet('screen', 'overview')
+        ->call('openCampaign', $campaign->id)
+        ->assertSet('screen', 'detail')
         ->assertSee('1 de 3 destinatário(s)')
         ->assertSee('33%')
         ->assertSee('Mensagens aceitas pelo servidor não significam entrega')
@@ -137,7 +144,15 @@ it('keeps the genuine API safety lock when live campaigns are disabled', functio
 
     $this->actingAs($manager)->get(route('campaigns.index'))
         ->assertOk()
-        ->assertSee('Envio real bloqueado');
+        ->assertSee('Modo seguro');
+
+    // O aviso detalhado e o botão de início ficam somente no rascunho aberto.
+    Livewire::actingAs($manager)->test('pages::campaigns.index')
+        ->assertSet('screen', 'overview')
+        ->call('openCampaign', $campaign->id)
+        ->assertSet('screen', 'detail')
+        ->assertSee('Envio real bloqueado')
+        ->assertDontSee('Envios reais habilitados');
 
     expect($campaign->fresh()->status)->toBe('draft');
 });

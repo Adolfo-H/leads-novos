@@ -18059,3 +18059,9 @@ body:not(.dark)
 @import './dashboard-v26.css';
 @import './dossier-company-commercial-v1.css';
 @import './imports-screen-v2.css';
+/* EC_SIMPLE_CAMPAIGNS_2026_V1 */
+@import './campaigns-simple-v1.css';
+/* EC_CAMPAIGN_REDESIGN_V21 */
+@import './campaigns-redesign-v21.css';
+/* EC_CAMPAIGNS_UX_V22 */
+@import './campaigns-v22.css';

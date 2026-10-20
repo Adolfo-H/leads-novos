@@ -78,7 +78,7 @@ new class extends Component
     }
 };
 ?>
-<div class="ecm6-page ecm7-page" wire:poll.60s>
+<div class="ecm6-page ecm7-page ec21-page ec21-queue" data-ec21-screen="queue" wire:poll.60s>
     <header class="ecm6-heading ecm7-page-heading">
         <div><span class="ecm6-eyebrow">RELACIONAMENTO / CAMPANHAS</span><h1>Envios e fila</h1><p>Acompanhe o processamento e simule volumes antes de configurar suas campanhas.</p></div>
         <span class="ecm7-status {{ $this->health['safe_mode'] ? '' : 'is-warning' }}"><span class="ecm7-status-dot"></span>{{ $this->health['safe_mode'] ? 'Envios comerciais bloqueados' : 'Envio comercial habilitado' }}</span>

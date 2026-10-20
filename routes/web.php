@@ -49,6 +49,8 @@ Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function ()
     Route::livewire('/campanhas/respostas', 'pages::campaigns.replies')->name('campaigns.replies');
     Route::livewire('/campanhas/fila', 'pages::campaigns.queue')->name('campaigns.queue');
     Route::livewire('/campanhas/configuracoes', 'pages::campaigns.settings')->name('campaigns.settings');
+    // EC_CAMPAIGNS_UX_V22: tela exclusivamente de leitura para gestores.
+    Route::livewire('/campanhas/avancado', 'pages::campaigns.advanced')->name('campaigns.advanced');
 });
 
 // Link individual e com HMAC; GET só exibe confirmação. POST realiza descadastro.

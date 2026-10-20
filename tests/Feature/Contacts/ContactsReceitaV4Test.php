@@ -140,9 +140,11 @@ it('does not infer fiscal association between HubSpot and Receita by company nam
         ->and(app(ContactPeopleDirectory::class)->paginate('', 'hubspot')->total())->toBe(1);
 });
 
-it('adds a Receita access link to the current Contacts workspace', function (): void {
+it('keeps the Receita data page accessible without a duplicate action in Contacts', function (): void {
     $this->actingAs(contactsReceitaV4Manager())
         ->get(route('contacts.index'))
         ->assertSuccessful()
-        ->assertSee('Canais Receita');
+        ->assertDontSee('Canais Receita');
+
+    $this->get(route('contacts.receita'))->assertSuccessful();
 });

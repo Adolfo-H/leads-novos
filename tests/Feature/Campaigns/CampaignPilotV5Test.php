@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 
 function ecPilotV5Manager(): User
 {
@@ -254,8 +255,17 @@ it('does not recount a UTC pilot as a legacy timestamp three hours later', funct
 it('shows pilot panel in a draft without making commercial sending available', function (): void {
     $campaign = ecPilotV5Draft();
     $user = ecPilotV5Manager();
+    // EC_SIMPLE_UX_PILOT_EXPLICIT_OPEN_V1: a tela inicial é simples;
+    // os recursos do piloto continuam acessíveis ao abrir o rascunho.
     $this->actingAs($user)->get(route('campaigns.index'))
         ->assertOk()
+        ->assertSee('Começar campanha')
+        ->assertDontSee('data-ec-pilot-v5', false);
+
+    Livewire::actingAs($user)->test('pages::campaigns.index')
+        ->assertSet('screen', 'overview')
+        ->call('openCampaign', $campaign->id)
+        ->assertSet('screen', 'detail')
         ->assertSee('data-ec-pilot-v5', false)
         ->assertSee('Piloto seguro V5');
     expect($campaign->status)->toBe('draft')

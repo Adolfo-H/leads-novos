@@ -1,0 +1,39 @@
+/* Pacotes 19/20 — ExportControl: camada incremental sem refazer o CSS existente. */
+.ec-simple-pace-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0; }
+.ec-simple-pace-fields .ecm2-field { display:grid;align-content:center;gap:8px; }
+.ec-simple-pace-fields .ecm2-field span {color:#afc9d7;font-weight:600;font-size:13px;}
+.ec-simple-pace-fields select {min-height:43px;border-radius:9px;border:1px solid #2d607b;background:#092842;color:#e5f8ff;padding:10px 13px;width:100%;}
+.ec-simple-big-number {font-size:28px;color:#e9f9ff;line-height:1.3;}
+.ec-simple-pace-metrics {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:15px 0;}
+.ec-simple-pace-metrics>div {display:grid;gap:7px;padding:17px;background:#0d324e;border:1px solid #295672;border-radius:12px;}
+.ec-simple-pace-metrics small,.ec-simple-pace-metrics span {font-size:12px;color:#9ec7d8;}
+.ec-simple-pace-metrics strong {font-size:28px;color:#52d7ce;line-height:1.1;}
+.ec-simple-warning,.ec-simple-info {border-radius:10px;padding:13px 15px;margin:13px 0;line-height:1.55;font-size:13px;}
+.ec-simple-warning {color:#ffddb0;background:rgba(145,97,31,.20);border:1px solid #87642f;}
+.ec-simple-info {color:#bff8ed;background:rgba(40,134,126,.16);border:1px solid #2b7f83;}
+.ec-simple-warning a,.ec-simple-info a {text-decoration:underline;color:inherit;font-weight:700;}
+.ec-simple-review-notice {border:1px solid #296276;background:#0d364c;border-radius:11px;padding:16px;margin:15px 0;}
+.ec-simple-review-notice>strong {color:#b0f5ed;display:block;margin-bottom:5px;}
+.ec-simple-review-notice>p {font-size:13px;line-height:1.6;color:#b4d1dc;}
+.ec-simple-final-safety {margin:15px 0;}
+.ec-simple-review-actions {flex-wrap:wrap;gap:10px;}
+.ec-simple-metrics-details {margin:12px 0 18px;border-radius:10px;border:1px solid #24536c;background:#0b2b44;padding:10px 16px;}
+.ec-simple-metrics-details>summary {cursor:pointer;color:#bfe8ee;font-size:13px;font-weight:700;}
+.ec-simple-metrics-details>.ecm2-stats {margin-top:15px;}
+.ec-simple-config-hub {margin:28px 0 20px;}
+.ec-simple-config-hub>header h2 {color:#effaff;font-weight:750;font-size:22px;margin:7px 0;}
+.ec-simple-config-hub>header p {color:#9fc4d4;font-size:13px;margin-bottom:17px;}
+.ec-simple-config-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+.ec-simple-config-grid details {background:#0c2f4b;border:1px solid #255875;border-radius:12px;padding:15px 18px;}
+.ec-simple-config-grid summary {cursor:pointer;display:grid;gap:5px;color:#eafaff;list-style:none;}
+.ec-simple-config-grid summary::-webkit-details-marker {display:none;}
+.ec-simple-config-grid summary::after {content:'⌄';float:right;position:absolute;right:18px;top:14px;color:#45d0c6;}
+.ec-simple-config-grid details {position:relative;}
+.ec-simple-config-grid details[open] summary::after {content:'⌃';}
+.ec-simple-config-grid summary small {color:#9ec7d8;font-size:12px;padding-right:15px;}
+.ec-simple-config-grid details>p {color:#bed9e5;font-size:13px;line-height:1.6;margin:14px 0;}
+.ec-simple-config-grid details>a {font-size:13px;font-weight:700;color:#51d5cb;text-decoration:underline;text-underline-offset:3px;}
+@media (max-width:800px) {
+    .ec-simple-pace-fields,.ec-simple-pace-metrics,.ec-simple-config-grid {grid-template-columns:minmax(0,1fr);}
+    .ec-simple-review-actions .ecm2-btn {width:100%;justify-content:center;}
+}

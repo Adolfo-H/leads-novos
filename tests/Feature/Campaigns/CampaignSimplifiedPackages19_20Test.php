@@ -1,0 +1,33 @@
+<?php
+
+use App\Services\Campaigns\CampaignSendPolicy;
+use Illuminate\Support\Facades\Route;
+
+it('shows the simplified campaign navigation without deleting operational routes', function (): void {
+    $nav = file_get_contents(resource_path('views/campaigns/module-nav.blade.php'));
+    expect($nav)->not->toBeFalse();
+    expect($nav)->toContain('EC_SIMPLE_NAV_PACK20')
+        ->toContain('Respostas')
+        ->toContain('Configurações gerais')
+        ->not->toContain('<span>Envios e fila</span>');
+    foreach (['campaigns.index', 'campaigns.replies', 'campaigns.settings', 'campaigns.queue', 'campaigns.production.index', 'campaigns.intelligence.index'] as $name) {
+        expect(Route::has($name))->toBeTrue();
+    }
+});
+
+it('keeps SMTP and daily limits enforced for unrealistic sending plans', function (): void {
+    $policy = app(CampaignSendPolicy::class);
+    expect($policy->quote(500, 1)['possible'])->toBeFalse()
+        ->and($policy->quote(500, 2)['possible'])->toBeFalse()
+        ->and($policy->quote(500, 8)['possible'])->toBeTrue();
+});
+
+it('keeps actual sending under explicit authorization', function (): void {
+    $view = file_get_contents(resource_path('views/pages/campaigns/⚡index.blade.php'));
+    expect($view)->not->toBeFalse();
+    expect($view)->toContain('saveAndStart')
+        ->toContain('lawfulBasisConfirmed')
+        ->toContain("config('campaign_mail.live_enabled')")
+        ->toContain('policy')
+        ->toContain("'pace'");
+});

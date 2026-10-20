@@ -1,15 +1,16 @@
 <?php
 
 use App\Models\EmailCampaign;
-use App\Models\EmailCampaignTestMessage;
 use App\Models\EmailCampaignRecipient;
 use App\Models\EmailCampaignReply;
+use App\Models\EmailCampaignTestMessage;
 use App\Models\User;
 use App\Services\Campaigns\CampaignAudience;
 use App\Services\Campaigns\CampaignContent;
+use App\Services\Campaigns\CampaignImapHealth;
 use App\Services\Campaigns\CampaignManager;
 use App\Services\Campaigns\CampaignPilot;
-use App\Services\Campaigns\CampaignImapHealth;
+use App\Services\Campaigns\CampaignSendPolicy;
 use App\Services\Campaigns\CampaignTrackedTest;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -22,21 +23,38 @@ new class extends Component
     // EC_RECEITA_UNIFIED_V10: chaves Receita verificadas em CampaignAudience.
 
     public string $screen = 'overview';
+
     public string $composerStep = 'audience';
+
+    public string $plannedHours = '8';
+
     public string $detailTab = 'recipients';
+
     public ?int $editingCampaignId = null;
+
     public ?int $selectedCampaignId = null;
+
     public string $name = '';
+
     public string $subject = '';
+
     public string $body = '';
+
     public string $audienceSearch = '';
+
     public string $audienceOrigin = 'all';
+
     public int $audiencePage = 1;
+
     /** @var list<string> */
     public array $audienceKeys = [];
+
     public bool $lawfulBasisConfirmed = false;
+
     public string $campaignSearch = '';
+
     public string $campaignStatus = 'all';
+
     public int $recipientPage = 1;
 
     public function mount(): void
@@ -55,7 +73,8 @@ new class extends Component
             $latestId = EmailCampaign::query()->latest('id')->value('id');
             if ($latestId !== null) {
                 $this->selectedCampaignId = (int) $latestId;
-                $this->screen = 'detail';
+                // Abre o ponto de partida; não força a campanha antiga sobre o usuário.
+                $this->screen = 'overview';
                 $this->detailTab = 'overview';
             }
         }
@@ -92,6 +111,7 @@ new class extends Component
     public function overview(): array
     {
         $this->assertManager();
+
         return [
             'campaigns' => EmailCampaign::query()->count(),
             'active' => EmailCampaign::query()->where('status', 'running')->count(),
@@ -114,6 +134,7 @@ new class extends Component
     public function audience(): LengthAwarePaginator
     {
         $this->assertManager();
+
         return app(CampaignAudience::class)->paginate(
             $this->audienceSearch, $this->audienceOrigin, $this->audiencePage,
         );
@@ -123,6 +144,7 @@ new class extends Component
     public function selectedCampaign(): ?EmailCampaign
     {
         $this->assertManager();
+
         return $this->selectedCampaignId !== null
             ? EmailCampaign::query()->withCount('recipients')->find($this->selectedCampaignId)
             : null;
@@ -135,6 +157,7 @@ new class extends Component
         if ($this->selectedCampaignId === null) {
             return [];
         }
+
         return EmailCampaignRecipient::query()
             ->where('email_campaign_id', $this->selectedCampaignId)
             ->select('status')->selectRaw('COUNT(*) AS total')
@@ -145,6 +168,7 @@ new class extends Component
     public function recipients(): LengthAwarePaginator
     {
         $this->assertManager();
+
         return EmailCampaignRecipient::query()
             ->where('email_campaign_id', $this->selectedCampaignId ?? 0)
             ->orderBy('id')->paginate(15, ['*'], 'recipientPage', $this->recipientPage);
@@ -154,6 +178,7 @@ new class extends Component
     public function replies(): Collection
     {
         $this->assertManager();
+
         return EmailCampaignReply::query()
             ->where('email_campaign_id', $this->selectedCampaignId ?? 0)
             ->latest('received_at')->limit(30)->get();
@@ -183,6 +208,7 @@ new class extends Component
             ? $total.' caixa(s) autorizada(s) adicionada(s) à fila piloto.'
             : 'Este rascunho já possui testes piloto para todos os endereços autorizados.');
     }
+
     // EC_CAMPAIGN_IMAP_MONITOR_V1: monitoramento local sem leitura de mensagens.
     #[Computed]
     public function imapHealth(): array
@@ -239,6 +265,7 @@ new class extends Component
             'audienceSearch', 'audienceOrigin', 'audiencePage', 'audienceKeys', 'lawfulBasisConfirmed']);
         $this->screen = 'composer';
         $this->composerStep = 'audience';
+        $this->plannedHours = '8';
         $this->applyTemplate('initial');
         $this->resetValidation();
     }
@@ -274,6 +301,7 @@ new class extends Component
             ->pluck('source_key')->all();
         $this->screen = 'composer';
         $this->composerStep = 'message';
+        $this->plannedHours = '8';
         $this->resetValidation();
     }
 
@@ -281,16 +309,17 @@ new class extends Component
     public function goToComposerStep(string $step): void
     {
         $this->assertManager();
-        abort_unless(in_array($step, ['audience', 'message', 'review'], true), 422);
+        abort_unless(in_array($step, ['audience', 'message', 'pace', 'review'], true), 422);
         $this->resetValidation();
 
-        if (in_array($step, ['message', 'review'], true) && $this->audienceKeys === []) {
+        if (in_array($step, ['message', 'pace', 'review'], true) && $this->audienceKeys === []) {
             $this->addError('recipients', 'Selecione pelo menos um contato antes de continuar.');
             $this->composerStep = 'audience';
+
             return;
         }
 
-        if ($step === 'review') {
+        if (in_array($step, ['pace', 'review'], true)) {
             $this->validate([
                 'name' => ['required', 'string', 'min:3', 'max:180'],
                 'subject' => ['required', 'string', 'min:3', 'max:180'],
@@ -298,7 +327,43 @@ new class extends Component
             ]);
         }
 
+        if ($step === 'review') {
+            $this->validate(['plannedHours' => ['required', 'in:1,2,4,8,12,24']]);
+        }
         $this->composerStep = $step;
+    }
+
+    /** Simulação da duração solicitada. Não altera a política real de envio.
+     * @return array{total:int,hours:int,required_hour:int,required_minute:int,allowed_hour:int,allowed_minute:int,allowed_day:int,max_recipients:int,possible:bool,within_policy:bool}
+     */
+    #[Computed]
+    public function pacePreview(): array
+    {
+        $this->assertManager();
+        $total = count($this->audienceKeys);
+        $hours = max(1, (int) $this->plannedHours);
+        $policy = app(CampaignSendPolicy::class);
+        $quote = $policy->quote($total, $hours);
+        $effective = $policy->effective();
+        $possible = $quote['possible'] && $total <= (int) config('campaign_mail.max_recipients', 100);
+        $withinPolicy = $possible
+            && $total <= $effective['day']
+            && $quote['hourly_limit'] <= $effective['hour']
+            && $quote['per_tick_limit'] <= $effective['tick']
+            && (! $effective['window_active'] || $hours <= $effective['duration_hours']);
+
+        return [
+            'total' => $total,
+            'hours' => $hours,
+            'required_hour' => $quote['hourly_limit'],
+            'required_minute' => $quote['per_tick_limit'],
+            'allowed_hour' => $effective['hour'],
+            'allowed_minute' => $effective['tick'],
+            'allowed_day' => $effective['day'],
+            'max_recipients' => (int) config('campaign_mail.max_recipients', 100),
+            'possible' => $possible,
+            'within_policy' => $withinPolicy,
+        ];
     }
 
     public function startWithTemplate(string $key): void
@@ -352,10 +417,10 @@ new class extends Component
             );
             $combined = array_values(array_unique(array_merge($this->audienceKeys, $keys)));
             if (count($combined) > (int) config('campaign_mail.max_recipients', 100)) {
-                throw new \InvalidArgumentException('O total selecionado ultrapassou o limite.');
+                throw new InvalidArgumentException('O total selecionado ultrapassou o limite.');
             }
             $this->audienceKeys = $combined;
-        } catch (\InvalidArgumentException $error) {
+        } catch (InvalidArgumentException $error) {
             $this->addError('recipients', $error->getMessage());
         }
     }
@@ -368,7 +433,7 @@ new class extends Component
             'subject' => ['required', 'string', 'min:3', 'max:180'],
             'body' => ['required', 'string', 'min:10', 'max:12000'],
             'audienceKeys' => ['required', 'array', 'min:1'],
-            'audienceKeys.*' => ['string', 'max:160', 'regex:/^(hubspot|manual):[0-9]+$/'],
+            'audienceKeys.*' => ['string', 'max:160', 'regex:/^(?:(?:hubspot|manual):[0-9]+|receita:[0-9a-fA-F-]{36})$/'],
         ]);
         $campaign = $manager->saveDraft($user, [
             'name' => $validated['name'], 'subject' => $validated['subject'], 'body' => $validated['body'],
@@ -377,6 +442,54 @@ new class extends Component
         session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.');
         unset($this->overview, $this->campaigns);
         $this->openCampaign((int) $campaign->id);
+    }
+
+    /**
+     * EC_SIMPLE_CAMPAIGNS_2026_V1
+     * Disparo explícito: primeiro salva rascunho, depois usa a mesma
+     * aprovação e todas as proteções já existentes no CampaignManager.
+     * A duração escolhida é uma simulação; a fila usa a política global.
+     */
+    public function saveAndStart(CampaignManager $manager): void
+    {
+        $this->assertManager();
+        if (! $this->lawfulBasisConfirmed) {
+            $this->addError('lawfulBasisConfirmed', 'Confirme a base legal e os descadastros antes de enviar.');
+
+            return;
+        }
+        if (! config('campaign_mail.enabled') || ! config('campaign_mail.live_enabled')) {
+            $this->addError('campaign', 'Envio real bloqueado. Salve o rascunho ou consulte as configurações.');
+
+            return;
+        }
+        if (! $this->pacePreview['within_policy']) {
+            $this->addError('campaign', 'O ritmo desejado não é compatível com os limites ativos.');
+
+            return;
+        }
+        $this->saveDraft($manager);
+        if ($this->selectedCampaignId !== null) {
+            $this->lawfulBasisConfirmed = true;
+            $this->startCampaign($this->selectedCampaignId, $manager);
+        }
+    }
+
+    // EC_CAMPAIGN_REDESIGN_V21: ações de editor, sem operações externas.
+    public function removeAudienceKey(string $key): void
+    {
+        $this->assertManager();
+        $this->audienceKeys = array_values(array_filter(
+            $this->audienceKeys,
+            static fn (string $selected): bool => $selected !== $key,
+        ));
+    }
+
+    public function appendTemplateVariable(string $token): void
+    {
+        $this->assertManager();
+        abort_unless(in_array($token, ['nome', 'primeiro_nome', 'empresa', 'cargo'], true), 422);
+        $this->body .= ($this->body === '' || str_ends_with($this->body, "\n") ? '' : ' ').'{{'.$token.'}}';
     }
 
     public function sendTest(CampaignManager $manager): void
@@ -391,7 +504,7 @@ new class extends Component
             session()->flash('campaign_success', 'Teste enviado somente à caixa configurada. Verifique o recebimento.');
         } catch (ValidationException $exception) {
             throw $exception;
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             report($exception);
             $this->addError('campaign', 'Falha no envio de teste: '.class_basename($exception).'. Verifique o SMTP.');
         }
@@ -456,7 +569,8 @@ new class extends Component
     $campaignsList = $this->campaigns;
     $mailEnabled = (bool) config('campaign_mail.enabled');
     $liveEnabled = $mailEnabled && (bool) config('campaign_mail.live_enabled');
-    $appUrl = (string) config('app.url');
+    // Mesma URL de descadastro usada no CampaignManager.
+    $appUrl = (string) (app(\App\Services\Campaigns\CampaignUnsubscribeLink::class)->base() ?? '');
     $appHost = parse_url($appUrl, PHP_URL_HOST);
     $publicHttps = parse_url($appUrl, PHP_URL_SCHEME) === 'https'
         && is_string($appHost)
@@ -473,7 +587,7 @@ new class extends Component
     $progress = $totalCount > 0 ? min(100, (int) round($sentCount * 100 / $totalCount)) : 0;
 @endphp
 
-<div class="ecm2" @if ($screen === 'detail') wire:poll.60s @endif>
+<div class="ecm2 ec21-page ec22-page" data-ec21="EC_CAMPAIGN_REDESIGN_V21" data-ec22-screen="{{ $screen }}" @if ($screen === 'detail') wire:poll.60s @endif>
     <header class="ecm2-head">
         <div>
             <div class="ecm2-breadcrumb">RELACIONAMENTO <span>/</span> EXPORTCONTROL</div>
@@ -505,6 +619,7 @@ new class extends Component
     {{-- EC_CAMPAIGN_V6_NAV --}}
     @include('campaigns.module-nav')
 
+    <details class="ec-simple-metrics-details"><summary>Ver indicadores das campanhas (avançado)</summary>
     <section class="ecm2-stats" aria-label="Indicadores reais das campanhas">
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-blue">▤</span><div><small>Rascunhos</small><strong>{{ number_format($counts['drafts'], 0, ',', '.') }}</strong><span>Aguardando preparação</span></div></div>
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-amber">◷</span><div><small>Na fila ativa</small><strong>{{ number_format($counts['queue'], 0, ',', '.') }}</strong><span>Aguardando envio real</span></div></div>
@@ -512,8 +627,9 @@ new class extends Component
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-green">↩</span><div><small>Respostas</small><strong>{{ number_format($counts['replies'], 0, ',', '.') }}</strong><span>Registradas pelo IMAP</span></div></div>
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-red">!</span><div><small>Não confirmados</small><strong>{{ number_format($counts['uncertain'], 0, ',', '.') }}</strong><span>Conferir tentativas</span></div></div>
     </section>
+    </details>
 
-    <div class="ecm2-shell">
+    <div class="ecm2-shell ec21-shell is-{{ $screen }}">
         <aside class="ecm2-list-panel" aria-label="Campanhas cadastradas">
             <header class="ecm2-panel-header">
                 <div><small>SUA OPERAÇÃO</small><h2>Minhas campanhas</h2></div>
@@ -565,110 +681,146 @@ new class extends Component
 
         <main class="ecm2-main" aria-label="Área de trabalho de campanhas">
             @if ($screen === 'overview')
-                <section class="ecm2-empty-workspace">
-                    <div class="ecm2-eyebrow">ÁREA DE TRABALHO / CAMPANHAS</div>
-                    <div class="ecm2-welcome-illustration" aria-hidden="true"><span>✉</span><i>✓</i></div>
-                    <h2>Da seleção de contatos ao acompanhamento, tudo organizado.</h2>
-                    <p>Escolha uma campanha à esquerda ou prepare uma nova comunicação em etapas. Nenhuma mensagem é enviada ao salvar um rascunho.</p>
-                    <div class="ecm2-overview-steps">
-                        <div><b>01</b><strong>Selecionar contatos</strong><small>HubSpot e cadastros manuais, sem duplicidades de e-mail.</small></div>
-                        <div><b>02</b><strong>Escrever mensagem</strong><small>Modelos prontos, personalização e prévia.</small></div>
-                        <div><b>03</b><strong>Testar e revisar</strong><small>Envie somente para sua caixa antes de salvar.</small></div>
-                    </div>
-                    <div class="ecm2-welcome-actions">
-                        <button type="button" wire:click="newCampaign" class="ecm2-btn ecm2-btn-primary">＋ Começar campanha</button>
-                        <a class="ecm2-link" href="{{ route('contacts.index') }}" wire:navigate>Consultar contatos →</a>
-                    </div>
-                    <div class="ecm2-templates">
-                        <h3>Começar com um modelo</h3>
-                        <div>
-                            <button type="button" wire:click="startWithTemplate('initial')"><span>▤</span><strong>Apresentação</strong><small>Primeiro contato comercial</small></button>
-                            <button type="button" wire:click="startWithTemplate('followup')"><span>↩</span><strong>Retomada</strong><small>Reabrir uma conversa</small></button>
-                            <button type="button" wire:click="startWithTemplate('meeting')"><span>▦</span><strong>Agendamento</strong><small>Convite para apresentação</small></button>
+                {{-- EC22: home simples, sem métricas inventadas nem controles técnicos. --}}
+                <section class="ec22-home" data-ec22-section="home">
+                    <div class="ec22-home-hero">
+                        <div class="ec22-home-hero-top">
+                            <div>
+                                <span class="ec22-kicker">CAMPANHAS / COMEÇAR</span>
+                                <h2>Crie sua próxima campanha de e-mail</h2>
+                                <p>Crie sua campanha em poucos passos. Escolha os destinatários, escreva o texto e revise antes de enviar.</p>
+                            </div>
+                            <div class="ec22-hero-symbol" aria-hidden="true">✉ <span>➤</span></div>
+                        </div>
+                        <ol class="ec22-home-steps" aria-label="Etapas da campanha">
+                            <li><span>01</span><div><strong>Selecionar contatos</strong><small>Encontre destinatários na base de contatos.</small></div></li>
+                            <li><span>02</span><div><strong>Escrever mensagem</strong><small>Personalize o assunto e o texto do e-mail.</small></div></li>
+                            <li><span>03</span><div><strong>Ritmo e revisão</strong><small>Confira os limites, faça um teste e salve.</small></div></li>
+                        </ol>
+                        <div class="ec22-home-cta">
+                            <button type="button" class="ec22-button ec22-button-primary" wire:click="newCampaign">＋ Começar campanha <span aria-hidden="true">→</span></button>
+                            <a href="{{ route('contacts.index') }}" wire:navigate>Consultar contatos →</a>
                         </div>
                     </div>
+                    <div class="ec22-home-templates">
+                        <div class="ec22-section-head"><div><h3>Modelos prontos para começar</h3><p>Você pode editar a mensagem antes de salvar a campanha.</p></div></div>
+                        <div class="ec22-home-template-grid">
+                            <button type="button" wire:click="startWithTemplate('initial')"><span aria-hidden="true">✉</span><strong>Apresentação</strong><small>Primeiro contato com uma empresa.</small><em>Usar modelo →</em></button>
+                            <button type="button" wire:click="startWithTemplate('followup')"><span aria-hidden="true">↩</span><strong>Retomada</strong><small>Retome uma conversa com contexto.</small><em>Usar modelo →</em></button>
+                            <button type="button" wire:click="startWithTemplate('meeting')"><span aria-hidden="true">▣</span><strong>Agendamento</strong><small>Convide para uma apresentação.</small><em>Usar modelo →</em></button>
+                        </div>
+                    </div>
+                    <div class="ec22-home-footnote">Os resultados de envio refletem registros reais do SMTP e IMAP. Não há contagem de aberturas sem rastreamento validado.</div>
                 </section>
             @elseif ($screen === 'composer')
-                <section class="ecm2-workflow">
-                    <header class="ecm2-workflow-heading">
-                        <div><div class="ecm2-eyebrow">{{ $editingCampaignId ? 'EDITANDO RASCUNHO' : 'NOVA CAMPANHA' }}</div><h2>{{ $editingCampaignId ? 'Editar campanha' : 'Preparar campanha' }}</h2><p>Três etapas antes de salvar o rascunho.</p></div>
-                        <button type="button" class="ecm2-btn ecm2-btn-muted" wire:click="showOverview">← Voltar</button>
+                {{-- EC22: um único assistente de três telas, sem painel lateral de campanhas. --}}
+                <section class="ec22-wizard" data-ec22-section="composer" data-ec22-step="{{ $composerStep }}">
+                    <header class="ec22-wizard-head">
+                        <div>
+                            <span class="ec22-kicker">CAMPANHAS DE E-MAIL / {{ $editingCampaignId ? 'EDITAR RASCUNHO' : 'NOVA CAMPANHA' }}</span>
+                            <h1>Nova campanha</h1>
+                            <p>{{ match ($composerStep) { 'audience' => 'Escolha quem vai receber seu e-mail.', 'message' => 'Escreva sua mensagem e confira a prévia.', default => 'Confira o ritmo e revise antes de solicitar o envio.' } }}</p>
+                        </div>
+                        <button type="button" class="ec22-button ec22-button-outline" wire:click="showOverview">Cancelar e voltar</button>
                     </header>
-                    <nav class="ecm2-stepper" aria-label="Etapas de criação">
-                        @foreach ([['audience','01','Destinatários'], ['message','02','Mensagem'], ['review','03','Revisão']] as [$stepKey, $stepNumber, $stepLabel])
-                            <button type="button" wire:click="goToComposerStep(@js($stepKey))" class="{{ $composerStep === $stepKey ? 'is-current' : '' }}" aria-current="{{ $composerStep === $stepKey ? 'step' : 'false' }}">
-                                <span>{{ $stepNumber }}</span><strong>{{ $stepLabel }}</strong>
-                            </button>
+                    @php $ec22Step = ['audience' => 1, 'message' => 2, 'pace' => 3, 'review' => 3][$composerStep] ?? 1; @endphp
+                    <nav class="ec22-stepper" aria-label="Etapas da criação">
+                        @foreach ([['audience', 1, 'Selecionar contatos'], ['message', 2, 'Escrever mensagem'], ['pace', 3, 'Ritmo e revisão']] as [$stepKey, $index, $stepName])
+                            <button type="button" class="{{ $ec22Step === $index ? 'is-current' : ($ec22Step > $index ? 'is-done' : '') }}" wire:click="goToComposerStep(@js($stepKey))" aria-current="{{ $ec22Step === $index ? 'step' : 'false' }}"><b>{{ $ec22Step > $index ? '✓' : $index }}</b><span><strong>{{ $stepName }}</strong><small>{{ match ($index) { 1 => 'Quem vai receber', 2 => 'O que será enviado', default => 'Quando e como enviar' } }}</small></span></button>
                         @endforeach
                     </nav>
                     @if ($composerStep === 'audience')
-                        <section class="ecm2-step-content">
-                            <div class="ecm2-section-top"><div><h3>Escolha quem receberá a campanha</h3><p>Somente pessoas com e-mail cadastrado, vindas do HubSpot ou da base manual.</p></div><span class="ecm2-selection-count">{{ count($audienceKeys) }} selecionado(s)</span></div>
-                            <div class="ecm2-field"><label for="ecm2-name">Nome interno da campanha <span>*</span></label><input id="ecm2-name" type="text" maxlength="180" wire:model="name" placeholder="Ex.: Prospecção — Cooperativas PR">@error('name') <small class="ecm2-field-error">{{ $message }}</small> @enderror</div>
-                            <div class="ecm2-audience-toolbar">
-                                <label class="ecm2-search"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg><input type="search" wire:model.live.debounce.450ms="audienceSearch" placeholder="Nome, empresa, e-mail..." aria-label="Buscar destinatários"></label>
-                                <select wire:model.live="audienceOrigin" aria-label="Origem dos destinatários"><option value="all">Todas as fontes</option><option value="hubspot">HubSpot</option><option value="manual">Manuais</option></select>
-                            </div>
-                            <div class="ecm2-audience-actions"><button type="button" wire:click="toggleAudiencePage">☐ Selecionar página</button><button type="button" wire:click="addAllFiltered">＋ Adicionar filtrados</button><button type="button" wire:click="$set('audienceKeys', [])" @disabled($audienceKeys === [])>Limpar seleção</button></div>
-                            <div class="ecm2-audience-list">
-                                @forelse ($this->audience as $person)
-                                    <label class="ecm2-audience-person" wire:key="ecm2-audience-{{ $person->source_key }}">
-                                        <input type="checkbox" wire:model.live="audienceKeys" value="{{ $person->source_key }}">
-                                        <span class="ecm2-avatar">{{ mb_strtoupper(mb_substr(trim((string) $person->person_name) ?: '?', 0, 1)) }}</span>
-                                        <span class="ecm2-audience-name"><strong>{{ trim((string) $person->person_name) ?: 'Contato sem nome' }}</strong><small>{{ $person->email }}</small><small>{{ trim((string) $person->company_name) ?: 'Empresa não informada' }}</small></span>
-                                        <span class="ecm2-origin is-{{ $person->origin }}">{{ $person->origin === 'hubspot' ? 'HubSpot' : 'Manual' }}</span>
-                                    </label>
-                                @empty
-                                    <div class="ecm2-audience-blank">Nenhum contato com e-mail encontrado para esta pesquisa.</div>
-                                @endforelse
-                            </div>
-                            <div class="ecm2-pagination"><span>{{ $this->audience->total() }} contato(s) elegíveis · Página {{ $this->audience->currentPage() }} de {{ $this->audience->lastPage() }}</span><div><button type="button" wire:click="changeAudiencePage({{ $this->audience->currentPage() - 1 }})" @disabled($this->audience->onFirstPage())>‹</button><button type="button" wire:click="changeAudiencePage({{ $this->audience->currentPage() + 1 }})" @disabled(! $this->audience->hasMorePages())>›</button></div></div>
-                            @error('audienceKeys') <div class="ecm2-field-error">{{ $message }}</div> @enderror
-                            <div class="ecm2-step-actions"><span>A seleção será deduplicada ao salvar.</span><button type="button" wire:click="goToComposerStep('message')" class="ecm2-btn ecm2-btn-primary">Próximo: mensagem →</button></div>
-                        </section>
-                    @elseif ($composerStep === 'message')
-                        <section class="ecm2-step-content">
-                            <div class="ecm2-section-top"><div><h3>Escreva a mensagem</h3><p>Use o editor e confira como o e-mail será apresentado.</p></div><span class="ecm2-selection-count">{{ count($audienceKeys) }} contato(s)</span></div>
-                            {{-- EC_CAMPAIGN_WIZARD_VALIDATION_V2_1: o nome não pode ficar escondido na etapa anterior. --}}
-                            <div class="ecm2-field">
-                                <label for="ecm2-campaign-name-message">Nome interno da campanha <span>*</span></label>
-                                <input id="ecm2-campaign-name-message" type="text" maxlength="180"
-                                       wire:model.blur="name" placeholder="Ex.: Retomada de contato - Cooperativas">
-                                <small class="ecm2-field-hint">Somente para organização interna; não aparece no e-mail enviado.</small>
-                                @error('name') <small class="ecm2-field-error" role="alert">{{ $message }}</small> @enderror
-                            </div>
-                            <div class="ecm2-template-bar"><span>Modelos rápidos</span><button type="button" wire:click="applyTemplate('initial')">Apresentação</button><button type="button" wire:click="applyTemplate('followup')">Retomada</button><button type="button" wire:click="applyTemplate('meeting')">Agendamento</button></div>
-                            <div class="ecm2-field"><label for="ecm2-subject">Assunto <span>*</span></label><input id="ecm2-subject" type="text" maxlength="180" wire:model.live.debounce.400ms="subject" placeholder="Assunto do e-mail">@error('subject') <small class="ecm2-field-error">{{ $message }}</small> @enderror</div>
-                            <div class="ecm2-field"><label for="ecm2-body">Corpo do e-mail <span>*</span></label><textarea id="ecm2-body" rows="11" maxlength="12000" spellcheck="true" wire:model.live.debounce.500ms="body" placeholder="Escreva sua mensagem..."></textarea>@error('body') <small class="ecm2-field-error">{{ $message }}</small> @enderror</div>
-                            <p class="ecm2-variables">Variáveis disponíveis: <code>@{{nome}}</code> <code>@{{primeiro_nome}}</code> <code>@{{empresa}}</code> <code>@{{cargo}}</code>. Elas são substituídas ao enviar cada mensagem.</p>
-                            <div class="ecm2-preview-label">Pré-visualização do texto <small>Variáveis aparecem como digitadas</small></div>
-                            <div class="ecm2-mail-preview"><div>De: {{ config('campaign_mail.from_name') }} &lt;{{ config('campaign_mail.from_address') }}&gt;</div><div>Assunto: <strong>{{ $subject ?: '(sem assunto)' }}</strong></div><p>{{ $body ?: 'O conteúdo da mensagem aparecerá aqui.' }}</p></div>
-                            @if ($errors->any())
-                                <div class="ecm2-validation-alert" role="alert" aria-live="assertive" data-campaign-errors>
-                                    <strong>Não foi possível avançar. Confira:</strong>
-                                    <ul>
-                                        @foreach ($errors->all() as $validationMessage)
-                                            <li>{{ $validationMessage }}</li>
-                                        @endforeach
-                                    </ul>
+                        <div class="ec22-two-columns ec22-audience-layout">
+                            <section class="ec22-card ec22-audience-card">
+                                <header class="ec22-card-head"><div><h2>Escolha os contatos</h2><p>Selecione na base. Você poderá revisar a lista antes de salvar.</p></div><span class="ec22-count">{{ number_format($this->audience->total(), 0, ',', '.') }} encontrados</span></header>
+                                <label class="ec22-search"><span aria-hidden="true">⌕</span><input aria-label="Buscar contatos" type="search" wire:model.live.debounce.400ms="audienceSearch" placeholder="Buscar por nome, empresa ou e-mail..."></label>
+                                <div class="ec22-tabs" role="group" aria-label="Origem dos contatos">
+                                    @foreach (['all' => 'Todos', 'hubspot' => 'HubSpot', 'manual' => 'Cadastro manual', 'receita' => 'Receita Federal'] as $key => $caption)
+                                        <button type="button" class="{{ $audienceOrigin === $key ? 'is-active' : '' }}" wire:click="$set('audienceOrigin', @js($key))" aria-pressed="{{ $audienceOrigin === $key ? 'true' : 'false' }}">{{ $caption }}</button>
+                                    @endforeach
                                 </div>
-                            @endif
-                            <div class="ecm2-step-actions"><button type="button" wire:click="goToComposerStep('audience')" class="ecm2-btn ecm2-btn-muted">← Voltar</button><button type="button" wire:click="goToComposerStep('review')" wire:loading.attr="disabled" wire:target="goToComposerStep" class="ecm2-btn ecm2-btn-primary">Próximo: revisar →</button></div>
-                        </section>
+                                <div class="ec22-recipient-tools"><button type="button" wire:click="toggleAudiencePage">Selecionar página</button><button type="button" wire:click="addAllFiltered">Adicionar resultados filtrados</button><button type="button" wire:click="$set('audienceKeys', [])" @disabled($audienceKeys === [])>Limpar seleção</button></div>
+                                <div class="ec22-table-scroll"><table class="ec22-contact-table"><thead><tr><th scope="col">✓</th><th scope="col">Contato / e-mail</th><th scope="col">Empresa</th><th scope="col">Origem</th></tr></thead><tbody>
+                                @forelse ($this->audience as $person)
+                                    @php
+                                        $ec22PersonName = trim((string) $person->person_name);
+                                        $ec22Email = (string) $person->email;
+                                        $ec22Picked = in_array((string) $person->source_key, $audienceKeys, true);
+                                    @endphp
+                                    <tr class="{{ $ec22Picked ? 'is-picked' : '' }}" wire:key="ec22-contact-{{ $person->source_key }}"><td><input type="checkbox" wire:model.live="audienceKeys" value="{{ $person->source_key }}" aria-label="Selecionar {{ $ec22Email }}"></td><td><div class="ec22-person-cell"><span class="ec22-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($ec22PersonName ?: $ec22Email, 0, 1)) }}</span><span><strong>{{ $ec22PersonName ?: $ec22Email }}</strong>@if($ec22PersonName)<small>{{ $ec22Email }}</small>@else<small>Nome não informado</small>@endif</span></div></td><td>{{ trim((string) $person->company_name) ?: 'Não informada' }}</td><td><span class="ec22-origin">{{ match ($person->origin) { 'hubspot' => 'HubSpot', 'receita' => 'Receita Federal', default => 'Manual' } }}</span></td></tr>
+                                @empty
+                                    <tr><td colspan="4" class="ec22-table-empty">Nenhum contato com e-mail encontrado.</td></tr>
+                                @endforelse
+                                </tbody></table></div>
+                                <footer class="ec22-table-footer"><span>Página {{ $this->audience->currentPage() }} de {{ $this->audience->lastPage() }} • {{ number_format($this->audience->total(), 0, ',', '.') }} com e-mail</span><div><button type="button" wire:click="changeAudiencePage({{ $this->audience->currentPage() - 1 }})" @disabled($this->audience->onFirstPage())>← Anterior</button><button type="button" wire:click="changeAudiencePage({{ $this->audience->currentPage() + 1 }})" @disabled(! $this->audience->hasMorePages())>Próxima →</button></div></footer>
+                            </section>
+                            <aside class="ec22-card ec22-selection-card">
+                                <h2>Destinatários selecionados</h2><div class="ec22-big-count">{{ count($audienceKeys) }}</div><p>contato(s) na seleção</p>
+                                <div class="ec22-info-note">Só endereços válidos e não bloqueados poderão entrar na campanha. Duplicados serão deduplicados ao salvar.</div>
+                                @php $ec22OnPage = collect($this->audience->items())->filter(fn ($p) => in_array((string) $p->source_key, $audienceKeys, true))->take(6); @endphp
+                                <div class="ec22-picks">
+                                    @foreach ($ec22OnPage as $person)
+                                        <div class="ec22-pick" wire:key="ec22-picked-{{ $person->source_key }}"><span class="ec22-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr(trim((string) $person->person_name) ?: (string) $person->email, 0, 1)) }}</span><span><strong>{{ trim((string) $person->person_name) ?: (string) $person->email }}</strong><small>{{ $person->email }}</small></span><button type="button" wire:click="removeAudienceKey(@js($person->source_key))" aria-label="Remover {{ $person->email }}">×</button></div>
+                                    @endforeach
+                                </div>
+                                @if (count($audienceKeys) > $ec22OnPage->count())<p class="ec22-secondary">Mais destinatários estão selecionados em outras páginas.</p>@endif
+                                <p class="ec22-limit">Limite por campanha: <strong>{{ (int) config('campaign_mail.max_recipients', 100) }}</strong></p>
+                                @error('recipients')<div class="ec22-error" role="alert">{{ $message }}</div>@enderror
+                                @error('audienceKeys')<div class="ec22-error" role="alert">{{ $message }}</div>@enderror
+                            </aside>
+                        </div>
+                        <footer class="ec22-footer"><button type="button" class="ec22-button ec22-button-outline" wire:click="showOverview">Cancelar</button><button type="button" class="ec22-button ec22-button-primary" wire:click="goToComposerStep('message')">Continuar →</button></footer>
+                    @elseif ($composerStep === 'message')
+                        <div class="ec22-two-columns ec22-message-layout">
+                            <section class="ec22-card ec22-editor-card">
+                                <header class="ec22-card-head"><div><h2>Escreva sua mensagem</h2><p>Defina o nome interno, o assunto e o conteúdo.</p></div></header>
+                                <div class="ec22-input"><label for="ec22-campaign-name">Nome interno da campanha</label><input id="ec22-campaign-name" type="text" wire:model.blur="name" maxlength="180" placeholder="Ex.: Apresentação ExportControl">@error('name')<small role="alert">{{ $message }}</small>@enderror</div>
+                                <div class="ec22-input"><label for="ec22-subject">Assunto do e-mail</label><input id="ec22-subject" type="text" wire:model.live.debounce.400ms="subject" maxlength="180" placeholder="Escreva um assunto claro...">@error('subject')<small role="alert">{{ $message }}</small>@enderror</div>
+                                <div class="ec22-token-row"><strong>Personalizar:</strong>@foreach (['primeiro_nome' => 'Primeiro nome', 'nome' => 'Nome', 'empresa' => 'Empresa', 'cargo' => 'Cargo'] as $token => $caption)<button type="button" wire:click="appendTemplateVariable(@js($token))" title="Inserir {{ $caption }} ao final da mensagem">&#123;&#123;{{ $token }}&#125;&#125;</button>@endforeach</div>
+                                <div class="ec22-input"><label for="ec22-body">Mensagem</label><textarea id="ec22-body" rows="15" maxlength="12000" wire:model.live.debounce.500ms="body" placeholder="Escreva aqui sua mensagem personalizada..."></textarea><small>Editor de texto simples, sem HTML. {{ mb_strlen($body) }}/12.000 caracteres.</small>@error('body')<small role="alert">{{ $message }}</small>@enderror</div>
+                                <div class="ec22-quick-templates"><strong>Usar modelo:</strong><button type="button" wire:click="applyTemplate('initial')">Apresentação</button><button type="button" wire:click="applyTemplate('followup')">Retomada</button><button type="button" wire:click="applyTemplate('meeting')">Agendamento</button></div>
+                                @if ($errors->any())<div class="ec22-error" role="alert"><strong>Não foi possível avançar. Confira os campos:</strong><ul>@foreach ($errors->all() as $messageError)<li>{{ $messageError }}</li>@endforeach</ul></div>@endif
+                            </section>
+                            <aside class="ec22-card ec22-preview-card">
+                                <header class="ec22-card-head"><div><h2>Pré-visualização</h2><p>Exemplo de como o texto aparecerá ao destinatário.</p></div></header>
+                                @php
+                                    $ec22PreviewBody = strtr((string) $body, ['{{primeiro_nome}}' => 'João', '{{nome}}' => 'João Exemplo', '{{empresa}}' => 'Empresa Exemplo', '{{cargo}}' => 'Responsável']);
+                                    $ec22PreviewSubject = strtr((string) $subject, ['{{primeiro_nome}}' => 'João', '{{nome}}' => 'João Exemplo', '{{empresa}}' => 'Empresa Exemplo', '{{cargo}}' => 'Responsável']);
+                                @endphp
+                                <div class="ec22-email-paper"><div class="ec22-email-headers"><div><span>De:</span> {{ config('campaign_mail.from_address') ?: 'Conta de envio não configurada' }}</div><div><span>Para:</span> contato@empresa.example (exemplo)</div><div><span>Assunto:</span> {{ $ec22PreviewSubject ?: '(sem assunto)' }}</div></div><div class="ec22-email-body">{{ $ec22PreviewBody ?: 'Escreva uma mensagem para visualizar a prévia.' }}</div></div>
+                                <div class="ec22-tip"><strong>Antes de enviar</strong><p>Use um assunto direto, revise as variáveis e envie um teste para a sua caixa. O link de descadastro é gerado pelo sistema.</p></div>
+                            </aside>
+                        </div>
+                        <footer class="ec22-footer"><button type="button" class="ec22-button ec22-button-outline" wire:click="goToComposerStep('audience')">← Voltar</button><button type="button" class="ec22-button ec22-button-primary" wire:click="goToComposerStep('pace')">Continuar →</button></footer>
                     @else
-                        <section class="ecm2-step-content">
-                            <div class="ecm2-section-top"><div><h3>Revise antes de salvar</h3><p>Salvar cria um rascunho. Nenhum destinatário recebe e-mail nesta etapa.</p></div><span class="ecm2-pill is-draft">Rascunho</span></div>
-                            <div class="ecm2-review-grid">
-                                <div><small>Campanha</small><strong>{{ $name }}</strong></div>
-                                <div><small>Contatos selecionados</small><strong>{{ count($audienceKeys) }}</strong></div>
-                                <div><small>Remetente</small><strong>{{ config('campaign_mail.from_address') }}</strong></div>
-                                <div><small>Limite da campanha</small><strong>{{ config('campaign_mail.max_recipients') }} endereços</strong></div>
-                            </div>
-                            <div class="ecm2-preview-label">Revisão do conteúdo</div>
-                            <div class="ecm2-mail-preview"><div>De: {{ config('campaign_mail.from_name') }} &lt;{{ config('campaign_mail.from_address') }}&gt;</div><div>Assunto: <strong>{{ $subject }}</strong></div><p>{{ $body }}</p></div>
-                            <div class="ecm2-testbox"><span aria-hidden="true">✉</span><div><strong>Envio de teste</strong><p>O teste vai somente para {{ config('campaign_mail.test_to') }} e não dispara aos contatos selecionados.</p></div><button type="button" class="ecm2-btn ecm2-btn-muted" wire:click="sendTest" wire:loading.attr="disabled" wire:target="sendTest" @disabled(! $mailEnabled)>Enviar teste</button></div>
-                            <div class="ecm2-step-actions"><button type="button" wire:click="goToComposerStep('message')" class="ecm2-btn ecm2-btn-muted">← Editar mensagem</button><button type="button" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft" class="ecm2-btn ecm2-btn-primary">✓ Salvar rascunho</button></div>
+                        <div class="ec22-two-columns ec22-final-layout">
+                            <section class="ec22-card ec22-rhythm-card">
+                                <header class="ec22-card-head"><div><h2>Em quanto tempo você quer enviar?</h2><p>Escolha um prazo desejado. A fila real seguirá a política autorizada.</p></div></header>
+                                <p class="ec22-secondary">{{ count($audienceKeys) }} destinatário(s) selecionado(s). Limite desta campanha: {{ (int) config('campaign_mail.max_recipients', 100) }}.</p>
+                                <h3 class="ec22-subheading">Duração desejada</h3>
+                                <div class="ec22-duration-grid" role="group" aria-label="Duração desejada">
+                                    @foreach ([1, 2, 4, 8, 12, 24] as $h)<button type="button" wire:click="$set('plannedHours', @js((string) $h))" class="{{ (int) $plannedHours === $h ? 'is-active' : '' }}" aria-pressed="{{ (int) $plannedHours === $h ? 'true' : 'false' }}">{{ $h }} {{ $h === 1 ? 'hora' : 'horas' }}</button>@endforeach
+                                </div>
+                                <div class="ec22-current-policy"><div><strong>Limites atuais de envio</strong><p>Esses valores são globais. O prazo que você escolher não os altera.</p></div><dl><div><dt>Por hora</dt><dd>{{ $this->pacePreview['allowed_hour'] }}</dd></div><div><dt>Por minuto</dt><dd>{{ $this->pacePreview['allowed_minute'] }}</dd></div><div><dt>Em 24 horas</dt><dd>{{ $this->pacePreview['allowed_day'] }}</dd></div></dl><a href="{{ route('campaigns.settings') }}" target="_blank" rel="noopener">Ver configurações gerais ↗</a></div>
+                                @if (! $this->pacePreview['possible'])<div class="ec22-warning" role="alert">A quantidade ou o prazo ultrapassa o teto técnico ou o limite de destinatários. Ajuste antes de enviar.</div>
+                                @elseif (! $this->pacePreview['within_policy'])<div class="ec22-warning" role="status">O prazo escolhido ultrapassa os limites atuais. Salve como rascunho ou revise as configurações autorizadas.</div>
+                                @else<div class="ec22-success" role="status">Ritmo teórico compatível com a política atual. Filas, janelas móveis e SMTP podem prolongar o envio.</div>@endif
+                            </section>
+                            <aside class="ec22-card ec22-pace-summary"><header class="ec22-card-head"><div><h2>Previsão do seu envio</h2><p>Simulação, não agendamento.</p></div></header>
+                                <div class="ec22-metric-grid"><div><span>Necessário por hora</span><strong>{{ $this->pacePreview['required_hour'] }}</strong></div><div><span>Necessário por minuto</span><strong>{{ $this->pacePreview['required_minute'] }}</strong></div><div><span>Duração desejada</span><strong>{{ $this->pacePreview['hours'] }}h</strong></div><div><span>Contatos</span><strong>{{ count($audienceKeys) }}</strong></div></div>
+                                <div class="ec22-info-note">O início e a duração efetivos dependem do agendador e dos limites SMTP. Este prazo não fica agendado individualmente.</div>
+                            </aside>
+                        </div>
+                        <section class="ec22-card ec22-review-card">
+                            <header class="ec22-card-head"><div><h2>Revisão final</h2><p>Confira antes de salvar ou solicitar o envio.</p></div><button type="button" class="ec22-button ec22-button-outline" wire:click="goToComposerStep('message')">Editar mensagem</button></header>
+                            <div class="ec22-review-grid"><div><span>Campanha</span><strong>{{ $name ?: '(sem nome)' }}</strong></div><div><span>Destinatários selecionados</span><strong>{{ count($audienceKeys) }}</strong></div><div><span>Remetente</span><strong>{{ config('campaign_mail.from_address') ?: 'Não configurado' }}</strong></div><div><span>Assunto</span><strong>{{ $subject ?: '(sem assunto)' }}</strong></div></div>
+                            <div class="ec22-test-block"><div><strong>Envio de teste</strong><p>Vai somente para a caixa configurada. Nenhum contato da campanha receberá este teste.</p></div><button type="button" class="ec22-button ec22-button-outline" wire:click="sendTest" wire:loading.attr="disabled" wire:target="sendTest" @disabled(! $mailEnabled)>Enviar teste</button></div>
+                            <label class="ec22-consent"><input type="checkbox" wire:model.live="lawfulBasisConfirmed"> Confirmo que revisei os destinatários, a base legal do contato e a política de descadastro.</label>
+                            @unless ($canStart)<div class="ec22-warning" role="status"><strong>Modo seguro ativo.</strong> Você pode salvar o rascunho, mas o envio comercial está bloqueado até a homologação.</div>@endunless
+                            @error('campaign')<div class="ec22-error" role="alert">{{ $message }}</div>@enderror
+                            @error('lawfulBasisConfirmed')<div class="ec22-error" role="alert">{{ $message }}</div>@enderror
                         </section>
+                        <footer class="ec22-footer"><button type="button" class="ec22-button ec22-button-outline" wire:click="goToComposerStep('message')">← Voltar</button><div><button type="button" class="ec22-button ec22-button-outline" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">Salvar rascunho</button><button type="button" class="ec22-button ec22-button-primary" wire:click="saveAndStart" wire:confirm="Confirma a autorização do envio real? O motor aplicará os limites e as proteções do sistema." wire:loading.attr="disabled" wire:target="saveAndStart" @disabled(! $canStart || ! $lawfulBasisConfirmed || ! $this->pacePreview['within_policy'])>Solicitar envio</button></div></footer>
                     @endif
                 </section>
             @elseif ($screen === 'detail' && $selected)

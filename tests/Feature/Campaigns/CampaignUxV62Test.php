@@ -52,9 +52,9 @@ it('shows unified UX tabs only to an authenticated manager', function (): void {
     $this->actingAs(ecV62Manager());
     foreach (['campaigns.replies', 'campaigns.queue', 'campaigns.settings'] as $route) {
         $this->get(route($route))->assertOk()
-            ->assertSee('Caixa de respostas')
-            ->assertSee('Envios e fila')
-            ->assertSee('Configurações');
+            // SIMPLE_CAMPAIGN_NAV_TEST_2026: navegação com três itens.
+            ->assertSee('Respostas')
+            ->assertSee('Configurações gerais');
     }
 });
 
