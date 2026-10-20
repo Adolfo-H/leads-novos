@@ -4,7 +4,9 @@ namespace App\Services\Campaigns;
 
 use App\Models\CommercialContact;
 use App\Models\EmailCampaignSuppression;
+use App\Models\Establishment;
 use App\Models\HubSpotContact;
+use App\Services\Contacts\ReceitaContactChannels;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +20,8 @@ use stdClass;
  */
 final class CampaignAudience
 {
+    // EC_RECEITA_UNIFIED_V10: inclui somente e-mails reais de estabelecimentos, sem criar pessoas.
+
     public static function normalizedEmail(string $value): string
     {
         return mb_strtolower(trim($value));
@@ -80,6 +84,16 @@ final class CampaignAudience
                 $email = (string) $person->email;
                 $company = (string) ($person->company->corporate_name ?? '');
                 $job = (string) $person->job_title;
+            } elseif (preg_match('/^receita:([0-9a-fA-F-]{36})$/D', $key, $match) === 1) {
+                $person = Establishment::query()->with('company')
+                    ->where('uuid', $match[1])->whereNotNull('company_id')->first();
+                if ($person === null || $person->company === null) {
+                    continue;
+                }
+                $name = 'Equipe';
+                $email = (string) $person->email;
+                $company = (string) $person->company->corporate_name;
+                $job = 'Canal cadastral da Receita';
             } else {
                 continue;
             }
@@ -119,10 +133,16 @@ final class CampaignAudience
             ->selectRaw("'manual' AS origin")
             ->whereNotNull('m.email')->where('m.email', '<>', '');
 
-        $query = DB::query()->fromSub($hubspot->unionAll($manual), 'audience')
+        $receita = ReceitaContactChannels::withEmail()
+            ->selectRaw("('receita:' || CAST(e.uuid AS VARCHAR)) AS source_key")
+            ->selectRaw("'Equipe' AS person_name")
+            ->selectRaw("e.email AS email, 'Canal cadastral da Receita' AS job_title, rc.corporate_name AS company_name")
+            ->selectRaw("'receita' AS origin");
+
+        $query = DB::query()->fromSub($hubspot->unionAll($manual)->unionAll($receita), 'audience')
             ->select('audience.*');
 
-        if (in_array($origin, ['hubspot', 'manual'], true)) {
+        if (in_array($origin, ['hubspot', 'manual', 'receita'], true)) {
             $query->where('origin', $origin);
         }
 

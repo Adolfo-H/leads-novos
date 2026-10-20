@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\CampaignIntelligenceController;
+use App\Http\Controllers\CampaignProductionReadinessController;
 use App\Http\Controllers\CampaignUnsubscribeController;
 use App\Http\Controllers\HubSpotWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -35,6 +37,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function () {
     Route::livewire('/contatos', 'pages::contacts.index')
         ->name('contacts.index');
+    /* CONTACTS_RECEITA_V4_ROUTE */
+    Route::livewire('/contatos/receita', 'pages::contacts.receita')->name('contacts.receita');
 });
 
 /* EC_EMAIL_CAMPAIGNS_V1_ROUTES */
@@ -139,4 +143,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'commercial.company-access'
         )
         ->name('companies.show');
+});
+
+/* EC_CAMPAIGN_RELEASE_V8: apenas gestores */
+Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function () {
+    Route::get('/campanhas/homologacao', [CampaignProductionReadinessController::class, 'index'])->name('campaigns.production.index');
+    Route::post('/campanhas/homologacao', [CampaignProductionReadinessController::class, 'save'])->name('campaigns.production.save');
+});
+
+/* EC_CAMPAIGN_INTELLIGENCE_V9 — apenas gestores */
+Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function () {
+    Route::get('/campanhas/inteligencia', [CampaignIntelligenceController::class, 'index'])->name('campaigns.intelligence.index');
+    Route::post('/campanhas/inteligencia/segmentos', [CampaignIntelligenceController::class, 'saveSegment'])->name('campaigns.intelligence.segments.save');
+    Route::post('/campanhas/inteligencia/rascunhos', [CampaignIntelligenceController::class, 'draft'])->name('campaigns.intelligence.draft');
+    Route::post('/campanhas/inteligencia/sequencias', [CampaignIntelligenceController::class, 'sequence'])->name('campaigns.intelligence.sequence');
+    Route::post('/campanhas/inteligencia/sequencias/{sequence}/preparar', [CampaignIntelligenceController::class, 'prepare'])->whereNumber('sequence')->name('campaigns.intelligence.prepare');
+    Route::post('/campanhas/inteligencia/responder', [CampaignIntelligenceController::class, 'sendReply'])->name('campaigns.intelligence.reply');
 });

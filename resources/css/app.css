@@ -11,6 +11,8 @@
 @import './campaigns-bounces-v7.css';
 @import './campaigns-pilot-v5.css';
 @import './contacts-reference-v3.css';
+/* CONTACTS_RECEITA_V4_STYLES */
+@import './contacts-receita-v4.css';
 @import './company-list-workspace.css';
 @import './company-create-workspace.css';
 @import './company-dossier.css';

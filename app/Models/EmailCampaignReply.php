@@ -10,6 +10,8 @@ class EmailCampaignReply extends Model
     protected $fillable = [
         'email_campaign_id', 'email_campaign_recipient_id', 'mailbox',
         'uid_validity', 'imap_uid', 'from_email', 'subject', 'received_at',
+        // EC_CAMPAIGN_INTELLIGENCE_V9
+        'incoming_message_id',
         'body_text', 'body_loaded_at',
     ];
 

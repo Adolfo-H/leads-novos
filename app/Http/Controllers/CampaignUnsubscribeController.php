@@ -6,7 +6,8 @@ use App\Services\Campaigns\CampaignManager;
 use App\Services\Campaigns\UnsubscribeToken;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use Illuminate\Http\Request; // EC_CAMPAIGN_RELEASE_V8
+use Illuminate\Http\Response;
 
 class CampaignUnsubscribeController extends Controller
 {
@@ -17,11 +18,15 @@ class CampaignUnsubscribeController extends Controller
         return view('campaigns.unsubscribe', ['token' => $token]);
     }
 
-    public function store(Request $request, string $token, UnsubscribeToken $tokens, CampaignManager $manager): RedirectResponse
+    public function store(Request $request, string $token, UnsubscribeToken $tokens, CampaignManager $manager): RedirectResponse|Response
     {
         $recipient = $tokens->resolve($token);
         abort_if($recipient === null, 404);
         $manager->suppress($recipient->normalized_email);
+        // RFC 8058: o provedor envia POST sem sessão, após validar token HMAC.
+        if ($request->input('List-Unsubscribe') === 'One-Click') {
+            return response('Descadastro confirmado.', 200)->header('Content-Type', 'text/plain; charset=utf-8');
+        }
 
         // EC_CAMPAIGNS_V7_RELATIVE_REDIRECT: mantém o host HTTPS público do túnel.
         return redirect()->to(route('campaigns.unsubscribe', ['token' => $token], false))

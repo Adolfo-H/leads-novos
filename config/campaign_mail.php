@@ -17,6 +17,9 @@ return [
     'max_recipients' => (int) env('CAMPAIGN_MAIL_MAX_RECIPIENTS', 100),
     // EC_CAMPAIGNS_V7_UNSUBSCRIBE_URL: dominio HTTPS do túnel; APP_URL local permanece inalterado.
     'unsubscribe_base_url' => env('CAMPAIGN_UNSUBSCRIBE_BASE_URL', ''),
+    // EC_CAMPAIGN_INTELLIGENCE_V9: desligados por padrão.
+    'reply_send_enabled' => (bool) env('CAMPAIGN_REPLY_SEND_ENABLED', false),
+    'followup_drafts_enabled' => (bool) env('CAMPAIGN_SEQUENCE_DRAFTS_ENABLED', false),
     'queue' => env('CAMPAIGN_MAIL_QUEUE', 'campaigns'),
     // Piloto restrito a caixas individuais autorizadas; não libera campanhas reais.
     'pilot_enabled' => (bool) env('CAMPAIGN_PILOT_ENABLED', false),

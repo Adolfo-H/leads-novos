@@ -339,3 +339,11 @@
     .ecc3-page .ecc3-modal .ecc-form-grid{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){.ecc3-page *{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* EC_RECEITA_UNIFIED_V10: canal cadastral institucional; origem sempre explícita. */
+.ecc3-page .ecc3-source-receita {
+    color: #94f8ed;
+    background: #0b4b58;
+    border-color: #28c6bb;
+}
+.ecc3-page .ecc3-source-receita::before { content: '▣'; margin-right: 5px; }

@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 
 final class IcpScoringService
 {
-    public const VERSION = 'v2';
+    public const VERSION = 'v3';
 
     /**
      * @var list<string>
@@ -458,8 +458,9 @@ final class IcpScoringService
                                 ->registration_status_code
                     );
 
-                    if ($code !== '') {
-                        return $code === '02';
+                    if ($code !== '' && ctype_digit($code)) {
+                        // A base antiga pode ter '2'; novas consultas gravam '02'.
+                        return (int) $code === 2;
                     }
 
                     return $this->normalizeText(

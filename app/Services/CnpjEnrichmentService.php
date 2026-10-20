@@ -33,6 +33,8 @@ final class CnpjEnrichmentService
             );
         }
 
+        $cnaes = $this->cnaes($data);
+
         return $this->companies
             ->createOrUpdateFromEstablishment(
                 [
@@ -146,13 +148,7 @@ final class CnpjEnrichmentService
                         ]
                     ),
 
-                    'registration_status_code' => $this->first(
-                        $data,
-                        [
-                            'situacao_cadastral',
-                            'codigo_situacao_cadastral',
-                        ]
-                    ),
+                    'registration_status_code' => $this->registrationStatusCode($data),
 
                     'registration_status' => $this->registrationStatus(
                         $data
@@ -337,10 +333,8 @@ final class CnpjEnrichmentService
                             ] ?? null,
                     ],
                 ],
-                $this->cnaes(
-                    $data
-                ),
-                replaceCnaes: true,
+                $cnaes,
+                replaceCnaes: $this->hasCompleteCnaes($data, $cnaes),
             );
     }
 
@@ -391,6 +385,69 @@ final class CnpjEnrichmentService
     }
 
     /** @param array<string, mixed> $data */
+    private function registrationStatusCode(array $data): ?string
+    {
+        $value = $this->first($data, [
+            'situacao_cadastral',
+            'codigo_situacao_cadastral',
+        ]);
+
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+
+        $value = trim((string) $value);
+
+        return preg_match('/^[0-9]{1,2}$/D', $value)
+            ? str_pad($value, 2, '0', STR_PAD_LEFT)
+            : $value;
+    }
+
+    /**
+     * A resposta so pode substituir a lista existente quando informa
+     * um CNAE principal valido e uma lista secundaria completa.
+     * Se a fonte omite algum desses campos, fazemos atualizacao incremental.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  list<array{code: string, description: ?string, is_primary: bool}>  $cnaes
+     */
+    private function hasCompleteCnaes(array $data, array $cnaes): bool
+    {
+        $hasPrimary = false;
+        foreach ($cnaes as $cnae) {
+            if ($cnae['is_primary']) {
+                $hasPrimary = true;
+                break;
+            }
+        }
+
+        if (! $hasPrimary) {
+            return false;
+        }
+
+        $secondary = data_get($data, 'cnaes_secundarios');
+        if (! is_array($secondary)) {
+            $secondary = data_get($data, 'cnaes_secundarias');
+        }
+
+        if (! is_array($secondary)) {
+            return false;
+        }
+
+        foreach ($secondary as $item) {
+            $rawCode = is_array($item)
+                ? ($item['codigo'] ?? $item['code'] ?? null)
+                : $item;
+
+            if ($this->normalizeCnaeCode($rawCode) === null) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** @param array<string, mixed> $data */
     private function registrationStatus(
         array $data
     ): ?string {
@@ -401,6 +458,7 @@ final class CnpjEnrichmentService
                 'situacao_descricao',
                 'situacao',
                 'status',
+                'situacao_cadastral',
             ]
         );
 
@@ -415,22 +473,14 @@ final class CnpjEnrichmentService
             );
         }
 
-        $code = $this->first(
-            $data,
-            [
-                'situacao_cadastral',
-                'codigo_situacao_cadastral',
-            ]
-        );
+        $code = $this->registrationStatusCode($data);
 
-        return match (
-            (string) $code
-        ) {
-            '1' => 'NULA',
-            '2' => 'ATIVA',
-            '3' => 'SUSPENSA',
-            '4' => 'INAPTA',
-            '8' => 'BAIXADA',
+        return match ($code) {
+            '01' => 'NULA',
+            '02' => 'ATIVA',
+            '03' => 'SUSPENSA',
+            '04' => 'INAPTA',
+            '08' => 'BAIXADA',
 
             default => null,
         };

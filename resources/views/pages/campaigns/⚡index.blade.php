@@ -19,6 +19,8 @@ use Livewire\Component;
 
 new class extends Component
 {
+    // EC_RECEITA_UNIFIED_V10: chaves Receita verificadas em CampaignAudience.
+
     public string $screen = 'overview';
     public string $composerStep = 'audience';
     public string $detailTab = 'recipients';
@@ -43,7 +45,7 @@ new class extends Component
         if (is_array($keys) && $keys !== []) {
             $this->audienceKeys = array_values(array_unique(array_filter($keys,
                 static fn (mixed $key): bool => is_string($key)
-                    && preg_match('/^(hubspot|manual):[0-9]+$/D', $key) === 1
+                    && preg_match('/^(?:(?:hubspot|manual):[0-9]+|receita:[0-9a-fA-F-]{36})$/D', $key) === 1
             )));
             $this->screen = 'composer';
             $this->composerStep = 'audience';

@@ -16,4 +16,12 @@
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="currentColor" stroke="none"/><circle cx="16" cy="17" r="3" fill="currentColor" stroke="none"/></svg>
         <span>Configurações</span>
     </a>
+    {{-- EC_CAMPAIGN_RELEASE_V8 --}}
+    <a href="{{ route('campaigns.production.index') }}" class="{{ request()->routeIs('campaigns.production.*') ? 'is-active' : '' }}" @if(request()->routeIs('campaigns.production.*')) aria-current="page" @endif>
+        <span>Homologação</span>
+    </a>
+    {{-- EC_CAMPAIGN_INTELLIGENCE_V9 --}}
+    <a href="{{ route('campaigns.intelligence.index') }}" class="{{ request()->routeIs('campaigns.intelligence.*') ? 'is-active' : '' }}" @if(request()->routeIs('campaigns.intelligence.*')) aria-current="page" @endif>
+        <span>Inteligência comercial</span>
+    </a>
 </nav>

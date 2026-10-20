@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(
             except: [
                 'webhooks/hubspot',
+                'email/descadastro/*', // EC_CAMPAIGN_RELEASE_V8: HMAC; POST sem CSRF para RFC 8058
             ]
         );
 

@@ -8,6 +8,7 @@ use App\Models\EmailCampaignRecipient;
 use App\Services\Campaigns\CampaignContent;
 use App\Services\Campaigns\CampaignDispatcher;
 use App\Services\Campaigns\CampaignSendPolicy;
+use App\Services\Campaigns\CampaignSequenceGuard;
 use App\Services\Campaigns\CampaignUnsubscribeLink;
 use App\Services\Campaigns\UnsubscribeToken;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -78,6 +79,10 @@ class SendEmailCampaignRecipient implements ShouldQueue
                     'reservation_token' => null,
                 ]);
 
+                return null;
+            }
+            // EC_CAMPAIGN_INTELLIGENCE_V9: verifica resposta/DSN/opt-out também no instante do job.
+            if (app(CampaignSequenceGuard::class)->suppressIfAnswered($row)) {
                 return null;
             }
             if ($dispatcher->markAsSuppressedIfNecessary($row)) {

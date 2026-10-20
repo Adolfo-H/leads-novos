@@ -90,6 +90,8 @@ final class CampaignInbox
                         'email_campaign_recipient_id' => $recipient->id,
                         'from_email' => $from,
                         'subject' => mb_substr((string) ($message['subject'] ?? ''), 0, 255),
+                        // EC_CAMPAIGN_INTELLIGENCE_V9: correlaciona resposta humana ao Message-ID recebido.
+                        'incoming_message_id' => mb_substr((string) ($message['message_id'] ?? ''), 0, 255),
                         'received_at' => $this->dateOrNow($message['received_at'] ?? null),
                     ],
                 );

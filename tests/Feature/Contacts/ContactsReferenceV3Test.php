@@ -1,5 +1,7 @@
 <?php
 
+// EC_RECEITA_UNIFIED_V10
+
 use App\Models\CommercialContact;
 use App\Models\Company;
 use App\Models\ContactPhoneVerification;
@@ -160,7 +162,7 @@ it('does not propagate unsafe HubSpot fiscal matches into the company panel', fu
         ->and($directory->paginate('', 'all', 'all', 'all', 'local:'.$s['company']->id)->total())->toBe(0);
 });
 
-it('keeps Receita establishment channels separate from human contacts', function (): void {
+it('keeps Receita channels distinguished from people in the unified list', function (): void {
     $s = contactsReferenceV3Scenario();
     Establishment::query()->create([
         'company_id' => $s['company']->id,
@@ -172,7 +174,9 @@ it('keeps Receita establishment channels separate from human contacts', function
         'email' => 'fiscal@agroindustria.test',
     ]);
 
-    expect(app(ContactPeopleDirectory::class)->paginate()->total())->toBe(1);
+    // Uma pessoa HubSpot + um canal fiscal visível na mesma listagem.
+    expect(app(ContactPeopleDirectory::class)->paginate()->total())->toBe(2)
+        ->and(app(ContactPeopleDirectory::class)->paginate('', 'receita')->total())->toBe(1);
 
     Livewire::actingAs(contactsReferenceV3Manager())
         ->test('pages::contacts.index')

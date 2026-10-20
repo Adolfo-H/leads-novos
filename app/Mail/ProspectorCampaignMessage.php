@@ -34,6 +34,8 @@ class ProspectorCampaignMessage extends Mailable
                 }
                 if ($this->unsubscribeUrl !== null) {
                     $email->getHeaders()->addTextHeader('List-Unsubscribe', '<'.$this->unsubscribeUrl.'>');
+                    // EC_CAMPAIGN_RELEASE_V8: RFC 8058. O endpoint POST dispensa cookie/sessão.
+                    $email->getHeaders()->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
                 }
                 $email->getHeaders()->addTextHeader('X-ExportControl-Prospector', $this->isTest ? 'test' : 'campaign');
             }],

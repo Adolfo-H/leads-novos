@@ -135,3 +135,6 @@ Schedule::command('campaigns:tick')->everyMinute()->withoutOverlapping();
 // IMAP é somente leitura e fica desabilitado até a configuração de Python.
 Schedule::command('campaigns:sync-replies')->everyFiveMinutes()->withoutOverlapping();
 /* EC_EMAIL_CAMPAIGNS_V1_SCHEDULE_END */
+
+// EC_CAMPAIGN_INTELLIGENCE_V9: gera RASCUNHOS, nunca envia; flag desativada por padrão.
+Schedule::command('campaigns:prepare-followup-drafts')->hourly()->withoutOverlapping();
