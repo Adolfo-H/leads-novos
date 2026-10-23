@@ -23,7 +23,11 @@ final class DashboardOwnedDealsV23Service
         $matches = $this->dealsForUser($userId);
         $counts = [];
         foreach ($matches as $deal) {
-            $label = $deal['stage'];
+            $label = trim((string) $deal['stage']);
+            // EC_PROSPECTOR_V41: etapa descontinuada fica somente no historico do HubSpot.
+            if (in_array(mb_strtolower($label), ['início do teste', 'inicio do teste', 'início de teste', 'inicio de teste'], true)) {
+                continue;
+            }
             $counts[$label] = ($counts[$label] ?? 0) + 1;
         }
         arsort($counts, SORT_NUMERIC);
@@ -37,7 +41,35 @@ final class DashboardOwnedDealsV23Service
             ];
         }
 
-        return ['total' => count($matches), 'stages' => $stages];
+        // EC_PROSPECTOR_V40: catálogo completo, incluindo etapas com zero negócios.
+        // Mantém primeiro os estágios com negócios, preservando os consumidores V23.
+        $known = [];
+        foreach ($stages as $stage) {
+            $known[mb_strtolower(trim($stage['label']))] = true;
+        }
+        $catalogStages = HubSpotPipelineStage::query()
+            ->whereNotNull('stage_label')
+            ->where('stage_label', '!=', '')
+            ->orderBy('display_order')
+            ->get(['stage_label']);
+        $stageLabels = $catalogStages->pluck('stage_label')->all();
+        $stageLabels = array_merge($stageLabels, [
+            'Reunião Agendada', 'Aceite da proposta', 'Contrato Assinado',
+        ]);
+        foreach ($stageLabels as $label) {
+            $label = trim((string) $label);
+            if ($label === '' || in_array(mb_strtolower($label), ['início do teste', 'inicio do teste', 'início de teste', 'inicio de teste'], true) || isset($known[mb_strtolower($label)])) {
+                continue;
+            }
+            $known[mb_strtolower($label)] = true;
+            $stages[] = [
+                'label' => $label,
+                'value' => 0,
+                'tone' => 'steel',
+            ];
+        }
+
+        return ['total' => array_sum($counts), 'stages' => $stages];
     }
 
     /** @return list<int> */
@@ -180,10 +212,11 @@ final class DashboardOwnedDealsV23Service
                 continue;
             }
 
-            $label = trim((string) $deal->stage_label);
+            // EC_PROSPECTOR_V40: stage_id do catálogo tem precedência sobre label obsoleto.
+            $label = $catalog[trim((string) $deal->pipeline_id).'|'.trim((string) $deal->stage_id)]
+                ?? trim((string) $deal->stage_label);
             if ($label === '') {
-                $label = $catalog[trim((string) $deal->pipeline_id).'|'.trim((string) $deal->stage_id)]
-                    ?? 'Etapa não informada';
+                $label = 'Etapa não informada';
             }
             $result[$dealId] = [
                 'stage' => $label,

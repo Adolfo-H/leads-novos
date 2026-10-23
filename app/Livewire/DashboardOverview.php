@@ -244,6 +244,10 @@ class DashboardOverview extends Component
         $this->assertManager();
         $this->search = '';
         $this->baseUf = '';
+        if ($this->dataset === 'state') {
+            $this->dataset = 'establishments';
+            $this->filterValue = '';
+        }
         $this->resetPage('overviewPage');
         unset($this->records);
     }
@@ -252,6 +256,16 @@ class DashboardOverview extends Component
     {
         $this->assertManager();
         abort_unless($this->baseUf === '' || in_array($this->baseUf, self::BRAZIL_UFS, true), 422);
+        // EC_PROSPECTOR_V48: o clique do mapa e o seletor usam o MESMO estado.
+        // Não aplicar MT e RJ simultaneamente ao trocar o recorte.
+        if ($this->dataset === 'state') {
+            if ($this->baseUf === '') {
+                $this->dataset = 'establishments';
+                $this->filterValue = '';
+            } else {
+                $this->filterValue = $this->baseUf;
+            }
+        }
         $this->resetPage('overviewPage');
         unset($this->records);
     }
@@ -269,9 +283,10 @@ class DashboardOverview extends Component
             $value = '';
         }
 
-        // Atalhos avançados e o mapa geográfico continuam globais;
-        // um filtro UF anterior da aba não deve interferir nesses atalhos.
-        if (! in_array($dataset, ['companies', 'establishments', 'active', 'cnaes', 'cnae'], true)) {
+        // EC_PROSPECTOR_V48: o mapa preenche o seletor Recorte atual.
+        if ($dataset === 'state') {
+            $this->baseUf = $value === '__unknown__' ? '' : $value;
+        } elseif (! in_array($dataset, ['companies', 'establishments', 'active', 'cnaes', 'cnae'], true)) {
             $this->baseUf = '';
         }
         $this->dataset = $dataset;

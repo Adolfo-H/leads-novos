@@ -252,9 +252,11 @@
 
         <div class="ec-topbar-context">
 
-            <span class="ec-topbar-eyebrow">
-                ExportControl
-            </span>
+            @unless (request()->routeIs('leads.index'))
+                <span class="ec-topbar-eyebrow">
+                    ExportControl
+                </span>
+            @endunless
 
             <span class="ec-topbar-title">
                 {{ $ecPageLabel }}

@@ -3,6 +3,8 @@
 use App\Models\Company;
 use App\Models\CompanyCrmCheck;
 use App\Models\CompanyHubSpotLead;
+use App\Models\HubSpotCompany;
+use App\Models\HubSpotDeal;
 use App\Models\User;
 use Livewire\Livewire;
 
@@ -173,138 +175,55 @@ it(
 it(
     'filters leads by a real HubSpot deal stage',
     function (): void {
-        $user =
-            User::factory()
-                ->create([
-                    'email_verified_at' => now(),
-                ]);
+        // v382-portfolio-stage-filter: usa o mirror REAL e a carteira, não
+        // um snapshot desatualizado de CompanyCrmCheck nem uma etapa por índice fixo.
+        $manager = User::factory()->create(['email_verified_at' => now()]);
+        $manager->forceFill(['commercial_role' => User::ROLE_MANAGER])->save();
+        $otherManager = User::factory()->create(['email_verified_at' => now()]);
+        $otherManager->forceFill(['commercial_role' => User::ROLE_MANAGER])->save();
 
-        $qualified =
-            quickFilterCompany(
-                '83000001',
-                'Empresa Etapa Qualificada',
-                80,
-                'high',
-            );
+        $qualified = quickFilterCompany('83000001', 'Empresa Etapa Qualificada', 80, 'high');
+        $differentStage = quickFilterCompany('83000002', 'Empresa Outra Etapa', 80, 'high');
+        $anotherPortfolio = quickFilterCompany('83000003', 'Empresa Qualificada Outra Carteira', 80, 'high');
 
-        CompanyCrmCheck::query()
-            ->create([
-                'company_id' => $qualified->id,
+        $cases = [
+            [$qualified, $manager, 'Leds qualificado', 'qualified-stage-v382'],
+            [$differentStage, $manager, 'Reunião realizada', 'meeting-stage-v382'],
+            [$anotherPortfolio, $otherManager, 'Leds qualificado', 'outside-stage-v382'],
+        ];
 
-                'provider' => 'hubspot',
+        foreach ($cases as [$company, $assigned, $stage, $suffix]) {
+            $company->leadWorkState()->create(['assigned_user_id' => $assigned->id]);
 
-                'status' => 'opportunity',
-
-                'external_id' => 'company-qualified',
-
-                'contacted_count' => 1,
-
-                'associated_deals_count' => 1,
-
-                'metadata' => [
-                    'deals' => [
-                        [
-                            'id' => 'deal-qualified',
-
-                            'name' => 'Negocio Qualificado',
-
-                            'stage_id' => 'qualifiedtobuy',
-
-                            'stage_label' => 'Leds qualificado',
-
-                            'pipeline_id' => 'default',
-
-                            'is_closed' => false,
-
-                            'is_closed_won' => false,
-
-                            'closed_at' => null,
-                        ],
-                    ],
-
-                    'deal_summary' => [
-                        'total' => 1,
-                        'active' => 1,
-                        'won' => 0,
-                        'closed_lost' => 0,
-                        'stages' => [
-                            'Leds qualificado',
-                        ],
-                    ],
-                ],
-
-                'checked_at' => now(),
+            $hubSpot = HubSpotCompany::query()->create([
+                'company_id' => $company->id,
+                'hubspot_id' => 'company-'.$suffix,
+                'name' => $company->corporate_name,
+                'match_source' => 'manual_verified',
             ]);
 
-        $other =
-            quickFilterCompany(
-                '83000002',
-                'Empresa Outra Etapa',
-                80,
-                'high',
-            );
-
-        CompanyCrmCheck::query()
-            ->create([
-                'company_id' => $other->id,
-
-                'provider' => 'hubspot',
-
-                'status' => 'opportunity',
-
-                'external_id' => 'company-other',
-
-                'contacted_count' => 1,
-
-                'associated_deals_count' => 1,
-
-                'metadata' => [
-                    'deals' => [
-                        [
-                            'id' => 'deal-other',
-
-                            'name' => 'Outro Negocio',
-
-                            'stage_id' => 'appointmentscheduled',
-
-                            'stage_label' => 'Reunião realizada',
-
-                            'pipeline_id' => 'default',
-
-                            'is_closed' => false,
-
-                            'is_closed_won' => false,
-
-                            'closed_at' => null,
-                        ],
-                    ],
-
-                    'deal_summary' => [
-                        'total' => 1,
-                        'active' => 1,
-                        'won' => 0,
-                        'closed_lost' => 0,
-                        'stages' => [
-                            'Reunião realizada',
-                        ],
-                    ],
-                ],
-
-                'checked_at' => now(),
+            $deal = HubSpotDeal::query()->create([
+                'hubspot_id' => 'deal-'.$suffix,
+                'name' => 'Negócio '.$stage,
+                'stage_label' => $stage,
+                'pipeline_id' => 'default',
+                'is_closed' => false,
+                'is_closed_won' => false,
             ]);
 
-        Livewire::actingAs(
-            $user
-        )
-            ->test(
-                'pages::leads.index'
-            )
-            ->call(
-                'applyCrmStageView',
-                0
-            )
-            ->assertSee(
-                'Empresa Etapa Qualificada'
-            );
+            $deal->companies()->attach($hubSpot->id, ['is_primary' => true]);
+        }
+
+        $page = Livewire::actingAs($manager)->test('pages::leads.index');
+        $options = collect($page->get('crmStageOptions'))->pluck('label');
+        $index = $options->search('Leds qualificado');
+        expect($index)->not->toBeFalse();
+
+        $page->call('applyCrmStageView', (int) $index)
+            ->assertSet('crm', 'stage:Leds qualificado')
+            ->assertSet('owner', 'mine')
+            ->assertSee('Empresa Etapa Qualificada')
+            ->assertDontSee('Empresa Outra Etapa')
+            ->assertDontSee('Empresa Qualificada Outra Carteira');
     }
 );

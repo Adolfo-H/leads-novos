@@ -10,7 +10,9 @@
 @if ($linkingHubSpotCompany)
 
 
-    <div class="lf34-linker-overlay" x-on:keydown.escape.window="$wire.closeCompanyLink()" x-on:click.self="$wire.closeCompanyLink()">
+    <div class="lf34-linker-overlay" x-data="{ pendingAction: null, pendingCompanyId: 0, pendingCompanyName: '' }"
+         x-on:keydown.escape.window="pendingAction !== null ? pendingAction = null : $wire.closeCompanyLink()"
+         x-on:click.self="if (pendingAction === null) $wire.closeCompanyLink()">
         <div class="rf-company-linker lf34-linker-dialog" role="dialog" aria-modal="true" aria-label="Identificar empresa no CRM">
 
         <div class="rf-linker-head">
@@ -50,8 +52,10 @@
 
             <b>
                 {{
-                    $linkingHubSpotCompany->name
-                    ?: 'Empresa sem nome'
+                    trim((string) $linkingHubSpotCompany->name) !== ''
+                    && trim((string) $linkingHubSpotCompany->name) !== '-'
+                    ? $linkingHubSpotCompany->name
+                    : 'Registro HubSpot #'.$linkingHubSpotCompany->hubspot_id
                 }}
             </b>
 
@@ -67,6 +71,11 @@
                 nome fantasia ou CNPJ...
             "
         >
+        <p class="lf42-linker-hint">
+            Se a empresa fiscal não aparecer nesta busca, informe o <strong>CNPJ completo</strong>.
+            Você poderá consultar a Receita Federal e importar a empresa antes de confirmar o vínculo.
+        </p>
+
 
 
         @if (
@@ -259,19 +268,9 @@
 
                     <button
                         type="button"
-                        wire:click="
-                            importAndLinkHubSpotCompany
-                        "
-                        wire:confirm="
-                            Importar esta empresa da Receita
-                            e vinculá-la ao registro do
-                            HubSpot? Confirme somente se
-                            o CNPJ estiver correto.
-                        "
-                        wire:loading.attr="disabled"
-                        wire:target="
-                            importAndLinkHubSpotCompany
-                        "
+                        x-on:click.stop="pendingAction = 'import'; pendingCompanyId = 0;
+                          pendingCompanyName = @js($companyLinkReceitaPreview['corporate_name'] ?? 'Empresa consultada na Receita');
+                          $nextTick(() => $refs.confirmationCancel.focus())"
                         class="
                             rf-btn
                             rf-btn-warning
@@ -395,17 +394,9 @@
 
                             <button
                                 type="button"
-                                wire:click="
-                                    linkHubSpotCompany(
-                                        {{ $candidate->id }}
-                                    )
-                                "
-                                wire:confirm="
-                                    Confirma este vínculo?
-                                    Use somente quando tiver
-                                    certeza de que é a mesma
-                                    empresa.
-                                "
+                                x-on:click.stop="pendingAction = 'existing'; pendingCompanyId = {{ (int) $candidate->id }};
+                                    pendingCompanyName = @js($candidate->corporate_name);
+                                    $nextTick(() => $refs.confirmationCancel.focus())"
                                 wire:loading.attr="
                                     disabled
                                 "
@@ -436,6 +427,35 @@
             Prospector.
         </div>
 
+        </div>
+
+        {{-- EC_PROSPECTOR_V43: confirmação no próprio sistema; nenhuma janela confirm() do navegador. --}}
+        <div class="lf43-confirm-backdrop" x-cloak x-show="pendingAction !== null"
+             x-on:click.self="pendingAction = null">
+            <div class="lf43-confirm-card" role="alertdialog" aria-modal="true"
+                 aria-labelledby="lf43-confirm-title" aria-describedby="lf43-confirm-description">
+                <div class="lf43-confirm-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L10.5 5.4"/>
+                        <path d="M14 11a5 5 0 0 0-7.07 0L4.8 13.12a5 5 0 0 0 7.07 7.07l1.6-1.6"/>
+                    </svg>
+                </div>
+                <h3 id="lf43-confirm-title" x-text="pendingAction === 'import' ? 'Importar e vincular empresa?' : 'Confirmar vínculo fiscal?'">Confirmar vínculo fiscal?</h3>
+                <p id="lf43-confirm-description">
+                    <span x-show="pendingAction === 'existing'">Confira se o registro do HubSpot e a empresa fiscal selecionada representam a <strong>mesma empresa</strong>.</span>
+                    <span x-show="pendingAction === 'import'">A empresa consultada na Receita será importada para o Prospector e vinculada ao registro do HubSpot.</span>
+                </p>
+                <div class="lf43-confirm-identity" x-text="pendingCompanyName"></div>
+                <p class="lf43-confirm-note">Esta confirmação não modifica os dados originais do HubSpot.</p>
+                <div class="lf43-confirm-actions">
+                    <button x-ref="confirmationCancel" type="button" class="lf43-confirm-cancel"
+                            x-on:click.stop="pendingAction = null">Cancelar</button>
+                    <button x-ref="confirmCommit" type="button" class="lf43-confirm-commit"
+                            x-on:click.stop="if (pendingAction === 'existing') { $wire.linkHubSpotCompany(pendingCompanyId) } else if (pendingAction === 'import') { $wire.importAndLinkHubSpotCompany() }; pendingAction = null">
+                        Confirmar vínculo
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -6,7 +6,7 @@ use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-it('exports a valid XLSX with the same 20 headers and releases worksheets after streaming', function (): void {
+it('exports a valid XLSX with 21 headers and releases worksheets after streaming', function (): void {
     $response = app(LeadUnifiedExcelV23Service::class)->excel(collect(), collect());
 
     expect($response)->toBeInstanceOf(StreamedResponse::class);
@@ -61,10 +61,13 @@ it('exports a valid XLSX with the same 20 headers and releases worksheets after 
         $readBack = (new Xlsx)->load($tmp);
         $sheet = $readBack->getActiveSheet();
 
-        expect($sheet->getHighestColumn())->toBe('T')
+        expect($sheet->getHighestColumn())->toBe('U')
             ->and($sheet->getCell('A1')->getValue())->toBe('Empresa')
             ->and($sheet->getCell('B1')->getValue())->toBe('CNPJ')
-            ->and($sheet->getCell('T1')->getValue())->toBe('Última atividade HubSpot');
+            ->and($sheet->getCell('L1')->getValue())->toBe('Nome do contato')
+            ->and($sheet->getCell('M1')->getValue())->toBe('Telefones')
+            ->and($sheet->getCell('N1')->getValue())->toBe('E-mails')
+            ->and($sheet->getCell('U1')->getValue())->toBe('Última atividade HubSpot');
     } finally {
         $readBack?->disconnectWorksheets();
         @unlink($tmp);
@@ -92,11 +95,11 @@ it('preserves leading zeroes and stores formula-looking commercial values as tex
 
         expect($sheet->getCell('A2')->getValue())->toBe("'=2+2")
             ->and($sheet->getCell('B2')->getValue())->toBe('00123456000100')
-            ->and($sheet->getCell('L2')->getValue())->toBe("'+5511999999999")
-            ->and($sheet->getCell('M2')->getValue())->toBe("'@teste.invalid")
-            ->and($sheet->getCell('N2')->getValue())->toBe("'-1+2");
+            ->and($sheet->getCell('M2')->getValue())->toBe("'+5511999999999")
+            ->and($sheet->getCell('N2')->getValue())->toBe("'@teste.invalid")
+            ->and($sheet->getCell('O2')->getValue())->toBe("'-1+2");
 
-        foreach (['A2', 'B2', 'L2', 'M2', 'N2'] as $cell) {
+        foreach (['A2', 'B2', 'M2', 'N2', 'O2'] as $cell) {
             expect($sheet->getCell($cell)->getDataType())->toBe(DataType::TYPE_STRING);
         }
     } finally {

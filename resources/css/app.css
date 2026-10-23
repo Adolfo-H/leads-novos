@@ -33,7 +33,6 @@
 @import './company-list-redesign-v26.css';
 @import './commercial-management-v2.css';
 @import './leads-figma-v34.css';
-
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
@@ -18439,3 +18438,2333 @@ body.ec-app-body:has(.ecgm-page.ecgm-v2) .ec-topbar .ec-topbar-context { margin-
     .leads-rf *, .ecgm-page.ecgm-v2 * {transition:none !important;}
 }
 /* EC_LEADS_V35_END */
+
+/* EC_LEADS_FIGMA_V36_BEGIN */
+/*
+  Prospector ExportControl — Leads/Figma v36
+  Fonte visual: REFERENCIAS_FIGMA_LEADS_11_TELAS, L01–L05 e L07.
+  Este bloco DEVE ficar após EC_LEADS_V35_END no app.css.
+  Escopo restrito a .lf36-leads: sem mudança de regras de negócio ou de banco.
+*/
+:root {
+  --lf36-ink: #142f45;
+  --lf36-navy: #061c32;
+  --lf36-muted: #60778a;
+  --lf36-line: #d9e3e9;
+  --lf36-teal: #047f75;
+  --lf36-teal-dark: #00695f;
+  --lf36-mint: #e5f6f1;
+  --lf36-bg: #f3f6f8;
+}
+body.ec-app-body:has(.lf36-leads) .ec-main,
+body.ec-app-body:has(.lf36-leads) .ec-content {
+  background:var(--lf36-bg)!important;
+}
+body.ec-app-body:has(.lf36-leads) .ec-topbar {
+  background:#fff!important;
+  border-bottom:1px solid var(--lf36-line)!important;
+}
+body.ec-app-body:has(.lf36-leads) .ec-topbar :is(.ec-topbar-title,.ec-topbar-context,.ec-topbar-eyebrow) {
+  color:var(--lf36-ink)!important;
+}
+.leads-rf.lf36-leads {
+  --lv13-bg:var(--lf36-bg);
+  --lv13-panel:#fff;
+  --lv13-fg:var(--lf36-ink);
+  --lv13-muted:var(--lf36-muted);
+  --lv13-border:var(--lf36-line);
+  width:100%!important; max-width:none!important; min-width:0!important;
+  margin:0!important; padding:28px clamp(18px,2.1vw,36px) 48px!important;
+  color:var(--lf36-ink)!important;
+  background:var(--lf36-bg)!important;
+  font-size:13px!important; line-height:1.48!important;
+}
+.leads-rf.lf36-leads *, .leads-rf.lf36-leads *::before, .leads-rf.lf36-leads *::after {box-sizing:border-box;}
+.leads-rf.lf36-leads .rf-shell {
+  display:flex!important; flex-direction:column!important; align-items:stretch!important;
+  max-width:1560px!important; width:100%!important; min-width:0!important;
+  gap:16px!important; margin:0 auto!important; padding:0!important;
+  color:var(--lf36-ink)!important;
+}
+.leads-rf.lf36-leads :is(h1,h2,p) { margin-top:0; }
+.leads-rf.lf36-leads :is(button,a,select,input,summary):focus-visible {
+  outline:3px solid rgba(11,148,133,.38)!important; outline-offset:2px!important;
+}
+.leads-rf.lf36-leads :is(button,a) { transition:background .12s ease,border-color .12s ease,color .12s ease; }
+.leads-rf.lf36-leads [x-cloak] { display:none!important; }
+
+/* Cabeçalho: título e ações começam alinhados à esquerda, como o protótipo. */
+.leads-rf.lf36-leads .rf-header {
+  display:flex!important; flex-direction:column!important; justify-content:flex-start!important;
+  align-items:flex-start!important; flex-wrap:nowrap!important;
+  min-height:0!important; gap:11px!important; margin:0!important; padding:0!important;
+}
+.leads-rf.lf36-leads .rf-header > div:first-child { width:100%; min-width:0; }
+.leads-rf.lf36-leads .rf-kicker {
+  display:block!important; margin:0 0 9px!important;
+  font-size:11px!important; font-weight:750!important; line-height:1.4!important;
+  letter-spacing:.085em!important; text-transform:uppercase!important;
+  color:#5c7282!important;
+}
+.leads-rf.lf36-leads .rf-title-row { display:flex!important; align-items:center!important; gap:8px!important; }
+.leads-rf.lf36-leads .rf-count-pill { display:none!important; }
+.leads-rf.lf36-leads .rf-title {
+  color:var(--lf36-ink)!important; font-size:clamp(26px,2.15vw,34px)!important;
+  font-weight:790!important; line-height:1.18!important; letter-spacing:-.035em!important;
+  padding:0!important; margin:0!important; text-shadow:none!important;
+}
+.leads-rf.lf36-leads .rf-subtitle {
+  display:block!important; margin:7px 0 0!important; max-width:750px!important;
+  color:var(--lf36-muted)!important; font-size:13px!important; line-height:1.55!important;
+}
+.leads-rf.lf36-leads .rf-header-actions {
+  display:flex!important; width:100%!important; flex:0 1 auto!important;
+  flex-wrap:wrap!important; align-items:center!important; justify-content:flex-start!important;
+  gap:9px!important; margin:0!important; padding:0!important;
+}
+.leads-rf.lf36-leads .rf-header-actions :is(.lf34-header-link,.rf-export-button,.lv14-hubspot-summary) {
+  display:inline-flex!important; align-items:center!important; justify-content:center!important;
+  width:auto!important; min-width:0!important; min-height:37px!important; height:auto!important;
+  margin:0!important; padding:9px 14px!important; border-radius:8px!important;
+  border:1px solid var(--lf36-line)!important; color:var(--lf36-ink)!important;
+  background:#fff!important; box-shadow:none!important;
+  font-size:12px!important; font-weight:670!important; line-height:1.3!important;
+  text-decoration:none!important; cursor:pointer;
+}
+.leads-rf.lf36-leads .rf-header-actions :is(.lf34-header-link,.rf-export-button,.lv14-hubspot-summary):hover {
+  border-color:#7bcbbd!important; background:#f0faf6!important;
+}
+.leads-rf.lf36-leads .rf-header-actions .rf-export-button {
+  background:var(--lf36-teal)!important; border-color:var(--lf36-teal)!important;
+  color:#fff!important;
+}
+.leads-rf.lf36-leads .rf-header-actions .rf-export-button:hover {background:var(--lf36-teal-dark)!important;}
+.leads-rf.lf36-leads .lv14-hubspot-status { position:relative; max-width:none!important; }
+.leads-rf.lf36-leads .lv14-hubspot-summary { gap:7px!important; }
+.leads-rf.lf36-leads .lv14-hubspot-copy {display:flex!important; flex-direction:column!important; align-items:flex-start!important; gap:1px!important;}
+.leads-rf.lf36-leads .lv14-hubspot-copy strong {font-size:12px!important;color:var(--lf36-ink)!important;}
+.leads-rf.lf36-leads .lv14-hubspot-copy small {font-size:10px!important;color:var(--lf36-muted)!important;}
+.leads-rf.lf36-leads .lv14-hubspot-dot.is-degraded,
+.leads-rf.lf36-leads .lv14-hubspot-dot.is-delayed { background:#df7b3c!important; }
+.leads-rf.lf36-leads .lv14-hubspot-popup {
+  position:absolute!important; right:auto!important; left:0!important; top:calc(100% + 8px)!important;
+  z-index:60!important; max-width:min(520px,calc(100vw - 40px))!important;
+  background:#fff!important; border:1px solid var(--lf36-line)!important;
+  border-radius:12px!important; box-shadow:0 20px 50px rgba(6,28,50,.13)!important;
+  color:var(--lf36-ink)!important;
+}
+.leads-rf.lf36-leads .rf-hubspot-health {display:block!important; max-width:none!important; border:0!important; background:#fff!important;}
+.leads-rf.lf36-leads .rf-hubspot-health :is(strong,small,span) {color:var(--lf36-ink)!important;}
+
+/* Navegação: sem segunda barra branca gigante. */
+.leads-rf.lf36-leads .lf36-tabs {
+  display:flex!important; width:100%!important; align-items:center!important;
+  flex-wrap:wrap!important; gap:7px!important; margin:0!important; padding:0!important;
+  border:0!important; border-radius:0!important; background:transparent!important;
+}
+.leads-rf.lf36-leads .lf36-tab {
+  display:inline-flex!important; justify-content:center!important; align-items:center!important;
+  min-height:38px!important; border:1px solid transparent!important; border-radius:8px!important;
+  background:transparent!important; padding:8px 15px!important;
+  color:#566e81!important; font-size:12px!important; font-weight:650!important;
+  white-space:nowrap; cursor:pointer;
+}
+.leads-rf.lf36-leads .lf36-tab:hover { color:var(--lf36-teal)!important; background:#e9f4f1!important; }
+.leads-rf.lf36-leads .lf36-tab.is-active {color:var(--lf36-teal-dark)!important;background:var(--lf36-mint)!important;}
+
+/* KPIs com densidade consistente; nenhum "atalho" duplicado aberto por padrão. */
+.leads-rf.lf36-leads .lf36-kpis {
+  display:grid!important; grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:13px!important; width:100%; margin:0!important;
+}
+.leads-rf.lf36-leads .lf36-kpis--single {grid-template-columns:minmax(0,1fr)!important;}
+.leads-rf.lf36-leads .lf36-kpi {
+  display:flex!important; flex-direction:column!important; align-items:flex-start!important; text-align:left!important;
+  gap:6px!important; width:100%!important; min-width:0!important; min-height:112px!important;
+  padding:17px 19px!important; background:#fff!important;
+  border:1px solid var(--lf36-line)!important; border-radius:12px!important;
+  box-shadow:none!important; color:var(--lf36-ink)!important; cursor:pointer;
+}
+.leads-rf.lf36-leads .lf36-kpi:hover {border-color:#7bc7b9!important;background:#fcfffe!important;}
+.leads-rf.lf36-leads .lf36-kpi.is-accent {border-color:#18a493!important;}
+.leads-rf.lf36-leads .lf36-kpi > span {font-size:12px!important;font-weight:570!important;line-height:1.4!important;color:#587183!important;}
+.leads-rf.lf36-leads .lf36-kpi > strong {
+  color:var(--lf36-ink)!important; font-size:clamp(25px,2vw,33px)!important;
+  font-weight:780!important;line-height:1.05!important;letter-spacing:-.035em!important;
+}
+.leads-rf.lf36-leads .lf36-kpi > small {color:#6a8192!important; font-size:11px!important; line-height:1.4!important;}
+.leads-rf.lf36-leads .lf36-extra-shortcuts {
+  margin:-4px 0 0!important; padding:0!important; background:transparent!important;
+  border:0!important; max-width:100%;
+}
+.leads-rf.lf36-leads .lf36-extra-shortcuts > summary {
+  width:max-content!important; padding:0!important; list-style:none; cursor:pointer;
+  color:var(--lf36-muted)!important;font-size:11px!important;
+}
+.leads-rf.lf36-leads .lf36-extra-shortcuts > summary::-webkit-details-marker{display:none;}
+.leads-rf.lf36-leads .lf36-extra-shortcuts > summary::before {content:'▸ ';}
+.leads-rf.lf36-leads .lf36-extra-shortcuts[open] > summary::before{content:'▾ ';}
+.leads-rf.lf36-leads .lf36-extra-shortcuts:not([open]) > :not(summary){display:none!important;}
+.leads-rf.lf36-leads .lf36-extra-shortcuts[open] > :not(summary){margin-top:10px!important;}
+
+/* Filtros: 6 campos em 2 linhas de 3, rótulos legíveis, sem falsos chips. */
+.leads-rf.lf36-leads .rf-panel.rf-filters {
+  display:grid!important; grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:12px 15px!important; padding:20px 22px!important; margin:0!important;
+  background:#fff!important; border:1px solid var(--lf36-line)!important;
+  border-radius:12px!important; box-shadow:none!important;
+}
+.leads-rf.lf36-leads .rf-filters-head {grid-column:1/-1!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;margin:0 0 3px!important;padding:0!important;border:0!important;}
+.leads-rf.lf36-leads .rf-filters-head strong {display:block!important;color:var(--lf36-ink)!important;font-size:15px!important;font-weight:720!important;}
+.leads-rf.lf36-leads .rf-filters-head span {display:none!important;}
+.leads-rf.lf36-leads .rf-filters-clear {border:0!important;background:transparent!important;padding:5px!important;color:var(--lf36-teal)!important;font-size:12px!important;min-height:0!important;}
+.leads-rf.lf36-leads .rf-filters-loading {grid-column:1/-1!important;}
+.leads-rf.lf36-leads .rf-filter-main,
+.leads-rf.lf36-leads .rf-filter-secondary {display:contents!important;}
+.leads-rf.lf36-leads .lf36-filter-field,
+.leads-rf.lf36-leads .lf36-readonly-owner {
+  display:flex!important; flex-direction:column!important; gap:6px!important;
+  min-width:0!important; margin:0!important; padding:0!important; background:transparent!important;
+}
+.leads-rf.lf36-leads .lf36-filter-field > label,
+.leads-rf.lf36-leads .lf36-readonly-owner > span {
+  color:#304b60!important; font-size:11px!important; font-weight:680!important;line-height:1.3!important;
+}
+.leads-rf.lf36-leads .lf36-readonly-owner > strong {
+  min-height:42px!important;display:flex!important;align-items:center!important;
+  padding:9px 12px!important;border:1px solid var(--lf36-line)!important;
+  border-radius:8px!important;color:#516a7e!important;font-size:12px!important;font-weight:500!important;
+}
+.leads-rf.lf36-leads :is(.rf-input,.rf-select) {
+  display:block!important;width:100%!important;min-width:0!important;
+  min-height:42px!important;height:42px!important;margin:0!important;
+  padding:9px 12px!important;border:1px solid #d6e1e7!important;
+  border-radius:8px!important; background:#fff!important;
+  color:var(--lf36-ink)!important; font-size:12px!important;
+  box-shadow:none!important;
+}
+.leads-rf.lf36-leads :is(.rf-input,.rf-select)::placeholder{color:#91a0aa!important;}
+.leads-rf.lf36-leads .rf-filter-action {display:none!important;}
+.leads-rf.lf36-leads :is(.lv15-selected-filter,.rf-dashboard-drilldown,[class*="active-filters"]) {
+  grid-column:1/-1!important; margin:0!important;
+  padding:10px 12px!important; background:#effaf6!important;color:#245868!important;
+  border:1px solid #cfe9df!important;border-radius:8px!important;font-size:12px!important;
+}
+
+/* Painel de etapas: três cartões reais e expansão sob demanda. */
+.leads-rf.lf36-leads .lf36-stages {
+  display:flex!important;flex-direction:column!important;gap:12px!important;
+  margin:0!important;padding:0!important;border:0!important;background:transparent!important;
+}
+.leads-rf.lf36-leads .lf36-section-heading,
+.leads-rf.lf36-leads .lf36-crm-toolbar {display:flex!important;justify-content:space-between!important;align-items:center!important;gap:15px!important;}
+.leads-rf.lf36-leads .lf36-section-heading h2,
+.leads-rf.lf36-leads .lf36-crm-toolbar h2 {margin:0!important;color:var(--lf36-ink)!important;font-size:16px!important;font-weight:740!important;}
+.leads-rf.lf36-leads .lf36-section-heading p,
+.leads-rf.lf36-leads .lf36-crm-toolbar p {margin:2px 0 0!important;color:var(--lf36-muted)!important;font-size:11px!important;}
+.leads-rf.lf36-leads .lf36-stage-grid {
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:13px!important;
+}
+.leads-rf.lf36-leads .lf36-stage {
+  display:flex!important;flex-direction:column!important;align-items:flex-start!important;
+  justify-content:space-between!important;text-align:left!important;gap:4px!important;
+  width:100%!important;min-width:0!important;min-height:96px!important;padding:16px 18px!important;
+  background:#fff!important;border:1px solid var(--lf36-line)!important;
+  color:var(--lf36-ink)!important;border-radius:11px!important;box-shadow:none!important;cursor:pointer;
+}
+.leads-rf.lf36-leads .lf36-stage-grid:not(.is-expanded) .lf36-stage.is-extra:not(.is-active) {display:none!important;}
+.leads-rf.lf36-leads .lf36-stage:hover,
+.leads-rf.lf36-leads .lf36-stage.is-active {border-color:#0da18f!important;background:#f9fffc!important;}
+.leads-rf.lf36-leads .lf36-stage > span {color:var(--lf36-ink)!important;font-size:13px!important;font-weight:710!important;}
+.leads-rf.lf36-leads .lf36-stage > strong {color:var(--lf36-teal)!important;font-size:22px!important;font-weight:790!important;}
+.leads-rf.lf36-leads .lf36-stage > small {color:#788b99!important;font-size:10px!important;}
+.leads-rf.lf36-leads :is(.lf36-more-stages,.lf36-link) {
+  display:block!important;align-self:center!important;margin:0!important;padding:4px!important;
+  border:0!important;background:transparent!important;color:var(--lf36-teal)!important;
+  font-size:12px!important;font-weight:620!important;cursor:pointer;
+}
+
+/* Empresas: sem faixa de alertas ocupando largura nem cartões de fundo escuro. */
+.leads-rf.lf36-leads .rf-list-panel {
+  overflow:hidden!important;margin:0!important;padding:0!important;
+  background:#fff!important;border:1px solid var(--lf36-line)!important;
+  border-radius:12px!important;box-shadow:none!important;
+}
+.leads-rf.lf36-leads .rf-list-toolbar {
+  display:flex!important;flex-wrap:wrap!important;justify-content:space-between!important;
+  align-items:center!important;gap:8px 15px!important;
+  padding:17px 20px!important;margin:0!important;border-bottom:1px solid var(--lf36-line)!important;
+  background:#fff!important;
+}
+.leads-rf.lf36-leads .lf36-list-title {margin:0 auto 0 0!important; font-size:16px!important;font-weight:760!important;color:var(--lf36-ink)!important;}
+.leads-rf.lf36-leads .rf-list-toolbar strong {font-size:12px!important;color:#30566c!important;}
+.leads-rf.lf36-leads .rf-list-toolbar span {font-size:11px!important;color:var(--lf36-muted)!important;}
+.leads-rf.lf36-leads .rf-list-scroll {display:block!important;width:100%!important;overflow-x:auto!important;overflow-y:visible!important;background:#fff!important;}
+.leads-rf.lf36-leads .rf-list-head {display:none!important;}
+.leads-rf.lf36-leads .lv13-list-head,
+.leads-rf.lf36-leads .lv13-lead-line {
+  box-sizing:border-box!important;display:grid!important;
+  grid-template-columns:26px minmax(220px,2fr) minmax(90px,.68fr) minmax(150px,1.13fr) minmax(130px,1fr) minmax(145px,1.05fr) minmax(140px,1fr) minmax(165px,1.1fr)!important;
+  gap:8px!important;align-items:center!important;min-width:1180px!important;width:100%!important;
+}
+.leads-rf.lf36-leads .lv13-list-head {
+  position:relative!important;min-height:42px!important;padding:9px 18px!important;
+  background:#f1f5f7!important;border-bottom:1px solid var(--lf36-line)!important;
+  font-size:11px!important;color:#526c80!important;
+}
+.leads-rf.lf36-leads .lv13-list-head :is(span,div,label) {font-size:11px!important;color:#526c80!important;font-weight:680!important;}
+.leads-rf.lf36-leads .rf-lead-row,
+.leads-rf.lf36-leads .lv13-lead-line {
+  border:0!important;border-bottom:1px solid #e8eef1!important; box-shadow:none!important;
+  background:#fff!important;color:var(--lf36-ink)!important;
+}
+.leads-rf.lf36-leads .lv13-lead-line {min-height:73px!important;padding:12px 18px!important;}
+.leads-rf.lf36-leads .rf-lead-row:hover .lv13-lead-line {background:#f4fbf9!important;}
+.leads-rf.lf36-leads .lv13-company {display:flex!important;align-items:center!important;gap:9px!important;min-width:0!important;}
+.leads-rf.lf36-leads .lv13-company-avatar {
+  display:grid!important;place-items:center!important; flex:0 0 32px!important;
+  width:32px!important;height:32px!important;border-radius:50%!important;
+  background:#e4f6f0!important;color:#08766d!important;border:1px solid #c9e6df!important;
+  font-size:12px!important;font-weight:760!important;
+}
+.leads-rf.lf36-leads .lv13-company-body {display:flex!important;flex-direction:column!important;gap:1px!important;min-width:0!important;}
+.leads-rf.lf36-leads .lv13-company-name {display:block!important;color:#12364e!important;font-weight:740!important;font-size:12px!important;line-height:1.3!important;white-space:normal!important;overflow-wrap:anywhere;}
+.leads-rf.lf36-leads .lv13-company-body small {display:block!important;color:#698193!important;font-size:10px!important;line-height:1.35!important;}
+.leads-rf.lf36-leads .lv13-score {display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:2px!important;}
+.leads-rf.lf36-leads .lv13-score > strong {font-size:12px!important;color:var(--lf36-ink)!important;}
+.leads-rf.lf36-leads .lv13-score-track {width:64px!important;height:5px!important;background:#e2eef0!important;}
+.leads-rf.lf36-leads .lv13-score-track > i{height:100%;display:block;background:#11af9e!important;}
+.leads-rf.lf36-leads .lv13-icp {font-size:10px!important;color:#4a7886!important;}
+.leads-rf.lf36-leads :is(.lv13-status,.lv13-stage,.lv13-next,.lv13-owner) {display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:3px!important;min-width:0!important;}
+.leads-rf.lf36-leads .lv13-pill {width:max-content;max-width:100%;font-size:10px!important;line-height:1.2!important;padding:4px 7px!important;border-radius:6px!important;white-space:normal!important;overflow-wrap:anywhere;}
+.leads-rf.lf36-leads :is(.lv13-status,.lv13-stage,.lv13-next) small,
+.leads-rf.lf36-leads .lv13-next time {font-size:10px!important;color:#698093!important;line-height:1.4!important;}
+.leads-rf.lf36-leads .lv13-next > strong {font-size:11px!important;color:#193a51!important;}
+.leads-rf.lf36-leads .lv13-owner {display:flex!important;flex-direction:row!important;align-items:center!important;gap:6px!important;}
+.leads-rf.lf36-leads .lv13-owner-avatar {flex:0 0 25px!important;width:25px!important;height:25px!important;border-radius:50%!important;background:#dff4ee!important;color:#08796f!important;font-size:10px!important;}
+.leads-rf.lf36-leads .lv13-owner-name {display:block!important;color:#38596f!important;font-size:11px!important;line-height:1.3!important;overflow-wrap:anywhere;}
+.leads-rf.lf36-leads .lv23-actions {display:flex!important;flex-wrap:wrap!important;align-items:center!important;justify-content:flex-start!important;gap:5px!important;}
+.leads-rf.lf36-leads .lv23-actions :is(a,button) {display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:5px 8px!important;min-height:28px!important;border-radius:7px!important;background:#fff!important;border:1px solid #cfdfdf!important;color:#047a70!important;font-size:10px!important;font-weight:650!important;white-space:nowrap!important;}
+.leads-rf.lf36-leads .lv23-actions :is(a,button):hover {background:#edfaf5!important;border-color:#84cfbf!important;}
+.leads-rf.lf36-leads .lv23-actions a.lv23-hubspot {color:#156eaa!important;}
+.leads-rf.lf36-leads .lv23-reprospecting-hint {font-size:10px!important;color:#637b88!important;}
+.leads-rf.lf36-leads .rf-empty-state {padding:40px 20px!important;background:#fff!important;color:var(--lf36-muted)!important;min-height:0!important;}
+.leads-rf.lf36-leads .rf-pagination {padding:13px 20px!important;min-height:52px!important;background:#fff!important;border-top:1px solid var(--lf36-line)!important;}
+.leads-rf.lf36-leads .rf-pagination-info {font-size:11px!important;color:var(--lf36-muted)!important;}
+.leads-rf.lf36-leads .rf-page-btn {min-width:33px!important;min-height:33px!important;background:#fff!important;color:var(--lf36-ink)!important;border:1px solid var(--lf36-line)!important;border-radius:8px!important;}
+.leads-rf.lf36-leads .rf-page-btn.is-active {background:var(--lf36-teal)!important;color:white!important;border-color:var(--lf36-teal)!important;}
+
+/* Visão específica CRM sem CNPJ: tabela com contraste real, sem pseudo-score. */
+.leads-rf.lf36-leads .lf36-crm-view {display:flex!important;flex-direction:column!important;gap:17px!important;min-width:0;}
+.leads-rf.lf36-leads .lf36-crm-kpis {display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:13px!important;}
+.leads-rf.lf36-leads .lf36-crm-kpis > div {
+  display:flex!important;flex-direction:column!important;gap:6px!important;align-items:flex-start!important;
+  min-width:0!important;min-height:108px!important;padding:17px 19px!important;
+  border:1px solid var(--lf36-line)!important;border-radius:12px!important;background:#fff!important;
+}
+.leads-rf.lf36-leads .lf36-crm-kpis span {color:#5e7285!important;font-size:12px!important;}
+.leads-rf.lf36-leads .lf36-crm-kpis strong {color:var(--lf36-ink)!important;font-size:30px!important;font-weight:780!important;line-height:1.05!important;}
+.leads-rf.lf36-leads .lf36-crm-kpis small {color:#748a99!important;font-size:11px!important;}
+.leads-rf.lf36-leads .lf36-primary {background:var(--lf36-teal)!important;border:1px solid var(--lf36-teal)!important;color:#fff!important;border-radius:8px!important;padding:9px 14px!important;font-size:12px!important;min-height:37px!important;cursor:pointer;}
+.leads-rf.lf36-leads .lf36-primary:hover{background:var(--lf36-teal-dark)!important;}
+.leads-rf.lf36-leads .lf36-crm-view .rf-crm-only-panel {display:block!important;overflow:hidden!important;border:1px solid var(--lf36-line)!important;border-radius:12px!important;background:#fff!important;color:var(--lf36-ink)!important;}
+.leads-rf.lf36-leads .rf-crm-only-toolbar {padding:18px 20px!important;background:#fff!important;border-bottom:1px solid var(--lf36-line)!important;}
+.leads-rf.lf36-leads .rf-crm-only-toolbar strong {color:var(--lf36-ink)!important;font-size:16px!important;}
+.leads-rf.lf36-leads .rf-crm-only-toolbar span {color:var(--lf36-muted)!important;font-size:11px!important;}
+.leads-rf.lf36-leads .rf-crm-only-count {color:var(--lf36-teal)!important;background:var(--lf36-mint)!important;border:1px solid #cae9de!important;font-size:11px!important;}
+.leads-rf.lf36-leads .rf-crm-only-scroll {width:100%!important;overflow-x:auto!important;background:#fff!important;}
+.leads-rf.lf36-leads .rf-crm-only-head,
+.leads-rf.lf36-leads .rf-crm-only-row {display:grid!important;grid-template-columns:minmax(220px,2fr) minmax(150px,1.12fr) minmax(170px,1.4fr) minmax(160px,1.3fr) minmax(130px,.9fr)!important;gap:12px!important;align-items:center!important;min-width:950px!important;width:100%!important;}
+.leads-rf.lf36-leads .rf-crm-only-head {padding:12px 18px!important;background:#f1f5f7!important;color:#4c687d!important;font-size:11px!important;border-bottom:1px solid var(--lf36-line)!important;}
+.leads-rf.lf36-leads .rf-crm-only-head > div {color:#516d81!important;font-weight:720!important;}
+.leads-rf.lf36-leads .rf-crm-only-row {padding:14px 18px!important;min-height:86px!important;background:#fff!important;color:var(--lf36-ink)!important;border-left:0!important;border-bottom:1px solid #e6eef1!important;}
+.leads-rf.lf36-leads .rf-crm-only-row:hover{background:#f5fbf9!important;}
+.leads-rf.lf36-leads .rf-crm-only-row *:not(button):not(a) {opacity:1!important;}
+.leads-rf.lf36-leads .rf-crm-only-name {color:#15364d!important;font-size:12px!important;font-weight:730!important;line-height:1.4!important;overflow-wrap:anywhere;}
+.leads-rf.lf36-leads .rf-crm-only-meta {color:#516f82!important;font-size:11px!important;line-height:1.5!important;overflow-wrap:anywhere;}
+.leads-rf.lf36-leads .rf-crm-only-helper {color:#6b8393!important;font-size:10px!important;line-height:1.4!important;}
+.leads-rf.lf36-leads .rf-crm-only-tag {display:inline-block!important;width:max-content!important;max-width:100%!important;color:#976c18!important;background:#fff7e5!important;border:1px solid #f1dcae!important;font-size:10px!important;padding:3px 7px!important;border-radius:6px!important;}
+.leads-rf.lf36-leads .rf-crm-only-warning {color:#ae731c!important;font-size:11px!important;font-weight:700!important;}
+.leads-rf.lf36-leads .rf-crm-only-stage {color:var(--lf36-teal)!important;background:#ecf9f4!important;border:1px solid #d1ece4!important;font-size:10px!important;}
+.leads-rf.lf36-leads .rf-crm-only-row .rf-btn {display:flex!important;align-items:center!important;justify-content:center!important;min-height:32px!important;padding:6px 10px!important;border:1px solid #cce3e0!important;border-radius:7px!important;color:#09766d!important;background:#fff!important;font-size:11px!important;font-weight:650!important;}
+.leads-rf.lf36-leads .rf-crm-only-row .rf-btn:hover {background:#eaf9f3!important;}
+.leads-rf.lf36-leads .rf-crm-only-row .rf-btn-primary {background:#0b3152!important;border-color:#0b3152!important;color:#fff!important;}
+.leads-rf.lf36-leads .lf36-crm-disclaimer {margin:0!important;padding:14px 16px!important;border:1px solid #f0deaf!important;border-radius:8px!important;color:#785711!important;background:#fff6df!important;font-size:11px!important;}
+.leads-rf.lf36-leads .lf36-crm-disclaimer strong{color:#76500a!important;}
+.leads-rf.lf36-leads .lf36-alert {margin:0!important;padding:12px 14px!important;border-radius:8px!important;color:#174a38!important;background:#eaf8ee!important;border:1px solid #c8e8d1!important;font-size:12px!important;}
+.leads-rf.lf36-leads .lf36-alert.is-error {color:#832e3b!important;background:#fff0f1!important;border-color:#f1c4cc!important;}
+
+/* Gestão Comercial: somente legibilidade e densidade (lógica fica intacta). */
+.ecgm-page.ecgm-v2 .ecgm-metric {min-height:112px!important;}
+.ecgm-page.ecgm-v2 .ecgm-panel-head :is(h2,strong) {font-size:15px!important;}
+.ecgm-page.ecgm-v2 .ecgm-management-table th {font-size:11px!important;color:#36556a!important;}
+.ecgm-page.ecgm-v2 .ecgm-management-table td {font-size:12px!important;}
+.ecgm-page.ecgm-v2 :is(.ecgm-role-row,.ecgm-person) {min-height:50px!important;}
+
+@media (max-width:1200px) {
+  .leads-rf.lf36-leads .lf36-kpis {grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  .leads-rf.lf36-leads .lf36-kpis--single {grid-template-columns:1fr!important;}
+  .leads-rf.lf36-leads .rf-panel.rf-filters {grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  .leads-rf.lf36-leads .lf36-stage-grid {grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+}
+@media (max-width:720px) {
+  .leads-rf.lf36-leads {padding:17px 12px 32px!important;}
+  .leads-rf.lf36-leads .lf36-kpis,.leads-rf.lf36-leads .lf36-kpis--single,
+  .leads-rf.lf36-leads .lf36-stage-grid,.leads-rf.lf36-leads .lf36-crm-kpis {grid-template-columns:1fr!important;}
+  .leads-rf.lf36-leads .rf-panel.rf-filters {grid-template-columns:1fr!important;padding:17px!important;}
+  .leads-rf.lf36-leads .lf36-kpi {min-height:94px!important;}
+  .leads-rf.lf36-leads .lf36-tab {padding:8px 10px!important;}
+  .leads-rf.lf36-leads .rf-list-toolbar {padding:14px!important;}
+  .leads-rf.lf36-leads .lf36-section-heading,.leads-rf.lf36-leads .lf36-crm-toolbar{align-items:flex-start!important;flex-direction:column!important;}
+  .leads-rf.lf36-leads .lv14-hubspot-popup {left:0!important;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .leads-rf.lf36-leads *,.ecgm-page.ecgm-v2 * {transition:none!important;animation:none!important;}
+}
+
+/* Sobrepõe o style inline legado que deixava o proprietário do HubSpot quase branco. */
+.leads-rf.lf36-leads .rf-crm-only-row [style*="color:var(--ec-text)"] {
+  color:#284b62!important;font-size:11px!important;font-weight:650!important;
+}
+.leads-rf.lf36-leads .rf-crm-only-row > div,
+.leads-rf.lf36-leads .rf-crm-only-row > div > div {
+  text-shadow:none!important;
+}
+.leads-rf.lf36-leads .rf-crm-only-row [style*="opacity"] { opacity:1!important; }
+
+/* A busca global compartilhada permanece funcional; somente a cor acompanha o protótipo. */
+body.ec-app-body:has(.lf36-leads) .ec-topbar .ec-global-search {
+  background:#f3f6f8!important;
+  border:1px solid #e3e9ee!important;
+  box-shadow:none!important;
+  color:#536e81!important;
+  border-radius:9px!important;
+}
+body.ec-app-body:has(.lf36-leads) .ec-topbar .ec-global-search input {
+  background:transparent!important;
+  color:#1e4058!important;
+  font-size:12px!important;
+}
+body.ec-app-body:has(.lf36-leads) .ec-topbar .ec-global-search input::placeholder {
+  color:#7f93a0!important;
+}
+body.ec-app-body:has(.lf36-leads) .ec-topbar .ec-global-search svg {
+  color:#567488!important;
+  stroke:#567488!important;
+}
+body.ec-app-body:has(.lf36-leads) .ec-topbar .ec-global-search kbd {
+  color:#628094!important;background:#edf3f6!important;border:1px solid #d7e3e8!important;
+}
+body.ec-app-body:has(.lf36-leads) .ec-topbar .ec-topbar-profile-name {
+  color:#2d4c62!important;
+}
+/* EC_LEADS_FIGMA_V36_END */
+
+/* EC_LEADS_V36_1_BEGIN */
+/*
+ * Correção 36.1 — pipeline original recolhido, CRM-only também nos resultados
+ * gerais e contraste de acessibilidade.
+ * Escopo exclusivo Leads v36; nenhuma regra funcional é alterada.
+ */
+.leads-rf.lf36-leads .lf361-pipeline-access {
+  display:block!important;
+  background:#fff!important;
+  border:1px solid #d7e4e9!important;
+  border-radius:12px!important;
+  overflow:hidden!important;
+  min-width:0!important;
+}
+.leads-rf.lf36-leads .lf361-pipeline-summary {
+  display:flex!important; align-items:center!important; justify-content:space-between!important;
+  gap:14px!important; min-height:48px!important; padding:12px 18px!important;
+  font-size:13px!important; font-weight:750!important; list-style:none!important;
+  color:#14344c!important; background:#fff!important; cursor:pointer!important;
+}
+.leads-rf.lf36-leads .lf361-pipeline-summary::-webkit-details-marker {display:none!important;}
+.leads-rf.lf36-leads .lf361-pipeline-summary::before {
+  content:'▸'; display:inline-block; color:#068174; margin-right:4px;
+}
+.leads-rf.lf36-leads .lf361-pipeline-access[open] .lf361-pipeline-summary::before {content:'▾';}
+.leads-rf.lf36-leads .lf361-pipeline-summary > span:first-child {margin-right:auto;color:#14344c!important;}
+.leads-rf.lf36-leads .lf361-pipeline-open-label {color:#0b8075!important;font-size:12px!important;font-weight:650!important;}
+.leads-rf.lf36-leads .lf361-pipeline-access > .rf-stage-strip {
+  border:0!important; border-top:1px solid #e5eef0!important; box-shadow:none!important;
+  margin:0!important; border-radius:0!important; background:#fff!important;
+  padding:16px!important; width:100%!important;
+}
+.leads-rf.lf36-leads .lf361-crm-secondary {display:block!important; min-width:0!important; margin:10px 0 0!important;}
+.leads-rf.lf36-leads .lf361-crm-secondary:empty {display:none!important;}
+.leads-rf.lf36-leads .lf361-crm-secondary .rf-crm-only-panel {
+  display:block!important; overflow:hidden!important;
+  background:#fff!important; color:#18364c!important;
+  border:1px solid #d9e5ea!important; border-radius:12px!important;
+}
+.leads-rf.lf36-leads .lf361-crm-secondary .rf-crm-only-toolbar {background:#fff!important;border-bottom:1px solid #e3ecef!important;}
+.leads-rf.lf36-leads .lf361-crm-secondary .rf-crm-only-toolbar strong {color:#16354a!important;}
+.leads-rf.lf36-leads .lf361-crm-secondary .rf-crm-only-toolbar span {color:#5b7384!important;}
+.leads-rf.lf36-leads .lf361-crm-secondary .rf-crm-only-row {
+  color:#15374d!important;background:#fff!important;border-bottom:1px solid #e9eff1!important;
+}
+.leads-rf.lf36-leads .lf361-crm-secondary .rf-crm-only-row:hover {background:#f5fbf8!important;}
+.leads-rf.lf36-leads .lf361-crm-secondary .rf-crm-only-row :is(.rf-crm-only-name,.rf-crm-only-meta,.rf-crm-only-helper) {opacity:1!important;}
+.leads-rf.lf36-leads .lf361-crm-secondary .rf-crm-only-name {color:#14374e!important;}
+.leads-rf.lf36-leads .lf361-crm-secondary .rf-crm-only-meta {color:#526e81!important;}
+.leads-rf.lf36-leads .lf361-crm-secondary .rf-crm-only-helper {color:#657d8f!important;}
+.leads-rf.lf36-leads .lf361-crm-secondary .rf-crm-only-row [style*="color:var(--ec-text)"] {color:#14374e!important;}
+.leads-rf.lf36-leads .lf361-crm-secondary .rf-crm-only-tag {color:#875e16!important;background:#fff5e1!important;}
+@media(max-width:800px) {
+  .leads-rf.lf36-leads .lf361-pipeline-summary{padding:12px!important;align-items:flex-start!important;}
+  .leads-rf.lf36-leads .lf361-pipeline-open-label{white-space:normal!important;text-align:right!important;}
+}
+/* EC_LEADS_V36_1_END */
+
+/* EC_LEADS_V364_BEGIN */
+/*
+ * Prospector ExportControl · Reparação estrutural 36.4
+ * Apenas em .lf36-leads: substituição dos blocos Blade de seleção e filtros.
+ * Não aplicar import no topo de app.css: estas regras entram depois de v35/v36.
+ */
+
+/* ---------- 1. Refinar fila: título, limpar e aviso somente quando carregando ---------- */
+.leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 13px 16px !important;
+    padding: 17px 20px 20px !important;
+    align-items: start !important;
+    overflow: visible !important;
+}
+.leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters > .rf-filters-head.lf364-filter-header {
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 10px 16px !important;
+    min-height: 36px !important;
+    margin: 0 !important;
+    padding: 0 0 5px !important;
+    background: transparent !important;
+    border: 0 !important;
+    position: static !important;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-filter-header-copy {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1px !important;
+    min-width: 0 !important;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-filter-header-copy > strong {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    font-weight: 750 !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    color: #15354d !important;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-filter-header-copy > .lf364-filter-caption {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    font-size: 11px !important;
+    font-weight: 450 !important;
+    line-height: 1.4 !important;
+    color: #647b8d !important;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-filter-header-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-left: auto !important;
+    min-width: 0 !important;
+}
+/* IMPORTANTE: sem regra display!important em .lf364-filter-progress.
+   Assim wire:loading.delay.longer pode alternar display via atributo style. */
+.leads-rf.leads-v13.lf36-leads .lf364-filter-progress {
+    color: #0b8078 !important;
+    font-size: 11px !important;
+    font-weight: 650 !important;
+    white-space: nowrap !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+}
+.leads-rf.leads-v13.lf36-leads button.lf364-filter-clear {
+    position: static !important;
+    margin: 0 !important;
+    min-height: 33px !important;
+    padding: 6px 11px !important;
+    background: #f4faf8 !important;
+    border: 1px solid #cce6df !important;
+    border-radius: 8px !important;
+    color: #0b7e72 !important;
+    font-size: 11px !important;
+    font-weight: 650 !important;
+}
+.leads-rf.leads-v13.lf36-leads button.lf364-filter-clear:hover {
+    background: #e6f6f0 !important;
+    border-color: #8acdbd !important;
+}
+.leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters > .rf-filter-main,
+.leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters > .rf-filter-secondary {
+    display: contents !important;
+    grid-column: auto !important;
+    position: static !important;
+}
+.leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters .lf36-filter-field,
+.leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters .lf36-readonly-owner {
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 0 !important;
+    gap: 6px !important;
+    margin: 0 !important;
+}
+.leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters .lf36-filter-field > label,
+.leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters .lf36-readonly-owner > span {
+    line-height: 1.3 !important;
+    font-size: 11px !important;
+    color: #365469 !important;
+    font-weight: 650 !important;
+}
+.leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters :is(.lv15-selected-filter,.rf-dashboard-drilldown,[class*="active-filters"]) {
+    grid-column: 1 / -1 !important;
+}
+/* Não mostrar a pílula do CRM como um terceiro filtro com fundo chamativo. */
+.leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters .rf-filter-action {
+    display: none !important;
+}
+
+/* ---------- 2. Cabeçalho da lista: exatamente 2 blocos, sem posição absoluta ---------- */
+.leads-rf.leads-v13.lf36-leads .rf-list-panel > .rf-list-toolbar.lf364-list-toolbar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(205px, max-content) !important;
+    align-items: center !important;
+    justify-content: stretch !important;
+    gap: 10px 24px !important;
+    width: 100% !important;
+    position: relative !important;
+    min-height: 76px !important;
+    padding: 15px 20px !important;
+    background: #ffffff !important;
+    border-bottom: 1px solid #dde6ea !important;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-list-heading,
+.leads-rf.leads-v13.lf36-leads .lf364-list-results {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    position: static !important;
+    transform: none !important;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-list-results {
+    text-align: right !important;
+    align-items: flex-end !important;
+    justify-self: end !important;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-list-heading .lf36-list-title {
+    font-size: 16px !important;
+    line-height: 1.3 !important;
+    font-weight: 750 !important;
+    color: #15354d !important;
+    margin: 0 !important;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-list-results > strong {
+    display: block !important;
+    font-size: 14px !important;
+    color: #12374f !important;
+    font-weight: 750 !important;
+    line-height: 1.3 !important;
+    white-space: nowrap !important;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-list-heading > span,
+.leads-rf.leads-v13.lf36-leads .lf364-list-results > span {
+    display: block !important;
+    color: #728698 !important;
+    line-height: 1.4 !important;
+    font-size: 11px !important;
+    white-space: normal !important;
+}
+/* Seleção em sua própria linha: removido <div class="lv13-selected"> absoluto. */
+.leads-rf.leads-v13.lf36-leads .rf-list-panel > .lf364-selection-bar {
+    display: flex; /* Alpine x-show pode ocultar via style="display:none" */
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    min-width: 0;
+    padding: 9px 20px;
+    margin: 0;
+    background: #eaf7f3 !important;
+    border-bottom: 1px solid #cce8df !important;
+    color: #184d45 !important;
+    /* SEM display!important para respeitar x-show="selectedIds.length > 0" */
+}
+.leads-rf.leads-v13.lf36-leads .lf364-selection-message {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 12px !important;
+    color: #22564e !important;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-selection-message > strong {
+    color: #06776c !important;
+    font-size: 13px !important;
+    font-weight: 800 !important;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-selection-indicator {
+    display: inline-block !important;
+    flex: 0 0 7px !important;
+    width: 7px !important;
+    height: 7px !important;
+    border-radius: 99px !important;
+    background: #0aa996 !important;
+    margin-right: 3px !important;
+}
+.leads-rf.leads-v13.lf36-leads button.lf364-selection-clear {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 6px !important;
+    min-height: 26px !important;
+    padding: 4px 7px !important;
+    color: #087c71 !important;
+    font-size: 12px !important;
+    font-weight: 730 !important;
+    text-decoration: none !important;
+    cursor: pointer;
+}
+.leads-rf.leads-v13.lf36-leads button.lf364-selection-clear:hover {
+    background: #d4efe4 !important;
+}
+
+/* ---------- 3. Tabela: checkbox tem 26px, avatar fica na coluna Empresa ---------- */
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-list-head,
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-lead-line {
+    display: grid !important;
+    grid-template-columns:
+        26px minmax(238px, 2.05fr) minmax(82px, .70fr)
+        minmax(137px, 1.08fr) minmax(120px, 1fr)
+        minmax(134px, 1.08fr) minmax(137px, 1fr)
+        minmax(182px, 1.2fr) !important;
+    column-gap: 12px !important;
+    align-items: center !important;
+    min-width: 1210px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 10px 18px !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-list-head {
+    min-height: 43px !important;
+    height: auto !important;
+    background: #f0f5f7 !important;
+    border-top: 0 !important;
+    border-bottom: 1px solid #dbe6eb !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-lead-line {
+    min-height: 73px !important;
+    background: #fff !important;
+    border-bottom: 1px solid #e7eef1 !important;
+    box-shadow: none !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-lead-line.is-selected {
+    background: #effaf6 !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .rf-lead-row:hover .lv13-lead-line {
+    background: #f5faf9 !important;
+}
+/* Remover faixas verticais duplicadas da v13 e dos pacotes 36.2/36.3. */
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-lead-line::before,
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .rf-row-overdue > .lv13-lead-line::before,
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-lead-line > :first-child::before {
+    content: none !important;
+    display: none !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-list-head > label.lv13-check,
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-lead-line > label.lv13-check {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: static !important;
+    flex: 0 0 auto !important;
+    width: 26px !important;
+    min-width: 0 !important;
+    max-width: 26px !important;
+    height: 24px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel label.lv13-check > input[type="checkbox"] {
+    appearance: auto !important;
+    display: block !important;
+    width: 16px !important;
+    min-width: 16px !important;
+    max-width: 16px !important;
+    height: 16px !important;
+    min-height: 16px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 4px !important;
+    accent-color: #078b80 !important;
+    box-shadow: none !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-company {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-company-avatar {
+    flex: 0 0 32px !important;
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    border-radius: 50% !important;
+    box-sizing: border-box !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-company-body {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-company-name {
+    line-height: 1.25 !important;
+}
+/* Ações: duas ações principais na mesma linha, ações complementares abaixo. */
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions > :is(a,button) {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 7px 10px !important;
+    width: auto !important;
+    min-width: 79px !important;
+    min-height: 32px !important;
+    max-width: 100% !important;
+    white-space: nowrap !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+    line-height: 1.1 !important;
+    font-weight: 650 !important;
+    color: #047b70 !important;
+    background: #fff !important;
+    border: 1px solid #c9e2dc !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions > a.lv23-hubspot {
+    color: #2176ac !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions > :is(a,button):hover {
+    border-color: #79c4b5 !important;
+    background: #f0faf6 !important;
+}
+
+@media (max-width: 1100px) {
+    .leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+@media (max-width: 720px) {
+    .leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters {
+        grid-template-columns: minmax(0, 1fr) !important;
+        padding: 15px !important;
+    }
+    .leads-rf.leads-v13.lf36-leads .rf-list-panel > .rf-list-toolbar.lf364-list-toolbar {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 8px !important;
+        padding: 14px 16px !important;
+    }
+    .leads-rf.leads-v13.lf36-leads .lf364-list-results {
+        text-align: left !important;
+        align-items: flex-start !important;
+        justify-self: start !important;
+    }
+    .leads-rf.leads-v13.lf36-leads .rf-list-panel > .lf364-selection-bar {
+        padding: 10px 16px;
+    }
+    .leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-list-head,
+    .leads-rf.leads-v13.lf36-leads .rf-list-panel .lv13-lead-line {
+        min-width: 1210px !important; /* tabela pode rolar, sem esmagar colunas */
+    }
+}
+/* EC_LEADS_V364_END */
+
+/* EC_LEADS_V37_START */
+/* PACOTE 37 — Topbar idêntica à identidade do Dashboard + escopos separados.
+   CSS de acabamento: a regra de negócio está nos métodos Livewire e nas views. */
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-context {
+    flex: 0 0 auto !important;
+    min-width: max-content !important;
+    margin-right: 28px !important;
+    gap: 0 !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-context .ec-topbar-title {
+    color: #465d72 !important;
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+    font-weight: 550 !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-global-search.ec-global-search--desktop {
+    flex: 0 1 340px !important;
+    width: min(340px, 32vw) !important;
+    max-width: 340px !important;
+    min-width: 185px !important;
+    height: 40px !important;
+    margin: 0 !important;
+    background: #f2f5f7 !important;
+    border: 1px solid transparent !important;
+    border-radius: 9px !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-global-search.ec-global-search--desktop kbd { display: none !important; }
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-profile-trigger {
+    min-height: 42px !important;
+    padding: 4px 10px 4px 5px !important;
+    color: #17364a !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: 11px !important;
+    box-shadow: none !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-profile-trigger:is(:hover,:focus-visible,[aria-expanded="true"]) {
+    background: #eaf6f3 !important;
+    border-color: #bee2d9 !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-profile-name {
+    color: #17364a !important;
+    font-size: 12px !important;
+    font-weight: 650 !important;
+    line-height: 1.25 !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-avatar {
+    border: 1px solid #abdcd4 !important;
+    background: #dff5f0 !important;
+    color: #076d65 !important;
+    box-shadow: none !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-profile-chevron { color: #527588 !important; }
+
+/* Panorama GLOBAL: cartões compactos, sem a duplicação de dez painéis enormes. */
+.leads-rf.lf36-leads .lf37-global-stages { margin-top: 0 !important; }
+.leads-rf.lf36-leads .lf37-global-heading { align-items: center !important; gap: 10px 20px !important; }
+.leads-rf.lf36-leads .lf37-global-heading h2 { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.leads-rf.lf36-leads .lf37-global-tag {
+    display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px;
+    color: #0b7c70; background: #e3f4ee; font-size: 10px; font-weight: 700;
+}
+.leads-rf.lf36-leads .lf37-global-total { display: flex; gap: 7px; align-items: baseline; white-space: nowrap; margin-left: auto; }
+.leads-rf.lf36-leads .lf37-global-total strong { font-size: 19px; color: #15354d; font-weight: 800; }
+.leads-rf.lf36-leads .lf37-global-total span { font-size: 11px; color: #647b8d; }
+.leads-rf.lf36-leads .lf37-global-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit,minmax(164px,1fr)) !important;
+    gap: 10px !important;
+}
+.leads-rf.lf36-leads .lf37-global-grid > .lf37-global-stage,
+.leads-rf.lf36-leads .lf37-global-grid > .lf37-global-stage.is-extra {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    padding: 11px 13px !important;
+    min-height: 72px !important;
+    border: 1px solid #dbe5e9 !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    cursor: default !important;
+}
+.leads-rf.lf36-leads .lf37-global-grid .lf37-global-stage > span { font-size: 11px !important; color: #4c6578 !important; line-height: 1.35 !important; }
+.leads-rf.lf36-leads .lf37-global-grid .lf37-global-stage > strong { font-size: 21px !important; color: #087d73 !important; line-height: 1.15 !important; font-variant-numeric: tabular-nums; }
+.leads-rf.lf36-leads .lf37-global-footer { margin: 10px 1px 0; font-size: 11px; color: #617b8c; }
+.leads-rf.lf36-leads .lf37-empty-stage { background: #fff; padding: 17px; border-radius: 10px; color: #647b8d; border: 1px dashed #d4e4e8; }
+
+/* Pipeline pessoal: uma caixa curta recolhida; sem títulos repetidos ao expandir. */
+.leads-rf.lf36-leads .lf361-pipeline-access { border-radius: 11px !important; background: #fff !important; border: 1px solid #d8e4e9 !important; }
+.leads-rf.lf36-leads .lf361-pipeline-access > summary { min-height: 52px !important; padding: 12px 16px !important; }
+.leads-rf.lf36-leads .lf361-pipeline-access .lf37-personal-title { color: #15354d !important; font-weight: 760 !important; font-size: 13px; }
+.leads-rf.lf36-leads .lf361-pipeline-access .lf37-personal-meta { color: #667e90 !important; font-size: 11px; font-weight: 550; }
+.leads-rf.lf36-leads .lf361-pipeline-access[open] .rf-stage-strip-heading { display: none !important; }
+.leads-rf.lf36-leads .lf361-pipeline-access[open] .rf-stage-strip { border: 0 !important; box-shadow: none !important; padding-top: 4px !important; }
+
+/* Ações comerciais: ícones SVG consistentes e alinhamento confortável. */
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions { align-items: center !important; gap: 7px !important; }
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions > a.lf37-row-action {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    min-height: 34px !important;
+    padding: 7px 10px !important;
+    border: 1px solid #c7e5dc !important;
+    border-radius: 8px !important;
+    background: #f4fbf8 !important;
+    color: #08776c !important;
+    font-weight: 700 !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions > a.lf37-row-action.lf37-hubspot-action {
+    background: #f4f8fc !important;
+    border-color: #d0e2ee !important;
+    color: #215e88 !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions > a.lf37-row-action:is(:hover,:focus-visible) { background: #e4f5ee !important; border-color: #78cbbb !important; }
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions > a.lf37-row-action.lf37-hubspot-action:is(:hover,:focus-visible) { background: #e8f2fb !important; border-color: #92bee2 !important; }
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions > a.lf37-row-action { position: relative !important; }
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions .lf37-action-sr {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip-path: inset(50%) !important;
+    border: 0 !important;
+    white-space: nowrap !important;
+}
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions > a.lf37-row-action svg { width: 15px !important; height: 15px !important; flex: 0 0 15px !important; stroke: currentColor !important; }
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lv23-actions > a.lf37-row-action span { color: inherit !important; font-weight: inherit !important; }
+
+@media (max-width: 1080px) {
+    body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-context { margin-right: 16px !important; }
+    .leads-rf.lf36-leads .lf37-global-grid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+}
+@media (max-width: 690px) {
+    .leads-rf.lf36-leads .lf37-global-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+    .leads-rf.lf36-leads .lf37-global-heading { align-items: flex-start !important; }
+    .leads-rf.lf36-leads .lf37-global-total { margin-left: 0 !important; }
+}
+/* EC_LEADS_V37_END */
+
+/* EC_LEADS_V38_START */
+/* Pacote 38: zero real e as etapas disponíveis. Sem interferir no visual da fila. */
+.leads-rf.lf36-leads .lf37-global-grid .lf37-global-stage.is-empty-stage {
+    background: #f7fafb !important;
+    border-color: #dce6e9 !important;
+}
+.leads-rf.lf36-leads .lf37-global-grid .lf37-global-stage.is-empty-stage > strong {
+    color: #6b8290 !important;
+}
+/* Pipeline pessoal: apresenta TODAS as etapas ao abrir o details; sem botão extra. */
+.leads-rf.lf36-leads .lf361-pipeline-access[open] .rf-stage-strip-list.lf34-all-stages {
+    display: grid !important;
+    grid-template-columns: repeat(4,minmax(0,1fr)) !important;
+    align-items: stretch !important;
+    flex: 1 1 100% !important;
+    flex-wrap: wrap !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    gap: 9px !important;
+}
+.leads-rf.lf36-leads .lf361-pipeline-access[open] .rf-stage-strip-list.lf34-all-stages > button.rf-stage-strip-chip {
+    display: flex !important;
+    min-height: 56px !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 11px 13px !important;
+    white-space: normal !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    border-radius: 9px !important;
+    background: #f7fafb !important;
+    border: 1px solid #d8e5e9 !important;
+    color: #15354d !important;
+    box-sizing: border-box !important;
+}
+.leads-rf.lf36-leads .lf361-pipeline-access[open] .rf-stage-strip-list.lf34-all-stages > button.rf-stage-strip-chip .lv18-chip-label {
+    white-space: normal !important;
+    text-overflow: clip !important;
+    overflow: visible !important;
+    max-width: none !important;
+    color: #15354d !important;
+    font-size: 11px !important;
+}
+.leads-rf.lf36-leads .lf361-pipeline-access[open] .rf-stage-strip-list.lf34-all-stages > button.rf-stage-strip-chip .lv18-chip-count {
+    font-size: 17px !important;
+    color: #008477 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+}
+@media (max-width: 1090px) {
+    .leads-rf.lf36-leads .lf361-pipeline-access[open] .rf-stage-strip-list.lf34-all-stages {
+        grid-template-columns: repeat(3,minmax(0,1fr)) !important;
+    }
+}
+@media (max-width: 700px) {
+    .leads-rf.lf36-leads .lf361-pipeline-access[open] .rf-stage-strip-list.lf34-all-stages {
+        grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    }
+}
+@media (max-width: 450px) {
+    .leads-rf.lf36-leads .lf361-pipeline-access[open] .rf-stage-strip-list.lf34-all-stages {
+        grid-template-columns: 1fr !important;
+    }
+}
+/* EC_LEADS_V38_END */
+
+/* EC_PROSPECTOR_V40_START */
+/* PACOTE 40 — Dashboard: todas as etapas do pipeline disponíveis sem modal */
+body.ec-app-body:has(.ef29-dashboard) .ef29-stages .ef29-bars,
+body.ec-app-body:has(.ef29-dashboard) .ef29-seller-deals .ef29-bars {
+    max-height: 520px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 6px;
+    scrollbar-width: thin;
+}
+body.ec-app-body:has(.ef29-dashboard) .ef29-bar-row {
+    min-height: 31px;
+}
+body.ec-app-body:has(.ef29-dashboard) .ef29-bar-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* EC_PROSPECTOR_V40_END */
+
+/* EC_PROSPECTOR_V41_START */
+/* PACOTE 41 - reverte rolagem artificial do dashboard introduzida no V40.
+   O painel cresce com a pagina ao clicar em "Ver todas as etapas". */
+body.ec-app-body:has(.ef29-dashboard) .ef29-stages .ef29-bars,
+body.ec-app-body:has(.ef29-dashboard) .ef29-seller-deals .ef29-bars,
+body.ec-app-body:has(.ef29-dashboard) .ef29-extra-stages .ef29-bars {
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    scrollbar-width: none !important;
+    padding-right: 0 !important;
+}
+body.ec-app-body:has(.ef29-dashboard) .ef29-extra-stages {
+    overflow: visible !important;
+    max-height: none !important;
+    margin-top: 17px !important;
+    border-top: 1px solid #e5edef !important;
+}
+body.ec-app-body:has(.ef29-dashboard) .ef29-extra-stages summary {
+    display: inline-flex !important;
+    align-items: center;
+    margin-top: 8px;
+    min-height: 34px;
+    padding: 8px 12px;
+    border: 1px solid #c5e7df;
+    border-radius: 9px;
+    background: #f0faf6;
+    color: #08796d !important;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+}
+body.ec-app-body:has(.ef29-dashboard) .ef29-extra-stages summary:hover,
+body.ec-app-body:has(.ef29-dashboard) .ef29-extra-stages summary:focus-visible {
+    background: #e2f5ee;
+    outline-offset: 2px;
+}
+body.ec-app-body:has(.ef29-dashboard) .ef29-stages,
+body.ec-app-body:has(.ef29-dashboard) .ef29-seller-deals {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+/* Leads: as etapas globais sao verdadeiros controles de filtro, nao cards inertes. */
+.leads-rf.lf36-leads .lf37-global-grid > button.lf37-global-stage {
+    cursor: pointer !important;
+    width: 100% !important;
+    text-align: left !important;
+    appearance: none;
+    transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.leads-rf.lf36-leads .lf37-global-grid > button.lf37-global-stage:is(:hover,:focus-visible) {
+    background: #eff9f6 !important;
+    border-color: #62c8b3 !important;
+    box-shadow: 0 0 0 2px #d4f4e9 !important;
+    outline: none;
+}
+.leads-rf.lf36-leads .lf37-global-grid > button.lf37-global-stage.is-active {
+    background: #e3f5ee !important;
+    border-color: #0d9781 !important;
+    box-shadow: inset 0 0 0 1px #0d9781 !important;
+}
+.leads-rf.lf36-leads .lf37-global-grid > button.lf37-global-stage:disabled { opacity:.65; cursor: progress !important; }
+.leads-rf.lf36-leads .lf41-global-results {
+    margin-top: 17px;
+    border: 1px solid #cfe7e2;
+    border-radius: 12px;
+    background: #fbfefd;
+    padding: 16px;
+}
+.leads-rf.lf36-leads .lf41-global-results-head {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.leads-rf.lf36-leads .lf41-global-results-head h3 {
+    font-size: 15px;
+    font-weight: 800;
+    color: #143950;
+}
+.leads-rf.lf36-leads .lf41-global-results-head p { font-size: 11px; margin-top: 4px; color: #557387; }
+.leads-rf.lf36-leads .lf41-clear {
+    border-radius: 8px !important;
+    border: 1px solid #bce3d9 !important;
+    background: #fff !important;
+    color: #0b7b70 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 9px 12px !important;
+    cursor: pointer;
+}
+.leads-rf.lf36-leads .lf41-global-results-list { display: grid; gap: 8px; }
+.leads-rf.lf36-leads .lf41-global-deal {
+    border: 1px solid #e3eeef;
+    border-radius: 9px;
+    background: #fff;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+}
+.leads-rf.lf36-leads .lf41-global-deal-main { display:flex; flex-direction:column; gap:4px; min-width:0; flex:1; }
+.leads-rf.lf36-leads .lf41-global-deal-main strong { color:#18364b; font-size:12px; font-weight:750; overflow-wrap:anywhere; }
+.leads-rf.lf36-leads .lf41-global-deal-main small { color:#658196; font-size:10px; }
+.leads-rf.lf36-leads .lf41-global-deal-link {
+    border: 1px solid #c8e2ee;
+    background: #f3f9fc;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #196b91 !important;
+    font-weight: 700;
+    font-size: 11px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.leads-rf.lf36-leads .lf41-global-deal-link:hover { background:#e5f3fc; text-decoration:underline; }
+.leads-rf.lf36-leads .lf41-global-results-pages { margin-top: 12px; }
+@media(max-width:600px) {
+  .leads-rf.lf36-leads .lf41-global-results { padding:12px; }
+  .leads-rf.lf36-leads .lf41-global-deal { flex-direction:column;align-items:stretch; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .leads-rf.lf36-leads .lf37-global-grid > button.lf37-global-stage { transition:none; }
+}
+/* EC_PROSPECTOR_V41_END */
+
+/* EC_PROSPECTOR_V42_START */
+/* EC_LEADS_V42 — fila estável e CRM com acesso legível. */
+.leads-rf.lf36-leads .lf36-tabs .lf36-tab[aria-pressed="false"],
+.leads-rf.lf36-leads .lf36-tabs .lf36-tab[aria-pressed="false"]:first-child {
+    background:transparent !important; border-color:transparent !important;
+    color:#416178 !important; box-shadow:none !important;
+}
+.leads-rf.lf36-leads .lf36-tabs .lf36-tab[aria-pressed="true"] {
+    background:#e3f5f1 !important; border:1px solid #a9dcd3 !important;
+    color:#04776e !important; box-shadow:none !important;
+}
+.leads-rf.lf36-leads .lf42-kpis .lf36-kpi.is-accent {
+    border-color:#28b5a3 !important; background:#f3fbf8 !important;
+}
+.leads-rf.lf36-leads .lf42-kpis .lf36-kpi[aria-pressed="true"] {
+    border-color:#28b5a3 !important; background:#f3fbf8 !important;
+}
+.leads-rf.lf36-leads .lf42-crm-view .lf42-crm-find {
+    margin:12px 0 14px; padding:16px 18px;
+    background:#fff; border:1px solid #d9e7eb; border-radius:12px;
+    color:#17354e;
+}
+.leads-rf.lf36-leads .lf42-crm-find label {
+    display:block; margin-bottom:8px; color:#17354e; font-size:13px; font-weight:750;
+}
+.leads-rf.lf36-leads .lf42-crm-search-field {
+    display:flex; align-items:center; gap:9px; width:100%;
+    padding:0 12px; min-height:43px; border:1px solid #bed4dd;
+    border-radius:9px; background:#fff; color:#507489;
+}
+.leads-rf.lf36-leads .lf42-crm-search-field:focus-within {border-color:#159a88; box-shadow:0 0 0 3px #15a58d15;}
+.leads-rf.lf36-leads .lf42-crm-search-field input {
+    flex:1; display:block; min-width:0; width:100%; height:40px;
+    color:#18394d !important; background:#fff !important;
+    border:0 !important; box-shadow:none !important; outline:none !important;
+    font-size:12px !important; padding:0 !important;
+}
+.leads-rf.lf36-leads .lf42-crm-search-field button {border:0; background:transparent; color:#00796f; font-size:12px; cursor:pointer;}
+.leads-rf.lf36-leads .lf42-crm-find p {margin:8px 0 0; font-size:11px; color:#57788c; line-height:1.6;}
+
+/* Botões na coluna Acesso — cada ação com um sentido visual. */
+.leads-rf.lf36-leads .rf-crm-only-panel .lf42-crm-actions {
+    display:flex !important; flex-direction:column; align-items:stretch; justify-content:center;
+    gap:7px; min-width:138px;
+}
+.leads-rf.lf36-leads .rf-crm-only-panel .lf42-crm-action {
+    display:inline-flex !important; align-items:center !important; justify-content:center !important;
+    gap:7px !important; min-height:35px !important; width:100% !important;
+    padding:8px 10px !important; margin:0 !important; border-radius:8px !important;
+    font-size:11px !important; line-height:1.2 !important; font-weight:700 !important;
+    white-space:nowrap; text-decoration:none !important; cursor:pointer;
+}
+.leads-rf.lf36-leads .rf-crm-only-panel .lf42-crm-action--hubspot {
+    background:#103d5a !important; color:#fff !important; border:1px solid #103d5a !important;
+}
+.leads-rf.lf36-leads .rf-crm-only-panel .lf42-crm-action--hubspot:hover {background:#195579 !important;}
+.leads-rf.lf36-leads .rf-crm-only-panel .lf42-crm-action--identify {
+    background:#effbf8 !important; border:1px solid #9bd9cf !important; color:#086c63 !important;
+}
+.leads-rf.lf36-leads .rf-crm-only-panel .lf42-crm-action--identify:hover {background:#dcf4ee !important;}
+.leads-rf.lf36-leads .rf-crm-only-panel .lf42-crm-action svg {flex:0 0 15px; width:15px; height:15px;}
+
+/* Overlay de vinculação: contraste em todas as opções (incluindo busca sem resultado). */
+.leads-rf.lf36-leads .lf34-linker-overlay {
+    position:fixed !important; inset:0 !important; z-index:100 !important;
+    display:flex !important; align-items:center !important; justify-content:center !important;
+    padding:18px !important; background:rgba(11,35,53,.68) !important;
+    backdrop-filter:blur(2px);
+}
+.leads-rf.lf36-leads .lf34-linker-dialog,
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog {
+    display:block !important; position:relative !important;
+    width:min(720px, 100%) !important; max-width:720px !important;
+    max-height:min(90vh, 820px) !important; overflow-y:auto !important;
+    background:#fff !important; color:#16394e !important;
+    border:1px solid #c8dbe2 !important; border-radius:14px !important;
+    box-shadow:0 24px 68px rgba(7,29,47,.22) !important;
+    padding:18px !important;
+}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-head,
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-source,
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-empty,
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-results,
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-result,
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-warning,
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-receita {
+    color:#19394e !important; background:#f7fafb !important;
+    border:1px solid #dce8ec !important; border-radius:10px !important;
+    box-shadow:none !important;
+}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-head {display:flex; align-items:center; justify-content:space-between; gap:12px; background:#fff !important;}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-head strong {color:#113248 !important; font-size:16px !important;}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-head span,
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-empty,
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-warning,
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-meta,
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-source small {color:#557487 !important; font-size:12px !important; line-height:1.5 !important;}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-source b,
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-company {color:#103a55 !important;}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-search {
+    display:block !important; width:100% !important; min-height:44px !important;
+    margin:12px 0 !important; color:#173a50 !important;
+    background:#fff !important; border:1px solid #abcdd5 !important;
+    border-radius:9px !important; padding:10px 12px !important;
+}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-search::placeholder {color:#76909d !important;}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-search:focus {outline:2px solid #2fb7a5 !important; outline-offset:1px;}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-btn-primary {color:#fff !important; background:#087e76 !important; border-color:#087e76 !important;}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-btn-warning {color:#08665d !important; background:#eaf9f5 !important; border-color:#93d3c9 !important;}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-btn-secondary {color:#17455e !important; background:#fff !important; border-color:#c0d9df !important;}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-warning {margin-top:12px; padding:11px 13px; background:#fffaf0 !important; border-color:#f0dfb7 !important;}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-result {display:grid !important;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:10px;align-items:center;margin:8px 0;padding:10px;}
+.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-empty {padding:14px;}
+@media(max-width:730px){.leads-rf.lf36-leads .lf34-linker-dialog .rf-linker-result{grid-template-columns:1fr !important;}.leads-rf.lf36-leads .lf42-crm-search-field{padding:0 8px;}}
+@media(prefers-reduced-motion:reduce){.leads-rf.lf36-leads .lf34-linker-overlay{backdrop-filter:none;}}
+
+/* Busca geral localiza registros HubSpot sem CNPJ sem mudar de tela. */
+.leads-rf.lf36-leads .lf42-crm-inline-results {
+    margin:14px 0; padding:0; background:transparent;
+}
+.leads-rf.lf36-leads .lf42-crm-inline-heading {
+    display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline;
+    gap:8px; margin:0 0 11px;
+}
+.leads-rf.lf36-leads .lf42-crm-inline-heading strong {font-size:14px;color:#153950;}
+.leads-rf.lf36-leads .lf42-crm-inline-heading span {font-size:11px;color:#668296;}
+/* EC_PROSPECTOR_V42_END */
+
+/* EC_PROSPECTOR_V43_START */
+/* EC_LEADS_V43: confirmação nativa substituída por diálogo no próprio Prospector */
+.leads-rf.lf36-leads .lf43-confirm-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 1100 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 18px !important;
+    background: rgba(8, 29, 45, .70) !important;
+    backdrop-filter: blur(3px);
+}
+.leads-rf.lf36-leads .lf43-confirm-backdrop[x-cloak],
+.leads-rf.lf36-leads .lf43-confirm-backdrop[style*="display: none"] {display:none !important;}
+.leads-rf.lf36-leads .lf43-confirm-card {
+    background: #fff !important;
+    color: #15354b !important;
+    width: min(450px, 100%) !important;
+    max-height: min(90vh, 700px) !important;
+    overflow-y: auto !important;
+    border: 1px solid #d4e6e7 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 24px 70px rgba(4, 28, 42, .24) !important;
+    padding: 24px !important;
+    text-align: left !important;
+}
+.leads-rf.lf36-leads .lf43-confirm-icon {
+    display: grid; place-items:center; width:44px; height:44px;
+    border-radius:12px; background:#e7f7f3; color:#08776b; margin-bottom:13px;
+}
+.leads-rf.lf36-leads .lf43-confirm-card h3 {
+    color: #102f43 !important; font-size: 19px !important;
+    font-weight: 760 !important; line-height: 1.25 !important;
+}
+.leads-rf.lf36-leads .lf43-confirm-card p {
+    color: #496779 !important; font-size: 13px !important;
+    line-height: 1.55 !important; margin-top: 10px !important;
+}
+.leads-rf.lf36-leads .lf43-confirm-card strong {color:#143c50 !important;}
+.leads-rf.lf36-leads .lf43-confirm-card .lf43-confirm-identity {
+    margin-top:14px !important; padding:12px 14px !important;
+    font-size:13px !important; font-weight:750 !important;
+    overflow-wrap:anywhere; border-radius:9px;
+    border:1px solid #c7e5df; color:#113b50 !important; background:#f2faf7;
+}
+.leads-rf.lf36-leads .lf43-confirm-card .lf43-confirm-note {font-size:11px !important;color:#78909b !important;}
+.leads-rf.lf36-leads .lf43-confirm-actions {
+    margin-top:22px; display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px;
+}
+.leads-rf.lf36-leads .lf43-confirm-actions button {
+    display: inline-flex !important; align-items:center !important; justify-content:center !important;
+    min-height: 40px !important; padding: 9px 17px !important;
+    border-radius: 9px !important; font-size:12px !important;
+    font-weight:730 !important; line-height:1.2 !important; cursor:pointer;
+}
+.leads-rf.lf36-leads .lf43-confirm-actions .lf43-confirm-cancel {
+    background:#fff !important; color:#385b70 !important; border:1px solid #cbdde4 !important;
+}
+.leads-rf.lf36-leads .lf43-confirm-actions .lf43-confirm-commit {
+    background:#078477 !important; color:#fff !important; border:1px solid #078477 !important;
+}
+.leads-rf.lf36-leads .lf43-confirm-actions .lf43-confirm-commit:hover {background:#056b61 !important;}
+.leads-rf.lf36-leads .lf43-confirm-actions button:focus-visible {outline:3px solid #49bdad !important;outline-offset:2px !important;}
+
+/* Etapa global: opção de identificar fiscalmente cada Company ainda sem CNPJ. */
+.leads-rf.lf36-leads .lf41-global-deal .lf43-stage-identity-actions {
+    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+    gap:7px !important; flex:0 0 auto; min-height:35px !important; padding:8px 12px !important;
+    border-radius:9px !important; border:1px solid #a6dacf !important;
+    background:#e9f9f3 !important; color:#08776b !important;
+    font-size:11px !important; font-weight:740 !important; white-space:nowrap; cursor:pointer;
+}
+.leads-rf.lf36-leads .lf41-global-deal .lf43-stage-identity-actions:is(:hover,:focus-visible) {
+    background:#d6f2e8 !important; border-color:#68c4b2 !important;
+    outline-offset:2px;
+}
+.leads-rf.lf36-leads .lf41-global-deal .lf43-stage-identity-actions svg {flex:0 0 15px;}
+
+/* Estado vazio leve: evita o bloco azul-escuro com lupa enorme dos estilos legados. */
+.leads-rf.lf36-leads .rf-empty-state.lf43-empty-state {
+    display:flex !important; flex-direction:column !important;
+    align-items:center !important; justify-content:center !important;
+    gap:9px !important; padding:28px 20px !important;
+    min-height:158px !important; text-align:center !important;
+    border:0 !important; background:#fff !important; box-shadow:none !important;
+    color:#536f83 !important;
+}
+.leads-rf.lf36-leads .rf-empty-state.lf43-empty-state::before,
+.leads-rf.lf36-leads .rf-empty-state.lf43-empty-state::after,
+.leads-rf.lf36-leads .rf-empty-state.lf43-empty-state > strong::before {
+    content:none !important; display:none !important;
+}
+.leads-rf.lf36-leads .rf-empty-state.lf43-empty-state .lf43-empty-visual {
+    display:grid !important; place-items:center !important;
+    width:52px !important; height:52px !important; margin:0 0 2px !important;
+    border:1px solid #cbe4e0 !important; border-radius:15px !important;
+    background:#ecf8f4 !important; color:#168a7d !important;
+}
+.leads-rf.lf36-leads .rf-empty-state.lf43-empty-state strong {
+    color:#1e445a !important; font-size:14px !important; font-weight:730 !important;
+}
+.leads-rf.lf36-leads .rf-empty-state.lf43-empty-state > span:not(.lf43-empty-visual) {
+    max-width:570px; color:#6b8798 !important; font-size:12px !important; line-height:1.6 !important;
+}
+.leads-rf.lf36-leads .lf43-empty-reset {
+    display:inline-flex !important; justify-content:center !important; align-items:center !important;
+    margin-top:3px !important; min-height:34px !important;
+    padding:7px 13px !important; border:1px solid #b3dfd5 !important;
+    border-radius:8px !important; color:#087568 !important;
+    background:#f1faf7 !important; font-size:11px !important;
+    font-weight:720 !important; cursor:pointer;
+}
+@media (max-width:600px) {
+    .leads-rf.lf36-leads .lf43-confirm-card {padding:17px !important;}
+    .leads-rf.lf36-leads .lf43-confirm-actions button {flex:1 1 auto;}
+}
+@media (prefers-reduced-motion:reduce) {
+    .leads-rf.lf36-leads .lf43-confirm-backdrop {backdrop-filter:none;}
+}
+/* EC_PROSPECTOR_V43_END */
+
+/* EC_PROSPECTOR_V43_2_START */
+/* PACOTE 43.2 — corrigir contraste da pre-visualizacao da Receita Federal.
+ * CSS exclusivo do modal de identificacao da pagina Leads.
+ * Nao alterar campos, eventos, permissoes ou vinculos.
+ */
+
+/* Superficie legivel, mesmo sobre os estilos escuros herdados de Leads V13. */
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita {
+    display: block !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    margin-top: 14px !important;
+    padding: 16px 18px !important;
+    border: 1px solid #b7ddd4 !important;
+    border-radius: 12px !important;
+    background: #f3fbf8 !important;
+    color: #24495d !important;
+    text-shadow: none !important;
+    opacity: 1 !important;
+    box-shadow: 0 1px 2px rgba(8, 62, 64, 0.04) !important;
+}
+
+/* Marcador superior "Receita Federal". */
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita .rf-linker-receita-label {
+    display: block !important;
+    color: #087f71 !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+    font-weight: 800 !important;
+    letter-spacing: .05em !important;
+    text-transform: uppercase !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+}
+
+/* Nome da empresa: antes vinha em quase branco, invisivel no card claro. */
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita .rf-linker-receita-name {
+    display: block !important;
+    margin-top: 7px !important;
+    color: #153b50 !important;
+    font-size: 15px !important;
+    font-weight: 780 !important;
+    line-height: 1.4 !important;
+    letter-spacing: -.01em !important;
+    overflow-wrap: anywhere !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+}
+
+/* CNPJ, fantasia, cidade/UF, situacao e numero de estabelecimentos. */
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita .rf-linker-receita-meta {
+    display: block !important;
+    margin-top: 9px !important;
+    color: #31576b !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    line-height: 1.75 !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+    overflow-wrap: anywhere !important;
+}
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita .rf-linker-receita-meta strong,
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita .rf-linker-receita-meta b {
+    color: #086f61 !important;
+    font-weight: 800 !important;
+    opacity: 1 !important;
+}
+
+/* Acao "Importar e vincular": fundo teal + texto branco de alto contraste. */
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita button.rf-btn,
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita .rf-btn-warning,
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita button[type="button"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 38px !important;
+    margin-top: 12px !important;
+    padding: 9px 15px !important;
+    border: 1px solid #087d70 !important;
+    border-radius: 9px !important;
+    background: #087d70 !important;
+    color: #fff !important;
+    font-size: 12px !important;
+    font-weight: 750 !important;
+    line-height: 1.25 !important;
+    box-shadow: 0 3px 10px rgba(8, 125, 112, 0.12) !important;
+    text-shadow: none !important;
+    opacity: 1 !important;
+    cursor: pointer !important;
+}
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita button.rf-btn:hover,
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita button[type="button"]:hover {
+    background: #06675d !important;
+    border-color: #06675d !important;
+}
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita button:focus-visible {
+    outline: 3px solid #2cbaaa !important;
+    outline-offset: 2px !important;
+}
+.leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita button:disabled {
+    opacity: .6 !important;
+    cursor: wait !important;
+}
+
+@media (max-width: 640px) {
+    .leads-rf.lf36-leads .rf-company-linker.lf34-linker-dialog .rf-linker-receita {
+        padding: 14px !important;
+    }
+}
+/* EC_PROSPECTOR_V43_2_END */
+
+/* EC_PROSPECTOR_V44_START */
+/* PACOTE 44 — Somente Leads: 3 correções visuais, escopo estrito por página.
+   O mesmo padrão de menu do Dashboard Figma é reutilizado no cabeçalho.
+   Não altera links, eventos, polling, webhook, permissões nem o layout do Dashboard.
+*/
+
+/* 1. O Dashboard já oculta o globo e a mensagem inferior; fazer igual em Leads. */
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-sidebar .ec-sidebar-world-v7,
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-sidebar-world-v7 {
+    display: none !important;
+}
+
+/* 2. HubSpot: o antigo details tem largura fixa de 225px, deixando espaço
+   branco à direita quando o summary é mais estreito. Fazer as duas superfícies
+   coincidirem, mantendo o popup/diagnóstico e o indicador funcional. */
+.leads-rf.lf36-leads .rf-header-actions > details.lv14-hubspot-status {
+    display: inline-block !important;
+    flex: 0 1 auto !important;
+    width: max-content !important;
+    max-width: min(280px, 100%) !important;
+    min-width: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    vertical-align: middle !important;
+}
+.leads-rf.lf36-leads .rf-header-actions > details.lv14-hubspot-status > summary.lv14-hubspot-summary {
+    display: flex !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 39px !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 6px 11px !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    border: 1px solid #d7e4e9 !important;
+    border-radius: 9px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    text-align: left !important;
+    cursor: pointer;
+}
+.leads-rf.lf36-leads .rf-header-actions > details.lv14-hubspot-status > summary.lv14-hubspot-summary:is(:hover,:focus-visible) {
+    border-color: #a3d7cd !important;
+    background: #f3faf8 !important;
+}
+.leads-rf.lf36-leads .rf-header-actions > details.lv14-hubspot-status .lv14-hubspot-copy {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+.leads-rf.lf36-leads .rf-header-actions > details.lv14-hubspot-status .lv14-hubspot-copy :is(strong,small) {
+    display: block !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+.leads-rf.lf36-leads .rf-header-actions > details.lv14-hubspot-status .lv14-hubspot-chevron {
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+}
+
+/* 3. Perfil do usuário: copiar a aparência CLARA do menu do Dashboard,
+   inclusive quando o Flux renderiza o popup em um portal fora da topbar. */
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-profile-trigger {
+    min-height: 42px !important;
+    padding: 4px 10px 4px 5px !important;
+    color: #17364a !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: 11px !important;
+    box-shadow: none !important;
+    transition: background-color 150ms ease, border-color 150ms ease !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-profile-trigger:is(:hover,:focus-visible,[aria-expanded="true"],[data-state="open"],[data-open]) {
+    color: #12384a !important;
+    background: #eaf6f3 !important;
+    border-color: #bee2d9 !important;
+    box-shadow: none !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-profile-trigger:focus-visible {
+    outline: 2px solid #14988b !important;
+    outline-offset: 2px;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-avatar {
+    border: 1px solid #abdcd4 !important;
+    background: #dff5f0 !important;
+    color: #076d65 !important;
+    box-shadow: none !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-profile-name {
+    color: #17364a !important;
+    font-size: 12px !important;
+    font-weight: 650 !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-profile-chevron {
+    color: #527588 !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar-account-menu {
+    min-width: 260px !important;
+    max-width: min(360px, calc(100vw - 24px)) !important;
+    padding: 7px !important;
+    color: #18384d !important;
+    background: #fff !important;
+    border: 1px solid #d8e6e8 !important;
+    border-radius: 13px !important;
+    box-shadow: 0 16px 44px rgba(9, 35, 51, .16) !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar-account-menu .ec-profile-menu-header {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    padding: 11px 12px !important;
+    border-radius: 9px !important;
+    background: #f1f7f7 !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar-account-menu .ec-profile-menu-name {
+    display: block;
+    color: #102d43 !important;
+    font-size: 13px !important;
+    font-weight: 750 !important;
+    line-height: 1.35 !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar-account-menu .ec-profile-menu-email {
+    display: block;
+    color: #526f81 !important;
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+    overflow-wrap: anywhere !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar-account-menu .ec-profile-menu-item {
+    min-height: 39px !important;
+    color: #23465b !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 620 !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar-account-menu .ec-profile-menu-item:is(:hover,:focus-visible,[data-active],[data-highlighted]) {
+    color: #076d65 !important;
+    background: #eaf7f3 !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar-account-menu .ec-profile-menu-item svg {
+    color: #477083 !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar-account-menu .ec-profile-menu-item:is(:hover,:focus-visible,[data-active],[data-highlighted]) svg {
+    color: #0c8e80 !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar-account-menu .ec-profile-menu-logout:is(:hover,:focus-visible) {
+    color: #9d3c36 !important;
+    background: #fff1f0 !important;
+}
+
+@media (max-width: 520px) {
+    .leads-rf.lf36-leads .rf-header-actions > details.lv14-hubspot-status {
+        max-width: 100% !important;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    body.ec-app-body:has(.leads-rf.lf36-leads) .ec-topbar .ec-topbar-profile-trigger {
+        transition: none !important;
+    }
+}
+/* EC_PROSPECTOR_V44_END */
+
+
+/* EC_PROSPECTOR_V45_START */
+/* V45: registros por etapa no mesmo painel Empresas para trabalhar; sem bloco duplicado. */
+.leads-rf.lf36-leads .lf45-stage-inline{width:100%;min-width:0;background:#fff;}
+.leads-rf.lf36-leads .lf45-stage-inline-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:15px 18px;border-bottom:1px solid #dce7eb;flex-wrap:wrap;background:#f9fcfc;}
+.leads-rf.lf36-leads .lf45-stage-inline-heading strong{font-size:12px;font-weight:750;color:#163c52;}
+.leads-rf.lf36-leads .lf45-stage-inline-heading p{margin:4px 0 0;color:#678195;font-size:11px;line-height:1.45;}
+.leads-rf.lf36-leads .lf45-clear-stage{border:1px solid #a9ded0;border-radius:8px;background:#eff9f6;color:#08786c;padding:8px 12px;min-height:32px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.leads-rf.lf36-leads .lf45-clear-stage:hover{background:#ddf4ed;}
+.leads-rf.lf36-leads .lf45-stage-table-head,.leads-rf.lf36-leads .lf45-stage-row{display:grid;grid-template-columns:29px minmax(210px,2.5fr) minmax(130px,1fr) minmax(140px,1fr) minmax(205px,1.7fr);gap:9px;align-items:center;min-width:770px;padding:13px 18px;box-sizing:border-box;}
+.leads-rf.lf36-leads .lf45-stage-table-head{background:#f0f5f7;font-size:10px;font-weight:760;color:#456378;border-bottom:1px solid #dce7eb;}
+.leads-rf.lf36-leads .lf45-stage-row{min-height:73px;border-bottom:1px solid #e2eaf0;background:#fff;}
+.leads-rf.lf36-leads .lf45-stage-row:nth-of-type(even){background:#fbfdfd;}
+.leads-rf.lf36-leads .lf45-stage-row:hover{background:#f1faf7;}
+.leads-rf.lf36-leads .lf45-stage-row.is-selected{background:#e7f7f0;}
+.leads-rf.lf36-leads .lf45-check{display:flex;align-items:center;justify-content:center;min-width:0;margin:0;padding:0;}
+.leads-rf.lf36-leads .lf45-check input{appearance:auto!important;width:15px!important;height:15px!important;min-width:15px!important;min-height:15px!important;margin:0!important;accent-color:#0b8e80;}
+.leads-rf.lf36-leads .lf45-stage-company{min-width:0;display:flex;flex-direction:column;gap:4px;}
+.leads-rf.lf36-leads .lf45-stage-company strong{color:#15364a;font-size:11px;font-weight:760;line-height:1.4;overflow-wrap:anywhere;}
+.leads-rf.lf36-leads .lf45-stage-company small{color:#7690a1;font-size:10px;line-height:1.3;overflow-wrap:anywhere;}
+.leads-rf.lf36-leads .lf45-stage-company small.is-unlinked{color:#a45e21;}
+.leads-rf.lf36-leads .lf45-stage-company small.is-linked{color:#078172;}
+.leads-rf.lf36-leads .lf45-stage-pill{display:inline-flex;align-items:center;min-height:25px;padding:4px 8px;border:1px solid #c1e5dc;background:#eaf7f3;color:#06786d;border-radius:7px;font-size:10px;font-weight:720;max-width:100%;}
+.leads-rf.lf36-leads .lf45-stage-owner{color:#476b80;font-size:10px;}
+.leads-rf.lf36-leads .lf45-stage-actions{display:flex;flex-wrap:wrap;align-items:center;gap:5px;}
+.leads-rf.lf36-leads .lf45-stage-action{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:auto!important;min-width:0!important;min-height:30px!important;padding:6px 9px!important;border:1px solid #c8e0e3!important;border-radius:8px!important;background:#fff!important;color:#0b6c79!important;font-size:10px!important;font-weight:700!important;line-height:1.2!important;text-decoration:none!important;cursor:pointer;white-space:nowrap;}
+.leads-rf.lf36-leads .lf45-stage-action:hover{background:#ecf9f5!important;border-color:#73c9bb!important;}
+.leads-rf.lf36-leads .lf45-stage-action.lf43-stage-identity-actions{background:#edf9f4!important;border-color:#a2dacf!important;color:#08786a!important;}
+.leads-rf.lf36-leads .lf45-stage-empty{display:flex;align-items:center;flex-direction:column;gap:8px;padding:28px 16px;}
+.leads-rf.lf36-leads .lf45-stage-empty strong{color:#25465b;font-size:12px;}
+.leads-rf.lf36-leads .lf45-stage-empty span{color:#718999;font-size:11px;text-align:center;}
+.leads-rf.lf36-leads .lf45-stage-pagination{padding:14px 18px;border-top:1px solid #e2eaf0;}
+.leads-rf.lf36-leads .lf45-selected-toolbar{margin-right:10px;}
+.leads-rf.lf36-leads .lf45-selection-hint{color:#087d73;font-size:11px;font-weight:700;white-space:nowrap;}
+@media(max-width:920px){.leads-rf.lf36-leads .lf45-stage-inline{overflow-x:auto;}.leads-rf.lf36-leads .lf45-stage-inline-heading{min-width:770px;}}
+/* EC_PROSPECTOR_V45_END */
+
+/* EC_PROSPECTOR_V46_START
+   UX das ETAPAS GLOBAIS. Não altera o Pipeline Minha Carteira.
+*/
+/* Linhas equilibradas e fontes legíveis no mesmo padrão da fila. */
+.leads-rf.lf36-leads .lf45-stage-inline .lf45-stage-table-head,
+.leads-rf.lf36-leads .lf45-stage-inline .lf45-stage-row {
+    grid-template-columns: 30px minmax(230px, 2.5fr) minmax(130px, .9fr)
+                           minmax(130px, 1fr) minmax(215px, 1.55fr) !important;
+    gap: 12px !important;
+    padding: 13px 18px !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf45-stage-row {
+    min-height: 73px !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf45-stage-company strong {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    color: #173950 !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf45-stage-company small {
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf45-stage-owner {
+    color: #536f82 !important;
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf45-stage-action {
+    font-size: 11px !important;
+    min-height: 32px !important;
+}
+/* Checkboxes: impedir os quadrados escuros nativos e destacar apenas seleção ativa. */
+.leads-rf.lf36-leads .lf45-stage-inline .lf45-check {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 27px !important;
+    min-width: 27px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf45-check input[type="checkbox"] {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 1.5px solid #adc3ce !important;
+    border-radius: 4px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    cursor: pointer;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf45-check input[type="checkbox"]:checked {
+    border-color: #088978 !important;
+    background: #088978 !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.3 8.1 6.6 11.2 12.7 4.9' fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2'/%3E%3C/svg%3E") !important;
+    background-position: center !important;
+    background-size: 15px 15px !important;
+    background-repeat: no-repeat !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf45-check input[type="checkbox"]:focus-visible {
+    outline: 3px solid #83d3c7 !important;
+    outline-offset: 3px !important;
+}
+/* Paginação local: clara, em português e adaptável ao espaço horizontal. */
+.leads-rf.lf36-leads .lf45-stage-inline .lf46-stage-pagination {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: 12px 20px !important;
+    min-height: 68px !important;
+    margin: 0 !important;
+    padding: 13px 18px !important;
+    background: #fff !important;
+    border-top: 1px solid #e1eaed !important;
+    border-radius: 0 0 11px 11px !important;
+    box-shadow: none !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf46-page-info {
+    color: #647f91 !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    white-space: nowrap !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf46-page-info strong {
+    color: #28495d !important;
+    font-size: 12px !important;
+    font-weight: 760 !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf46-page-controls {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 5px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf46-page-controls button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 6px 9px !important;
+    margin: 0 !important;
+    border: 1px solid #d7e6e9 !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+    color: #37596c !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    font-weight: 680 !important;
+    cursor: pointer;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf46-page-controls button:is(:hover, :focus-visible):not(:disabled) {
+    border-color: #89cfc3 !important;
+    background: #effaf7 !important;
+    color: #08796f !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf46-page-controls button.is-current {
+    border-color: #078b7c !important;
+    background: #0a8e7c !important;
+    color: #fff !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf46-page-controls button:disabled {
+    opacity: .4 !important;
+    cursor: default !important;
+}
+.leads-rf.lf36-leads .lf45-stage-inline .lf46-page-ellipsis {
+    padding: 0 4px !important;
+    color: #8597a4 !important;
+    font-size: 14px !important;
+}
+@media (max-width: 1000px) {
+    .leads-rf.lf36-leads .lf45-stage-inline .lf46-stage-pagination {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    .leads-rf.lf36-leads .lf45-stage-inline .lf46-page-controls {
+        justify-content: flex-start !important;
+    }
+}
+/* EC_PROSPECTOR_V46_END */
+
+/* EC_PROSPECTOR_V47_START
+   A etapa global deixa de ter uma tabela própria: usa a MESMA grade da fila Leads.
+   A origem continua HubSpot geral; o escopo da carteira pessoal não muda.
+*/
+.leads-rf.lf36-leads .lf45-stage-inline.lf47-unified-stage {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+}
+/* Filtro exibido como um chip discreto, não um segundo painel de HubSpot. */
+.leads-rf.lf36-leads .lf47-filter-active {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 12px !important;
+    min-height: 45px !important;
+    padding: 9px 16px !important;
+    border-bottom: 1px solid #e2eaed !important;
+    background: #f6fbf9 !important;
+    color: #365e70 !important;
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+    flex-wrap: wrap !important;
+}
+.leads-rf.lf36-leads .lf47-filter-active strong {font-weight: 750 !important;color: #0b8174 !important;}
+.leads-rf.lf36-leads .lf47-filter-active .lf45-clear-stage {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 31px !important;
+    padding: 6px 11px !important;
+    background: #fff !important;
+    border: 1px solid #b8dfd5 !important;
+    color: #08796d !important;
+    font-size: 11px !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+/* 8 colunas IDÊNTICAS: seleção + Empresa + Score + Situação + Etapa + Ação + Responsável + Ações. */
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-head,
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lv13-lead-line {
+    grid-template-columns: 26px minmax(238px,2.05fr) minmax(82px,.70fr)
+                           minmax(137px,1.08fr) minmax(120px,1fr)
+                           minmax(134px,1.08fr) minmax(137px,1fr) minmax(182px,1.2fr) !important;
+    min-width: 1210px !important;
+    box-sizing: border-box !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-head {
+    display: grid !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 11px 16px !important;
+    border-bottom: 1px solid #e0e9ec !important;
+    background: #eff4f6 !important;
+    color: #486579 !important;
+    font-size: 10.5px !important;
+    font-weight: 740 !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row.rf-lead-row.lf45-stage-row {
+    display: block !important;
+    grid-template-columns: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-bottom: 1px solid #e3ebee !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row.rf-lead-row.lf45-stage-row:hover {
+    background: #f3faf8 !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row.rf-lead-row.lf45-stage-row.is-selected {
+    background: #eef9f5 !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lv13-lead-line {
+    display: grid !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: 73px !important;
+    padding: 11px 16px !important;
+    background: transparent !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lf45-stage-company.lv13-company {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+    background: transparent !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lv13-company-body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    min-width: 0 !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lv13-company-name {
+    font-size: 11px !important;
+    font-weight: 740 !important;
+    color: #18394e !important;
+    text-decoration: none !important;
+    line-height: 1.4 !important;
+    overflow-wrap: anywhere !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lv13-company-body small {
+    font-size: 10px !important;
+    font-weight: 450 !important;
+    line-height: 1.4 !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lv13-score,
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lv13-status,
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lv13-stage,
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lv13-next,
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lv13-owner {
+    min-width: 0 !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-linked-pill {
+    background: #eaf7f3 !important;
+    color: #097f71 !important;
+    border: 1px solid #bae2d8 !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unlinked-pill {
+    background: #fff6e9 !important;
+    color: #956221 !important;
+    border: 1px solid #f1ddb9 !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lv13-stage .lf45-stage-pill {
+    display: inline-flex !important;
+    max-width: 100% !important;
+    min-height: 24px !important;
+    padding: 4px 7px !important;
+    margin: 0 !important;
+    border: 1px solid #bce3d7 !important;
+    border-radius: 6px !important;
+    background: #e6f7f1 !important;
+    color: #0a7a6f !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    line-height: 1.35 !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lv23-actions.lf45-stage-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-width: 0 !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .lf47-unified-row .lv23-actions .lf45-stage-action {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 30px !important;
+    padding: 5px 8px !important;
+    margin: 0 !important;
+    background: #fff !important;
+    border: 1px solid #c4dfe1 !important;
+    color: #077181 !important;
+    border-radius: 7px !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+}
+/* As classes de paginação são as MESMAS da lista fiscal, com conexão distinta. */
+.leads-rf.lf36-leads .lf47-unified-stage .rf-pagination.lf46-stage-pagination {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: 12px !important;
+    padding: 13px 16px !important;
+    border-top: 1px solid #e2eaed !important;
+    border-radius: 0 0 10px 10px !important;
+    background: #fff !important;
+}
+.leads-rf.lf36-leads .lf47-unified-stage .rf-pagination .rf-page-btn {
+    border-radius: 8px !important;
+}
+@media (max-width: 1200px) {
+    .leads-rf.lf36-leads .lf47-unified-stage .lf47-filter-active,
+    .leads-rf.lf36-leads .lf47-unified-stage .rf-pagination {
+        min-width: 1210px !important;
+    }
+}
+/* Etiqueta do filtro GLOBAL no cabeçalho da lista habitual. */
+.leads-rf.leads-v13.lf36-leads .lf364-list-heading > .lf47-active-stage-chip {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    align-self: flex-start !important;
+    gap: 8px !important;
+    padding: 5px 9px !important;
+    margin-top: 5px !important;
+    border: 1px solid #b5dfd4 !important;
+    border-radius: 8px !important;
+    background: #effaf6 !important;
+    color: #0b8174 !important;
+    font-size: 11px !important;
+    font-weight: 710 !important;
+    line-height: 1.35 !important;
+    cursor: pointer;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-list-heading > .lf47-active-stage-chip:hover {
+    background: #dff5ec !important;
+    border-color: #90cfbc !important;
+}
+.leads-rf.leads-v13.lf36-leads .lf364-list-heading > .lf47-active-stage-chip svg {flex-shrink: 0;}
+/* Precedência acima do CSS V36.4: cabeçalho e linhas com EXATAMENTE as mesmas colunas. */
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lf47-unified-stage .lv13-list-head.lf47-unified-head,
+.leads-rf.leads-v13.lf36-leads .rf-list-panel .lf47-unified-stage .rf-lead-row.lf47-unified-row .lv13-lead-line {
+    grid-template-columns: 26px minmax(238px,2.05fr) minmax(82px,.70fr)
+                           minmax(137px,1.08fr) minmax(120px,1fr)
+                           minmax(134px,1.08fr) minmax(137px,1fr) minmax(182px,1.2fr) !important;
+    column-gap: 12px !important;
+    min-width: 1210px !important;
+    padding: 10px 18px !important;
+    box-sizing: border-box !important;
+}
+/* EC_PROSPECTOR_V47_END */
+
+/* EC_PROSPECTOR_V48_START */
+/* Leads: "Limpar filtros" à esquerda, no mesmo cartão, sem deslocar inputs. */
+body.ec-app-body:has(.leads-rf.lf36-leads) .leads-rf.lf36-leads .rf-panel.rf-filters .rf-filters-head {
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    text-align: left !important;
+}
+body.ec-app-body:has(.leads-rf.lf36-leads) .leads-rf.lf36-leads .rf-panel.rf-filters .rf-filters-head > button.rf-filters-clear {
+    display: inline-flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    order: -1 !important;
+    margin: 0 auto 0 0 !important;
+    align-self: flex-start !important;
+}
+/* Sem criar uma segunda lista: o filtro pessoal usa a mesma chip e grade V47. */
+.leads-rf.lf36-leads .lf364-list-heading .lf48-personal-stage-chip {
+    max-width: 100% !important;
+    white-space: normal !important;
+}
+/* EC_PROSPECTOR_V48_END */
+
+/* EC_PROSPECTOR_V49_START
+   Três correções delimitadas à interface de Leads. Preservar negócio/portfólio/exportação.
+*/
+
+/* 1. O botão fica no INÍCIO do cabeçalho dos filtros.
+   V36.4 usa .lf364-filter-header-actions como wrapper e lhe aplica
+   margin-left:auto!important. A regra antiga V48 mirava o botão como filho
+   direto, mas o botão está dentro deste wrapper.
+*/
+body.ec-app-body .leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters > .rf-filters-head.lf364-filter-header {
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+}
+body.ec-app-body .leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters > .rf-filters-head.lf364-filter-header > .lf364-filter-header-actions {
+    display: flex !important;
+    align-items: center !important;
+    order: -1 !important;
+    justify-content: flex-start !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-width: 0 !important;
+}
+body.ec-app-body .leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters > .rf-filters-head.lf364-filter-header > .lf364-filter-header-copy {
+    order: 0 !important;
+    margin: 0 !important;
+}
+body.ec-app-body .leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters .lf364-filter-header-actions > button.lf364-filter-clear {
+    margin: 0 !important;
+    order: -1 !important;
+    min-height: 36px !important;
+    padding: 8px 12px !important;
+    border: 1px solid #b8ded5 !important;
+    border-radius: 9px !important;
+    background: #edfaf5 !important;
+    color: #08766b !important;
+    font-size: 11px !important;
+    font-weight: 720 !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+}
+body.ec-app-body .leads-rf.leads-v13.lf36-leads section.rf-panel.rf-filters .lf364-filter-header-actions > button.lf364-filter-clear:hover {
+    background: #dcf5ec !important;
+    border-color: #85cebb !important;
+}
+
+/* 2. Dossiê e HubSpot com os mesmos ícones vetoriais discretos da fila fiscal.
+   Ambas as visões (global e Minha carteira) reutilizam o partial V47. */
+body.ec-app-body .leads-rf.leads-v13.lf36-leads .lf47-unified-stage .lf47-unified-row .lv23-actions.lf45-stage-actions .lf45-stage-action.lf49-icon-action {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-height: 32px !important;
+    padding: 6px 10px !important;
+    margin: 0 !important;
+    background: #fff !important;
+    border: 1px solid #c5e0de !important;
+    border-radius: 8px !important;
+    color: #097d74 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    box-shadow: none !important;
+}
+body.ec-app-body .leads-rf.leads-v13.lf36-leads .lf47-unified-stage .lf47-unified-row .lv23-actions.lf45-stage-actions .lf45-stage-action.lf49-icon-action:hover {
+    border-color: #8ac9bd !important;
+    background: #effaf6 !important;
+}
+body.ec-app-body .leads-rf.leads-v13.lf36-leads .lf47-unified-stage .lv23-actions .lf49-icon-action svg {
+    display: inline-block !important;
+    flex: 0 0 14px !important;
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    max-width: 14px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    vertical-align: middle !important;
+}
+body.ec-app-body .leads-rf.leads-v13.lf36-leads .lf47-unified-stage .lv23-actions .lf49-icon-action > span {
+    display: inline !important;
+    font-size: inherit !important;
+    color: inherit !important;
+    white-space: nowrap !important;
+}
+body.ec-app-body .leads-rf.leads-v13.lf36-leads .lf47-unified-stage .lf47-unified-row .lv23-actions.lf45-stage-actions .lf49-action-hubspot {
+    color: #166c97 !important;
+}
+body.ec-app-body .leads-rf.leads-v13.lf36-leads .lf47-unified-stage .lf47-unified-row .lv23-actions.lf45-stage-actions .lf49-action-hubspot:hover {
+    border-color: #8abecf !important;
+    background: #f1f8fc !important;
+}
+
+/* 3. A supressão do rodapé fiscal duplicado foi corrigida no Blade.
+   Nenhum display:none da paginação é usado: cada visão mantém seu
+   único paginador operacional com o próprio total e página atual. */
+/* EC_PROSPECTOR_V49_END */

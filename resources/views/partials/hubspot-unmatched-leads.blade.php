@@ -313,53 +313,22 @@
                     </div>
 
 
-                    <div>
-
+                    <div class="lf42-crm-actions">
                         @if ($hubSpotUrl)
-
-                            <a
-                                href="{{ $hubSpotUrl }}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="
-                                    rf-btn
-                                    rf-btn-primary
-                                "
-                            >
-                                HubSpot ↗
+                            <a href="{{ $hubSpotUrl }}" target="_blank" rel="noopener noreferrer"
+                               class="lf42-crm-action lf42-crm-action--hubspot" title="Abrir o registro no HubSpot">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="m20 4-9 9"/><path d="M20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6"/></svg>
+                                <span>Abrir HubSpot</span>
                             </a>
-
                         @endif
-
-
-                        @if (
-                            $this->isCommercialManager()
-                        )
-
-                            <button
-                                type="button"
-                                wire:click="
-                                    openCompanyLink(
-                                        {{
-                                            $hubSpotCompany
-                                                ->id
-                                        }}
-                                    )
-                                "
-                                class="
-                                    rf-btn
-                                    rf-btn-warning
-                                "
-                                style="
-                                    margin-top:6px;
-                                    width:100%;
-                                "
-                            >
-                                Identificar empresa
+                        @if ($this->isCommercialManager())
+                            <button type="button" wire:click="openCompanyLink({{ $hubSpotCompany->id }})"
+                                    class="lf42-crm-action lf42-crm-action--identify"
+                                    title="Identificar e vincular o CNPJ desta empresa do HubSpot">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l2.12-2.12a5 5 0 0 0-7.07-7.07L10.5 5.4"/><path d="M14 11a5 5 0 0 0-7.07 0L4.8 13.12a5 5 0 0 0 7.07 7.07l1.6-1.6"/></svg>
+                                <span>Identificar empresa</span>
                             </button>
-
                         @endif
-
                     </div>
 
                 </article>

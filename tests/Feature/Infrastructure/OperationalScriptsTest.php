@@ -96,7 +96,7 @@ it('runs update-safe in dry-run with a fake Docker command only', function () {
     }
 });
 
-it('keeps the public unsubscribe gateway separate from the signed HubSpot webhook', function () {
+it('keeps the public gateway restricted to signed HubSpot webhooks and HMAC unsubscribe links', function () {
     $gateway = file_get_contents(base_path('docker/campaign-unsubscribe/nginx.conf'));
     $routes = file_get_contents(base_path('routes/web.php'));
     $compose = file_get_contents(base_path('compose.yaml'));
@@ -107,7 +107,18 @@ it('keeps the public unsubscribe gateway separate from the signed HubSpot webhoo
 
     expect($gateway)->toContain('/email/descadastro/');
     expect($gateway)->toContain('location / { return 404; }');
-    expect($gateway)->not->toContain('/webhooks/hubspot');
+    // EC_PROSPECTOR_V47_2: a rota webhook foi adicionada com escopo exato na V38.2.
+    // Antes disso este teste proibia a URL e ficou incompatível com o gateway seguro.
+    expect($gateway)->toContain('location = /webhooks/hubspot {');
+    expect($gateway)->toContain('add_header X-EC-Webhook-Route "hubspot-v382" always;');
+    expect($gateway)->toContain('if ($request_method = HEAD) { return 405; }');
+    expect($gateway)->toContain('if ($request_method !~ ^(POST|HEAD)$) { return 405; }');
+    expect($gateway)->toContain('proxy_intercept_errors off;');
+    expect($gateway)->toContain('proxy_pass http://laravel.test:80;');
+    // Somente este endpoint deve atravessar o gateway; nao liberar prefixos de rotas.
+    expect(substr_count($gateway, 'location = /webhooks/hubspot'))->toBe(1);
+    expect($gateway)->not->toContain('location /webhooks');
+    expect($gateway)->toContain('location / { return 404; }');
     expect($routes)->toContain("->middleware(\n        'hubspot.signature'");
     expect($compose)->toContain('campaigns-unsubscribe-gateway:8080');
     expect($compose)->toContain('max-size: \'10m\'');

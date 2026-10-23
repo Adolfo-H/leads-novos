@@ -81,12 +81,20 @@ class HubSpotTask extends Model
         }
 
         if ($owners !== []) {
+            // EC_PROSPECTOR_V40: prefere o ID de responsável real do HubSpot.
+            // Texto assigned_to é legado e só vale sem owner_id remoto.
             $query->where(function (Builder $ownerQuery) use ($owners): void {
                 foreach ($owners as $nameOrId) {
-                    $ownerQuery->orWhereRaw(
-                        'LOWER(TRIM(hubspot_tasks.assigned_to)) = ?',
-                        [mb_strtolower($nameOrId)]
-                    );
+                    $ownerQuery->orWhere('hubspot_tasks.raw_properties->hubspot_owner_id', $nameOrId)
+                        ->orWhere(function (Builder $legacy) use ($nameOrId): void {
+                            $legacy->where(function (Builder $missing): void {
+                                $missing->whereNull('hubspot_tasks.raw_properties->hubspot_owner_id')
+                                    ->orWhere('hubspot_tasks.raw_properties->hubspot_owner_id', '');
+                            })->whereRaw(
+                                'LOWER(TRIM(hubspot_tasks.assigned_to)) = ?',
+                                [mb_strtolower($nameOrId)]
+                            );
+                        });
                 }
             });
         }

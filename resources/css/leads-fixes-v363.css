@@ -1,0 +1,193 @@
+/* PACOTE 36.3 — correção fina após o ajuste 36.2
+   Corrige:
+   - cabeçalho/toolbar do bloco da listagem
+   - pílula de itens selecionados
+   - primeira coluna sem quebrar o cabeçalho "Empresa"
+   - botões de ação mais limpos
+*/
+
+/* ===== Topo da listagem / contador / seleção ===== */
+.leads-rf .rf-list-toolbar {
+    display: grid !important;
+    grid-template-columns: minmax(220px, 1fr) auto !important;
+    align-items: center !important;
+    gap: 12px 16px !important;
+}
+
+.leads-rf .rf-list-toolbar > :first-child {
+    min-width: 0 !important;
+}
+
+.leads-rf .rf-list-toolbar > :last-child {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+}
+
+.leads-rf :is(.rf-selection-summary,.rf-selected-summary,.rf-selection-count,.rf-selected-count,[class*="selection-summary"],[class*="selected-summary"],[class*="selection-count"],[class*="selected-count"]) {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    max-width: max-content !important;
+    min-height: 34px !important;
+    padding: 6px 10px !important;
+    border-radius: 9px !important;
+    background: #0f4265 !important;
+    color: #ffffff !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    z-index: auto !important;
+}
+
+.leads-rf :is(.rf-selection-summary,.rf-selected-summary,.rf-selection-count,.rf-selected-count,[class*="selection-summary"],[class*="selected-summary"],[class*="selection-count"],[class*="selected-count"]) * {
+    color: inherit !important;
+}
+
+.leads-rf :is(.rf-selection-clear,.rf-selected-clear,[class*="clear-selection"],[class*="clear-selected"]) {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    margin-left: 2px !important;
+    background: transparent !important;
+    border: 0 !important;
+    color: #8fe7da !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+}
+
+/* ===== Cabeçalho da tabela: não quebrar a coluna Empresa ===== */
+.leads-rf :is(.rf-list-head,.lv13-list-head) > :first-child {
+    width: auto !important;
+    min-width: 56px !important;
+    padding-left: 18px !important;
+    padding-right: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    position: static !important;
+}
+
+.leads-rf :is(.rf-list-head,.lv13-list-head) > :first-child::before,
+.leads-rf :is(.rf-list-head,.lv13-list-head) > :first-child::after {
+    content: none !important;
+}
+
+/* ===== Linhas da tabela: checkbox + avatar alinhados ===== */
+.leads-rf :is(.lv13-lead-line,.rf-lead-row) > :first-child {
+    position: relative !important;
+    width: 84px !important;
+    min-width: 84px !important;
+    padding-left: 16px !important;
+    padding-right: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+}
+
+.leads-rf :is(.lv13-lead-line,.rf-lead-row) > :first-child::before {
+    content: "" !important;
+    position: absolute !important;
+    left: 6px !important;
+    top: 10px !important;
+    bottom: 10px !important;
+    width: 2px !important;
+    border-radius: 999px !important;
+    background: #f18d98 !important;
+}
+
+.leads-rf :is(.lv13-lead-line,.rf-lead-row) input[type="checkbox"] {
+    width: 15px !important;
+    height: 15px !important;
+    min-width: 15px !important;
+    min-height: 15px !important;
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+.leads-rf :is(.lv13-company-avatar,.rf-company-avatar) {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    flex: 0 0 auto !important;
+}
+
+/* ===== Botões de ação ===== */
+.leads-rf .lv23-actions,
+.leads-rf [class*="lead-actions"],
+.leads-rf [class*="row-actions"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+}
+
+.leads-rf .lv23-actions :is(a,button),
+.leads-rf [class*="lead-actions"] :is(a,button),
+.leads-rf [class*="row-actions"] :is(a,button) {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 78px !important;
+    min-height: 30px !important;
+    padding: 5px 10px !important;
+    border-radius: 8px !important;
+    white-space: nowrap !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+}
+
+.leads-rf .lv23-actions :is(a,button) svg,
+.leads-rf [class*="lead-actions"] :is(a,button) svg,
+.leads-rf [class*="row-actions"] :is(a,button) svg {
+    margin-left: 4px !important;
+    width: 12px !important;
+    height: 12px !important;
+}
+
+.leads-rf :is(.rf-list-head,.lv13-list-head) > :last-child,
+.leads-rf :is(.lv13-lead-line,.rf-lead-row) > :last-child {
+    min-width: 170px !important;
+}
+
+@media (max-width: 1100px) {
+    .leads-rf .rf-list-toolbar {
+        grid-template-columns: 1fr !important;
+        align-items: flex-start !important;
+    }
+
+    .leads-rf .rf-list-toolbar > :last-child {
+        justify-content: flex-start !important;
+    }
+}
+
+@media (max-width: 820px) {
+    .leads-rf :is(.lv13-lead-line,.rf-lead-row) > :first-child {
+        width: 72px !important;
+        min-width: 72px !important;
+        gap: 8px !important;
+        padding-left: 14px !important;
+    }
+
+    .leads-rf :is(.lv13-company-avatar,.rf-company-avatar) {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        min-height: 30px !important;
+    }
+}

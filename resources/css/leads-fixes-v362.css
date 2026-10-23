@@ -1,0 +1,203 @@
+/* PACOTE 36.2 — ajustes finos na listagem de Leads
+   Objetivo:
+   1) organizar a área de total/encontrados + selecionados
+   2) melhorar a primeira coluna (checkbox / marca lateral)
+   3) melhorar espaçamento e legibilidade das ações Dossiê / HubSpot
+*/
+
+/* ===== Toolbar do quadro/listagem ===== */
+.leads-rf .rf-list-panel .rf-list-toolbar,
+.leads-rf .rf-list-toolbar {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 14px !important;
+    flex-wrap: wrap !important;
+}
+
+.leads-rf .rf-list-toolbar > :first-child {
+    flex: 1 1 320px !important;
+    min-width: 280px !important;
+}
+
+.leads-rf .rf-list-toolbar > :last-child {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    margin-left: auto !important;
+}
+
+.leads-rf .rf-list-toolbar > :last-child > * {
+    margin: 0 !important;
+}
+
+.leads-rf .rf-list-toolbar strong,
+.leads-rf .rf-list-toolbar .rf-results-total,
+.leads-rf .rf-list-toolbar [class*="results-total"],
+.leads-rf .rf-list-toolbar [class*="total-count"] {
+    font-size: 14px !important;
+    line-height: 1.25 !important;
+}
+
+/* “1 selecionado(s)” e similares */
+.leads-rf :is(.rf-selection-summary,.rf-selected-summary,.rf-selection-count,.rf-selected-count,[class*="selection-summary"],[class*="selected-summary"],[class*="selection-count"],[class*="selected-count"]) {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: 38px !important;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+    background: #0f4367 !important;
+    color: #fff !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+}
+
+.leads-rf :is(.rf-selection-summary,.rf-selected-summary,.rf-selection-count,.rf-selected-count,[class*="selection-summary"],[class*="selected-summary"],[class*="selection-count"],[class*="selected-count"]) * {
+    color: inherit !important;
+}
+
+.leads-rf :is(.rf-selection-clear,.rf-selected-clear,[class*="clear-selection"],[class*="clear-selected"]) {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: 34px !important;
+    padding: 0 6px !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #0a8d84 !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+}
+
+/* ===== Primeira coluna (checkbox / faixa lateral / avatar) ===== */
+.leads-rf :is(.rf-list-head,.lv13-list-head) > :first-child,
+.leads-rf :is(.lv13-lead-line,.rf-lead-row) > :first-child {
+    position: relative !important;
+    width: 74px !important;
+    min-width: 74px !important;
+    padding-left: 16px !important;
+    padding-right: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+}
+
+.leads-rf :is(.lv13-lead-line,.rf-lead-row) > :first-child::before {
+    content: "" !important;
+    position: absolute !important;
+    left: 8px !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 2px !important;
+    border-radius: 999px !important;
+    background: #ef8d98 !important;
+    opacity: .95 !important;
+}
+
+.leads-rf :is(.lv13-lead-line,.rf-lead-row):hover > :first-child::before {
+    background: #df7380 !important;
+}
+
+.leads-rf :is(.lv13-lead-line,.rf-lead-row) input[type="checkbox"],
+.leads-rf :is(.lv13-lead-line,.rf-lead-row) [type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    border-radius: 4px !important;
+}
+
+.leads-rf :is(.lv13-company-avatar,.rf-company-avatar) {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    min-height: 34px !important;
+    border-width: 1px !important;
+}
+
+/* ===== Ações ===== */
+.leads-rf .lv23-actions,
+.leads-rf [class*="lead-actions"],
+.leads-rf [class*="row-actions"] {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+}
+
+.leads-rf .lv23-actions :is(a,button),
+.leads-rf [class*="lead-actions"] :is(a,button),
+.leads-rf [class*="row-actions"] :is(a,button) {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 84px !important;
+    min-height: 32px !important;
+    padding: 6px 10px !important;
+    white-space: nowrap !important;
+    border-radius: 8px !important;
+}
+
+.leads-rf .lv23-actions :is(a,button) svg,
+.leads-rf [class*="lead-actions"] :is(a,button) svg,
+.leads-rf [class*="row-actions"] :is(a,button) svg {
+    margin-left: 4px !important;
+}
+
+/* largura maior da última coluna para evitar aperto visual */
+.leads-rf :is(.rf-list-head,.lv13-list-head) > :last-child,
+.leads-rf :is(.lv13-lead-line,.rf-lead-row) > :last-child {
+    min-width: 180px !important;
+}
+
+/* ===== Ajustes gerais de legibilidade ===== */
+.leads-rf :is(.lv13-company-name,.rf-company-name) {
+    line-height: 1.25 !important;
+}
+
+.leads-rf :is(.lv13-company-body small,.lv13-company-body span,.rf-company-meta) {
+    line-height: 1.35 !important;
+}
+
+@media (max-width: 1200px) {
+    .leads-rf .rf-list-toolbar > :last-child {
+        justify-content: flex-start !important;
+        margin-left: 0 !important;
+    }
+
+    .leads-rf :is(.rf-list-head,.lv13-list-head) > :last-child,
+    .leads-rf :is(.lv13-lead-line,.rf-lead-row) > :last-child {
+        min-width: 150px !important;
+    }
+}
+
+@media (max-width: 820px) {
+    .leads-rf :is(.rf-list-head,.lv13-list-head) > :first-child,
+    .leads-rf :is(.lv13-lead-line,.rf-lead-row) > :first-child {
+        width: 62px !important;
+        min-width: 62px !important;
+        padding-left: 12px !important;
+        padding-right: 8px !important;
+        gap: 8px !important;
+    }
+
+    .leads-rf :is(.lv13-company-avatar,.rf-company-avatar) {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        min-height: 30px !important;
+    }
+
+    .leads-rf .lv23-actions :is(a,button),
+    .leads-rf [class*="lead-actions"] :is(a,button),
+    .leads-rf [class*="row-actions"] :is(a,button) {
+        min-width: 76px !important;
+        font-size: 10px !important;
+    }
+}

@@ -10,6 +10,7 @@ use App\Models\CompanySdrScore;
 use App\Models\Establishment;
 use App\Models\HubSpotCompany;
 use App\Models\HubSpotDeal;
+use App\Models\HubSpotPipelineStage;
 use App\Models\User;
 use App\Services\HubSpotCompanyLinkService;
 use App\Services\HubSpotLeadReprospectingActionService;
@@ -54,13 +55,30 @@ new class extends Component
     #[Url]
     public string $dashboardStage = '';
 
+    // EC_PROSPECTOR_V41_LEADS: filtro global disponivel somente para gestores.
+    public string $globalHubSpotStage = '';
+
+    // EC_PROSPECTOR_V48: etapa selecionada SOMENTE na carteira pessoal.
+    public string $personalHubSpotStage = '';
+
+    // EC_PROSPECTOR_V45_LEADS: seleção persiste no Livewire e respeita filtros/permissões.
+    /** @var list<string> */
+    public array $selectedLeadIds = [];
+
+    /** @var list<string> */
+    public array $selectedGlobalDealIds = [];
+
     #[Url]
     public string $workStatus = '';
 
     #[Url]
     public string $crmSituation = '';
 
+    #[Url] // EC_PROSPECTOR_V40_LEADS — permite abrir vencimentos pela URL do Dashboard
     public bool $dueActionOnly = false;
+
+    // EC_PROSPECTOR_V42_LEADS: subtipo exclusivo dos cards de tarefas.
+    public string $queueDuePeriod = '';
 
     #[Url]
     public string $followUp = '';
@@ -328,6 +346,10 @@ new class extends Component
 
     public function updatedCrm(): void
     {
+        if ($this->personalHubSpotStage !== '' && $this->crm !== 'stage:'.$this->personalHubSpotStage) {
+            $this->personalHubSpotStage = '';
+            $this->selectedGlobalDealIds = [];
+        }
         $this->resetPage();
 
         $this->resetPage(
@@ -393,10 +415,15 @@ new class extends Component
             'crm',
             'crmSituation',
             'dueActionOnly',
+            'queueDuePeriod',
             'state',
             'owner',
             'dashboardView',
             'dashboardStage',
+            'globalHubSpotStage',
+            'personalHubSpotStage',
+            'selectedLeadIds',
+            'selectedGlobalDealIds',
             'dashboardCompany',
             'workStatus',
             'followUp',
@@ -652,13 +679,22 @@ new class extends Component
                          * Assim contagem e listagem
                          * usam a mesma fonte.
                          */
+                        $stageIds = HubSpotPipelineStage::query()
+                            ->where('stage_label', $stage)
+                            ->whereNotNull('stage_id')
+                            ->pluck('stage_id')
+                            ->all();
+
                         $query->whereHas(
                             'hubSpotCompanies.commercialDeals',
-                            fn ($dealQuery) => $dealQuery
-                                ->where(
-                                    'hubspot_deals.stage_label',
-                                    $stage
-                                )
+                            static function ($dealQuery) use ($stage, $stageIds): void {
+                                $dealQuery->where(function ($matching) use ($stage, $stageIds): void {
+                                    $matching->where('hubspot_deals.stage_label', $stage);
+                                    if ($stageIds !== []) {
+                                        $matching->orWhereIn('hubspot_deals.stage_id', $stageIds);
+                                    }
+                                });
+                            }
                         );
 
                         return;
@@ -689,8 +725,7 @@ new class extends Component
             )
             ->when(
                 $this->dueActionOnly,
-                fn ($query) => app(\App\Services\LeadCrmSituationService::class)
-                    ->dueForAuthenticatedUser($query)
+                fn ($query) => $this->applyV42DueQueue($query)
             )
 
             ->when(
@@ -794,7 +829,7 @@ new class extends Component
             )
 
             ->when(
-                $this->workStatus !== '',
+                $this->workStatus !== '' && ! ($this->dueActionOnly && $this->queueDuePeriod !== ''),
                 function ($query): void {
                     if (
                         $this->workStatus
@@ -896,7 +931,7 @@ new class extends Component
             )
 
             ->when(
-                $this->followUp !== '',
+                $this->followUp !== '' && ! ($this->dueActionOnly && $this->queueDuePeriod !== ''),
                 function ($query): void {
                     $query->where(
                         'work.work_status',
@@ -1137,18 +1172,73 @@ new class extends Component
 
     }
 
+    /**
+     * IDs de seleção são não-confiáveis até serem validados no backend.
+     * A autorização está nas queries filtradas e nunca é ampliada pelo ID enviado.
+     * @param array<mixed> $values
+     * @return list<int>
+     */
+    private function selectedExportIdsV45(array $values): array
+    {
+        abort_if(count($values) > 3000, 422);
+        $result = [];
+        foreach ($values as $value) {
+            if (! is_string($value) && ! is_int($value)) {
+                continue;
+            }
+            $value = trim((string) $value);
+            if ($value === '' || ! ctype_digit($value)) {
+                continue;
+            }
+            $id = filter_var($value, FILTER_VALIDATE_INT);
+            if (is_int($id) && $id > 0) {
+                $result[$id] = $id;
+            }
+        }
+        return array_values($result);
+    }
+
     public function exportExcel(
         LeadExportService $service,
     ): StreamedResponse {
-        unset($service); // legacy method injection kept for older integrations.
-        $companies = $this->hubSpotOnly
-            ? collect()
-            : $this->filteredLeadsQuery()->with('establishments')->get();
+        unset($service); // legacy injection preservada para integracoes/testes antigos.
 
-        // Mesmos filtros da lista CRM sem CNPJ, sem limite de paginação.
+        if ($this->globalHubSpotStage !== '' || $this->personalHubSpotStage !== '') {
+            if ($this->globalHubSpotStage !== '') {
+                abort_unless($this->isCommercialManager(), 403);
+            }
+            $ids = $this->selectedExportIdsV45($this->selectedGlobalDealIds);
+            $deals = ($this->globalHubSpotStage !== '' ? $this->globalHubSpotStageQuery() : $this->personalHubSpotStageQuery())
+                ->when($this->selectedGlobalDealIds !== [], static function ($query) use ($ids): void {
+                    if ($ids === []) {
+                        $query->whereRaw('1 = 0');
+                        return;
+                    }
+                    $query->whereIn('hubspot_deals.id', $ids);
+                })
+                ->with(['companies.prospectorCompany.matrix', 'stage'])
+                ->get();
+
+            return app(\App\Services\LeadGlobalStageExcelV45Service::class)
+                ->excel($deals, $this->globalHubSpotStage !== '' ? $this->globalHubSpotStage : $this->personalHubSpotStage);
+        }
+
+        $ids = $this->selectedExportIdsV45($this->selectedLeadIds);
+        $companies = $this->hubSpotOnly ? collect() : $this->filteredLeadsQuery()
+            ->when($this->selectedLeadIds !== [], static function ($query) use ($ids): void {
+                if ($ids === []) {
+                    $query->whereRaw('1 = 0');
+                    return;
+                }
+                $query->whereIn('companies.id', $ids);
+            })
+            ->with('establishments')->get();
+
+        // Reaproveita a mesma consulta do CRM sem CNPJ que alimenta a tela.
+        // Quando há seleção fiscal, não incluir registros CRM-only extras.
         $crmOnly = $this->filteredCrmOnlyQuery()
-            ->with(['deals', 'contacts', 'tasks'])
-            ->get();
+            ->when($this->selectedLeadIds !== [], static fn ($q) => $q->whereRaw('1 = 0'))
+            ->with(['deals', 'contacts', 'tasks'])->get();
 
         return app(\App\Services\LeadUnifiedExcelV23Service::class)
             ->excel($companies, $crmOnly);
@@ -1792,7 +1882,7 @@ new class extends Component
          * A visão CRM sem CNPJ representa a fila
          * comercial ainda ativa.
          */
-        if ($this->hubSpotOnly) {
+        if ($this->hubSpotOnly && $search === '') {
             $query->whereHas(
                 'deals',
                 fn ($dealQuery) => $dealQuery
@@ -1801,7 +1891,7 @@ new class extends Component
                         false
                     )
             );
-        } else {
+        } elseif (! $this->hubSpotOnly && $search === '') {
             /*
              * Na busca textual também permitimos
              * encontrar histórico encerrado.
@@ -1837,7 +1927,8 @@ new class extends Component
                                 .$normalized
                                 .'%',
                             ]
-                        );
+                        )
+                        ->orWhere('hubspot_id', 'like', '%'.$normalized.'%');
                 }
             );
         }
@@ -1878,14 +1969,19 @@ new class extends Component
                 );
 
             if ($stage !== '') {
-                $query->whereHas(
-                    'deals',
-                    fn ($dealQuery) => $dealQuery
-                        ->where(
-                            'stage_label',
-                            $stage
-                        )
-                );
+                $stageIds = HubSpotPipelineStage::query()
+                    ->where('stage_label', $stage)
+                    ->whereNotNull('stage_id')
+                    ->pluck('stage_id')
+                    ->all();
+                $query->whereHas('deals', static function ($dealQuery) use ($stage, $stageIds): void {
+                    $dealQuery->where(static function ($match) use ($stage, $stageIds): void {
+                        $match->where('hubspot_deals.stage_label', $stage);
+                        if ($stageIds !== []) {
+                            $match->orWhereIn('hubspot_deals.stage_id', $stageIds);
+                        }
+                    });
+                });
             }
         }
 
@@ -2016,109 +2112,167 @@ new class extends Component
      *     count: int
      * }>
      */
-    #[Computed]
-    public function crmStageOptions(): array
+    /**
+     * Todas as etapas do HubSpot, de TODOS os negócios do espelho local.
+     * Independe dos filtros comerciais, das pessoas e dos vínculos por CNPJ.
+     * Totais globais são visíveis somente à gestão, por autorização.
+     *
+     * @return list<array{label: string, count: int}>
+     */
+    /**
+     * Exibe a configuração real das etapas do espelho HubSpot, inclusive
+     * as que ainda não possuem negócios associados (contagem real = 0).
+     * Os três estágios solicitados são garantia de apresentação, não
+     * registros ou negócios artificiais.
+     *
+     * @param list<array{label: string, count: int}> $stages
+     * @return list<array{label: string, count: int}>
+     */
+    private function withMissingHubSpotStages(array $stages): array
     {
-        $companyIds =
-            $this
-                ->operationalLeadQuery()
-                ->pluck(
-                    'companies.id'
-                )
-                ->map(
-                    static fn (
-                        mixed $id
-                    ): int => (int) $id
-                )
-                ->filter(
-                    static fn (
-                        int $id
-                    ): bool => $id > 0
-                )
-                ->unique()
-                ->values()
-                ->all();
+        $result = [];
 
-        if ($companyIds === []) {
+        foreach ($stages as $stage) {
+            $label = trim($stage['label']);
+            if ($label === '' || in_array(mb_strtolower($label), ['início do teste', 'inicio do teste', 'início de teste', 'inicio de teste'], true)) {
+                continue;
+            }
+            $key = mb_strtolower($label);
+            if (isset($result[$key])) {
+                $result[$key]['count'] += (int) $stage['count'];
+            } else {
+                $result[$key] = [
+                    'label' => $label,
+                    'count' => (int) $stage['count'],
+                ];
+            }
+        }
+
+        // Cadastro de etapas espelhado do HubSpot: não depende de haver
+        // negócios ativos em cada uma.
+        $registered = HubSpotPipelineStage::query()
+            ->whereNotNull('stage_label')
+            ->orderBy('display_order')
+            ->pluck('stage_label')
+            ->all();
+
+        // Estas etapas fazem parte do pipeline comercial configurado.
+        // Se não existem negócios nessa etapa, exibimos ZERO — nunca
+        // usamos uma contagem fictícia.
+        $required = [
+            'Reunião Agendada',
+            'Aceite da proposta',
+            'Contrato Assinado',
+        ];
+
+        foreach (array_merge($registered, $required) as $label) {
+            if (! is_string($label)) {
+                continue;
+            }
+            $label = trim($label);
+            if ($label === '' || in_array(mb_strtolower($label), ['início do teste', 'inicio do teste', 'início de teste', 'inicio de teste'], true)) {
+                continue;
+            }
+            $key = mb_strtolower($label);
+            if (! isset($result[$key])) {
+                $result[$key] = ['label' => $label, 'count' => 0];
+            }
+        }
+
+        return array_values($result);
+    }
+
+    /**
+     * Visão GERENCIAL, sem filtro de responsável nem exigência de CNPJ.
+     * A etapa é resolvida primeiro pelo ID REAL do HubSpot, não pelo label
+     * antigo do CSV, que pode ter ficado desatualizado durante o túnel offline.
+     * Contamos negócios distintos, inclusive sem Company fiscal.
+     *
+     * @return list<array{label:string,count:int}>
+     */
+    #[Computed]
+    public function globalHubSpotStageOptions(): array
+    {
+        if (! $this->isCommercialManager()) {
             return [];
         }
 
-        $rows =
-            HubSpotDeal::query()
-                ->whereNotNull(
-                    'stage_label'
-                )
-                ->where(
-                    'stage_label',
-                    '!=',
-                    ''
-                )
-                ->whereHas(
-                    'commercialCompanies',
-                    function (
-                        $query
-                    ) use (
-                        $companyIds
-                    ): void {
-                        $query->whereIn(
-                            'hubspot_companies.company_id',
-                            $companyIds
-                        );
+        $catalog = HubSpotPipelineStage::query()
+            ->whereNotNull('stage_id')
+            ->get(['pipeline_id', 'stage_id', 'stage_label'])
+            ->mapWithKeys(static function (HubSpotPipelineStage $stage): array {
+                return [trim((string) $stage->pipeline_id).'|'.trim((string) $stage->stage_id)
+                    => trim((string) $stage->stage_label)];
+            });
 
-                        $query->where(
-                            function (
-                                $linkQuery
-                            ): void {
-                                $linkQuery
-                                    ->whereNull(
-                                        'hubspot_companies.match_source'
-                                    )
-                                    ->orWhereNotIn(
-                                        'hubspot_companies.match_source',
-                                        HubSpotCompany::UNSAFE_FISCAL_MATCH_SOURCES
-                                    );
-                            }
-                        );
-                    }
-                )
-                ->select(
-                    'stage_label'
-                )
-                ->selectRaw(
-                    'COUNT(DISTINCT hubspot_deals.id) as total'
-                )
-                ->groupBy(
-                    'stage_label'
-                )
-                ->orderBy(
-                    'stage_label'
-                )
-                ->get();
-
-        $options = [];
-
+        $rows = HubSpotDeal::query()
+            ->select(['pipeline_id', 'stage_id', 'stage_label'])
+            ->selectRaw('COUNT(DISTINCT hubspot_deals.id) AS total')
+            ->groupBy('pipeline_id', 'stage_id', 'stage_label')
+            ->get();
+        $counts = [];
         foreach ($rows as $row) {
-            $label =
-                trim(
-                    (string)
-                    $row->stage_label
-                );
+            $code = trim((string) $row->pipeline_id).'|'.trim((string) $row->stage_id);
+            $label = trim((string) ($catalog->get($code) ?: $row->stage_label ?: 'Sem etapa'));
+            $key = mb_strtolower($label);
+            if (! isset($counts[$key])) {
+                $counts[$key] = ['label' => $label, 'count' => 0];
+            }
+            $counts[$key]['count'] += (int) $row->getAttribute('total');
+        }
 
+        return $this->withMissingHubSpotStages(array_values($counts));
+    }
+
+    /**
+     * Pipeline LOCAL pessoal. Permanece restrito às empresas atribuídas;
+     * o catálogo corrige o rótulo sem abrir acesso a outras carteiras.
+     * @return list<array{label:string,count:int}>
+     */
+    #[Computed]
+    public function crmStageOptions(): array
+    {
+        $userId = $this->authenticatedUserId();
+        if ($userId === null) {
+            return [];
+        }
+
+        $ownedCompanies = CompanyLeadWorkState::query()
+            ->select('company_id')
+            ->where('assigned_user_id', $userId);
+        $catalog = HubSpotPipelineStage::query()
+            ->whereNotNull('stage_id')
+            ->get(['pipeline_id', 'stage_id', 'stage_label'])
+            ->mapWithKeys(static function (HubSpotPipelineStage $stage): array {
+                return [trim((string) $stage->pipeline_id).'|'.trim((string) $stage->stage_id)
+                    => trim((string) $stage->stage_label)];
+            });
+
+        $rows = HubSpotDeal::query()
+            ->whereHas('commercialCompanies', static function ($query) use ($ownedCompanies): void {
+                $query->trustedFiscalLink()
+                    ->whereIn('hubspot_companies.company_id', $ownedCompanies);
+            })
+            ->select(['pipeline_id', 'stage_id', 'stage_label'])
+            ->selectRaw('COUNT(DISTINCT hubspot_deals.id) AS total')
+            ->groupBy('pipeline_id', 'stage_id', 'stage_label')
+            ->get();
+
+        $counts = [];
+        foreach ($rows as $row) {
+            $code = trim((string) $row->pipeline_id).'|'.trim((string) $row->stage_id);
+            $label = trim((string) ($catalog->get($code) ?: $row->stage_label));
             if ($label === '') {
                 continue;
             }
-
-            $options[] = [
-                'label' => $label,
-
-                'count' => (int)
-                    $row->getAttribute(
-                        'total'
-                    ),
-            ];
+            $key = mb_strtolower($label);
+            if (! isset($counts[$key])) {
+                $counts[$key] = ['label' => $label, 'count' => 0];
+            }
+            $counts[$key]['count'] += (int) $row->getAttribute('total');
         }
 
-        return $options;
+        return $this->withMissingHubSpotStages(array_values($counts));
     }
 
     #[Computed]
@@ -2985,12 +3139,43 @@ new class extends Component
         $this->resetPage();
     }
 
-    /** Filtro do Figma: limpa critérios anteriores para manter contagem e lista coerentes. */
+    /**
+     * Cartões de vencimento: usam a MESMA consulta HubSpot de v242DueCounts.
+     * Os campos legados workStatus/followUp são preservados para links antigos,
+     * mas não filtram por work.last_task_due_at quando o card está ativo.
+     */
     public function applyFigmaFollowUp(string $period): void
     {
         abort_unless(in_array($period, ['overdue', 'today'], true), 422);
         $this->clearFilters();
         $this->applyFollowUpView($period);
+        $this->dueActionOnly = true;
+        $this->queueDuePeriod = $period;
+        $this->resetPage();
+    }
+
+    /** Card Sem responsável deve ser um filtro novo, não misturar com Atrasados. */
+    public function applyFigmaUnassigned(): void
+    {
+        abort_unless($this->isCommercialManager(), 403);
+        $this->clearFilters();
+        $this->owner = 'unassigned';
+        $this->resetPage();
+    }
+
+    /** @param \Illuminate\Database\Eloquent\Builder<Company> $query */
+    private function applyV42DueQueue(\Illuminate\Database\Eloquent\Builder $query): void
+    {
+        $service = app(\App\Services\LeadCrmSituationService::class);
+        if ($this->queueDuePeriod === 'overdue') {
+            $service->dueForAuthenticatedUserPeriod($query, null, now());
+            return;
+        }
+        if ($this->queueDuePeriod === 'today') {
+            $service->dueForAuthenticatedUserPeriod($query, now(), today()->addDay());
+            return;
+        }
+        $service->dueForAuthenticatedUser($query);
     }
 
     public function applyFollowUpView(
@@ -3094,6 +3279,147 @@ new class extends Component
         $this->resetPage();
     }
 
+    /**
+     * Etapas gerais pertencem a TODOS os negocios, independentemente de CNPJ.
+     * Vendedores nao podem abrir esta consulta por Livewire, mesmo manipulando requests.
+     */
+    public function applyGlobalHubSpotStageView(int $index): void
+    {
+        abort_unless($this->isCommercialManager(), 403);
+
+        $stage = $this->globalHubSpotStageOptions[$index]['label'] ?? null;
+        abort_unless(is_string($stage) && trim($stage) !== '', 422);
+        $stage = trim($stage);
+
+        $this->clearFilters();
+        $this->globalHubSpotStage = $stage;
+        // Continua filtrando tambem empresas com vinculo fiscal e CRM sem CNPJ.
+        $this->crm = 'stage:'.$stage;
+        $this->resetPage('globalStageDealsPage');
+    }
+
+    public function clearGlobalHubSpotStageView(): void
+    {
+        abort_unless($this->isCommercialManager(), 403);
+        $this->globalHubSpotStage = '';
+        $this->selectedGlobalDealIds = [];
+        $this->selectedLeadIds = [];
+        $this->crm = '';
+        $this->resetPage();
+        $this->resetPage('hubspotPage');
+        $this->resetPage('globalStageDealsPage');
+    }
+
+    /**
+     * Resultados do filtro GLOBAL incluem Deals sem associacao a Company.
+     * Contagens e resultados seguem as mesmas regras de stage_label/stage_id.
+     * @return \Illuminate\Pagination\LengthAwarePaginator
+     */
+    /** @return \Illuminate\Database\Eloquent\Builder<HubSpotDeal> */
+    private function globalHubSpotStageQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $stage = trim($this->globalHubSpotStage);
+        $query = HubSpotDeal::query();
+
+        if (! $this->isCommercialManager() || $stage === '') {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $allowed = collect($this->globalHubSpotStageOptions)
+            ->contains(static fn (array $row): bool => (string) ($row['label'] ?? '') === $stage);
+        if (! $allowed) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $stageIds = HubSpotPipelineStage::query()
+            ->where('stage_label', $stage)
+            ->whereNotNull('stage_id')
+            ->pluck('stage_id')->all();
+
+        return $query->where(static function ($match) use ($stage, $stageIds): void {
+            $match->where('hubspot_deals.stage_label', $stage);
+            if ($stageIds !== []) {
+                $match->orWhereIn('hubspot_deals.stage_id', $stageIds);
+            }
+        });
+    }
+
+    /** @return \Illuminate\Pagination\LengthAwarePaginator */
+    #[Computed]
+    public function globalHubSpotStageDeals()
+    {
+        return $this->globalHubSpotStageQuery()
+            ->with(['companies.prospectorCompany', 'stage'])
+            ->orderByDesc('hubspot_deals.id')
+            ->paginate(15, ['*'], 'globalStageDealsPage');
+    }
+
+
+    /**
+     * Mesmo escopo do contador "Pipeline HubSpot - Minha carteira".
+     * Nunca aceita Deal por stage_label sem antes confirmar vínculo fiscal
+     * confiável e atribuição da Company ao usuário autenticado.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder<HubSpotDeal>
+     */
+    private function personalHubSpotStageQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = HubSpotDeal::query();
+        $userId = $this->authenticatedUserId();
+        $stage = trim($this->personalHubSpotStage);
+        if ($userId === null || $stage === '') {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $isSelectable = collect($this->crmStageOptions)
+            ->contains(static fn (array $option): bool => (string) ($option['label'] ?? '') === $stage);
+        if (! $isSelectable) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        // Consulta idêntica à base fiscal do crmStageOptions() da V40.
+        $ownedCompanyIds = CompanyLeadWorkState::query()
+            ->select('company_id')
+            ->where('assigned_user_id', $userId);
+        $query->whereHas('commercialCompanies', static function ($hubspot) use ($ownedCompanyIds): void {
+            $hubspot->trustedFiscalLink()
+                ->whereIn('hubspot_companies.company_id', $ownedCompanyIds);
+        });
+
+        // Um label salvo antes da reconciliação não pode ocultar o estágio.
+        $stageIds = HubSpotPipelineStage::query()
+            ->where('stage_label', $stage)
+            ->whereNotNull('stage_id')
+            ->pluck('stage_id')
+            ->all();
+        return $query->where(static function ($matching) use ($stage, $stageIds): void {
+            $matching->where('hubspot_deals.stage_label', $stage);
+            if ($stageIds !== []) {
+                $matching->orWhereIn('hubspot_deals.stage_id', $stageIds);
+            }
+        });
+    }
+
+    /** @return \Illuminate\Pagination\LengthAwarePaginator */
+    #[Computed]
+    public function personalHubSpotStageDeals()
+    {
+        return $this->personalHubSpotStageQuery()
+            ->with(['companies.prospectorCompany', 'stage'])
+            ->orderByDesc('hubspot_deals.id')
+            ->paginate(15, ['*'], 'globalStageDealsPage');
+    }
+
+    public function clearPersonalHubSpotStageView(): void
+    {
+        $this->personalHubSpotStage = '';
+        $this->crm = '';
+        $this->selectedGlobalDealIds = [];
+        $this->selectedLeadIds = [];
+        $this->resetPage();
+        $this->resetPage('globalStageDealsPage');
+    }
+
     public function applyCrmStageView(
         int $index
     ): void {
@@ -3124,12 +3450,16 @@ new class extends Component
          * clicar numa etapa mostre sua base real.
          */
         $this->clearFilters();
+        $this->personalHubSpotStage = $stage;
 
+        // O clique no pipeline pessoal mantém a consulta na carteira do usuário.
+        $this->owner = 'mine';
         $this->crm =
             'stage:'
             .$stage;
 
         $this->resetPage();
+        $this->resetPage('globalStageDealsPage');
     }
 
     public function summaryPercent(
@@ -3944,7 +4274,7 @@ new class extends Component
 {{-- LEADS_POLL_SINGLE_V249: uma atualizacao a cada 30s evita duas renderizacoes caras a cada 10s.
      Atualizacao mais frequente do status deve usar um componente isolado, nao o workspace inteiro. --}}
 <div
-    class="ec-page-shell leads-rf leads-v11 leads-v13 leads-v15 leads-v16 leads-v18 leads-v19 leads-v20 leads-v23 lf34-leads"
+    class="ec-page-shell leads-rf leads-v11 leads-v13 leads-v15 leads-v16 leads-v18 leads-v19 leads-v20 leads-v23 lf34-leads lf36-leads"
     wire:poll.30s="$refresh"
 >
 
@@ -3956,13 +4286,27 @@ new class extends Component
         <div>
 
             <div class="rf-kicker">
-                Operação comercial
-            </div>
+                    @if (!$this->isCommercialManager() || $owner === 'mine')
+                        Sua fila comercial
+                    @else
+                        Leads
+                    @endif
+                </div>
 
             <div class="rf-title-row">
 
                 <h1 class="rf-title">
-                    Sua fila comercial
+                    @if ($hubSpotOnly)
+                        CRM sem identidade fiscal confirmada
+                    @elseif ($crmSituation === 'new')
+                        Novos para prospectar
+                    @elseif ($dueActionOnly || in_array($followUp, ['overdue', 'today'], true))
+                        Sua fila comercial
+                    @elseif ($owner === 'mine' || ! $this->isCommercialManager())
+                        Minha fila comercial
+                    @else
+                        Sua fila comercial
+                    @endif
                 </h1>
 
                 <span class="rf-count-pill">
@@ -3978,7 +4322,19 @@ new class extends Component
 
             </div>
 
-            <p class="rf-subtitle">Escolha a próxima empresa para trabalhar com contexto e prioridade.</p>
+            <p class="rf-subtitle">
+                    @if ($hubSpotOnly)
+                        Confira os registros antes de relacioná-los à base empresarial.
+                    @elseif ($crmSituation === 'new')
+                        Empresas com situação CRM Novo no recorte autorizado.
+                    @elseif ($dueActionOnly || in_array($followUp, ['overdue', 'today'], true))
+                        Priorize os retornos vencidos ou previstos para hoje.
+                    @elseif ($owner === 'mine' || ! $this->isCommercialManager())
+                        Acompanhe sua carteira e as próximas ações comerciais.
+                    @else
+                        Escolha a próxima empresa para trabalhar com contexto e prioridade.
+                    @endif
+                </p>
 
         </div>
 
@@ -4335,7 +4691,8 @@ new class extends Component
 
 
 
-    @include('partials.leads-figma-tabs-v34')
+    @if (!$hubSpotOnly)
+        @include('partials.leads-figma-tabs-v36')
 
     @if ($commercialActionMessage !== '')
 
@@ -4363,9 +4720,9 @@ new class extends Component
     @endif
 
 
-    @include('partials.leads-figma-summary-v34')
+    @include('partials.leads-figma-summary-v36')
 
-    <details class="lf34-legacy-shortcuts">
+    <details class="lf36-extra-shortcuts">
         <summary>Outros atalhos de fila</summary>
         @include('partials.leads-action-center-v15')
     </details>
@@ -4373,65 +4730,37 @@ new class extends Component
 
         <section class="rf-panel rf-filters">
 
-        <div class="rf-filters-head">
-
-            <div>
-
-                <strong>
-                    Refinar fila
-                </strong>
-
-                <span>
-                    Busque e combine critérios apenas quando precisar
-                    aprofundar a carteira.
-                </span>
-
+        <div class="rf-filters-head lf364-filter-header">
+            <div class="lf364-filter-header-copy">
+                <strong>Refinar fila</strong>
+                <span class="lf364-filter-caption">Combine critérios para encontrar as próximas empresas.</span>
             </div>
-
-
-            <button
-                type="button"
-                wire:click="clearFilters"
-                class="rf-filters-clear"
-            >
-                Limpar filtros
-            </button>
-
+            <div class="lf364-filter-header-actions">
+                {{-- O Livewire controla a visibilidade; não aplicar display:...!important aqui. --}}
+                <div class="lf364-filter-progress rf-filters-loading" style="display: none;" wire:loading.delay.longer
+                     wire:target="search,priority,icp,crm,crmSituation,state,owner,workStatus,followUp"
+                     role="status" aria-live="polite">Atualizando filtros...</div>
+                <button type="button" wire:click="clearFilters"
+                        class="rf-filters-clear lf364-filter-clear">Limpar filtros</button>
+            </div>
         </div>
-
-        <div
-            wire:loading.delay.longer
-            wire:target="
-                search,
-                priority,
-                icp,
-                crm,
-                state,
-                owner,
-                workStatus,
-                followUp
-            "
-            class="rf-filters-loading"
-            role="status"
-            aria-live="polite"
-        >
-            <span></span>
-
-            Atualizando fila...
-        </div>
-
 
         <div class="rf-filter-main">
 
-            <input
+            <div class="lf36-filter-field">
+    <label for="lf36-filter-search">Empresa ou CNPJ</label>
+    <input id="lf36-filter-search"
                 type="search"
                 wire:model.live.debounce.350ms="search"
                 class="rf-input"
                 placeholder="Buscar empresa ou CNPJ..."
             >
+</div>
 
 
-            <select
+            <div class="lf36-filter-field">
+    <label for="lf36-filter-priority">Prioridade</label>
+    <select id="lf36-filter-priority"
                 wire:model.live="priority"
                 class="rf-select"
             >
@@ -4451,9 +4780,12 @@ new class extends Component
                     Prioridade baixa
                 </option>
             </select>
+</div>
 
 
-            <select
+            <div class="lf36-filter-field">
+    <label for="lf36-filter-icp">ICP</label>
+    <select id="lf36-filter-icp"
                 wire:model.live="icp"
                 class="rf-select"
             >
@@ -4477,9 +4809,12 @@ new class extends Component
                     ICP D
                 </option>
             </select>
+</div>
 
 
-            <select wire:model.live="crmSituation" class="rf-select lv15-crm-filter"
+            <div class="lf36-filter-field">
+    <label for="lf36-filter-crmSituation">Situação CRM</label>
+    <select id="lf36-filter-crmSituation" wire:model.live="crmSituation" class="rf-select lv15-crm-filter"
                     aria-label="Situação CRM">
                 <option value="">Situação CRM — Todas</option>
                 <option value="new">Novo — sem presença no HubSpot</option>
@@ -4488,6 +4823,7 @@ new class extends Component
                 <option value="reprospecting">Reprospecção — sem contato há 90 dias</option>
                 <option value="waiting">Aguardando retorno — tarefa pendente</option>
             </select>
+</div>
 
 
 
@@ -4504,7 +4840,9 @@ new class extends Component
                 $this->isCommercialManager()
             )
 
-                <select
+                <div class="lf36-filter-field">
+    <label for="lf36-filter-owner">Responsável</label>
+    <select id="lf36-filter-owner"
                     wire:model.live="owner"
                     class="rf-select"
                 >
@@ -4534,15 +4872,19 @@ new class extends Component
                     @endforeach
 
                 </select>
+</div>
 
             @else
-
-                <div></div>
-
+                <div class="lf36-readonly-owner">
+                    <span>Responsável</span>
+                    <strong>Minha carteira</strong>
+                </div>
             @endif
 
 
-            <select
+            <div class="lf36-filter-field">
+    <label for="lf36-filter-state">Estado</label>
+    <select id="lf36-filter-state"
                 wire:model.live="state"
                 class="rf-select"
             >
@@ -4563,6 +4905,7 @@ new class extends Component
 
                 @endforeach
             </select>
+</div>
 
 
             @if (
@@ -4622,23 +4965,29 @@ new class extends Component
         @include('partials.leads-active-filters-v11')
     </section>
 
-    @include('partials.leads-crm-stage-strip')
+    @if ($this->isCommercialManager())
+            @include('partials.leads-figma-stages-v36')
+        @endif
+
+        {{-- Faixa original preservada: evita perda de filtros e usa crmStageOptions. --}}
+        <details class="lf361-pipeline-access" aria-label="Pipeline dos negócios da minha carteira">
+            <summary class="lf361-pipeline-summary">
+                <span class="lf37-personal-title">Pipeline HubSpot · Minha carteira</span>
+                <span class="lf361-pipeline-open-label lf37-personal-meta">{{ collect($this->crmStageOptions)->sum('count') }} negócio(s) dos meus leads · Ver etapas</span>
+            </summary>
+            @include('partials.leads-crm-stage-strip')
+        </details>
+    @endif {{-- fim da interface da fila com CNPJ --}}
 
 
 
 
-@include(
-        'partials.hubspot-unmatched-leads'
-    )
+@if ($hubSpotOnly)
+        @include('partials.leads-figma-crm-v36')
+    @endif
 
 
-    @if (
-        ! $hubSpotOnly
-        && (
-            $this->leads->total() > 0
-            || $this->hubSpotOnlyLeads->total() === 0
-        )
-    )
+    @if (! $hubSpotOnly) {{-- EC_V42: tabela sempre visível mesmo com zero leads --}}
 
     @if ($dashboardView !== '' || $dashboardStage !== '' || $dashboardCompany !== '')
         <section class="rf-dashboard-drilldown" aria-label="Filtro aplicado pelo dashboard">
@@ -4660,42 +5009,61 @@ new class extends Component
         </section>
     @endif
 
-    <section class="rf-panel rf-list-panel" x-data="{ selectedIds: [] }">
+    <section class="rf-panel rf-list-panel" x-data="{ selectedIds: $wire.entangle('selectedLeadIds').live, stageSelectedIds: $wire.entangle('selectedGlobalDealIds').live }">
 
-        <div class="rf-list-toolbar">
-            <div class="lv13-selected" x-show="selectedIds.length > 0" x-cloak>
-                <strong x-text="selectedIds.length + ' selecionado(s)'"></strong>
-                <button type="button" x-on:click="selectedIds = []">Limpar seleção</button>
+        <div class="rf-list-toolbar lf364-list-toolbar" data-testid="leads-list-toolbar">
+            <div class="lf364-list-heading">
+                <h2 class="lf36-list-title">Empresas para trabalhar</h2>
+                <span class="lf364-list-hint">Sua fila de prospecção e acompanhamento</span>
+                @if ($globalHubSpotStage !== '')
+                    {{-- EC_PROSPECTOR_V47: filtro ativo no cabeçalho usual da fila. --}}
+                    <button type="button" class="lf47-active-stage-chip" wire:click="clearGlobalHubSpotStageView"
+                            title="Remover filtro da etapa do HubSpot" aria-label="Limpar etapa selecionada">
+                        <span>Negócios do HubSpot · {{ $globalHubSpotStage }}</span>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9"
+                             stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+                        <span class="sr-only">Limpar etapa</span>
+                    </button>
+                @endif
+
+                @if ($personalHubSpotStage !== '')
+                    <button type="button" class="lf47-active-stage-chip lf48-personal-stage-chip"
+                            wire:click="clearPersonalHubSpotStageView" aria-label="Limpar etapa da minha carteira"
+                            title="Remover filtro da etapa da sua carteira">
+                        <span>Minha carteira · {{ $personalHubSpotStage }}</span>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                             stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+                            <path d="M6 6l12 12M18 6 6 18"/>
+                        </svg>
+                        <span class="sr-only">Limpar etapa</span>
+                    </button>
+                @endif
+
             </div>
-
-            <div>
-
-                <strong>
-                    {{
-                        number_format(
-                            $this->leads->total(),
-                            0,
-                            ',',
-                            '.'
-                        )
-                    }}
-                    leads encontrados
-                </strong>
-
-                <span>
-                    Ordenados pela necessidade
-                    de atenção comercial e score.
-                </span>
-
+            <div class="lf364-list-results">
+                <strong>{{ number_format($globalHubSpotStage !== '' ? $this->globalHubSpotStageDeals->total() : ($personalHubSpotStage !== '' ? $this->personalHubSpotStageDeals->total() : $this->leads->total()), 0, ',', '.') }} {{ $globalHubSpotStage !== '' || $personalHubSpotStage !== '' ? 'negócios na etapa' : 'leads encontrados' }}</strong>
+                <span>Ordenados por atenção comercial e score</span>
             </div>
-
-
-
-
         </div>
 
+        {{-- Controles de seleção em faixa própria: nunca sobrepor o contador. --}}
+        <div class="lf364-selection-bar" data-testid="leads-selection-bar"
+             x-show="($wire.globalHubSpotStage !== '' || $wire.personalHubSpotStage !== '') ? stageSelectedIds.length > 0 : selectedIds.length > 0" x-cloak aria-live="polite" role="status">
+            <div class="lf364-selection-message">
+                <span class="lf364-selection-indicator" aria-hidden="true"></span>
+                <strong x-text="($wire.globalHubSpotStage !== '' || $wire.personalHubSpotStage !== '') ? stageSelectedIds.length : selectedIds.length"></strong>
+                <span x-text="($wire.globalHubSpotStage !== '' || $wire.personalHubSpotStage !== '') ? 'negócios selecionados nesta página' : 'leads selecionados nesta página'"></span>
+            </div>
+            <button type="button" class="lf364-selection-clear"
+                    x-on:click="selectedIds = []; stageSelectedIds = []; $el.closest('.rf-list-panel').querySelectorAll('input[type=checkbox]').forEach(box => box.checked = false)">
+                Limpar seleção
+            </button>
+        </div>
 
         <div class="rf-list-scroll">
+            @if (($globalHubSpotStage !== '' && $this->isCommercialManager()) || $personalHubSpotStage !== '')
+                @include('partials.leads-global-stage-list-v45')
+            @else
 
             <div class="rf-list-head">
 
@@ -5296,10 +5664,10 @@ new class extends Component
                         </div>
 
                         <div class="lv23-actions" aria-label="Ações comerciais de {{ $lead->corporate_name }}">
-                            <a href="{{ route('companies.show', $lead) }}" wire:navigate title="Abrir dossiê completo">Dossiê ↗</a>
+                            <a href="{{ route('companies.show', $lead) }}" wire:navigate title="Abrir dossiê completo" class="lf37-row-action lf37-dossier-action"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg><span class="lf37-action-sr">Dossiê ↗</span><span aria-hidden="true">Dossiê</span></a>
                             @if ($hubSpotActionUrl)
                                 <a href="{{ $hubSpotActionUrl }}" target="_blank" rel="noopener noreferrer"
-                                   class="lv23-hubspot" title="Abrir no HubSpot">HubSpot ↗</a>
+                                   class="lv23-hubspot lf37-row-action lf37-hubspot-action" title="Abrir no HubSpot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7M10 14 21 3"/><path d="M20 13v5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h5"/></svg><span class="lf37-action-sr">HubSpot ↗</span><span aria-hidden="true">HubSpot</span></a>
                             @endif
                             @if ($this->isCommercialManager() && $assignedUser === null)
                                 <button type="button" wire:click="claimLead({{ $lead->id }})"
@@ -5320,27 +5688,41 @@ new class extends Component
 
             @empty
 
-                <div class="rf-empty-state">
-
+                <div class="rf-empty-state lf43-empty-state">
+                    {{-- EC_PROSPECTOR_V43: apresentação compacta sem lupa escura gigante. --}}
+                    <span class="lf43-empty-visual" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4.5" y="4.5" width="15" height="15" rx="3"/>
+                            <path d="M8 10h8M8 14h5"/>
+                        </svg>
+                    </span>
                     <strong>
                         Nenhum lead encontrado
                     </strong>
 
                     <span>
-                        Ajuste os filtros para
-                        ampliar a busca.
+                        @if ($globalHubSpotStage !== '')
+                            Nenhuma empresa deste negócio está vinculada à fila fiscal. Identifique o CNPJ na lista de negócios do HubSpot acima.
+                        @elseif ($dueActionOnly)
+                            Nenhuma tarefa aberta com esse vencimento foi encontrada nas empresas da sua carteira.
+                        @elseif ($owner === 'unassigned')
+                            Nenhuma empresa sem responsável corresponde aos filtros.
+                        @else
+                            Nenhuma empresa corresponde aos filtros atuais. Você pode limpar os filtros para voltar à fila completa.
+                        @endif
                     </span>
-
+                    @if ($dueActionOnly || $owner !== '' || $search !== '' || $globalHubSpotStage !== '' || $crm !== '')
+                        <button type="button" class="lf43-empty-reset" wire:click="clearFilters">Limpar filtros e ver todos</button>
+                    @endif
                 </div>
 
             @endforelse
 
+            @endif
+
         </div>
 
-
-        @if (
-            $this->leads->hasPages()
-        )
+        @if ($globalHubSpotStage === '' && $personalHubSpotStage === '' && $this->leads->hasPages())
 
             <div class="rf-pagination">
 
@@ -5472,6 +5854,22 @@ new class extends Component
 
     @endif
 
+
+
+    {{-- Empresas do HubSpot sem CNPJ também aparecem na busca geral. --}}
+    {{-- EC_PROSPECTOR_V42: busca geral preserva lista fiscal e permite vincular CRM sem CNPJ. --}}
+    @if (! $hubSpotOnly && $this->isCommercialManager() && (
+        $linkingHubSpotCompanyId !== null
+        || (trim($search) !== '' && $this->hubSpotOnlyLeads->total() > 0)
+    ))
+        <div class="lf361-crm-secondary lf42-crm-inline-results">
+            <div class="lf42-crm-inline-heading">
+                <strong>Encontramos no HubSpot, sem CNPJ vinculado</strong>
+                <span>Identifique a empresa diretamente aqui, sem sair da fila comercial.</span>
+            </div>
+            @include('partials.hubspot-unmatched-leads')
+        </div>
+    @endif
 </div>
 
 </div>

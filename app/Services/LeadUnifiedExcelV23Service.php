@@ -15,10 +15,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /** Export precisely the selected Companies and/or HubSpot-only Companies. */
 final class LeadUnifiedExcelV23Service
 {
+    // EC_PROSPECTOR_V51_CONTACT_COLUMNS: uma coluna para o nome, seguida por telefone e e-mail.
     private const HEADERS = [
         'Empresa', 'CNPJ', 'Cidade', 'UF', 'Score SDR', 'Prioridade', 'ICP',
         'Responsável', 'Status comercial', 'Status CRM', 'Próxima ação',
-        'Telefones', 'E-mails', 'Exportação', 'Resumo exportação',
+        'Nome do contato', 'Telefones', 'E-mails', 'Exportação', 'Resumo exportação',
         'HubSpot Company ID', 'HubSpot Deal ID', 'Etapas HubSpot',
         'Origem', 'Última atividade HubSpot',
     ];
@@ -44,11 +45,14 @@ final class LeadUnifiedExcelV23Service
                 'hubSpotLead',
                 'leadWorkState.assignedUser',
                 'hubSpotCompanies.commercialDeals',
+                'hubSpotCompanies.contacts',
+                'hubSpotCompanies.commercialDeals.contacts',
             ]);
 
         (new \Illuminate\Database\Eloquent\Collection($crmOnlyCompanies->all()))
-            ->loadMissing(['deals', 'contacts', 'tasks']);
+            ->loadMissing(['deals.contacts', 'contacts', 'tasks']);
 
+        $contactExporter = app(HubSpotContactExportV50Service::class);
         $normal = app(LeadExportService::class)->rows($companies);
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
@@ -85,12 +89,18 @@ final class LeadUnifiedExcelV23Service
                     $company->hubSpotLead?->getAttribute('last_activity_at')
                 );
             }
+            if ($company instanceof Company) {
+                $people = $contactExporter->forFiscalCompany($company);
+                $row['Nome do contato'] = $people['names'];
+                $row['Telefones'] = $contactExporter->withAssociatedContacts((string) $row['Telefones'], $people['namedPhones']);
+                $row['E-mails'] = $contactExporter->withAssociatedContacts((string) $row['E-mails'], $people['namedEmails']);
+            }
             $this->writeRow($sheet, $lineNumber++, $row);
         }
         foreach ($crmOnlyCompanies as $company) {
             $this->writeRow($sheet, $lineNumber++, $this->hubSpotRow($company));
         }
-        $lastCol = 'T';
+        $lastCol = 'U';
         $sheet->getStyle('A1:'.$lastCol.'1')->getFont()->setBold(true);
         $sheet->freezePane('A2');
         $sheet->setAutoFilter('A1:'.$lastCol.'1');
@@ -116,15 +126,13 @@ final class LeadUnifiedExcelV23Service
     /** @return array<string,string> */
     public function hubSpotRow(HubSpotCompany $company): array
     {
-        $company->loadMissing(['deals', 'contacts', 'tasks']);
+        $company->loadMissing(['deals.contacts', 'contacts', 'tasks']);
+        $contactExporter = app(HubSpotContactExportV50Service::class);
+        $people = $contactExporter->forHubSpotCompany($company);
         $stages = $company->deals->pluck('stage_label')->filter()->unique()->implode(' | ');
-        $emails = $company->contacts->pluck('email')->filter()->unique()->implode(' | ');
+        $emails = ''; // E-mails de contatos são acrescentados com o nome correspondente.
         // Inclui o telefone da Company e dos contatos sem violar o tipo do Collection.
         $phoneValues = [(string) ($company->phone ?? '')];
-        foreach ($company->contacts as $contact) {
-            $phoneValues[] = (string) ($contact->phone ?? '');
-            $phoneValues[] = (string) ($contact->mobile_phone ?? '');
-        }
         $phones = collect($phoneValues)
             ->map(static fn (string $phone): string => trim($phone))
             ->filter(static fn (string $phone): bool => $phone !== '')
@@ -134,6 +142,8 @@ final class LeadUnifiedExcelV23Service
         $nextDue = $openTasks->pluck('due_at')->filter()->sort()->first();
         $nextDueText = $this->displayDate($nextDue);
         $lastActivity = $this->displayDate($company->getAttribute('last_activity_at'));
+        $emails = $contactExporter->withAssociatedContacts($emails, $people['namedEmails']);
+        $phones = $contactExporter->withAssociatedContacts($phones, $people['namedPhones']);
 
         return [
             'Empresa' => (string) ($company->name ?: 'Empresa sem nome'),
@@ -147,6 +157,7 @@ final class LeadUnifiedExcelV23Service
             'Status comercial' => (string) ($company->lead_status ?? ''),
             'Status CRM' => 'HubSpot sem vínculo fiscal',
             'Próxima ação' => $nextDueText,
+            'Nome do contato' => $people['names'],
             'Telefones' => $phones,
             'E-mails' => $emails,
             'Exportação' => '',

@@ -250,12 +250,7 @@ final class HubSpotActivitySyncService
                             ->object_id,
                     ],
                     [
-                        'title' => mb_strimwidth(
-                            $title,
-                            0,
-                            180,
-                            '…'
-                        ),
+                        'title' => $title,
 
                         'description' => $description,
 

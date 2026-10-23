@@ -10,9 +10,12 @@
             $ds25Bundle = $ds25MetricsService->snapshotWithCompanyIds();
             $ds25Metrics = $ds25Bundle['summary'];
             $ds25Deals = $this->myHubSpotStageSummary;
+            // EC_PROSPECTOR_V40: contagem individual de TAREFAS vencidas ou para hoje.
+            $ds25MyDueTasks = app(\App\Services\DashboardHubSpotDueTasksV40Service::class)
+                ->forUser((int) auth()->id());
             $ds25Stages = $ds25Deals['stages'] ?? [];
-            $ds25FirstStages = array_slice($ds25Stages, 0, 7);
-            $ds25RemainingStages = array_slice($ds25Stages, 7);
+            $ds25FirstStages = $ds25Stages;
+            $ds25RemainingStages = [];
             $ds25StageMax = max([1, ...array_map(static fn (array $stage): int => (int) ($stage['value'] ?? 0), $ds25FirstStages)]);
             $ds25CrmWithoutCnpj = \App\Models\HubSpotCompany::query()
                 ->whereNull('company_id')
@@ -99,9 +102,9 @@
                     'url' => route('leads.index', ['hubSpotOnly' => 1]),
                 ],
                 [
-                    'title' => 'Aguardando retorno', 'detail' => 'Leads que precisam de acompanhamento',
-                    'value' => $commercial['waiting_total'], 'tone' => 'amber', 'icon' => 'activity',
-                    'url' => route('leads.index', ['workStatus' => 'waiting']),
+                    'title' => 'Aguardando retorno', 'detail' => 'Tarefas abertas vencidas ou com vencimento hoje',
+                    'value' => $ds25MyDueTasks['total'], 'tone' => 'amber', 'icon' => 'activity',
+                    'url' => route('leads.index', ['dueActionOnly' => 1]),
                 ],
             ];
 
@@ -158,8 +161,8 @@
         @endphp
         @php
             // Figma D01: ordem e desenho reais, sem dados demonstrativos.
-            $ef29Stages = array_slice($ds25Stages, 0, 4);
-            $ef29ExtraStages = array_slice($ds25Stages, 4);
+            $ef29Stages = array_slice($ds25Stages, 0, 5); // EC_PROSPECTOR_V41: cinco maiores.
+            $ef29ExtraStages = array_slice($ds25Stages, 5); // Expande abaixo do grafico, sem scrollbar.
             $ef29StageMax = max([1, ...array_map(static fn (array $row): int => (int) ($row['value'] ?? 0), $ef29Stages)]);
             $ef29TopStates = array_slice($s['states'], 0, 4);
             $ef29TopCodes = array_values(array_filter(
@@ -321,8 +324,8 @@
                          'description' => $ds25Number($ds25NewCount).' empresas para iniciar relacionamento.',
                          'url' => route('leads.index', ['crmSituation' => 'new'])],
                         ['tag' => 'Rotina', 'title' => 'Aguardando retorno',
-                         'description' => $ds25Number($commercial['waiting_total']).' empresas com acompanhamento pendente.',
-                         'url' => route('leads.index', ['workStatus' => 'waiting'])],
+                         'description' => $ds25Number($ds25MyDueTasks['total']).' tarefas abertas vencidas ou para hoje (minha carteira HubSpot).',
+                         'url' => route('leads.index', ['dueActionOnly' => 1])],
                     ];
                 @endphp
                 @foreach ($ef29More as $card)
@@ -342,7 +345,8 @@
             $ef29CurrentUserId = (int) auth()->id();
             $ef29MyDeals = app(\App\Services\DashboardOwnedDealsV23Service::class)
                 ->forUser($ef29CurrentUserId);
-            $ef29MyStages = array_slice($ef29MyDeals['stages'], 0, 4);
+            $ef29MyStages = array_slice($ef29MyDeals['stages'], 0, 5); // EC_PROSPECTOR_V41 vendedor.
+            $ef29MyExtraStages = array_slice($ef29MyDeals['stages'], 5);
             $ef29Max = max([1, ...array_map(static fn (array $stage): int => (int) $stage['value'], $ef29MyStages)]);
             $ef29MyPortfolio = \App\Models\CompanyLeadWorkState::query()
                 ->where('assigned_user_id', $ef29CurrentUserId)
@@ -451,6 +455,25 @@
                         </a>
                     @endforeach
                 </div>
+                @if ($ef29MyExtraStages !== [])
+                    <details class="ef29-extra-stages">
+                        <summary>Ver todas as {{ count($ef29MyDeals['stages']) }} etapas do HubSpot</summary>
+                        <div class="ef29-bars">
+                            @foreach ($ef29MyExtraStages as $stage)
+                                @php
+                                    $ef29Value = (int) ($stage['value'] ?? 0);
+                                    $ef29Width = $ef29Value > 0 ? max(2, round(100 * $ef29Value / $ef29Max)) : 0;
+                                @endphp
+                                <a href="{{ route('leads.index', ['owner' => 'mine', 'dashboardStage' => $stage['label']]) }}"
+                                   wire:navigate class="ef29-bar-row">
+                                    <span class="ef29-bar-label">{{ $stage['label'] }}</span>
+                                    <span class="ef29-bar-track" aria-hidden="true"><i style="width: {{ $ef29Width }}%"></i></span>
+                                    <span class="ef29-bar-count">{{ number_format($ef29Value, 0, ',', '.') }} negócios</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </details>
+                @endif
             @else
                 <p class="ef29-empty">Ainda não há negócios associados a seu responsável HubSpot.</p>
             @endif
