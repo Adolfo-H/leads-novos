@@ -123,7 +123,7 @@ it('uses explicit drilldown links instead of decorative KPI trend lines', functi
     expect($source)
         ->toContain('dashboardStage')
         ->toContain('dashboardView')
-        ->toContain('ds25-stage')
+        ->toContain('ef29-bar-row')
         ->not->toContain('ds-v5-kpi-ornament')
         ->and($leads)
         ->toContain('public string $dashboardStage')

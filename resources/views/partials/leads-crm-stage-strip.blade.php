@@ -1,11 +1,11 @@
 {{-- Faixa estável: a seleção não modifica a largura do título nem dos números. --}}
-<section class="rf-stage-strip lv18-pipeline" aria-label="Etapas reais do HubSpot">
+<section class="rf-stage-strip lv18-pipeline lf34-pipeline" aria-label="Etapas reais do HubSpot" x-data="{allStages:false}">
     <div class="rf-stage-strip-heading lv18-pipeline-heading">
         <strong>Pipeline HubSpot</strong>
         <span>Etapas com negócios vinculados</span>
     </div>
 
-    <div class="rf-stage-strip-list lv18-pipeline-chips" role="group" aria-label="Filtrar por etapa do HubSpot">
+    <div class="rf-stage-strip-list lv18-pipeline-chips" x-bind:class="{'lf34-all-stages':allStages}" role="group" aria-label="Filtrar por etapa do HubSpot">
         @forelse ($this->crmStageOptions as $stage)
             @php
                 $lv18StageName = (string) $stage['label'];
@@ -35,6 +35,13 @@
             <span class="rf-stage-strip-empty">Nenhuma etapa disponível na base local.</span>
         @endforelse
     </div>
+
+    @if (count($this->crmStageOptions) > 3)
+        <button class="lf34-more-stages" type="button" x-on:click="allStages = ! allStages"
+            x-bind:aria-expanded="allStages ? 'true' : 'false'">
+            <span x-text="allStages ? 'Mostrar menos etapas' : 'Ver todas as etapas HubSpot'"></span>
+        </button>
+    @endif
 
     <div class="lv18-pipeline-clear-container">
         @if (str_starts_with($crm, 'stage:'))

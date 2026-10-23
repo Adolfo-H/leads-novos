@@ -10,7 +10,8 @@
 @if ($linkingHubSpotCompany)
 
 
-    <div class="rf-company-linker">
+    <div class="lf34-linker-overlay" x-on:keydown.escape.window="$wire.closeCompanyLink()" x-on:click.self="$wire.closeCompanyLink()">
+        <div class="rf-company-linker lf34-linker-dialog" role="dialog" aria-modal="true" aria-label="Identificar empresa no CRM">
 
         <div class="rf-linker-head">
 
@@ -435,6 +436,7 @@
             Prospector.
         </div>
 
+        </div>
     </div>
 
 @endif

@@ -161,14 +161,7 @@ return [
     */
 
     'features' => [
-        ...(
-            filter_var(
-                env('APP_ALLOW_REGISTRATION', false),
-                FILTER_VALIDATE_BOOL
-            )
-                ? [Features::registration()]
-                : []
-        ),
+        // EC_ACCESS_V24: registro aberto desativado; criação só mediante convite aprovado.
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

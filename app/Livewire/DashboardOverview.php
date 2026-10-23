@@ -38,6 +38,15 @@ class DashboardOverview extends Component
 
     public string $search = '';
 
+    /** Filtro opcional por UF da tabela da Base Empresarial (D02). */
+    public string $baseUf = '';
+
+    private const BRAZIL_UFS = [
+        'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+        'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+        'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
+    ];
+
     private const TITLES = [
         'companies' => 'Empresas cadastradas',
         'establishments' => 'Todos os estabelecimentos',
@@ -202,8 +211,48 @@ class DashboardOverview extends Component
             return;
         }
 
+        // A busca global sempre consulta a base completa, sem filtro de UF residual.
+        $this->baseUf = '';
         $this->openExplorer('companies');
         $this->search = $term;
+        unset($this->records);
+    }
+
+    /** Abre a base diretamente em Empresas, sem consultar o CRM. */
+    public function openBase(): void
+    {
+        $this->assertManager();
+        if ($this->dataset === '') {
+            $this->selectBaseDataset('companies');
+        }
+    }
+
+    /** Alterna as quatro abas reais do protótipo D02, sem rolagem inesperada. */
+    public function selectBaseDataset(string $dataset): void
+    {
+        $this->assertManager();
+        abort_unless(in_array($dataset, ['companies', 'establishments', 'active', 'cnaes'], true), 422);
+        $this->dataset = $dataset;
+        $this->filterValue = '';
+        $this->search = '';
+        $this->resetPage('overviewPage');
+        unset($this->records);
+    }
+
+    public function clearBaseFilters(): void
+    {
+        $this->assertManager();
+        $this->search = '';
+        $this->baseUf = '';
+        $this->resetPage('overviewPage');
+        unset($this->records);
+    }
+
+    public function updatedBaseUf(): void
+    {
+        $this->assertManager();
+        abort_unless($this->baseUf === '' || in_array($this->baseUf, self::BRAZIL_UFS, true), 422);
+        $this->resetPage('overviewPage');
         unset($this->records);
     }
 
@@ -220,6 +269,11 @@ class DashboardOverview extends Component
             $value = '';
         }
 
+        // Atalhos avançados e o mapa geográfico continuam globais;
+        // um filtro UF anterior da aba não deve interferir nesses atalhos.
+        if (! in_array($dataset, ['companies', 'establishments', 'active', 'cnaes', 'cnae'], true)) {
+            $this->baseUf = '';
+        }
         $this->dataset = $dataset;
         $this->filterValue = $value;
         $this->search = '';
@@ -234,6 +288,7 @@ class DashboardOverview extends Component
         $this->dataset = '';
         $this->filterValue = '';
         $this->search = '';
+        $this->baseUf = '';
         $this->resetPage('overviewPage');
         unset($this->records);
         $this->dispatch('overview-explorer-closed', dataset: $previous);
@@ -309,6 +364,8 @@ class DashboardOverview extends Component
         $term = mb_strtolower(trim(mb_substr($this->search, 0, 120)));
         $document = preg_replace('/[^A-Z0-9]/', '', mb_strtoupper($term)) ?? '';
         $like = '%'.$term.'%';
+        $baseUf = $this->baseUf;
+        abort_unless($baseUf === '' || in_array($baseUf, self::BRAZIL_UFS, true), 422);
 
         if ($this->dataset === 'companies') {
             $query = DB::table('companies as c')
@@ -317,6 +374,16 @@ class DashboardOverview extends Component
                     DB::table('establishments as e')->selectRaw('COUNT(*)')->whereColumn('e.company_id', 'c.id'),
                     'establishments_count'
                 );
+
+            if ($baseUf !== '') {
+                // Uma empresa aparece na UF somente se possuir unidade real nela.
+                $query->whereExists(function (Builder $q) use ($baseUf): void {
+                    $q->selectRaw('1')
+                        ->from('establishments as e')
+                        ->whereColumn('e.company_id', 'c.id')
+                        ->whereRaw('UPPER(TRIM(e.state)) = ?', [$baseUf]);
+                });
+            }
 
             if ($term !== '') {
                 $query->where(function (Builder $q) use ($like, $document): void {
@@ -337,7 +404,18 @@ class DashboardOverview extends Component
         }
 
         if ($this->dataset === 'cnaes') {
-            $query = Cnae::query()->whereHas('establishments')->withCount('establishments');
+            $query = Cnae::query()->whereHas('establishments');
+            if ($baseUf !== '') {
+                // Contagem por CNAE restrita às unidades da UF; não usa valor fictício.
+                $query->whereHas('establishments', static function ($q) use ($baseUf): void {
+                    $q->whereRaw('UPPER(TRIM(establishments.state)) = ?', [$baseUf]);
+                });
+                $query->withCount(['establishments' => static function ($q) use ($baseUf): void {
+                    $q->whereRaw('UPPER(TRIM(establishments.state)) = ?', [$baseUf]);
+                }]);
+            } else {
+                $query->withCount('establishments');
+            }
             if ($term !== '') {
                 $query->where(function ($q) use ($like): void {
                     $q->where('code', 'like', $like)->orWhereRaw('LOWER(description) LIKE ?', [$like]);
@@ -352,6 +430,10 @@ class DashboardOverview extends Component
             ->join('companies as c', 'c.id', '=', 'e.company_id')
             ->select('e.id', 'e.cnpj', 'e.type', 'e.registration_status', 'e.municipality_name',
                 'e.state', 'e.email', 'e.phone_1', 'e.phone_2', 'c.uuid as company_uuid', 'c.corporate_name');
+
+        if ($baseUf !== '') {
+            $query->whereRaw('UPPER(TRIM(e.state)) = ?', [$baseUf]);
+        }
 
         switch ($this->dataset) {
             case 'active':

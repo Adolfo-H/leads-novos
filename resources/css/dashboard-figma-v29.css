@@ -1,0 +1,578 @@
+/* ExportControl Prospector — Figma D01 / D01-V — layout estrutural V29.
+ * Estes estilos só afetam o Dashboard; não redesenham Leads/Empresas/Contatos.
+ * Dados e cliques vêm dos serviços existentes do Laravel/Livewire.
+ */
+body.ec-app-body:has(.ef29-activated) {
+    --ef29-background: #f5f7f9;
+    --ef29-panel: #fff;
+    --ef29-border: #dbe4e8;
+    --ef29-text: #153047;
+    --ef29-muted: #607589;
+    --ef29-green: #078578;
+    --ef29-green-quiet: #e3f5f0;
+    background: var(--ef29-background) !important;
+}
+/* Cabeçalho global, SOMENTE na página Dashboard. O padrão Figma é branco. */
+body.ec-app-body:has(.ef29-activated) .ec-topbar {
+    background: #fff !important;
+    color: #173149 !important;
+    border-bottom: 1px solid #e0e8ec !important;
+    box-shadow: none !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar-context .ec-topbar-eyebrow { display: none !important; }
+body.ec-app-body:has(.ef29-activated) .ec-topbar-context .ec-topbar-title {
+    color: #465d72 !important; font-weight: 550; font-size: 13px;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-topbar-profile-name { color: #173149 !important; }
+body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-topbar-profile-chevron { color: #607589 !important; }
+body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-topbar-avatar {
+    color: #0d8074 !important; background: #e2f2ed !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-global-search.ec-global-search--desktop {
+    height: 40px; margin-inline: auto 8px; max-width: 340px; flex-grow: 0;
+    background: #f2f5f7 !important; border: 1px solid transparent !important;
+    color: #5f788b !important; border-radius: 9px;
+}
+body.ec-app-body:has(.ef29-activated) .ec-global-search input { color: #566e83 !important; }
+body.ec-app-body:has(.ef29-activated) .ec-global-search input::placeholder { color: #566e83 !important; }
+body.ec-app-body:has(.ef29-activated) .ec-global-search kbd { display: none !important; }
+body.ec-app-body:has(.ef29-activated) .ec-global-search:focus-within { border-color: #21a396 !important; }
+/* A barra de navegação mantém o navy e os controles existentes. */
+body.ec-app-body:has(.ef29-activated) .ec-sidebar,
+body.ec-app-body:has(.ef29-activated) .ec-sidebar [data-flux-sidebar] {
+    background: #071c31 !important; color: #d5e4ec !important;
+    border-right-color: #132d44 !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-sidebar-world-v7 { display: none !important; }
+body.ec-app-body:has(.ef29-activated) .ec-sidebar-group [data-flux-sidebar-group-heading] {
+    text-transform: uppercase !important; letter-spacing: .035em !important;
+    font-size: 11px !important; color: #a2b8c7 !important; font-weight: 500 !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-sidebar .ec-nav-item:is([data-current],[aria-current="page"]) {
+    background: #153f3e !important; color: #41d8ce !important;
+    box-shadow: none !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-sidebar .ec-nav-item:is([data-current],[aria-current="page"])::before { display: none !important; }
+body.ec-app-body:has(.ef29-activated) .ec-main { background: var(--ef29-background) !important; }
+
+/* Frame D01: espaçamento do Figma (não a antiga faixa com globo). */
+.ec-overview.ec-strategic-v4.ef29-activated {
+    max-width: 1440px; width: 100%; padding: 28px clamp(18px,2.2vw,34px) 32px;
+    margin-inline: auto; gap: 0; color: #153047 !important;
+    --eo-text: #153047 !important; --eo-muted: #607589 !important;
+    --eo-bg: #fff !important; --eo-bg-soft: #f5f7f9 !important;
+    --eo-line: #dbe4e8 !important; --eo-teal: #078578 !important;
+}
+.ec-overview.ef29-activated .ec-dash-pane { min-width: 0; }
+.ec-overview.ef29-activated .ef29-dashboard {
+    width: 100%; min-width: 0; display: flex; flex-direction: column;
+    gap: 0; color: #153047; font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    font-size: 14px; line-height: 1.45;
+}
+.ef29-dashboard *, .ef29-dashboard *::before, .ef29-dashboard *::after { box-sizing: border-box; }
+.ef29-dashboard :is(h1,h2,p) { margin: 0 !important; }
+.ef29-dashboard a { text-decoration: none; color: inherit; }
+.ef29-dashboard :is(a,button,summary):focus-visible { outline: 2px solid #078578; outline-offset: 3px; }
+.ef29-dashboard button { font: inherit; }
+.ef29-intro { padding: 2px 0 20px; }
+.ef29-intro-meta { display: flex; align-items: center; gap: 12px; min-height: 29px; color: #72869a; font-size: 11px; font-weight: 550; }
+.ef29-tag {
+    display: inline-flex; align-items: center; width: max-content; max-width: 100%;
+    padding: 6px 11px; border-radius: 999px; color: #078578;
+    background: #e4f5f0; font-size: 11px; line-height: 1.15; font-weight: 650;
+}
+.ef29-intro h1 { color: #143049 !important; font-weight: 780 !important; letter-spacing: -.042em !important; font-size: clamp(27px,2.4vw,37px) !important; line-height: 1.22 !important; margin: 10px 0 8px !important; }
+.ef29-intro p { color: #637a8d !important; font-size: 14px !important; margin: 0 0 12px !important; }
+.ef29-intro-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ef29-button {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 37px; padding: 8px 14px; border: 1px solid #d5e1e6;
+    background: #fff; border-radius: 7px; color: #173149 !important;
+    font-size: 13px; font-weight: 650; cursor: pointer; text-decoration: none;
+}
+.ef29-button:hover { border-color: #068779; }
+.ef29-button--main { color: #fff !important; background: #078578 !important; border-color: #078578 !important; }
+.ef29-button--main:hover { background: #086c62 !important; }
+.ef29-button:disabled { opacity: .65; cursor: progress; }
+
+/* KPI horizontais, três cartões amplos e SEM decoração de ícone. */
+.ef29-dashboard .ef29-kpis { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; margin-bottom: 20px; }
+.ef29-dashboard .ef29-kpi {
+    display: flex; flex-direction: column; min-width: 0; min-height: 116px;
+    padding: 19px 20px 16px; background: #fff; border: 1px solid #dbe4e8;
+    border-radius: 11px; color: #173149 !important; box-shadow: none;
+    transition: border-color .14s, transform .14s;
+}
+.ef29-dashboard .ef29-kpi:hover { border-color: #0b9084; transform: translateY(-1px); }
+.ef29-dashboard .ef29-kpi--accent { border-color: #13a192; }
+.ef29-kpi-title { display: block; color: #617789; font-size: 12px; }
+.ef29-kpi-value { display: block; font-size: clamp(27px,2.15vw,34px); line-height: 1.25; margin: 7px 0 2px; color: #153047; letter-spacing: -.038em; font-weight: 780; font-variant-numeric: tabular-nums; }
+.ef29-kpi-caption { display: block; color: #607589; font-size: 11px; line-height: 1.45; }
+
+.ef29-layout { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(0,.9fr); gap: 16px; align-items: start; min-width: 0; margin-bottom: 20px; }
+.ef29-card {
+    min-width: 0; padding: 22px; background: #fff; border: 1px solid #dbe4e8;
+    border-radius: 11px; color: #153047;
+}
+.ef29-dashboard h2 { color: #193149 !important; font-size: 17px !important; font-weight: 760 !important; letter-spacing: -.023em !important; line-height: 1.3 !important; }
+.ef29-card-title { display: flex; align-items: baseline; gap: 10px; justify-content: space-between; }
+.ef29-card-title>span { font-size: 11px; color: #7a8da0; white-space: nowrap; }
+.ef29-stages { min-height: 198px; }
+.ef29-bars { display: grid; gap: 16px; margin-top: 18px; }
+.ef29-bar-row {
+    display: grid; grid-template-columns: minmax(105px,1fr) minmax(95px,1fr) minmax(72px,auto);
+    column-gap: 14px; align-items: center; min-height: 23px;
+    font-size: 12px; font-weight: 450; color: #607589 !important;
+    border-radius: 5px;
+}
+.ef29-bar-row:hover .ef29-bar-label { color: #078578 !important; text-decoration: underline; }
+.ef29-bar-row .ef29-bar-track { height: 6px; background: #edf2f4; border-radius: 99px; overflow: hidden; }
+.ef29-bar-track i { display: block; height: 100%; background: #078578; border-radius: inherit; }
+.ef29-bar-count { text-align: right; font-size: 11px; color: #244059; font-weight: 580; font-variant-numeric: tabular-nums; }
+.ef29-extra-stages { margin-top: 17px; padding-top: 10px; border-top: 1px solid #eef2f4; }
+.ef29-extra-stages summary, .ef29-geographic summary { display: inline-flex; align-items: center; gap: 7px; color: #078578; font-size: 12px; font-weight: 650; cursor: pointer; }
+.ef29-extra-stages .ef29-bars { border-top: 1px solid #eef2f4; padding-top: 12px; }
+.ef29-empty { padding: 18px 0; color: #637a8d; font-size: 13px; }
+
+/* À direita, ações grandes como no Figma, não linhas comprimidas. */
+.ef29-action-panel>h2 { margin: 1px 0 12px !important; }
+.ef29-focus-list { display: grid; gap: 10px; }
+.ef29-focus {
+    display: flex; flex-direction: column; gap: 7px;
+    padding: 16px 18px; min-height: 77px;
+    border: 1px solid #dbe4e8; border-radius: 11px;
+    background: #fff; transition: border-color .14s;
+}
+.ef29-focus:hover { border-color: #078578; }
+.ef29-focus strong { color: #173149; font-size: 15px; line-height: 1.3; font-weight: 750; }
+.ef29-focus span { color: #65798c; font-size: 12px; }
+
+/* Mapa de UFs idêntico na hierarquia ao Figma, com mapa vetorial disponível em 'Detalhes'. */
+.ef29-map-panel {
+    overflow: hidden;
+}
+
+.ef29-map-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.ef29-map-header > div > p {
+    margin-top: 8px !important;
+    font-size: 12px !important;
+    color: #607589 !important;
+}
+
+.ef29-map-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid #cfe2e6;
+    border-radius: 10px;
+    background: #f9fcfc;
+    color: #078578;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: border-color .14s, background .14s, color .14s;
+}
+
+.ef29-map-link:hover {
+    border-color: #078578;
+    background: #eef9f6;
+    color: #066d63;
+}
+
+.ef29-map-link--inline {
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+}
+
+.ef29-map-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, .95fr);
+    gap: 22px;
+    align-items: start;
+}
+
+.ef29-map-schematic {
+    min-width: 0;
+}
+
+.ef29-map-grid {
+    margin: 8px auto 8px;
+    display: grid;
+    grid-template-columns: repeat(13, 34px);
+    grid-template-rows: repeat(13, 30px);
+    column-gap: 8px;
+    row-gap: 8px;
+    width: max-content;
+    max-width: 100%;
+    justify-content: center;
+}
+
+.ef29-dashboard .ef29-uf {
+    display: grid;
+    place-items: center;
+    height: 30px;
+    min-width: 34px;
+    padding: 0;
+    background: #f0f4f6;
+    border: 1px solid #dbe7ea;
+    border-radius: 8px;
+    font-size: 10px;
+    color: #607589;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 1px 0 rgba(15, 35, 52, 0.04);
+    transition: transform .12s, border-color .12s, background .12s;
+}
+
+.ef29-dashboard .ef29-uf--filled {
+    background: #e9f5f1;
+    color: #087a70;
+}
+
+.ef29-dashboard .ef29-uf--top {
+    background: #d9f2eb;
+    color: #078578;
+    border-color: #bfe5dc;
+}
+
+.ef29-dashboard .ef29-uf:hover {
+    border-color: #078578;
+    background: #cfeee5;
+    transform: translateY(-1px);
+}
+
+.ef29-map-footnote {
+    margin: 14px 0 0 !important;
+    font-size: 11px !important;
+    color: #718597 !important;
+}
+
+.ef29-map-geographic-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 18px;
+    background: #f8fbfc;
+    border: 1px solid #e2eaee;
+    border-radius: 12px;
+}
+
+.ef29-map-geographic-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.ef29-map-geographic-header strong {
+    color: #173149;
+    font-size: 14px;
+    font-weight: 760;
+}
+
+.ef29-map-geographic-header span {
+    color: #6b7f90;
+    font-size: 12px;
+}
+
+.ef29-geographic-body {
+    width: 100%;
+    min-height: 360px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0;
+}
+
+.ef29-geographic-body .ds-v7-map-svg {
+    width: min(100%, 430px);
+    max-height: 340px;
+}
+
+.ef29-map-geographic-footer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e4ecef;
+}
+
+.ef29-states-panel { min-height: 401px; }
+.ef29-states-panel>h2 { margin-bottom: 15px !important; }
+.ef29-table-scroll { overflow-x: auto; }
+.ef29-states-table { width: 100%; border-collapse: collapse; font-size: 12px; color: #244059; }
+.ef29-states-table thead { background: #f3f6f7; color: #708293; }
+.ef29-states-table th { padding: 11px 9px; font-size: 12px; font-weight: 500; text-align: left; }
+.ef29-states-table td { padding: 15px 9px; border-bottom: 1px solid #e5ecef; font-variant-numeric: tabular-nums; }
+.ef29-states-table td:first-child { font-weight: 700; }
+.ef29-states-table button { padding: 1px 0; background: none; border: 0; cursor: pointer; color: #244059; font-weight: 700; }
+.ef29-states-table button:hover { color: #078578; text-decoration: underline; }
+.ef29-states-footnote { margin-top: 15px !important; color: #738697 !important; font-size: 11px !important; }
+
+/* Três ações inferiores. */
+.ef29-more-actions { margin: 1px 0 0; }
+.ef29-more-actions>h2, .ef29-today>h2 { margin: 2px 0 14px !important; }
+.ef29-more-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
+.ef29-more-card {
+    display: flex; flex-direction: column; min-height: 156px; padding: 20px;
+    background: #fff; border: 1px solid #dbe4e8; border-radius: 11px;
+    color: #153047 !important; transition: border-color .14s;
+}
+.ef29-more-card:hover { border-color: #078578; }
+.ef29-more-card strong { color: #193149; font-size: 15px; font-weight: 750; margin-top: 15px; }
+.ef29-more-card>span:not(.ef29-tag) { color: #607589; font-size: 12px; margin-top: 9px; flex: 1; }
+.ef29-more-card em, .ef29-more-card>a { color: #078578 !important; font-size: 12px; font-style: normal; font-weight: 650; margin-top: 14px; }
+.ef29-more-card em span { margin-left: 7px; font-size: 19px; }
+.ef29-more-card--empty { background: #fbfcfd; }
+.ef29-footer { margin-top: 22px; padding-bottom: 6px; color: #8b9cac; font-size: 11px; }
+
+/* D01-V: visão personalizada real do vendedor. */
+.ef29-today { margin-top: 3px; }
+.ef29-seller-deals { margin-top: 22px; }
+.ef29-seller-deals .ef29-bars { gap: 15px; }
+.ef29-seller-note { display: flex; gap: 15px; padding: 22px 16px 0; color: #607589; font-size: 13px; }
+.ef29-seller-note>span { font-size: 22px; color: #078578; }
+.ef29-seller-note p strong { color: #3e596d; }
+
+/* Navegação da base D02 reaproveitada: visual claro, filtragem/paginação intactas. */
+.ec-overview.ef29-activated .ds-v4-base-back button { border-radius: 7px; padding: 9px 14px; background: #fff; border: 1px solid #dbe4e8; color: #173149; }
+.ec-overview.ef29-activated .eo-header h2 { color: #143049; font-size: 26px; font-weight: 780; }
+.ec-overview.ef29-activated .eo-header p { color: #607589; }
+.ec-overview.ef29-activated .eo-panel,
+.ec-overview.ef29-activated .eo-kpi { color: #173149 !important; background: #fff !important; border: 1px solid #dbe4e8 !important; border-radius: 11px; box-shadow: none; }
+.ec-overview.ef29-activated .eo-table th { background: #f3f6f7 !important; color: #607589 !important; }
+.ec-overview.ef29-activated .eo-table td { color: #173149; border-bottom-color: #e1eaed; }
+.ec-overview.ef29-activated .eo-table tbody tr:hover { background: #f3f9f8 !important; }
+.ec-overview.ef29-activated .eo-search { background: #fff !important; color: #607589 !important; border: 1px solid #dbe4e8 !important; }
+.ec-overview.ef29-activated .eo-search input { color: #173149 !important; }
+.ec-overview.ef29-activated .eo-button-primary { background: #078578; color: #fff !important; border-color: #078578; }
+.ec-overview.ef29-activated .eo-button-quiet { background: #fff !important; color: #244059 !important; }
+.ec-overview.ef29-activated .eo-kpi-value { color: #143049 !important; }
+.ec-overview.ef29-activated .eo-kpi-label, .ec-overview.ef29-activated .eo-region { color: #244059 !important; }
+.ec-overview.ef29-activated .eo-footnote { color: #718597 !important; }
+
+@media (max-width: 1150px) {
+    .ef29-layout { grid-template-columns: minmax(0,1.32fr) minmax(0,1fr); }
+    .ef29-card { padding: 18px; }
+    .ef29-bar-row { grid-template-columns: minmax(80px,1fr) minmax(70px,1fr) minmax(63px,auto); gap: 9px; }
+
+    .ef29-map-split {
+        grid-template-columns: 1fr;
+    }
+
+    .ef29-map-grid {
+        grid-template-columns: repeat(13, 30px);
+        grid-template-rows: repeat(13, 28px);
+        column-gap: 6px;
+        row-gap: 6px;
+    }
+
+    .ef29-geographic-body {
+        min-height: 320px;
+    }
+
+    .ef29-geographic-body .ds-v7-map-svg {
+        width: min(100%, 460px);
+        max-height: 320px;
+    }
+}
+
+@media (max-width: 900px) {
+    .ef29-dashboard .ef29-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .ef29-layout { grid-template-columns: 1fr; }
+    .ef29-more-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+    .ef29-map-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ef29-map-grid {
+        grid-template-columns: repeat(13, 27px);
+        grid-template-rows: repeat(13, 25px);
+        column-gap: 5px;
+        row-gap: 5px;
+    }
+
+    .ef29-dashboard .ef29-uf {
+        min-width: 27px;
+        height: 25px;
+        font-size: 9px;
+    }
+}
+
+@media (max-width: 620px) {
+    .ec-overview.ec-strategic-v4.ef29-activated { padding: 18px 14px 32px; }
+    .ef29-intro h1 { font-size: 28px !important; }
+    .ef29-dashboard .ef29-kpis, .ef29-more-grid { grid-template-columns: 1fr; }
+    .ef29-dashboard .ef29-kpi { min-height: 101px; }
+    .ef29-bar-row { grid-template-columns: minmax(75px,1fr) minmax(60px,1.2fr) minmax(63px,auto); }
+    .ef29-card { padding: 16px; }
+    .ef29-states-panel { min-height: unset; }
+
+    .ef29-map-grid {
+        grid-template-columns: repeat(13, 22px);
+        grid-template-rows: repeat(13, 22px);
+        column-gap: 3px;
+        row-gap: 3px;
+    }
+
+    .ef29-dashboard .ef29-uf {
+        min-width: 22px;
+        height: 22px;
+        font-size: 8px;
+        border-radius: 6px;
+    }
+
+    .ef29-geographic-body {
+        min-height: 260px;
+    }
+
+    .ef29-geographic-body .ds-v7-map-svg {
+        width: min(100%, 320px);
+        max-height: 240px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ef29-dashboard :is(a,button) { transition: none !important; }
+}
+
+/* EC_TOPBAR_V31_START
+   Ajustes exclusivos do cabeçalho claro do Dashboard Figma D01.
+   Não altera a pesquisa, autenticação, menus ou permissões no backend.
+*/
+
+/* Título "Dashboard" e busca precisam de distância consistente. */
+@media (min-width: 1024px) {
+    body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-topbar-context {
+        flex: 0 0 auto;
+        min-width: max-content;
+        margin-right: 30px !important;
+    }
+
+    body.ec-app-body:has(.ef29-activated) .ec-topbar
+    .ec-global-search.ec-global-search--desktop {
+        flex: 0 1 340px !important;
+        width: min(340px, 32vw) !important;
+        max-width: 340px !important;
+        min-width: 190px;
+        margin: 0 !important;
+        margin-inline: 0 !important;
+    }
+}
+
+/* Perfil: texto escuro e legível em todos os estados do botão no tema claro. */
+body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-topbar-profile-trigger {
+    min-height: 42px !important;
+    padding: 4px 10px 4px 5px !important;
+    color: #17364a !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: 11px !important;
+    box-shadow: none !important;
+    transition: background-color 150ms ease, border-color 150ms ease !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-topbar-profile-trigger:is(:hover, :focus-visible, [aria-expanded="true"], [data-state="open"], [data-open]) {
+    color: #12384a !important;
+    background: #eaf6f3 !important;
+    border-color: #bee2d9 !important;
+    box-shadow: none !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-topbar-profile-trigger:focus-visible {
+    outline: 2px solid #14988b !important;
+    outline-offset: 2px;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-topbar-profile-name {
+    color: #17364a !important;
+    font-size: 12px !important;
+    font-weight: 650 !important;
+    line-height: 1.25;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-topbar-profile-chevron {
+    color: #527588 !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-topbar-avatar {
+    border: 1px solid #abdcd4 !important;
+    background: #dff5f0 !important;
+    color: #076d65 !important;
+    box-shadow: none !important;
+}
+
+/* Menu aberto: superfície branca, hierarquia de informações, contraste e foco. */
+body.ec-app-body:has(.ef29-activated) .ec-topbar-account-menu {
+    min-width: 260px !important;
+    max-width: min(360px, calc(100vw - 24px));
+    padding: 7px !important;
+    color: #18384d !important;
+    background: #ffffff !important;
+    border: 1px solid #d8e6e8 !important;
+    border-radius: 13px !important;
+    box-shadow: 0 16px 44px rgba(9, 35, 51, .16) !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar-account-menu .ec-profile-menu-header {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    padding: 11px 12px !important;
+    border-radius: 9px;
+    background: #f1f7f7;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar-account-menu .ec-profile-menu-name {
+    display: block;
+    color: #102d43 !important;
+    font-size: 13px !important;
+    font-weight: 750 !important;
+    line-height: 1.35;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar-account-menu .ec-profile-menu-email {
+    display: block;
+    color: #526f81 !important;
+    font-size: 11px !important;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar-account-menu .ec-profile-menu-item {
+    min-height: 39px !important;
+    color: #23465b !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 620 !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar-account-menu .ec-profile-menu-item:is(:hover, :focus-visible, [data-active], [data-highlighted]) {
+    color: #076d65 !important;
+    background: #eaf7f3 !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar-account-menu .ec-profile-menu-item svg {
+    color: #477083 !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar-account-menu .ec-profile-menu-item:is(:hover, :focus-visible, [data-active], [data-highlighted]) svg {
+    color: #0c8e80 !important;
+}
+body.ec-app-body:has(.ef29-activated) .ec-topbar-account-menu .ec-profile-menu-logout:is(:hover, :focus-visible) {
+    color: #9d3c36 !important;
+    background: #fff1f0 !important;
+}
+
+@media (min-width: 1024px) and (max-width: 1200px) {
+    body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-topbar-context { margin-right: 19px !important; }
+    body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-global-search.ec-global-search--desktop {
+        flex-basis: 260px !important;
+        width: min(260px, 27vw) !important;
+        min-width: 155px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    body.ec-app-body:has(.ef29-activated) .ec-topbar .ec-topbar-profile-trigger { transition: none !important; }
+}
+/* EC_TOPBAR_V31_END */

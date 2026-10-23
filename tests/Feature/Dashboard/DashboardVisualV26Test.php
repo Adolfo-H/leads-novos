@@ -8,7 +8,7 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-it('renders the V26 layout with real data sources and the interactive Brazil map', function (): void {
+it('renders Figma D01 on existing real sources and keeps the geographic map available', function (): void {
     Http::preventStrayRequests();
 
     $user = User::factory()->create(['email_verified_at' => now()]);
@@ -16,15 +16,15 @@ it('renders the V26 layout with real data sources and the interactive Brazil map
 
     Livewire::actingAs($user)
         ->test(DashboardOverview::class)
-        ->assertSee('Dashboard estratégico')
-        ->assertSee('MAIS MERCADOS')
+        ->assertSee('Sua operação, em perspectiva')
+        ->assertSee('Gestor ·')
         ->assertSee('Leads cadastrados')
-        ->assertSee('Leads sem responsável')
+        ->assertSee('Sem responsável')
         ->assertSee('Meus negócios por etapa')
-        ->assertSee('Ações rápidas')
-        ->assertSee('Concentração por estado')
-        ->assertSee('Prioridades comerciais')
-        ->assertSee('globe-hero.webp')
+        ->assertSee('Outras ações rápidas')
+        ->assertSee('Presença da carteira por estado')
+        ->assertSee('Comece por aqui')
+        ->assertSee('ef30-map-canvas')
         ->assertSee('ds-v7-map-svg');
 
     Http::assertNothingSent();
@@ -36,7 +36,7 @@ it('keeps management counts hidden from sellers', function (): void {
 
     Livewire::actingAs($user)
         ->test(DashboardOverview::class)
-        ->assertSee('Minha fila de leads')
+        ->assertSee('Sua próxima boa conversa')
         ->assertDontSee('Ações rápidas')
         ->assertDontSee('Leads sem responsável');
 });
@@ -50,8 +50,8 @@ it('retains existing source services and dashboard-only styles without invented 
         ->toContain('DashboardLeadMetricsV23Service')
         ->toContain('LeadCrmSituationService')
         ->toContain('myHubSpotStageSummary')
-        ->toContain('map-interactive-v7')
-        ->toContain('ds26-hero-motto')
+        ->toContain('map-panel-v30')
+        ->toContain('ef29-layout--first')
         ->toContain("'hubSpotOnly' => 1")
         ->toContain("'dashboardView' => 'overdue'")
         ->not->toContain('+12%');

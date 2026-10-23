@@ -64,7 +64,7 @@ it('links dashboard charts, risk alerts and profiles to corresponding Leads filt
     expect($blade)->toContain("'dashboardView' => 'all'")
         ->toContain("'dashboardView' => 'overdue'")
         ->toContain("'dashboardView' => 'stale90'")
-        ->toContain('Ações rápidas')
+        ->toContain('Outras ações rápidas')
         ->toContain('Meus negócios por etapa')
         ->not->toContain('Top oportunidades por CNAE');
     expect($leads)->toContain('public string $dashboardCompany')

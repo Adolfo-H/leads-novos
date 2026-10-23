@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Access\AccessAdminController;
+use App\Http\Controllers\Access\AccessInvitationController;
+use App\Http\Controllers\Access\AccessRequestController;
 use App\Http\Controllers\CampaignIntelligenceController;
 use App\Http\Controllers\CampaignProductionReadinessController;
 use App\Http\Controllers\CampaignUnsubscribeController;
@@ -17,7 +20,7 @@ Route::post(
         'webhooks.hubspot'
     );
 
-Route::view('/', 'welcome')->name('home');
+Route::get('/', static fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'))->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
@@ -59,6 +62,33 @@ Route::get('/email/descadastro/{token}', [CampaignUnsubscribeController::class, 
 Route::post('/email/descadastro/{token}', [CampaignUnsubscribeController::class, 'store'])
     ->middleware('throttle:10,1')->name('campaigns.unsubscribe.store');
 /* EC_EMAIL_CAMPAIGNS_V1_ROUTES_END */
+
+// EC_ACCESS_V24 — fluxo público de solicitação sem auto cadastro.
+Route::middleware(['guest', 'throttle:8,1'])->group(function (): void {
+    Route::get('/acesso/solicitar', [AccessRequestController::class, 'create'])
+        ->name('access.request.create');
+    Route::post('/acesso/solicitar', [AccessRequestController::class, 'store'])
+        ->name('access.request.store');
+    Route::get('/acesso/convite/{token}', [AccessInvitationController::class, 'show'])
+        ->where('token', '[a-f0-9]{64}')->name('access.invitation.show');
+    Route::post('/acesso/convite/{token}', [AccessInvitationController::class, 'activate'])
+        ->where('token', '[a-f0-9]{64}')->name('access.invitation.activate');
+});
+Route::middleware(['auth', 'verified', 'commercial.manager', 'throttle:20,1'])->group(function (): void {
+    Route::get('/acessos/solicitacoes', [AccessAdminController::class, 'index'])
+        ->name('access.requests.index');
+    Route::post('/acessos/solicitacoes/{accessRequest}/aprovar', [AccessAdminController::class, 'approve'])
+        ->name('access.requests.approve');
+    Route::post('/acessos/solicitacoes/{accessRequest}/recusar', [AccessAdminController::class, 'reject'])
+        ->name('access.requests.reject');
+    Route::post('/acessos/solicitacoes/{accessRequest}/reenviar', [AccessAdminController::class, 'resend'])
+        ->name('access.requests.resend');
+    Route::post('/acessos/solicitacoes/{accessRequest}/reenviar-aviso', [AccessAdminController::class, 'resendNotification'])
+        ->name('access.requests.resend-notification');
+    Route::post('/acessos/solicitacoes/{accessRequest}/revogar', [AccessAdminController::class, 'revoke'])
+        ->name('access.requests.revoke');
+});
+// EC_ACCESS_V24_END
 
 require __DIR__.'/settings.php';
 

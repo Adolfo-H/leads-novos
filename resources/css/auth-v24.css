@@ -1,0 +1,81 @@
+/* Pacote 24 - apenas telas de acesso (classes ec24). Não depende dos estilos antigos. */
+body.ec24-auth-body{margin:0;min-height:100vh;background:#f4f8fa!important;color:#09243a!important;font-family:Inter,'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+.ec24-auth,.ec24-auth *,.ec24-management,.ec24-management *{box-sizing:border-box}
+.ec24-auth{min-height:100vh;display:grid;grid-template-columns:minmax(320px,47%) minmax(0,1fr);}
+.ec24-brand{position:relative;min-height:100vh;overflow:hidden;color:#f4faff;background:linear-gradient(132deg,#041c32 4%,#042741 48%,#022137 100%)}
+.ec24-brand-layer{position:absolute;inset:0;background-image:linear-gradient(180deg,rgba(2,17,29,.20),rgba(3,21,36,.68)),url('/images/brand/login-background.png');background-position:center center;background-size:cover;opacity:.62;pointer-events:none}
+.ec24-brand::after{content:'';position:absolute;width:55vw;height:55vw;border:1px solid rgba(35,212,196,.12);border-radius:50%;left:36%;top:8%;pointer-events:none;box-shadow:0 0 0 140px rgba(24,178,169,.025)}
+.ec24-brand-content{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;padding:clamp(24px,4.1vw,72px)}
+.ec24-brand-logo{display:inline-flex;align-items:center;gap:14px;width:fit-content;color:white!important;text-decoration:none!important;font-size:16px;line-height:1.1;letter-spacing:.04em}
+.ec24-brand-logo img{width:54px;height:54px;object-fit:contain}
+.ec24-brand-logo span{display:flex;flex-direction:column;gap:5px}.ec24-brand-logo b{font-weight:800}.ec24-brand-logo small{font-size:15px;color:#b9d2e0;letter-spacing:.01em;font-weight:400}
+.ec24-brand-statement{margin:auto 0;max-width:640px;padding-block:55px 24px}
+.ec24-brand-kicker{display:block;color:#4ce0d3;font-size:13px;font-weight:800;letter-spacing:.105em}
+.ec24-brand-statement h1{font-size:clamp(34px,3.8vw,57px);line-height:1.12;font-weight:800;letter-spacing:-.045em;margin:25px 0 23px;color:#fff;max-width:590px}
+.ec24-brand-statement>p{font-size:clamp(16px,1.3vw,20px);line-height:1.6;color:#c4dbe7;margin:0;max-width:495px}
+.ec24-brand-features{margin-top:45px;display:grid;gap:24px}.ec24-brand-features>div{display:flex;align-items:center;gap:18px}.ec24-feature-symbol{width:54px;height:54px;flex:0 0 54px;display:grid;place-items:center;background:linear-gradient(140deg,rgba(35,212,191,.29),rgba(2,68,97,.65));border:1px solid rgba(85,228,217,.24);border-radius:13px;color:#9ffbf1;font-size:26px}.ec24-brand-features p{margin:0}.ec24-brand-features b{display:block;font-size:15px;color:#fff}.ec24-brand-features small{display:block;font-size:14px;line-height:1.55;color:#bbd0db;margin-top:2px}
+.ec24-brand-footer{font-size:12px;color:#7daabf;letter-spacing:.035em;margin-top:36px}
+.ec24-auth-main{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;padding:88px clamp(20px,5.5vw,95px) 30px;background:radial-gradient(circle at 90% 0,#f9fcff,transparent 55%),#f3f7fa}
+.ec24-auth-top{position:absolute;top:clamp(20px,3vw,42px);right:clamp(20px,3vw,60px);display:flex;gap:15px;align-items:center;color:#748598;font-size:14px}.ec24-auth-top a{text-decoration:none!important}.ec24-auth-top .ec24-top-back{color:#007f78;font-weight:700}.ec24-auth-top .ec24-outline,.ec24-management .ec24-outline{border:1px solid #b4e0dd;color:#087c76;border-radius:10px;padding:12px 19px;background:rgba(255,255,255,.63);font-weight:700;text-decoration:none}
+.ec24-auth-card{width:min(100%,630px);padding:clamp(24px,3.2vw,49px);background:#fff;border-radius:17px;box-shadow:0 20px 65px rgba(9,41,67,.075),0 0 0 1px rgba(19,70,92,.035)}
+.ec24-head{margin:0 0 27px}.ec24-overline{color:#6c8499;display:block;font-weight:800;letter-spacing:.085em;font-size:11px;margin-bottom:12px}.ec24-head h2{font-size:clamp(30px,2.3vw,40px);font-weight:800;line-height:1.12;letter-spacing:-.045em;margin:0 0 12px;color:#08253c!important}.ec24-head p{font-size:15px;line-height:1.5;color:#688197;margin:0}.ec24-head strong{color:#0d5b76;overflow-wrap:anywhere}
+.ec24-form{display:flex;flex-direction:column;gap:11px}.ec24-form>label,.ec24-two-col label{color:#12344d;font-size:13px;font-weight:750;margin:6px 0 0;display:block}
+.ec24-form input:not([type=checkbox]),.ec24-two-col input{display:block;width:100%;height:48px;border:1px solid #cfdde6!important;background:#fff!important;border-radius:9px;padding:10px 15px;color:#16364e!important;font-size:15px;box-shadow:none!important;outline:none;transition:border .2s,box-shadow .2s}
+.ec24-form input::placeholder{color:#8498aa}.ec24-form input:focus,.ec24-two-col input:focus{border-color:#0f9a90!important;box-shadow:0 0 0 3px rgba(20,176,165,.12)!important}
+.ec24-password-field{position:relative}.ec24-password-field input{padding-right:53px!important}.ec24-eye{position:absolute;right:7px;top:7px;height:33px;width:38px;color:#778b9b;display:grid;place-items:center;background:transparent;border:0;cursor:pointer;font-size:19px}
+.ec24-between{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:6px}.ec24-between a,.ec24-link-centered{color:#087c76;text-decoration:none;font-size:13px;font-weight:800}.ec24-checkbox{display:flex!important;align-items:center;gap:9px;font-size:13px!important;font-weight:500!important;color:#435b6d!important;margin:0!important;line-height:1.45}.ec24-checkbox input{width:18px;height:18px;accent-color:#0b958a;flex-shrink:0}.ec24-consent{margin-top:9px!important}
+.ec24-primary,.ec24-secondary{min-height:48px;padding:12px 20px;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:12px;text-decoration:none!important;text-align:center;font-size:14px;font-weight:800;cursor:pointer;border:1px solid #0b9286}
+.ec24-primary{background:#078b80!important;color:white!important;margin-top:9px}.ec24-primary:hover{background:#076e68!important}.ec24-primary span{font-size:20px}.ec24-secondary{background:#f8fcfc!important;color:#087c76!important;border-color:#c2e7e3!important}.ec24-secondary:hover{background:#eaf7f6!important}
+.ec24-divider{display:flex;align-items:center;gap:16px;margin:24px 0 20px;font-size:13px;color:#8a9cab}.ec24-divider::before,.ec24-divider::after{content:'';flex:1;height:1px;background:#e0e9ef}.ec24-link-centered{display:block;text-align:center;padding:3px}.ec24-auth-privacy{font-size:12px;margin:24px 0 0;color:#8a9cab}
+.ec24-secure{margin-top:27px;font-size:12px;color:#758c9e;line-height:1.55;display:flex;gap:9px;align-items:flex-start}.ec24-secure span{color:#0b958a}
+.ec24-info-box{background:#eff6fd;border:1px solid #d9e8f7;border-radius:10px;padding:16px 18px;color:#40617f;line-height:1.55;font-size:13px;margin:23px 0 0}
+.ec24-notice{border-radius:9px;padding:12px 15px;font-size:13px;line-height:1.5;margin-bottom:18px}.ec24-notice-success{background:#eaf9f5;border:1px solid #b9e8d9;color:#07745d}.ec24-notice-error{background:#fff0f1;border:1px solid #f3bfc5;color:#a52e45}.ec24-error{font-size:12px;margin:0 0 5px;color:#a52e45;line-height:1.5}.ec24-two-col{display:grid;grid-template-columns:1fr 1fr;gap:13px}.ec24-two-col>div{min-width:0}.ec24-two-col label{margin:6px 0 11px}.ec24-honeypot{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+.ec24-recovery{border-top:1px solid #e0e9ef;padding-top:23px;margin-top:26px}.ec24-recovery summary{cursor:pointer;color:#087c76;font-weight:800;font-size:13px}.ec24-recovery>p{color:#627c91;font-size:13px;margin:14px 0}.ec24-recovery .ec24-form{margin-top:12px}
+/* Área administrativa: visual consistente, mas usa a estrutura global do Prospector. */
+.ec24-management{max-width:1480px;margin:0 auto;padding:32px 28px 70px;color:#122f44}.ec24-management-header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:25px}.ec24-management-header small{font-size:11px;color:#0a998e;font-weight:800;letter-spacing:.1em}.ec24-management-header h1{font-size:30px;font-weight:800;margin:8px 0 7px;color:#12344d}.ec24-management-header p{color:#688197;font-size:14px}.ec24-admin-filters{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:20px}.ec24-admin-filters a{display:inline-flex;gap:10px;border:1px solid #cadae5;background:white;color:#40607a;font-size:13px;text-decoration:none;border-radius:10px;padding:10px 15px;font-weight:700}.ec24-admin-filters a.active{background:#daf7f2;color:#075f58;border-color:#6acabb}.ec24-admin-filters span{opacity:.7}.ec24-admin-table-wrap{border-radius:15px;border:1px solid #dbe7ed;background:#fff;overflow-x:auto;box-shadow:0 8px 25px rgba(7,45,66,.045)}.ec24-admin-table{border-collapse:collapse;width:100%;min-width:790px;font-size:13px}.ec24-admin-table th{background:#edf4f7;color:#47667b;padding:16px;text-align:left;font-weight:800}.ec24-admin-table td{padding:18px 16px;border-top:1px solid #e9f0f4;vertical-align:top;color:#24465c}.ec24-admin-table td strong{display:block;max-width:270px;word-break:break-word}.ec24-admin-table td small{display:block;font-size:12px;color:#718a9d;margin-top:6px;overflow-wrap:anywhere}.ec24-admin-empty{text-align:center;color:#617b8c}.ec24-action-row{display:flex;gap:7px}.ec24-action-row button,.ec24-retry{cursor:pointer;padding:8px 12px;border-radius:9px;border:1px solid transparent;font-size:12px;font-weight:800}.ec24-approve{background:#e6f8ef;color:#08744d}.ec24-reject{background:#fff0ef;color:#b53f34}.ec24-retry{background:#eaf8fc;color:#066d88}.ec24-muted{color:#8c9da9;font-size:12px}.ec24-state{display:inline-flex;border-radius:999px;font-size:11px;font-weight:800;padding:5px 10px}.ec24-state-pending{background:#fff5dc;color:#916008}.ec24-state-approved{background:#e9f5ff;color:#25679d}.ec24-state-rejected{background:#ffebee;color:#a42c42}.ec24-state-activated{background:#ddf8ec;color:#08764f}.ec24-admin-pager{margin-top:20px}.ec24-admin-legal{font-size:12px;color:#6f8495;margin-top:15px;line-height:1.5}
+@media(max-width:1100px){.ec24-auth{grid-template-columns:40% 60%}.ec24-brand-content{padding:24px}.ec24-brand-statement h1{font-size:36px}.ec24-brand-features{gap:16px;margin-top:25px}.ec24-auth-main{padding-inline:28px}}
+@media(max-width:760px){.ec24-auth{display:block;min-height:100vh}.ec24-brand{min-height:140px;height:140px}.ec24-brand-layer{background-position:center 65%}.ec24-brand-content{padding:18px 25px;min-height:140px;justify-content:center}.ec24-brand-statement,.ec24-brand-footer{display:none}.ec24-brand-logo img{width:42px;height:42px}.ec24-auth-main{min-height:calc(100vh - 140px);padding:75px 18px 30px;justify-content:flex-start}.ec24-auth-top{top:24px;right:20px}.ec24-auth-card{padding:28px 22px}.ec24-two-col{grid-template-columns:1fr}.ec24-management{padding:20px 14px}.ec24-management-header{display:block}.ec24-management-header .ec24-outline{display:inline-block;margin-top:15px}}
+@media(prefers-reduced-motion:reduce){.ec24-auth *{transition:none!important;animation:none!important}}
+
+/* EC_ACCESS_FIX_V25: foto real empacotada e mapa/globo visual; sem alterar layout de formulário. */
+.ec24-brand-layer {
+    background-image: linear-gradient(90deg,rgba(2,20,35,.93) 0%,rgba(2,26,42,.73) 47%,rgba(2,25,45,.48) 100%),
+        linear-gradient(0deg,rgba(1,13,27,.17),rgba(1,13,27,.23)),
+        url('/images/brand/login-background-v25.png') !important;
+    background-position: center,center,center bottom !important;
+    background-size: cover,cover,cover !important;
+    opacity: 1 !important;
+}
+.ec24-brand::before {
+    content: '';
+    position: absolute;
+    top: 7%;
+    right: -20%;
+    width: min(90%, 750px);
+    aspect-ratio: 1;
+    background: url('/images/brand/login-globe-v25.webp') center/contain no-repeat;
+    opacity: .23;
+    mix-blend-mode: screen;
+    pointer-events: none;
+}
+.ec24-brand .ec24-brand-content { z-index: 2; }
+.ec24-brand .ec24-feature-symbol {
+    width: 56px;
+    height: 56px;
+    flex-basis: 56px;
+    border-radius: 15px;
+    background: linear-gradient(135deg,rgba(7,115,126,.40),rgba(3,35,59,.84));
+    border: 1px solid rgba(90,230,219,.44);
+    box-shadow: inset 0 1px 0 rgba(205,255,255,.08),0 7px 19px rgba(0,5,19,.22);
+    color: #92f7ed;
+}
+.ec24-brand .ec24-feature-symbol svg {
+    width: 29px;
+    height: 29px;
+    overflow: visible;
+    filter: drop-shadow(0 0 3px rgba(13,221,201,.15));
+}
+@media(max-width:760px) {
+    .ec24-brand::before { top: -120px; right: -50px; width: 300px; opacity: .18; }
+    .ec24-brand-layer { background-position: center,center,center 68% !important; }
+}

@@ -1,54 +1,16 @@
-<x-layouts::auth :title="__('Reset password')">
-    <div class="flex flex-col gap-6">
-        <x-auth-header :title="__('Reset password')" :description="__('Please enter your new password below')" />
-
-        <!-- Session Status -->
-        <x-auth-session-status class="text-center" :status="session('status')" />
-
-        <form method="POST" action="{{ route('password.update') }}" class="flex flex-col gap-6">
-            @csrf
-            <!-- Token -->
-            <input type="hidden" name="token" value="{{ request()->route('token') }}">
-
-            <!-- Email Address -->
-            <flux:input
-                name="email"
-                value="{{ request('email') }}"
-                :label="__('Email')"
-                type="email"
-                required
-                autocomplete="email"
-            />
-
-            <!-- Password -->
-            <flux:input
-                name="password"
-                :label="__('Password')"
-                type="password"
-                required
-                autocomplete="new-password"
-                :placeholder="__('Password')"
-                passwordrules="{{ \Illuminate\Validation\Rules\Password::defaults()->toPasswordRulesString() }}"
-                viewable
-            />
-
-            <!-- Confirm Password -->
-            <flux:input
-                name="password_confirmation"
-                :label="__('Confirm password')"
-                type="password"
-                required
-                autocomplete="new-password"
-                :placeholder="__('Confirm password')"
-                passwordrules="{{ \Illuminate\Validation\Rules\Password::defaults()->toPasswordRulesString() }}"
-                viewable
-            />
-
-            <div class="flex items-center justify-end">
-                <flux:button type="submit" variant="primary" class="w-full" data-test="reset-password-button">
-                    {{ __('Reset password') }}
-                </flux:button>
-            </div>
-        </form>
-    </div>
+<x-layouts::auth :title="'Criar nova senha'">
+    <div class="ec24-head"><span class="ec24-overline">RECUPERAÇÃO</span><h2>Crie uma nova senha</h2><p>Defina uma senha segura para recuperar o acesso à sua conta.</p></div>
+    <form method="POST" action="{{ route('password.update') }}" class="ec24-form">
+        @csrf
+        <input type="hidden" name="token" value="{{ request()->route('token') }}">
+        <label for="email">E-mail</label>
+        <input id="email" name="email" type="email" required autocomplete="username" value="{{ old('email', request('email')) }}" />
+        @error('email')<p class="ec24-error" role="alert">{{ $message }}</p>@enderror
+        <label for="password">Nova senha</label>
+        <input id="password" name="password" type="password" required autocomplete="new-password" minlength="8" />
+        @error('password')<p class="ec24-error" role="alert">{{ $message }}</p>@enderror
+        <label for="password_confirmation">Confirme a nova senha</label>
+        <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password" minlength="8" />
+        <button type="submit" class="ec24-primary" data-test="reset-password-button">Atualizar senha <span>→</span></button>
+    </form>
 </x-layouts::auth>

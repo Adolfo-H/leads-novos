@@ -1,0 +1,513 @@
+/*
+ * PACOTE 33 · ExportControl Prospector · Indicadores cadastrais avançados.
+ * Escopo EXCLUSIVO: Dashboard > Explorar base > detalhes. Sem alterar dados.
+ * Carregado APÓS dashboard-base-v32.css para sobrepor a herança escura.
+ */
+.ec-overview.ef29-activated .ef32-base .ef32-advanced.ef33-advanced {
+    --ef33-ink: #12304a;
+    --ef33-muted: #61778e;
+    --ef33-line: #dfe9ef;
+    --ef33-teal: #078b7f;
+    --ef33-blue: #2a70ad;
+    margin-top: 20px;
+    border: 1px solid #d9e5ee !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    box-shadow: 0 6px 24px rgba(16, 51, 77, .035) !important;
+    overflow: hidden;
+    color: var(--ef33-ink) !important;
+}
+
+/* Cabeçalho expansível. Mantém o <details> nativo e teclado. */
+.ec-overview.ef29-activated .ef32-base .ef33-advanced > .ef33-summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    min-height: 62px;
+    padding: 16px 22px;
+    gap: 13px;
+    cursor: pointer;
+    color: var(--ef33-ink) !important;
+    background: linear-gradient(100deg, #f7fbfe, #fff) !important;
+    border-bottom: 0;
+}
+.ef33-advanced > .ef33-summary::-webkit-details-marker { display: none; }
+.ec-overview.ef29-activated .ef32-base .ef33-summary .ef33-summary-icon {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    display: grid;
+    place-items: center;
+    color: #087e77 !important;
+    background: #e4f7f1;
+    border-radius: 9px;
+}
+.ef33-summary-icon svg { width: 17px; height: 17px; }
+.ec-overview.ef29-activated .ef32-base .ef33-summary > strong {
+    display: inline-block;
+    color: #13314c !important;
+    font-size: 15px !important;
+    letter-spacing: -.012em;
+    font-weight: 760;
+    line-height: 1.35;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-summary > .ef33-summary-subtitle {
+    display: inline-block;
+    margin-left: 2px !important;
+    font-size: 12px !important;
+    font-weight: 450;
+    color: #7890a3 !important;
+    line-height: 1.4;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-summary > .ef33-summary-chevron {
+    display: grid;
+    place-items: center;
+    width: 27px;
+    height: 27px;
+    flex: 0 0 27px;
+    margin: 0 0 0 auto !important;
+    border-radius: 7px;
+    background: #f0f6f8;
+    color: #0f5360 !important;
+    transition: transform .16s ease;
+}
+.ef33-summary-chevron svg { width: 15px; height: 15px; }
+.ef33-advanced[open] > .ef33-summary .ef33-summary-chevron { transform: rotate(180deg); }
+.ec-overview.ef29-activated .ef32-base .ef33-advanced[open] > .ef33-summary {
+    border-bottom: 1px solid var(--ef33-line);
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .ef32-advanced-body {
+    padding: 20px !important;
+    background: #fff !important;
+}
+
+/* Dois cartões consistentes em desktop. */
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 17px;
+    margin-top: 0 !important;
+    align-items: stretch;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-panel {
+    min-width: 0;
+    background: #fff !important;
+    border: 1px solid #e0eaf0 !important;
+    border-radius: 13px !important;
+    box-shadow: 0 1px 6px rgba(21, 58, 84, .025);
+    color: var(--ef33-ink) !important;
+    overflow: hidden;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-panel-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px 21px 14px;
+    border: 0 !important;
+    background: transparent !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-panel-head > div { min-width: 0; }
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-panel :is(h2, h3, .eo-structure-heading h2) {
+    color: #14324b !important;
+    font-size: 19px !important;
+    font-weight: 760 !important;
+    line-height: 1.25 !important;
+    letter-spacing: -.024em;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-panel-head p,
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-heading p {
+    color: #647b91 !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    margin-top: 5px !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-chip {
+    padding: 8px 11px;
+    border: 1px solid #133e67 !important;
+    border-radius: 8px !important;
+    background: #113d66 !important;
+    color: #fff !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-head-icon {
+    flex: 0 0 38px;
+    display: grid;
+    place-items: center;
+    height: 38px;
+    width: 38px;
+    border-radius: 12px;
+    background: #e9f5ff;
+    color: #277bc2 !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-head-icon svg {
+    width: 19px;
+    height: 19px;
+}
+
+/* Cobertura: cartões com títulos ESCUROS, progresso e links reais. */
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-list {
+    display: grid;
+    gap: 11px;
+    padding: 2px 18px 13px;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-row {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr);
+    align-items: center;
+    gap: 15px;
+    min-width: 0;
+    margin: 0;
+    padding: 13px;
+    border: 1px solid #e2eaf0 !important;
+    border-radius: 11px;
+    background: #fcfefe;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-row + .eo-coverage-row {
+    border-top: 1px solid #e2eaf0 !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-row .eo-icon {
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    padding: 11px;
+    border: 0 !important;
+    border-radius: 11px;
+    background: #dff7f0 !important;
+    color: #008b7e !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-row:nth-child(2) .eo-icon {
+    background: #e4f2ff !important;
+    color: #247cd2 !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-row:nth-child(3) .eo-icon {
+    background: #edf0fe !important;
+    color: #4a65c6 !important;
+}
+.ef33-advanced .eo-coverage-row .eo-icon svg { display: block; width: 23px; height: 23px; }
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-body {
+    flex: 1;
+    min-width: 0;
+    color: #18354c !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-title strong {
+    color: #15364f !important;
+    font-size: 13px !important;
+    font-weight: 750 !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-title > span {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #dff7f1 !important;
+    color: #057e74 !important;
+    font-size: 12px !important;
+    font-weight: 760;
+    font-variant-numeric: tabular-nums;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-meter {
+    height: 8px;
+    border-radius: 999px;
+    margin: 11px 0 9px;
+    background: #e1e9ef !important;
+    overflow: hidden;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-meter > span {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #46c7b4, #14a58f) !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-detail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px 13px;
+    flex-wrap: wrap;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-text-link {
+    color: #2e607f !important;
+    background: none !important;
+    border: 0;
+    border-radius: 3px;
+    font-size: 11px;
+    line-height: 1.45;
+    font-weight: 550;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-text-link:hover {
+    color: #027a70 !important;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-link-attention {
+    color: #af5c20 !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-panel-note {
+    padding: 0 19px 19px;
+    color: #74889a !important;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* UF: cabeçalho de colunas + lista clicável. */
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .ef33-uf-columns {
+    display: grid;
+    grid-template-columns: 38px minmax(0,1fr) 74px 54px 12px;
+    column-gap: 9px;
+    align-items: center;
+    padding: 5px 17px 3px;
+    color: #8a9cae;
+    font-size: 10px;
+    line-height: 1.3;
+    font-weight: 670;
+}
+.ef33-uf-columns span:nth-child(3), .ef33-uf-columns span:nth-child(4) { text-align: right; }
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-regions {
+    display: grid;
+    gap: 0;
+    margin: 0 15px 4px;
+    padding: 3px 0 8px;
+    min-height: 0;
+    background: #fff;
+    border: 1px solid #e2eaf0;
+    border-radius: 11px;
+    overflow: hidden;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-region {
+    display: grid;
+    grid-template-columns: 38px minmax(0,1fr) 74px 54px 12px;
+    column-gap: 9px;
+    align-items: center;
+    width: 100%;
+    min-height: 47px;
+    padding: 8px 12px;
+    border: 0;
+    color: #18354f !important;
+    background: #fff !important;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-region + .eo-region {
+    border-top: 1px solid #f0f3f6;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-region:hover:not(:disabled) {
+    background: #f3fbf8 !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-region-code {
+    font-size: 12px;
+    font-weight: 800;
+    color: #163651 !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-region-meter {
+    display: block;
+    height: 9px;
+    width: 100%;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #e6edf3 !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-region-meter > span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #74b5dc, #2e77b3) !important;
+    border-radius: inherit;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-region strong {
+    color: #173752 !important;
+    font-size: 12px !important;
+    font-weight: 730;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-region-pct {
+    color: #316fa9 !important;
+    font-size: 10.5px;
+    text-align: right;
+    font-weight: 680;
+    font-variant-numeric: tabular-nums;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-region-arrow {
+    font-size: 14px;
+    color: #347eab !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-regions-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 19px 19px;
+    font-size: 11px;
+    color: #73889a !important;
+}
+
+/* Matriz/filial: estatísticas visíveis e barra proporcional. */
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure {
+    display: grid;
+    grid-template-columns: minmax(215px,.8fr) minmax(0,1.6fr);
+    align-items: center;
+    gap: 22px;
+    margin-top: 15px !important;
+    padding: 19px 21px !important;
+    background: #fff !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+.ef33-structure-icon {
+    width: 47px;
+    height: 47px;
+    flex: 0 0 47px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: #e6f4ff;
+    color: #2075b9;
+}
+.ef33-structure-icon svg { display: block; width: 24px; height: 24px; }
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-labels {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px 18px;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-stat {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    min-width: 0;
+    padding: 6px 0;
+    border: 0;
+    color: #62788a !important;
+    background: transparent !important;
+    font-size: 12px;
+    cursor: pointer;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-stat:hover {
+    color: #087e73 !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-stat strong {
+    color: #183952 !important;
+    font-size: 23px;
+    font-weight: 770;
+    letter-spacing: -.035em;
+    font-variant-numeric: tabular-nums;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-stat small {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    background: #e8f4ff;
+    border-radius: 999px;
+    color: #316da3 !important;
+    font-size: 11px;
+    font-weight: 700;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-stat > i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-meter {
+    display: flex;
+    height: 12px;
+    width: 100%;
+    margin-top: 14px;
+    border-radius: 999px;
+    background: #e4edf3 !important;
+    overflow: hidden;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-meter > span {
+    display: block;
+    height: 100%;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-meter > .eo-dot-matrix {
+    background: #30baa6 !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-meter > .eo-dot-branch {
+    background: #4d90ca !important;
+}
+.ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-footnote {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 13px 4px 0 !important;
+    margin-top: 0;
+    border: 0;
+    color: #7a8e9f !important;
+    font-size: 10.5px;
+}
+
+@media (max-width: 1260px) {
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-main-grid {
+        grid-template-columns: 1fr;
+    }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 720px) {
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .ef32-advanced-body { padding: 14px !important; }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced > .ef33-summary {
+        flex-wrap: wrap;
+        min-height: 56px;
+        gap: 9px;
+        padding: 12px 15px;
+    }
+    .ec-overview.ef29-activated .ef32-base .ef33-summary > .ef33-summary-subtitle {
+        flex-basis: 100%;
+        order: 3;
+        margin: 0 0 0 43px !important;
+    }
+    .ef33-summary-chevron { order: 2; }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-panel-head { padding: 17px 14px 12px; }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-list { padding: 2px 12px 12px; }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-row { gap: 11px; padding: 11px; }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-regions { margin: 0 10px 4px; }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-regions-footer { padding-inline: 12px; }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure { padding: 16px !important; }
+}
+@media (max-width: 480px) {
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .ef33-uf-columns { display: none; }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-region {
+        grid-template-columns: 26px minmax(0,1fr) 58px 45px;
+        column-gap: 7px;
+        padding-inline: 9px;
+        font-size: 11px;
+    }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-region-arrow { display: none; }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-row {
+        grid-template-columns: 36px minmax(0,1fr);
+    }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-row .eo-icon {
+        width: 36px;
+        height: 36px;
+        padding: 8px;
+    }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-coverage-detail { gap: 4px; }
+    .ec-overview.ef29-activated .ef32-base .ef33-advanced .eo-structure-stat strong { font-size: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ef33-advanced .ef33-summary-chevron,
+    .ef33-advanced .eo-region { transition: none !important; }
+}

@@ -8,7 +8,7 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-it('renders the real redesigned dashboard with globe, interactive map and actions', function (): void {
+it('renders the real Figma D01 layout with one geographic map and real actions', function (): void {
     Http::preventStrayRequests();
 
     $manager = User::factory()->create(['email_verified_at' => now()]);
@@ -16,15 +16,15 @@ it('renders the real redesigned dashboard with globe, interactive map and action
 
     Livewire::actingAs($manager)
         ->test(DashboardOverview::class)
-        ->assertSee('Dashboard estratégico')
+        ->assertSee('Sua operação, em perspectiva')
         ->assertSee('Leads cadastrados')
         ->assertSee('Meus negócios por etapa')
-        ->assertSee('Ações rápidas')
-        ->assertSee('Concentração por estado')
-        ->assertSee('Prioridades comerciais')
-        ->assertSee('globe-hero.webp')
+        ->assertSee('Outras ações rápidas')
+        ->assertSee('Presença da carteira por estado')
+        ->assertSee('Comece por aqui')
+        ->assertSee('ef30-map-canvas')
         ->assertSee('ds-v7-map-svg')
-        ->assertSee('ds25-kpis');
+        ->assertSee('ef29-kpis');
 
     Http::assertNothingSent();
 });
@@ -35,7 +35,7 @@ it('keeps manager-only indicators away from sellers', function (): void {
 
     Livewire::actingAs($seller)
         ->test(DashboardOverview::class)
-        ->assertSee('Minha fila de leads')
+        ->assertSee('Sua próxima boa conversa')
         ->assertDontSee('Ações rápidas')
         ->assertDontSee('Leads sem responsável');
 });
@@ -49,7 +49,7 @@ it('uses isolated styles with bounded images and no global search overrides', fu
         ->toContain('DashboardLeadMetricsV23Service')
         ->toContain('LeadCrmSituationService')
         ->toContain('myHubSpotStageSummary')
-        ->toContain('map-interactive-v7')
+        ->toContain('map-panel-v30')
         ->toContain("'dashboardView' => 'overdue'")
         ->toContain("'hubSpotOnly' => 1")
         ->not->toContain('$dashboard[\'summary_cards\']');

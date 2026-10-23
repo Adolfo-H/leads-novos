@@ -310,7 +310,7 @@ new class extends Component
 };
 ?>
 
-<div class="ecgm-page ecgm-v2" wire:poll.visible.30s="$refresh">
+<div class="ecgm-page ecgm-v2 lf34-management" wire:poll.visible.30s="$refresh" x-data="{view:'overview',showConfirm:false}">
 
     <div
         class="ecgm-page-loading"
@@ -517,7 +517,14 @@ new class extends Component
         </a>
     </header>
 
-<section class="ecgm-metrics" aria-label="Indicadores da operação">
+<nav class="lf34-manager-nav" aria-label="Áreas da gestão comercial">
+        <button type="button" x-on:click="view='overview'" x-bind:aria-pressed="view==='overview'">Visão geral</button>
+        <button type="button" x-on:click="view='distribution'" x-bind:aria-pressed="view==='distribution'">Distribuição automática</button>
+        <button type="button" x-on:click="view='access'" x-bind:aria-pressed="view==='access'">Acessos comerciais</button>
+    </nav>
+
+    <div class="lf34-manager-overview" x-show="view==='overview'">
+    <section class="ecgm-metrics" aria-label="Indicadores da operação">
         @foreach ($metrics as [$key, $label, $caption, $tone, $filters])
             @if ($filters !== null)
                 <a class="ecgm-metric" data-tone="{{ $tone }}"
@@ -1004,11 +1011,13 @@ new class extends Component
         </footer>
     </section>
 
-    <div class="ecgm-controls">
+    </div> {{-- lf34-manager-overview --}}
+    <div class="ecgm-controls" x-show="view!=='overview'" x-cloak>
 
         <section
             class="ecgm-panel"
             aria-labelledby="ecgm-distribution-title"
+            x-show="view==='distribution'" x-cloak
         >
             <header class="ecgm-panel-head">
                 <div>
@@ -1041,6 +1050,14 @@ new class extends Component
                         role="status"
                     >
                         {{ $distributionMessage }}
+                    </div>
+                @endif
+
+                @if ($distributionMessage !== '')
+                    <div class="lf34-success" role="status">
+                        <h3>Distribuição concluída</h3>
+                        <p>{{ $distributionMessage }}</p>
+                        <a href="{{ route('leads.index') }}" wire:navigate>Ver fila de leads →</a>
                     </div>
                 @endif
 
@@ -1142,10 +1159,9 @@ new class extends Component
                     <button
                         type="button"
                         class="ecgm-button ecgm-primary"
-                        wire:click="autoDistribute"
-                        wire:confirm="Distribuir os novos leads entre os responsáveis selecionados?"
+                        x-on:click="showConfirm = true"
                         wire:loading.attr="disabled"
-                        @disabled($distributionSellerIds === [] || $available === 0)
+                        @disabled($distributionSellerIds === [] || $available === 0 || $distributionPreview === null)
                     >
                         <span
                             wire:loading.remove
@@ -1184,6 +1200,7 @@ new class extends Component
         <section
             class="ecgm-panel"
             aria-labelledby="ecgm-access-title"
+            x-show="view==='access'" x-cloak
         >
             <header class="ecgm-panel-head">
                 <div>
@@ -1270,5 +1287,35 @@ new class extends Component
             </div>
         </section>
 
+    </div>
+
+    {{-- L05: confirmação real. Nenhuma ação é realizada antes de Confirmar. --}}
+    <div class="lf34-confirm-overlay" x-show="showConfirm" x-cloak
+        x-on:keydown.escape.window="showConfirm=false"
+        x-on:click.self="showConfirm=false">
+        <section class="lf34-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="lf34-confirm-title">
+            <h2 id="lf34-confirm-title">Confirmar distribuição?</h2>
+            <p>A prévia considera a situação atual da carteira. Ao confirmar, o serviço revalidará as regras e atribuirá somente leads elegíveis.</p>
+            <div class="lf34-confirm-stats">
+                <div><small>Leads nesta rodada</small><strong>{{ number_format((int) ($distributionPreview['planned'] ?? 0), 0, ',', '.') }}</strong></div>
+                <div><small>Responsáveis selecionados</small><strong>{{ count($distributionSellerIds) }}</strong></div>
+            </div>
+            @if ($distributionPreview !== null)
+                <div class="lf34-confirm-stats">
+                    <div><small>Sem responsável após a prévia</small><strong>{{ number_format((int) ($distributionPreview['remaining_after'] ?? 0), 0, ',', '.') }}</strong></div>
+                    <div><small>Limite configurado</small><strong>{{ number_format($distributionLimit, 0, ',', '.') }}</strong></div>
+                </div>
+            @endif
+            <p class="lf34-confirm-warning">Esta ação muda apenas a atribuição comercial local. Não altera negócios, etapas ou responsáveis no HubSpot.</p>
+            <div class="lf34-confirm-buttons">
+                <button type="button" x-on:click="showConfirm=false">Cancelar</button>
+                <button class="lf34-confirm-yes" type="button"
+                    wire:click="autoDistribute" x-on:click="showConfirm=false"
+                    wire:loading.attr="disabled" wire:target="autoDistribute"
+                    @disabled($distributionSellerIds === [] || $available === 0 || $distributionPreview === null)>
+                    Confirmar distribuição
+                </button>
+            </div>
+        </section>
     </div>
 </div>

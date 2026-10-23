@@ -1,0 +1,117 @@
+/* EC_BASE_EMPRESARIAL_V32 — Figma D02; somente a aba Base Empresarial. */
+.ec-overview.ef29-activated:has(.ef32-base) .ef32-base {
+    --ef32-ink: #153149;
+    --ef32-muted: #657b8d;
+    --ef32-border: #dce5ea;
+    --ef32-teal: #07887b;
+    color: var(--ef32-ink);
+    width: 100%;
+    min-width: 0;
+    padding: 20px 0 30px;
+}
+.ec-overview.ef29-activated .ef32-base *,
+.ec-overview.ef29-activated .ef32-base *::before,
+.ec-overview.ef29-activated .ef32-base *::after { box-sizing: border-box; }
+.ec-overview.ef29-activated .ef32-base h1,
+.ec-overview.ef29-activated .ef32-base h2,
+.ec-overview.ef29-activated .ef32-base p { margin: 0; }
+.ec-overview.ef29-activated .ef32-base button,
+.ec-overview.ef29-activated .ef32-base a,
+.ec-overview.ef29-activated .ef32-base select,
+.ec-overview.ef29-activated .ef32-base input { font: inherit; }
+.ec-overview.ef29-activated .ef32-base :is(button,a,input,select):focus-visible {
+    outline: 2px solid #07887b; outline-offset: 3px;
+}
+.ef32-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 22px; }
+.ef32-eyebrow { color: #74879a; font-size: 10px; letter-spacing: .12em; font-weight: 760; }
+.ec-overview.ef29-activated .ef32-head h1 { font-size: clamp(25px,2.1vw,33px) !important; line-height: 1.2; letter-spacing: -.038em; margin-top: 10px; font-weight: 770; color: #143149 !important; }
+.ef32-head-copy > p { color: #657b8d; margin-top: 7px !important; font-size: 13px; }
+.ef32-head-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.ec-overview.ef29-activated .ef32-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 16px; min-height: 38px; text-decoration: none; border: 1px solid var(--ef32-border,#dce5ea); background: #fff; color: #26475e; border-radius: 8px; font-size: 12px; font-weight: 650; cursor: pointer; transition: border-color .15s, background .15s; }
+.ec-overview.ef29-activated .ef32-button:hover { background: #f5fbf9; border-color: #86c7ba; }
+.ec-overview.ef29-activated .ef32-button--primary { color: #fff; background: #07887b; border-color: #07887b; }
+.ec-overview.ef29-activated .ef32-button--primary:hover { color: #fff; background: #06766d; }
+.ec-overview.ef29-activated .ef32-button--quiet { color: #627a8a; }
+.ef32-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 18px; }
+.ec-overview.ef29-activated .ef32-tab { display: inline-flex; align-items: center; justify-content: center; padding: 11px 15px; min-height: 39px; border: 1px solid transparent; border-radius: 7px; color: #5c7485; background: transparent; font-weight: 630; font-size: 12px; cursor: pointer; }
+.ec-overview.ef29-activated .ef32-tab:hover { background: #e9f1f3; color: #143149; }
+.ec-overview.ef29-activated .ef32-tab.is-active { background: #e2f3ee; border-color: #b4ded4; color: #07887b; }
+.ef32-kpis { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px; margin-bottom: 19px; }
+.ec-overview.ef29-activated .ef32-kpi { text-align: left; display: flex; flex-direction: column; align-items: flex-start; padding: 18px 18px 16px; min-height: 122px; border-radius: 10px; background: #fff; border: 1px solid #dce5ea; box-shadow: 0 1px 1px #162b3f07; cursor: pointer; }
+.ec-overview.ef29-activated .ef32-kpi:hover { border-color: #9bcfc3; }
+.ec-overview.ef29-activated .ef32-kpi.is-active { border-color: #78c8b8; }
+.ef32-kpi>span { font-size: 12px; color: #6a8091; }
+.ef32-kpi strong { font-size: clamp(26px,2.15vw,32px); letter-spacing: -.05em; line-height: 1.22; font-weight: 800; color: #143149; margin-top: 7px; font-variant-numeric: tabular-nums; }
+.ef32-kpi small { font-size: 11px; margin-top: auto; color: #07887b; font-weight: 660; }
+.ef32-search-card,.ef32-results,.ef32-advanced { background: #fff; border: 1px solid #dce5ea; border-radius: 11px; box-shadow: 0 1px 1px #152b3e05; min-width: 0; }
+.ef32-search-card { padding: 23px 24px 20px; margin-bottom: 18px; }
+.ef32-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+.ec-overview.ef29-activated .ef32-base h2 { font-size: 16px !important; color: #18364b !important; font-weight: 750 !important; line-height: 1.35; }
+.ef32-section-heading>span { font-size: 11px; color: #8a9bac; }
+.ef32-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.ef32-field { display: grid; gap: 8px; min-width: 0; }
+.ef32-field label { font-size: 12px; font-weight: 680; color: #1c3a51; }
+.ec-overview.ef29-activated .ef32-field :is(input,select) { width: 100%; min-height: 42px; font-size: 13px; color: #244055; background: #fff; border: 1px solid #d5e0e5; border-radius: 7px; padding: 9px 13px; outline-offset: 1px; }
+.ec-overview.ef29-activated .ef32-field :is(input,select):focus { border-color: #0a9385; box-shadow: 0 0 0 3px #068a7619; }
+.ef32-field small { display: block; min-height: 30px; color: #8194a2; font-size: 10px; }
+.ef32-status { margin-top: 9px; font-size: 12px; color: #087e73; }
+.ef32-offline { margin-top: 9px; font-size: 12px; color: #bc604e; }
+.ef32-results { overflow: hidden; margin-bottom: 18px; }
+.ef32-results:focus { outline: none; }
+.ef32-results-head { display: flex; justify-content: space-between; align-items: center; padding: 22px 24px 12px; gap: 12px; }
+.ef32-results-head p { color: #7a8e9e; font-size: 11px; margin-top: 6px !important; }
+.ec-overview.ef29-activated .ef32-clear { background: #f2fbf8; color: #07887b; padding: 9px 13px; border: 1px solid #cce8e0; border-radius: 7px; font-size: 12px; font-weight: 650; cursor: pointer; }
+.ef32-table-scroll { overflow-x: auto; padding: 0 24px; transition: opacity .15s; }
+.ef32-table-scroll.ef32-is-loading { opacity: .65; }
+.ef32-table { width: 100%; border-collapse: collapse; min-width: 560px; font-size: 12px; color: #2b455b; }
+.ef32-table thead { background: #f2f5f7; color: #6e8292; }
+.ef32-table th { text-align: left; font-weight: 570; font-size: 11px; padding: 12px 11px; white-space: nowrap; }
+.ef32-table td { border-bottom: 1px solid #e3eaee; padding: 14px 11px; vertical-align: middle; overflow-wrap: anywhere; }
+.ef32-table tbody tr:hover { background: #f7fbfa; }
+.ef32-table tbody tr:last-child td { border-bottom: 0; }
+.ef32-name { display: block; color: #163449; font-weight: 680; }
+.ef32-code { font-variant-numeric: tabular-nums; color: #597085; }
+.ef32-secondary { display: block; color: #8495a2; font-weight: 450; font-size: 10.5px; margin-top: 6px; }
+.ec-overview.ef29-activated .ef32-open { color: #07887b !important; font-size: 12px; font-weight: 650; text-decoration: none; border: 0; background: transparent; white-space: nowrap; cursor: pointer; }
+.ef32-open:hover { text-decoration: underline !important; }
+.ef32-tag { display: inline-block; padding: 5px 9px; border-radius: 5px; background: #f0f3f5; font-size: 11px; color: #6e8191; }
+.ef32-tag.is-active { background: #e3f4ed; color: #07887b; }
+.ef32-empty { text-align: center; padding: 35px !important; color: #718395; }
+.ef32-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 13px 24px 18px; color: #72889a; font-size: 11px; border-top: 1px solid #edf1f3; }
+.ef32-pagination>div { display: flex; gap: 9px; }
+.ec-overview.ef29-activated .ef32-pagination button { padding: 10px 13px; min-height: 35px; border: 1px solid #dbe5e9; border-radius: 7px; background: #fff; color: #24465b; font-size: 12px; cursor: pointer; }
+.ec-overview.ef29-activated .ef32-pagination button:disabled { opacity: .45; cursor: not-allowed; }
+.ec-overview.ef29-activated .ef32-pagination button:not(:disabled):hover { border-color: #07887b; color: #07887b; }
+.ef32-advanced { overflow: hidden; margin-top: 16px; }
+.ef32-advanced summary { cursor: pointer; padding: 16px 23px; font-size: 13px; font-weight: 710; color: #193950; }
+.ef32-advanced summary>span { margin-left: 7px; color: #73899a; font-weight: 400; font-size: 11px; }
+.ef32-advanced[open] summary { border-bottom: 1px solid #e3eaed; }
+.ef32-advanced-body { padding: 18px; }
+.ef32-advanced-body .eo-main-grid { margin-top: 0 !important; }
+.ef32-advanced-body .eo-structure { margin-top: 15px; }
+.ef32-denied { padding: 24px; background: #fff; border: 1px solid #dce5ea; border-radius: 10px; }
+.ef32-denied p { margin: 10px 0 !important; font-size: 13px; }
+.ef32-denied a { color: #07887b; font-weight: 700; }
+@media (max-width: 1080px) {
+    .ef32-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 760px) {
+    .ef32-fields { grid-template-columns: 1fr; }
+    .ef32-kpis { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .ef32-head { gap: 12px; }
+    .ef32-search-card { padding: 19px; }
+    .ef32-results-head { padding: 19px; }
+    .ef32-table-scroll { padding: 0 16px; }
+    .ef32-pagination { padding: 12px 16px 17px; }
+}
+@media (max-width: 520px) {
+    .ef32-kpis { grid-template-columns: 1fr; }
+    .ef32-head-actions { align-items: stretch; }
+    .ef32-head-actions :is(a,button) { flex: 1 1 130px; }
+    .ef32-section-heading { display: block; }
+    .ef32-section-heading>span { display: block; margin-top: 5px; }
+    .ef32-advanced summary>span { display: block; margin: 5px 0 0 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ef32-base :is(button,a) { transition: none !important; }
+}

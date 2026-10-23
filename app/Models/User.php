@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\ExportControlResetPassword;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -58,6 +59,16 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Notificação de recuperação personalizada, mantendo o token do Fortify.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(
+            new ExportControlResetPassword((string) $token)
+        );
     }
 
     public function isCommercialManager(): bool

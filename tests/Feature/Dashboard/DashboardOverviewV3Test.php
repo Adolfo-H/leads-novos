@@ -155,7 +155,7 @@ it('does not grant a seller access to the complete company base', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
     $user->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
     Livewire::actingAs($user)->test(DashboardOverview::class)
-        ->assertSee('Minha fila de leads')->assertDontSee('Nova prospecção')
+        ->assertSee('Sua próxima boa conversa')->assertDontSee('Nova prospecção')
         ->call('openExplorer', 'companies')->assertForbidden();
 });
 

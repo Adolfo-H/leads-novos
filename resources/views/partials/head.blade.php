@@ -13,3 +13,5 @@
 
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 @fluxAppearance
+{{-- PACOTE_35_LEADS_GESTAO_CORRECAO_REAL: final scoped layer AFTER Vite, no rebuild needed. --}}
+<link rel="stylesheet" href="{{ asset('css/leads-gestao-v35.css') }}?v=35" data-ec-leads-visual="v35">

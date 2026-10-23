@@ -2985,6 +2985,14 @@ new class extends Component
         $this->resetPage();
     }
 
+    /** Filtro do Figma: limpa critérios anteriores para manter contagem e lista coerentes. */
+    public function applyFigmaFollowUp(string $period): void
+    {
+        abort_unless(in_array($period, ['overdue', 'today'], true), 422);
+        $this->clearFilters();
+        $this->applyFollowUpView($period);
+    }
+
     public function applyFollowUpView(
         string $view
     ): void {
@@ -3936,7 +3944,7 @@ new class extends Component
 {{-- LEADS_POLL_SINGLE_V249: uma atualizacao a cada 30s evita duas renderizacoes caras a cada 10s.
      Atualizacao mais frequente do status deve usar um componente isolado, nao o workspace inteiro. --}}
 <div
-    class="ec-page-shell leads-rf leads-v11 leads-v13 leads-v15 leads-v16 leads-v18 leads-v19 leads-v20 leads-v23"
+    class="ec-page-shell leads-rf leads-v11 leads-v13 leads-v15 leads-v16 leads-v18 leads-v19 leads-v20 leads-v23 lf34-leads"
     wire:poll.30s="$refresh"
 >
 
@@ -3954,7 +3962,7 @@ new class extends Component
             <div class="rf-title-row">
 
                 <h1 class="rf-title">
-                    Leads
+                    Sua fila comercial
                 </h1>
 
                 <span class="rf-count-pill">
@@ -3970,13 +3978,16 @@ new class extends Component
 
             </div>
 
-            <p class="rf-subtitle">Sua operação comercial em um só lugar.</p>
+            <p class="rf-subtitle">Escolha a próxima empresa para trabalhar com contexto e prioridade.</p>
 
         </div>
 
 
 
         <div class="rf-header-actions">
+            @if ($this->isCommercialManager())
+                <a class="lf34-header-link" href="{{ route('leads.index', ['hubSpotOnly' => 1]) }}" wire:navigate>CRM sem CNPJ</a>
+            @endif
 
     @php
         $hubSpotHealth =
@@ -4324,6 +4335,8 @@ new class extends Component
 
 
 
+    @include('partials.leads-figma-tabs-v34')
+
     @if ($commercialActionMessage !== '')
 
         <div
@@ -4350,9 +4363,13 @@ new class extends Component
     @endif
 
 
-    @include('partials.leads-action-center-v15')
+    @include('partials.leads-figma-summary-v34')
 
-    @include('partials.leads-crm-stage-strip')
+    <details class="lf34-legacy-shortcuts">
+        <summary>Outros atalhos de fila</summary>
+        @include('partials.leads-action-center-v15')
+    </details>
+
 
         <section class="rf-panel rf-filters">
 
@@ -4604,6 +4621,8 @@ new class extends Component
 
         @include('partials.leads-active-filters-v11')
     </section>
+
+    @include('partials.leads-crm-stage-strip')
 
 
 

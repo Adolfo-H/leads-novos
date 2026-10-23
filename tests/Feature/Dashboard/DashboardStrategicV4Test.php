@@ -20,11 +20,11 @@ it('shows strategic dashboard to managers without network requests', function ()
 
     Livewire::actingAs($manager)
         ->test(DashboardOverview::class)
-        ->assertSee('Dashboard estratégico')
+        ->assertSee('Sua operação, em perspectiva')
         ->assertSee('Meus negócios por etapa')
-        ->assertSee('Ações rápidas')
-        ->assertSee('Concentração por estado')
-        ->assertSee('Prioridades comerciais')
+        ->assertSee('Outras ações rápidas')
+        ->assertSee('Presença da carteira por estado')
+        ->assertSee('Comece por aqui')
         ->assertSee('Cobertura cadastral');
 
     Http::assertNothingSent();
@@ -36,7 +36,7 @@ it('shows no management metrics to sellers', function () {
 
     Livewire::actingAs($seller)
         ->test(DashboardOverview::class)
-        ->assertSee('Minha fila de leads')
+        ->assertSee('Sua próxima boa conversa')
         ->assertDontSee('Top oportunidades por CNAE')
         ->assertDontSee('Negócios no HubSpot');
 });

@@ -21,9 +21,9 @@ it('shows commercial indicators to managers without external requests', function
 
     $page = Livewire::actingAs($manager)
         ->test(DashboardOverview::class)
-        ->assertSee('Dashboard estratégico')
+        ->assertSee('Sua operação, em perspectiva')
         ->assertSee('Leads cadastrados')
-        ->assertSee('Prioridades comerciais')
+        ->assertSee('Comece por aqui')
         ->assertSee('Cobertura cadastral');
 
     $summary = $page->get('commercialSummary');
@@ -47,7 +47,7 @@ it('does not expose team metrics to sellers', function () {
 
     $page = Livewire::actingAs($seller)
         ->test(DashboardOverview::class)
-        ->assertSee('Minha fila de leads')
+        ->assertSee('Sua próxima boa conversa')
         ->assertDontSee('Top oportunidades por CNAE')
         ->assertDontSee('Gestão comercial');
 

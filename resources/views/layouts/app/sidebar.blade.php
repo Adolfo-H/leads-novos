@@ -23,7 +23,8 @@
                 'leads.*',
                 'profile.edit',
                 'security.edit',
-                'appearance.edit'
+                'appearance.edit',
+                'access.requests.*'
             )
                 ? 'ec-dashboard-mode'
                 : ''
@@ -171,6 +172,17 @@
                 </flux:sidebar.group>
             @endif
 
+            {{-- EC_ACCESS_V24 - administrar novos acessos --}}
+            @if (\App\Http\Controllers\Access\AccessAdminController::isApprover(auth()->user()))
+                <flux:sidebar.group heading="Administração" class="ec-sidebar-group grid">
+                    <flux:sidebar.item icon="user-plus"
+                        :href="route('access.requests.index')"
+                        :current="request()->routeIs('access.requests.*')"
+                        wire:navigate class="ec-nav-item">
+                        Solicitações de acesso
+                    </flux:sidebar.item>
+                </flux:sidebar.group>
+            @endif
         </flux:sidebar.nav>
 
         <flux:spacer />
@@ -215,6 +227,7 @@
 
     @php
         $ecPageLabel = match (true) {
+            request()->routeIs('access.requests.*') => 'Solicitações de acesso',
             request()->routeIs('dashboard') => 'Dashboard',
             request()->routeIs('leads.management') => 'Gestão comercial',
             request()->routeIs('leads.*') => 'Leads',
@@ -299,19 +312,15 @@
                 </flux:button>
 
 
-                <flux:menu>
+                <flux:menu class="ec-topbar-account-menu">
 
                     <div
-                        class="
+                        class="ec-profile-menu-header
                             flex items-center gap-2
                             px-2 py-2 text-start
                         "
                     >
 
-                        <flux:avatar
-                            :name="auth()->user()->name"
-                            :initials="auth()->user()->initials()"
-                        />
 
                         <div
                             class="
@@ -321,11 +330,11 @@
                             "
                         >
 
-                            <flux:heading class="truncate">
+                            <flux:heading class="ec-profile-menu-name truncate">
                                 {{ auth()->user()->name }}
                             </flux:heading>
 
-                            <flux:text class="truncate">
+                            <flux:text class="ec-profile-menu-email truncate">
                                 {{ auth()->user()->email }}
                             </flux:text>
 
@@ -341,7 +350,7 @@
                         :href="route('profile.edit')"
                         icon="cog"
                         wire:navigate
-                    >
+                     class="ec-profile-menu-item">
                         Configurações
                     </flux:menu.item>
 
@@ -357,7 +366,7 @@
                             as="button"
                             type="submit"
                             icon="arrow-right-start-on-rectangle"
-                            class="w-full cursor-pointer"
+                            class="ec-profile-menu-item ec-profile-menu-logout w-full cursor-pointer"
                             data-test="logout-button"
                         >
                             Sair
@@ -375,7 +384,8 @@
     </flux:header>
 
 
-    {{-- TOPBAR MOBILE --}}
+        <!-- EC_TOPBAR_V31 -->
+{{-- TOPBAR MOBILE --}}
     <flux:header
         class="ec-topbar lg:hidden"
     >
