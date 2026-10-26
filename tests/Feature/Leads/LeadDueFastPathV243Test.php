@@ -83,7 +83,7 @@ it('skips expensive company-task association queries if all open tasks are futur
     }
 });
 
-it('selects only company IDs when an actual task is due', function (): void {
+it('counts due tasks directly without expensive company association queries', function (): void {
     Carbon::setTestNow('2026-10-09 11:00:00');
 
     try {
@@ -96,13 +96,19 @@ it('selects only company IDs when an actual task is due', function (): void {
         v243LeadWithTask($manager, '99424302', now()->subHours(2));
 
         $taskCompanyQueries = [];
-        DB::listen(static function (QueryExecuted $event) use (&$taskCompanyQueries): void {
+        $taskCountQueries = [];
+        DB::listen(static function (QueryExecuted $event) use (&$taskCompanyQueries, &$taskCountQueries): void {
             $sql = strtolower($event->sql);
             if (str_contains($sql, 'from "companies"')
                 && str_contains($sql, 'hubspot_tasks')
                 && str_contains($sql, 'assigned_to')
                 && str_contains($sql, 'due_at')) {
                 $taskCompanyQueries[] = $sql;
+            }
+            if (str_contains($sql, 'from "hubspot_tasks"')
+                && str_contains($sql, 'due_at')
+                && str_contains($sql, 'assigned_to')) {
+                $taskCountQueries[] = $sql;
             }
         });
 
@@ -114,11 +120,9 @@ it('selects only company IDs when an actual task is due', function (): void {
             'today' => 0,
         ]);
 
-        expect($taskCompanyQueries)->not->toBeEmpty();
-        foreach ($taskCompanyQueries as $sql) {
-            expect($sql)->toContain('"companies"."id"')
-                ->not->toContain('select "companies".*');
-        }
+        // V54 conta tarefas diretamente, sem EXISTS em Company para cada card.
+        expect($taskCompanyQueries)->toBeEmpty()
+            ->and($taskCountQueries)->not->toBeEmpty();
     } finally {
         Carbon::setTestNow();
     }

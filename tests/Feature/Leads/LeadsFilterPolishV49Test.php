@@ -28,8 +28,11 @@ it('renders document and external link icons in both global and personal HubSpot
 it('shows fiscal pagination only without either HubSpot-stage filter to avoid double footers', function (): void {
     $view = file_get_contents(resource_path('views/pages/leads/⚡index.blade.php'));
     $partial = file_get_contents(resource_path('views/partials/leads-global-stage-list-v45.blade.php'));
+    $tasks = file_get_contents(resource_path('views/partials/leads-due-tasks-v54.blade.php'));
 
-    expect($view)->toContain("@if (\$globalHubSpotStage === '' && \$personalHubSpotStage === '' && \$this->leads->hasPages())")
+    expect($tasks)->toContain('Paginação das tarefas HubSpot')
+        ->toContain("nextPage('dueTaskPage')")
+        ->and($view)->toContain("@if (! \$dueActionOnly && \$globalHubSpotStage === '' && \$personalHubSpotStage === '' && \$this->leads->hasPages())")
         ->and($partial)->toContain("nextPage('globalStageDealsPage')")
         ->toContain('Paginação dos negócios desta etapa')
         ->not->toContain('$lf45Deals->links()');

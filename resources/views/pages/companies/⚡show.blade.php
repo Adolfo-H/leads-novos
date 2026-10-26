@@ -1855,6 +1855,8 @@ new class extends Component
             'success',
             'CNAE adicionado com sucesso.'
         );
+        // E53: fechar somente o formulario novo apos persistencia confirmada.
+        $this->dispatch('e53-cnae-saved');
     }
 
     public function makeCnaePrimary(
@@ -2293,7 +2295,7 @@ new class extends Component
 ?>
 
 <div
-    class="ec-page-shell ec-dossier-page"
+    class="ec-page-shell ec-dossier-page e53-dossier"
     x-data="{
         dossierTab:
             new URLSearchParams(
@@ -2301,6 +2303,13 @@ new class extends Component
             ).get('tab')
             || 'commercial',
 
+        dossierView: 'summary',
+        showAdvancedDossier: false,
+        e53ResearchOpen: false,
+        e53SelectedUnit: null,
+        e53AddCnaeOpen: false,
+        e53DeleteCnae: null,
+        e53DeleteCnaeLabel: '',
         expandedTimeline: false,
         expandedEstablishments: false,
         expandedGroupCnaes: false,
@@ -2309,6 +2318,8 @@ new class extends Component
 
         setDossierTab(tab) {
             this.dossierTab = tab;
+            this.dossierView = 'summary';
+            this.showAdvancedDossier = false;
 
             const url =
                 new URL(
@@ -2357,6 +2368,12 @@ new class extends Component
         $crmReprospecting =
             $this->crmReprospecting;
     @endphp
+
+    {{-- EC_PROSPECTOR_E53: telas Figma E05–E09 (dados locais e ações existentes). --}}
+    @include('partials.company-dossier.figma-v53')
+
+    {{-- Legado preservado integralmente para operações avançadas e auditoria. --}}
+    <div class="e53-legacy" x-show="showAdvancedDossier" x-cloak>
 
     {{-- VOLTAR --}}
     <div>
@@ -2661,4 +2678,5 @@ new class extends Component
         'partials.company-dossier.cnaes'
     )
 
+    </div> {{-- /e53-legacy --}}
 </div>

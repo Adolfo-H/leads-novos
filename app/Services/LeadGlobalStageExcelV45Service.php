@@ -38,8 +38,17 @@ final class LeadGlobalStageExcelV45Service
         // EC_PROSPECTOR_V50_2: recarregar associações atualizadas do banco em cada exportação.
         // loadMissing reutiliza a relação vazia armazenada em um modelo exportado antes.
         $models->load([
-            'companies.prospectorCompany.matrix', 'companies.contacts', 'contacts', 'stage',
+            'companies.prospectorCompany.matrix', 'companies.prospectorCompany.hubSpotLead',
+            'companies.contacts', 'contacts', 'stage',
         ]);
+
+        // EC_PROSPECTOR_V52: rótulo comercial idêntico às duas listas HubSpot.
+        $v52FiscalCompanies = $models
+            ->flatMap(static fn ($deal) => $deal->companies)
+            ->filter(static fn ($hub) => $hub->hasTrustedFiscalLink() && $hub->prospectorCompany !== null)
+            ->map(static fn ($hub) => $hub->prospectorCompany)
+            ->unique('id')->values();
+        $v52Statuses = app(LeadCommercialSituationV52Service::class)->forCompanies($v52FiscalCompanies);
 
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
@@ -62,6 +71,9 @@ final class LeadGlobalStageExcelV45Service
             $matrix = $fiscal?->matrix;
             $cnpj = trim((string) data_get($matrix, 'cnpj', ''));
             $people = $contactExporter->forHubSpotDeal($deal, $company);
+            $v52Status = $fiscal !== null
+                ? ($v52Statuses[(int) $fiscal->id] ?? '')
+                : ($deal->is_closed_won ? 'client' : '');
 
             $row = [
                 'Empresa' => (string) ($company?->name ?: $deal->name ?: 'Negócio sem empresa vinculada'),
@@ -72,7 +84,12 @@ final class LeadGlobalStageExcelV45Service
                 'Prioridade' => '',
                 'ICP' => '',
                 'Responsável' => (string) ($deal->owner_name ?: 'Não informado'),
-                'Status comercial' => '',
+                'Status comercial' => match ($v52Status) {
+                    'client' => 'Cliente',
+                    'known' => 'Conhecido',
+                    'reprospecting' => 'Reprospecção',
+                    default => '',
+                },
                 'Status CRM' => $fiscal !== null ? 'Vínculo fiscal confirmado' : 'HubSpot sem vínculo fiscal',
                 'Próxima ação' => '',
                 'Nome do contato' => $people['names'],

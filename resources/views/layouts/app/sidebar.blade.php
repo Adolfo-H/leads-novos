@@ -252,7 +252,7 @@
 
         <div class="ec-topbar-context">
 
-            @unless (request()->routeIs('leads.index'))
+            @unless (request()->routeIs('leads.index', 'companies.show'))
                 <span class="ec-topbar-eyebrow">
                     ExportControl
                 </span>

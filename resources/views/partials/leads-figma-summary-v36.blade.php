@@ -2,9 +2,9 @@
 <section class="lf36-kpis lf42-kpis" aria-label="Indicadores reais da fila de Leads">
     <button type="button" class="lf36-kpi {{ ! $dueActionOnly && $owner === '' && $crmSituation === '' && $globalHubSpotStage === '' && $personalHubSpotStage === '' ? 'is-accent' : '' }}"
             wire:click="clearFilters" wire:loading.attr="disabled" aria-label="Ver todos os leads">
-        <span>{{ ($globalHubSpotStage !== '' || $personalHubSpotStage !== '') ? 'Negócios na etapa' : 'Leads no recorte' }}</span>
-        <strong>{{ number_format($globalHubSpotStage !== '' ? $this->globalHubSpotStageDeals->total() : ($personalHubSpotStage !== '' ? $this->personalHubSpotStageDeals->total() : $this->leads->total()), 0, ',', '.') }}</strong>
-        <small>{{ ($globalHubSpotStage !== '' || $personalHubSpotStage !== '') ? 'Negócios reais do HubSpot filtrados pela etapa' : 'Empresas que atendem aos filtros atuais' }}</small>
+        <span>{{ $dueActionOnly ? 'Tarefas no recorte' : (($globalHubSpotStage !== '' || $personalHubSpotStage !== '') ? 'Negócios na etapa' : 'Leads no recorte') }}</span>
+        <strong>{{ number_format($dueActionOnly ? $this->dueHubSpotTasks->total() : ($globalHubSpotStage !== '' ? $this->globalHubSpotStageDeals->total() : ($personalHubSpotStage !== '' ? $this->personalHubSpotStageDeals->total() : $this->leads->total())), 0, ',', '.') }}</strong>
+        <small>{{ $dueActionOnly ? 'Cada tarefa do HubSpot é contabilizada individualmente' : (($globalHubSpotStage !== '' || $personalHubSpotStage !== '') ? 'Negócios reais do HubSpot filtrados pela etapa' : 'Empresas que atendem aos filtros atuais') }}</small>
     </button>
     <button type="button" class="lf36-kpi {{ $dueActionOnly && $queueDuePeriod === 'overdue' ? 'is-accent' : '' }}"
             wire:click="applyFigmaFollowUp('overdue')" wire:loading.attr="disabled"

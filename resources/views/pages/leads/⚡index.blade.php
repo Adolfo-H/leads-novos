@@ -68,6 +68,10 @@ new class extends Component
     /** @var list<string> */
     public array $selectedGlobalDealIds = [];
 
+    // EC_PROSPECTOR_V54: tarefas selecionadas (IDs locais, revalidados no backend).
+    /** @var list<string> */
+    public array $selectedDueTaskIds = [];
+
     #[Url]
     public string $workStatus = '';
 
@@ -194,56 +198,37 @@ new class extends Component
     }
 
     /**
-     * LEADS_DUE_QUERY_REUSE_V242
-     *
-     * Duas consultas com os mesmos filtros/autorizações usados antes,
-     * compartilhadas entre os cards. A união dos IDs é necessária:
-     * uma empresa pode ter tarefas atrasadas E tarefas para hoje;
-     * o total não pode contabilizá-la duas vezes.
-     *
-     * Cache somente na requisição Livewire (sem persistir no Redis).
-     *
-     * @return array{total: int, overdue: int, today: int}
+     * LEADS_DUE_QUERY_REUSE_V242 — compatibilidade com os cards antigos.
+     * EC_PROSPECTOR_V54: agora os números são de TAREFAS, e não de empresas.
+     * Cada tarefa é contada uma vez, inclusive sem identidade fiscal confirmada.
+     * @return array{total:int,overdue:int,today:int}
      */
     #[Computed]
     public function v242DueCounts(): array
     {
-        $service = app(\App\Services\LeadCrmSituationService::class);
-        $now = now();
-        $tomorrow = today()->addDay();
-
-        // LEADS_DUE_FAST_PATH_V243
-        // Se nenhuma tarefa global esta aberta e vence ate hoje, nao ha
-        // tarefas elegiveis para nenhum vendedor/empresa. Evitamos duas
-        // consultas com multiplas relacoes e filtros de permissao.
-        // Apenas um atalho: quando ha tarefas, as regras antigas sao usadas.
-        if (! \App\Models\HubSpotTask::query()
-            ->dueInPeriod($tomorrow)
-            ->exists()) {
-            return [
-                'total' => 0,
-                'overdue' => 0,
-                'today' => 0,
-            ];
+        $user = auth()->user();
+        if (! $user instanceof User) {
+            return ['total' => 0, 'overdue' => 0, 'today' => 0];
         }
 
-        // A consulta operacional seleciona companies.* por padrao.
-        // Para contar IDs, nao carregar todas as colunas das empresas.
-        $overdueIds = $service->dueForAuthenticatedUserPeriod(
-            $this->operationalLeadQuery(), null, $now
-        )->select('companies.id')->pluck('companies.id')
-            ->map(static fn (mixed $id): int => (int) $id)->all();
+        return app(\App\Services\LeadDueTaskQueueV54Service::class)->counts($user);
+    }
 
-        $todayIds = $service->dueForAuthenticatedUserPeriod(
-            $this->operationalLeadQuery(), $now, $tomorrow
-        )->select('companies.id')->pluck('companies.id')
-            ->map(static fn (mixed $id): int => (int) $id)->all();
+    /** @return \Illuminate\Pagination\LengthAwarePaginator<int, \App\Models\HubSpotTask> */
+    #[Computed]
+    public function dueHubSpotTasks(): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof User, 403);
 
-        return [
-            'total' => count(array_unique([...$overdueIds, ...$todayIds])),
-            'overdue' => count($overdueIds),
-            'today' => count($todayIds),
-        ];
+        $period = in_array($this->queueDuePeriod, ['overdue', 'today'], true)
+            ? $this->queueDuePeriod : 'all';
+
+        return app(\App\Services\LeadDueTaskQueueV54Service::class)
+            ->forUser($user, $period)
+            ->orderBy('hubspot_tasks.due_at')
+            ->orderBy('hubspot_tasks.id')
+            ->paginate(20, ['*'], 'dueTaskPage');
     }
 
     /**
@@ -269,6 +254,7 @@ new class extends Component
 
         if ($card === 'due') {
             $this->dueActionOnly = true;
+            $this->resetPage('dueTaskPage');
         } elseif ($card === 'mine') {
             $this->owner = 'mine';
         } else {
@@ -424,6 +410,7 @@ new class extends Component
             'personalHubSpotStage',
             'selectedLeadIds',
             'selectedGlobalDealIds',
+            'selectedDueTaskIds',
             'dashboardCompany',
             'workStatus',
             'followUp',
@@ -1202,6 +1189,27 @@ new class extends Component
         LeadExportService $service,
     ): StreamedResponse {
         unset($service); // legacy injection preservada para integracoes/testes antigos.
+
+        // EC_PROSPECTOR_V54: Excel de tarefas individuais (inclui sem CNPJ).
+        if ($this->dueActionOnly) {
+            $user = auth()->user();
+            abort_unless($user instanceof User, 403);
+            $ids = $this->selectedExportIdsV45($this->selectedDueTaskIds);
+            $period = in_array($this->queueDuePeriod, ['overdue', 'today'], true)
+                ? $this->queueDuePeriod : 'all';
+            $tasks = app(\App\Services\LeadDueTaskQueueV54Service::class)
+                ->forUser($user, $period)
+                ->when($this->selectedDueTaskIds !== [], static function ($query) use ($ids): void {
+                    if ($ids === []) {
+                        $query->whereRaw('1 = 0');
+                    } else {
+                        $query->whereIn('hubspot_tasks.id', $ids);
+                    }
+                })
+                ->orderBy('hubspot_tasks.due_at')->orderBy('hubspot_tasks.id')->get();
+
+            return app(\App\Services\LeadDueTaskExcelV54Service::class)->excel($tasks);
+        }
 
         if ($this->globalHubSpotStage !== '' || $this->personalHubSpotStage !== '') {
             if ($this->globalHubSpotStage !== '') {
@@ -2341,11 +2349,15 @@ new class extends Component
 
             'future' => 'Oportunidade futura',
 
+            'known' => 'Conhecido',
+
+            'client' => 'Cliente',
+
             'reprospecting' => 'Reprospecção',
 
             'refused' => 'Recusou',
 
-            'converted' => 'Convertido',
+            'converted' => 'Cliente',
 
             'discarded' => 'Descartado',
 
@@ -3152,6 +3164,7 @@ new class extends Component
         $this->dueActionOnly = true;
         $this->queueDuePeriod = $period;
         $this->resetPage();
+        $this->resetPage('dueTaskPage');
     }
 
     /** Card Sem responsável deve ser um filtro novo, não misturar com Atrasados. */
@@ -4944,7 +4957,11 @@ new class extends Component
         <div class="lv15-selected-filter" role="status">
             <span>
                 @if ($dueActionOnly)
-                    Tarefas abertas vencidas ou previstas para hoje
+                    {{ match ($queueDuePeriod) {
+                        'overdue' => 'Tarefas abertas com horário já vencido (inclusive hoje)',
+                        'today' => 'Tarefas abertas que ainda vencem hoje',
+                        default => 'Tarefas abertas vencidas ou previstas até o fim de hoje',
+                    } }}
                 @else
                     Situação CRM:
                     {{ match ($crmSituation) {
@@ -5009,12 +5026,12 @@ new class extends Component
         </section>
     @endif
 
-    <section class="rf-panel rf-list-panel" x-data="{ selectedIds: $wire.entangle('selectedLeadIds').live, stageSelectedIds: $wire.entangle('selectedGlobalDealIds').live }">
+    <section class="rf-panel rf-list-panel" x-data="{ selectedIds: $wire.entangle('selectedLeadIds').live, stageSelectedIds: $wire.entangle('selectedGlobalDealIds').live, dueSelectedIds: $wire.entangle('selectedDueTaskIds').live }">
 
         <div class="rf-list-toolbar lf364-list-toolbar" data-testid="leads-list-toolbar">
             <div class="lf364-list-heading">
                 <h2 class="lf36-list-title">Empresas para trabalhar</h2>
-                <span class="lf364-list-hint">Sua fila de prospecção e acompanhamento</span>
+                <span class="lf364-list-hint">{{ $dueActionOnly ? 'Tarefas individuais atribuídas a você no HubSpot' : 'Sua fila de prospecção e acompanhamento' }}</span>
                 @if ($globalHubSpotStage !== '')
                     {{-- EC_PROSPECTOR_V47: filtro ativo no cabeçalho usual da fila. --}}
                     <button type="button" class="lf47-active-stage-chip" wire:click="clearGlobalHubSpotStageView"
@@ -5041,27 +5058,29 @@ new class extends Component
 
             </div>
             <div class="lf364-list-results">
-                <strong>{{ number_format($globalHubSpotStage !== '' ? $this->globalHubSpotStageDeals->total() : ($personalHubSpotStage !== '' ? $this->personalHubSpotStageDeals->total() : $this->leads->total()), 0, ',', '.') }} {{ $globalHubSpotStage !== '' || $personalHubSpotStage !== '' ? 'negócios na etapa' : 'leads encontrados' }}</strong>
-                <span>Ordenados por atenção comercial e score</span>
+                <strong>{{ number_format($dueActionOnly ? $this->dueHubSpotTasks->total() : ($globalHubSpotStage !== '' ? $this->globalHubSpotStageDeals->total() : ($personalHubSpotStage !== '' ? $this->personalHubSpotStageDeals->total() : $this->leads->total())), 0, ',', '.') }} {{ $dueActionOnly ? 'tarefas encontradas' : ($globalHubSpotStage !== '' || $personalHubSpotStage !== '' ? 'negócios na etapa' : 'leads encontrados') }}</strong>
+                <span>{{ $dueActionOnly ? 'Cada tarefa aparece uma vez, inclusive sem CNPJ' : 'Ordenados por atenção comercial e score' }}</span>
             </div>
         </div>
 
         {{-- Controles de seleção em faixa própria: nunca sobrepor o contador. --}}
         <div class="lf364-selection-bar" data-testid="leads-selection-bar"
-             x-show="($wire.globalHubSpotStage !== '' || $wire.personalHubSpotStage !== '') ? stageSelectedIds.length > 0 : selectedIds.length > 0" x-cloak aria-live="polite" role="status">
+             x-show="$wire.dueActionOnly ? dueSelectedIds.length > 0 : (($wire.globalHubSpotStage !== '' || $wire.personalHubSpotStage !== '') ? stageSelectedIds.length > 0 : selectedIds.length > 0)" x-cloak aria-live="polite" role="status">
             <div class="lf364-selection-message">
                 <span class="lf364-selection-indicator" aria-hidden="true"></span>
-                <strong x-text="($wire.globalHubSpotStage !== '' || $wire.personalHubSpotStage !== '') ? stageSelectedIds.length : selectedIds.length"></strong>
-                <span x-text="($wire.globalHubSpotStage !== '' || $wire.personalHubSpotStage !== '') ? 'negócios selecionados nesta página' : 'leads selecionados nesta página'"></span>
+                <strong x-text="$wire.dueActionOnly ? dueSelectedIds.length : (($wire.globalHubSpotStage !== '' || $wire.personalHubSpotStage !== '') ? stageSelectedIds.length : selectedIds.length)"></strong>
+                 <span x-text="$wire.dueActionOnly ? 'tarefas selecionadas' : (($wire.globalHubSpotStage !== '' || $wire.personalHubSpotStage !== '') ? 'negócios selecionados' : 'leads selecionados')"></span>
             </div>
             <button type="button" class="lf364-selection-clear"
-                    x-on:click="selectedIds = []; stageSelectedIds = []; $el.closest('.rf-list-panel').querySelectorAll('input[type=checkbox]').forEach(box => box.checked = false)">
+                    x-on:click="selectedIds = []; stageSelectedIds = []; dueSelectedIds = []; $el.closest('.rf-list-panel').querySelectorAll('input[type=checkbox]').forEach(box => box.checked = false)">
                 Limpar seleção
             </button>
         </div>
 
         <div class="rf-list-scroll">
-            @if (($globalHubSpotStage !== '' && $this->isCommercialManager()) || $personalHubSpotStage !== '')
+            @if ($dueActionOnly)
+                @include('partials.leads-due-tasks-v54')
+            @elseif (($globalHubSpotStage !== '' && $this->isCommercialManager()) || $personalHubSpotStage !== '')
                 @include('partials.leads-global-stage-list-v45')
             @else
 
@@ -5108,6 +5127,12 @@ new class extends Component
                 <span>Etapa HubSpot</span><span>Próxima ação</span>
                 <span>Responsável</span><span>Ações</span>
             </div>
+
+            {{-- EC_PROSPECTOR_V52: resolver os rótulos em lote, sem consultas por linha. --}}
+            @php
+                $v52CommercialByCompany = app(\App\Services\LeadCommercialSituationV52Service::class)
+                    ->forCompanies($this->leads->getCollection());
+            @endphp
 
             @forelse (
                 $this->leads
@@ -5355,6 +5380,9 @@ new class extends Component
                         $hubSpotLead
                             ?->work_status
                         ?? 'new';
+
+                    $v52VisibleStatus = $v52CommercialByCompany[(int) $lead->id]
+                        ?? $currentWorkStatus;
 
                     $workClass =
                         match (
@@ -5624,8 +5652,13 @@ new class extends Component
                         </div>
 
                         <div class="lv13-status">
-                            <span class="lv13-pill lv13-status--{{ $currentWorkStatus }}">{{ $this->workStatusLabel($currentWorkStatus) }}</span>
-                            <small>{{ $leadIsOverdue ? 'Follow-up atrasado' : ($leadIsDueToday ? 'Ação hoje' : $this->workContext($hubSpotLead)) }}</small>
+                            <span class="lv13-pill lv13-status--{{ $v52VisibleStatus }}">{{ $this->workStatusLabel($v52VisibleStatus) }}</span>
+                            <small>{{ $leadIsOverdue ? 'Follow-up atrasado' : ($leadIsDueToday ? 'Ação hoje' : match ($v52VisibleStatus) {
+                                'known' => 'Atividade HubSpot nos últimos 30 dias',
+                                'reprospecting' => 'Sem atividade registrada há 90 dias ou mais',
+                                'client' => 'Cliente convertido no HubSpot',
+                                default => $this->workContext($hubSpotLead),
+                            }) }}</small>
                         </div>
 
                         <div class="lv13-stage">
@@ -5722,7 +5755,7 @@ new class extends Component
 
         </div>
 
-        @if ($globalHubSpotStage === '' && $personalHubSpotStage === '' && $this->leads->hasPages())
+        @if (! $dueActionOnly && $globalHubSpotStage === '' && $personalHubSpotStage === '' && $this->leads->hasPages())
 
             <div class="rf-pagination">
 

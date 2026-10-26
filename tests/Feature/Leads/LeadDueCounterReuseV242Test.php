@@ -49,7 +49,7 @@ function v242CompanyWithTasks(string $root, array $tasks): void
     }
 }
 
-it('counts a company with overdue and due-today tasks only once in the total', function (): void {
+it('counts individual overdue and due-today tasks even on the same company', function (): void {
     Carbon::setTestNow('2026-10-08 11:00:00');
 
     try {
@@ -59,7 +59,7 @@ it('counts a company with overdue and due-today tasks only once in the total', f
         ]);
         $manager->forceFill(['commercial_role' => User::ROLE_MANAGER])->save();
 
-        // Empresa 1: duas tarefas minhas, uma atrasada e outra para hoje.
+        // Empresa 1: duas tarefas minhas, uma atrasada e outra para hoje; total deve ser 3.
         v242CompanyWithTasks('99424201', [
             ['owner' => $manager->name, 'due' => now()->subHours(2)],
             ['owner' => $manager->name, 'due' => now()->addHours(2)],
@@ -83,12 +83,12 @@ it('counts a company with overdue and due-today tasks only once in the total', f
 
         $page = Livewire::actingAs($manager)->test('pages::leads.index');
 
-        expect($page->get('v15DueCount'))->toBe(2)
+        expect($page->get('v15DueCount'))->toBe(3)
             ->and($page->get('v17DueBreakdown'))->toBe([
                 'overdue' => 1,
                 'today' => 2,
             ])
-            ->and($page->get('v242DueCounts')['total'])->toBe(2);
+            ->and($page->get('v242DueCounts')['total'])->toBe(3);
     } finally {
         Carbon::setTestNow();
     }

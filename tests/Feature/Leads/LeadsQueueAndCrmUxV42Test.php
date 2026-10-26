@@ -57,7 +57,7 @@ it('keeps the Leads table visible when overdue is empty but unmatched CRM deals 
         ->assertSet('dueActionOnly', true)
         ->assertSee('Sua fila comercial')
         ->assertSee('Empresas para trabalhar')
-        ->assertSee('Nenhum lead encontrado')
+        ->assertSee('Nenhuma tarefa aberta nesse período')
         ->assertDontSee('Retornos que precisam de atenção');
 });
 

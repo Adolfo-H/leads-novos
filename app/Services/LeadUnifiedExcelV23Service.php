@@ -54,6 +54,8 @@ final class LeadUnifiedExcelV23Service
 
         $contactExporter = app(HubSpotContactExportV50Service::class);
         $normal = app(LeadExportService::class)->rows($companies);
+        // EC_PROSPECTOR_V52: exportar o mesmo rótulo apresentado e filtrado em Leads.
+        $v52Statuses = app(LeadCommercialSituationV52Service::class)->forCompanies($companies);
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Leads');
@@ -66,6 +68,13 @@ final class LeadUnifiedExcelV23Service
             // Company snapshot and mirrored deals are preserved as distinct sources.
             $company = $companies->get($idx);
             if ($company instanceof Company) {
+                $v52Status = $v52Statuses[(int) $company->id] ?? '';
+                $row['Status comercial'] = match ($v52Status) {
+                    'client' => 'Cliente',
+                    'known' => 'Conhecido',
+                    'reprospecting' => 'Reprospecção',
+                    default => (string) ($row['Status comercial'] ?? ''),
+                };
                 $company->loadMissing(['hubSpotCompanies.commercialDeals']);
                 $stages = $company->hubSpotCompanies
                     ->flatMap(static fn ($linked) => $linked->commercialDeals->pluck('stage_label'))

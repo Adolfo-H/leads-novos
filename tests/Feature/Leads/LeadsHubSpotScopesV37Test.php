@@ -109,7 +109,17 @@ it('does not reveal global HubSpot totals to sellers but keeps their personal pi
 it('keeps the Dashboard topbar unchanged while simplifying only the Leads title', function (): void {
     $layout = file_get_contents(resource_path('views/layouts/app/sidebar.blade.php'));
     $view = file_get_contents(resource_path('views/pages/leads/⚡index.blade.php'));
-    expect($layout)->toContain("@unless (request()->routeIs('leads.index'))")
+    // V54.4: o Dossiê também pode ocultar a sobrancelha do cabeçalho.
+    // Validar apenas o bloco do cabeçalho (e não o texto literal de @unless).
+    $header = explode('<div class="ec-topbar-context">', $layout, 2)[1] ?? '';
+    $eyebrow = explode('<span class="ec-topbar-title">', $header, 2)[0];
+
+    expect($eyebrow)
+        ->toContain('leads.index')
+        ->toContain('ec-topbar-eyebrow')
+        ->toContain('ExportControl')
+        ->toMatch('/@(?:unless|if)\s*\([\s\S]*?leads\.index[\s\S]*?\)/')
+        ->toMatch('/@(?:endunless|endif)/')
         ->and($view)->toContain('lf37-row-action')
         ->toContain('HubSpot ↗')
         ->toContain("@include('partials.leads-crm-stage-strip')")

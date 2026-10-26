@@ -108,9 +108,9 @@ it(
         'Recusou',
     ],
 
-    'convertido' => [
+    'convertido → cliente (V52)' => [
         'converted',
-        'Convertido',
+        'Cliente',
     ],
 
     'descartado' => [

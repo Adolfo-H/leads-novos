@@ -238,6 +238,9 @@ final class LeadCrmSituationService
     {
         return $query->where(function ($client): void {
             $client->whereHas('crmCheck', fn ($crm) => $crm->where('status', 'client'))
+                // EC_PROSPECTOR_V52: Convertido no espelho comercial é Cliente,
+                // mesmo sem a propriedade is_closed_won ou status CRM legado.
+                ->orWhereHas('hubSpotLead', fn ($lead) => $lead->where('work_status', 'converted'))
                 ->orWhereHas('hubSpotCompanies.commercialDeals', fn ($deal) => $deal
                     ->where('hubspot_deals.is_closed_won', true));
         });
@@ -251,6 +254,7 @@ final class LeadCrmSituationService
     {
         return $query
             ->whereDoesntHave('crmCheck', fn ($crm) => $crm->where('status', 'client'))
+            ->whereDoesntHave('hubSpotLead', fn ($lead) => $lead->where('work_status', 'converted'))
             ->whereDoesntHave('hubSpotCompanies.commercialDeals', fn ($deal) => $deal
                 ->where('hubspot_deals.is_closed_won', true));
     }

@@ -16,6 +16,14 @@
         'companies.prospectorCompany.hubSpotLead',
         'companies.prospectorCompany.matrix',
     ]);
+    // EC_PROSPECTOR_V52: os dois pipelines usam o mesmo recorte do filtro CRM.
+    $v52FiscalCompanies = $lf45Deals->getCollection()
+        ->flatMap(static fn ($deal) => $deal->companies)
+        ->filter(static fn ($hub) => $hub->hasTrustedFiscalLink() && $hub->prospectorCompany !== null)
+        ->map(static fn ($hub) => $hub->prospectorCompany)
+        ->unique('id')->values();
+    $v52StageStatuses = app(\App\Services\LeadCommercialSituationV52Service::class)
+        ->forCompanies($v52FiscalCompanies);
     // V46: não desmarca outras páginas ao selecionar/desmarcar a atual.
     $lf46PageDealIds = $lf45Deals->getCollection()
         ->pluck('id')
@@ -53,6 +61,9 @@
             $lf47Icp = $lf47Fiscal?->icpScore;
             $lf47HubSpotLead = $lf47Fiscal?->hubSpotLead;
             $lf47WorkStatus = (string) ($lf47HubSpotLead?->work_status ?? '');
+            $v52StageStatus = $lf47Fiscal
+                ? ($v52StageStatuses[(int) $lf47Fiscal->id] ?? $lf47WorkStatus)
+                : $lf47WorkStatus;
             $lf47Owner = trim((string) ($lf45Deal->owner_name ?? ''));
             $lf47Owner = $lf47Owner !== '' ? $lf47Owner : 'Não informado';
             $lf47Due = $lf47HubSpotLead?->last_task_due_at;
@@ -100,8 +111,8 @@
                 </div>
 
                 <div class="lv13-status">
-                    @if ($lf47WorkStatus !== '')
-                        <span class="lv13-pill lv13-status--{{ $lf47WorkStatus }}">{{ $this->workStatusLabel($lf47WorkStatus) }}</span>
+                    @if ($v52StageStatus !== '')
+                        <span class="lv13-pill lv13-status--{{ $v52StageStatus }}">{{ $this->workStatusLabel($v52StageStatus) }}</span>
                     @elseif ($lf47Fiscal)
                         <span class="lv13-pill lf47-linked-pill">CNPJ identificado</span>
                     @else
