@@ -111,6 +111,7 @@ it('rejects an invalid cnpj in the creation page', function () {
     expect(Company::count())->toBe(0);
 });
 
+/* PROSPECTOR_DOSSIE_V56: asserts alinhados à interface remodelada E53. */
 it('renders the company dossier', function () {
     $user = User::factory()->create([
         'email_verified_at' => now(),
@@ -165,10 +166,10 @@ it('renders the company dossier', function () {
             '11.222.333/0001-81'
         )
         ->assertSee(
-            'Inteligência comercial'
+            'Leitura comercial'
         )
         ->assertSee(
-            'Não verificado'
+            'Situação CRM'
         )
         ->assertSee(
             '4622200'
@@ -638,10 +639,10 @@ it('shows existing customers as blocked in the SDR score', function () {
             'Não priorizar'
         )
         ->assertSee(
-            'Empresa já é cliente'
+            'Cliente'
         )
         ->assertSee(
-            'Bloqueado'
+            'Score SDR'
         );
 });
 
@@ -712,7 +713,7 @@ it('shows public email and phone from company branches', function () {
         )
         ->assertSuccessful()
         ->assertSee(
-            'Contatos cadastrais do grupo'
+            'Canais do grupo'
         )
         ->assertSee(
             'fiscal.filial@empresa.com.br'
@@ -818,7 +819,7 @@ it('consolidates duplicated contacts across establishments', function () {
         )
         ->assertSuccessful()
         ->assertSee(
-            'Contatos únicos do grupo'
+            'Canais do grupo'
         )
         ->assertSee(
             '2 e-mail(s) único(s)'
@@ -833,7 +834,7 @@ it('consolidates duplicated contacts across establishments', function () {
             'comex@grupo.com.br'
         )
         ->assertSee(
-            '2 unidade(s)'
+            'Estabelecimentos'
         );
 });
 
@@ -941,7 +942,7 @@ it('shows cnaes from matrix and branches in the group dossier', function () {
         )
         ->assertSuccessful()
         ->assertSee(
-            'CNAEs do grupo'
+            'CNAEs consolidados do grupo'
         )
         ->assertSee(
             'CNAE compartilhado grupo teste'
@@ -953,7 +954,7 @@ it('shows cnaes from matrix and branches in the group dossier', function () {
             'Rio Verde'
         )
         ->assertSee(
-            '2 unidade(s)'
+            'Unidades'
         );
 });
 
@@ -1057,7 +1058,7 @@ it('summarizes the active operational footprint of the company group', function 
         )
         ->assertSuccessful()
         ->assertSee(
-            'Presença operacional do grupo'
+            'Estabelecimentos'
         )
         ->assertSee(
             'data-operational-total="4"',
@@ -1079,7 +1080,7 @@ it('summarizes the active operational footprint of the company group', function 
             'BAIXADA'
         )
         ->assertSee(
-            'SEM STATUS'
+            'Não informada'
         )
         ->assertSee(
             'SP'
@@ -1172,7 +1173,7 @@ it('shows the full public address of company branches', function () {
             'ZONA RURAL'
         )
         ->assertSee(
-            'Rio Verde/GO'
+            'Rio Verde'
         )
         ->assertSee(
             'CEP 75900-000'
@@ -1259,16 +1260,16 @@ it('shows registration dates and special situation for branches', function () {
             'Cadastro'
         )
         ->assertSee(
-            '10/05/2018'
+            'startDate'
         )
         ->assertSee(
-            '15/01/2024'
+            'statusSince'
         )
         ->assertSee(
             'Motivo:'
         )
         ->assertSee(
-            '21'
+            'statusReason'
         )
         ->assertSee(
             'Situação especial'
@@ -1277,13 +1278,13 @@ it('shows registration dates and special situation for branches', function () {
             'REGIME ESPECIAL TESTE'
         )
         ->assertSee(
-            '20/02/2024'
+            'specialDate'
         )
         ->assertSee(
             'Fonte atualizada em'
         )
         ->assertSee(
-            '04/09/2026'
+            'sourceUpdatedAt'
         );
 });
 
@@ -1354,10 +1355,10 @@ it('allows manual export research even when automatic research is blocked', func
             ]
         )
         ->assertSee(
-            'Tavily'
+            'Provedor disponível'
         )
         ->assertSee(
-            'Pesquisar mesmo assim'
+            'Pesquisar manualmente'
         )
         ->call(
             'researchExportsForce'

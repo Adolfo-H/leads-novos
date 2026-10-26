@@ -111,9 +111,9 @@
             // Prioridades comerciais: evitar períodos fictícios e números de mockup.
             $ds25Priorities = [
                 [
-                    'title' => 'Follow-ups atrasados', 'detail' => 'Tarefas abertas cujo vencimento já passou',
-                    'value' => $ds25Metrics['overdue'], 'tone' => 'danger', 'symbol' => '!',
-                    'url' => route('leads.index', ['dashboardView' => 'overdue']),
+                    'title' => 'Minhas tarefas atrasadas', 'detail' => 'Tarefas abertas do HubSpot cujo horário já passou',
+                    'value' => $ds25MyDueTasks['overdue'], 'tone' => 'danger', 'symbol' => '!',
+                    'url' => route('leads.index', ['dueActionOnly' => 1, 'queueDuePeriod' => 'overdue']),
                 ],
                 [
                     'title' => 'Leads aguardando contato', 'detail' => 'Empresas ainda não abordadas no CRM',
@@ -260,9 +260,9 @@
                 <h2 id="ef29-actions-heading">Comece por aqui</h2>
                 @php
                     $ef29Focus = [
-                        ['title' => 'Retornos vencidos', 'value' => $ds25Metrics['overdue'],
-                         'note' => 'Retome o acompanhamento da carteira.',
-                         'url' => route('leads.index', ['dashboardView' => 'overdue'])],
+                        ['title' => 'Minhas tarefas atrasadas', 'value' => $ds25MyDueTasks['overdue'],
+                         'note' => 'Retome as tarefas vencidas atribuídas a você.',
+                         'url' => route('leads.index', ['dueActionOnly' => 1, 'queueDuePeriod' => 'overdue'])],
                         ['title' => 'Sem responsável', 'value' => $ds25Metrics['unassigned'],
                          'note' => 'Distribua a carteira com prévia de impacto.',
                          'url' => route('leads.index', ['dashboardView' => 'all', 'owner' => 'unassigned'])],
@@ -351,11 +351,9 @@
             $ef29MyPortfolio = \App\Models\CompanyLeadWorkState::query()
                 ->where('assigned_user_id', $ef29CurrentUserId)
                 ->count();
-            $ef29MyToday = \App\Models\CompanyLeadWorkState::query()
-                ->where('assigned_user_id', $ef29CurrentUserId)
-                ->where('next_action_at', '>=', now()->startOfDay())
-                ->where('next_action_at', '<', now()->addDay()->startOfDay())
-                ->count();
+            // V55: hora exata do HubSpot; não inclui prazos já vencidos.
+            $ef29MyToday = app(\App\Services\DashboardHubSpotDueTasksV40Service::class)
+                ->forUser($ef29CurrentUserId)['today'];
             $ef29Overdue = \App\Models\CompanyLeadWorkState::query()
                 ->with('company')
                 ->where('assigned_user_id', $ef29CurrentUserId)
@@ -403,10 +401,10 @@
                 <strong class="ef29-kpi-value">{{ number_format($ef29MyPortfolio, 0, ',', '.') }}</strong>
                 <span class="ef29-kpi-caption">Empresas atribuídas a você</span>
             </a>
-            <a class="ef29-kpi" href="{{ route('leads.index', ['owner' => 'mine', 'followUp' => 'today']) }}" wire:navigate>
+            <a class="ef29-kpi" href="{{ route('leads.index', ['dueActionOnly' => 1, 'queueDuePeriod' => 'today']) }}" wire:navigate>
                 <span class="ef29-kpi-title">Vencem hoje</span>
                 <strong class="ef29-kpi-value">{{ number_format($ef29MyToday, 0, ',', '.') }}</strong>
-                <span class="ef29-kpi-caption">Prazos previstos na sua carteira local</span>
+                <span class="ef29-kpi-caption">Tarefas HubSpot ainda não vencidas</span>
             </a>
             <a class="ef29-kpi ef29-kpi--accent" href="{{ route('leads.index', ['owner' => 'mine', 'dashboardView' => 'with_deal']) }}" wire:navigate>
                 <span class="ef29-kpi-title">Meus negócios</span>

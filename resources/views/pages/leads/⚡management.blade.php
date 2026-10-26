@@ -310,1012 +310,371 @@ new class extends Component
 };
 ?>
 
-<div class="ecgm-page ecgm-v2 lf34-management" wire:poll.visible.30s="$refresh" x-data="{view:'overview',showConfirm:false}">
+{{-- EC_GESTAO_FIGMA_V62: tela L04 fiel ao protótipo. Todos os números vêm dos serviços existentes. --}}
+<div class="ecgm-page ecgm-v2 lf34-management ecgm61 ecgm62"
+     data-ecgm-figma="L04-L05-V62"
+     wire:poll.visible.30s="$refresh"
+     x-data="{ view: 'overview', sellerPage: 1, showConfirm: false }">
 
-    <div
-        class="ecgm-page-loading"
-        wire:loading.delay
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-    >
-        <span
-            class="ecgm-page-loading-dot"
-            aria-hidden="true"
-        ></span>
-
+    <div class="ecgm-page-loading" wire:loading.delay role="status" aria-live="polite">
+        <span class="ecgm-page-loading-dot" aria-hidden="true"></span>
         Atualizando painel comercial...
     </div>
-
 
     @php
         $dashboard = $this->dashboard;
         $summary = $dashboard['summary'];
-        $sellers = $dashboard['sellers'];
+        $sellers = array_values($dashboard['sellers']);
         $available = $this->distributionCandidatesCount;
         $participants = $this->distributionUsers;
         $commercialUsers = $this->commercialUsers;
-
-        $attentionQueue =
-            $this->managementAttentionQueue;
-
-        $distributionPreview =
-            $this->distributionPreview;
-
-
-        $sellerLoads =
-            array_map(
-                static fn (
-                    array $seller
-                ): int => (int) $seller[
-                    'active_total'
-                ],
-                $sellers
-            );
-
-        $maxSellerLoad =
-            $sellerLoads === []
-                ? 1
-                : max(
-                    1,
-                    max(
-                        $sellerLoads
-                    )
-                );
-
-        $attentionSellers =
-            array_slice(
-                array_values(
-                    array_filter(
-                        $sellers,
-                        static fn (
-                            array $seller
-                        ): bool => (int) $seller[
-                            'attention_total'
-                        ] > 0
-                    )
-                ),
-                0,
-                6
-            );
-
-        $number = static fn ($value): string =>
-            number_format((int) $value, 0, ',', '.');
-
-        $metrics = [
-            [
-                'active_total',
-                'Carteira ativa',
-                'Leads atualmente em trabalho',
-                'neutral',
-                null,
-            ],
-            [
-                'opportunities_total',
-                'Oportunidades ativas',
-                'Com negócio HubSpot em andamento',
-                'info',
-                null,
-            ],
-            [
-                'overdue_total',
-                'Atrasados',
-                'Retornos vencidos →',
-                'danger',
-                [
-                    'workStatus' => 'waiting',
-                    'followUp' => 'overdue',
-                ],
-            ],
-            [
-                'due_today_total',
-                'Para hoje',
-                'Retornos do dia →',
-                'warning',
-                [
-                    'workStatus' => 'waiting',
-                    'followUp' => 'today',
-                ],
-            ],
-            [
-                'attention_total',
-                'Exigem atenção',
-                'Atrasos, sem prazo e parados',
-                'danger',
-                null,
-            ],
-            [
-                'unassigned_total',
-                'Sem responsável',
-                'Distribuir carteira →',
-                'warning',
-                [
-                    'owner' => 'unassigned',
-                ],
-            ],
-        ];
-
-        $columns = [
-            [
-                'active_total',
-                'Carteira',
-                [],
-            ],
-            [
-                'opportunities_total',
-                'Oportunidades',
-                [],
-            ],
-            [
-                'new_total',
-                'Novos',
-                [
-                    'workStatus' => 'new',
-                ],
-            ],
-            [
-                'overdue_total',
-                'Atrasados',
-                [
-                    'workStatus' => 'waiting',
-                    'followUp' => 'overdue',
-                ],
-            ],
-            [
-                'due_today_total',
-                'Hoje',
-                [
-                    'workStatus' => 'waiting',
-                    'followUp' => 'today',
-                ],
-            ],
-            [
-                'unscheduled_total',
-                'Sem prazo',
-                [
-                    'workStatus' => 'waiting',
-                    'followUp' => 'unscheduled',
-                ],
-            ],
-            [
-                'stale_total',
-                'Parados',
-                [
-                    'workStatus' => 'contacting',
-                ],
-            ],
-        ];
+        $attentionQueue = $this->managementAttentionQueue;
+        $distributionPreview = $this->distributionPreview;
+        $number = static fn ($value): string => number_format((int) $value, 0, ',', '.');
+        $localCompanies = \App\Models\Company::query()->count();
+        $activeSellers = $commercialUsers->where('commercial_role', User::ROLE_SELLER)->count();
+        $sellerPages = max(1, (int) ceil(count($sellers) / 5));
+        $rolesById = $commercialUsers->mapWithKeys(static fn ($u): array => [(string) $u->id => (string) $u->commercial_role])->all();
+        $firstUser = $commercialUsers->first();
+        $attentionCompanies = $attentionQueue === []
+            ? collect()
+            : \App\Models\Company::query()
+                ->whereIn('id', collect($attentionQueue)->pluck('company_id')->all())
+                ->get(['id', 'uuid'])
+                ->keyBy('id');
     @endphp
 
-    <header class="ecgm-header">
-        <div>
-            <span class="ecgm-eyebrow">
-                OPERAÇÃO COMERCIAL
-            </span>
-
-            <div class="ecgm-v2-title">
-                <span class="ecgm-v2-title-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 20V12h4v8M10 20V4h4v16M16 20V8h4v12M2 20h20" />
-                    </svg>
-                </span>
-                <h1>Gestão Comercial</h1>
-            </div>
-
-            <p>
-                Acompanhe a equipe, priorize os retornos
-                e distribua novos leads.
-            </p>
+    {{-- L04: título compacto; ações abaixo do subtítulo, sem indicadores redundantes. --}}
+    <header class="ecgm62-page-header">
+        <span class="ecgm62-eyebrow">LEADS</span>
+        <h1>Gestão Comercial</h1>
+        <p>Distribua trabalho e acompanhe a capacidade da equipe.</p>
+        <div class="ecgm62-top-actions">
+            <button type="button" class="ecgm62-btn" wire:click="$refresh" wire:loading.attr="disabled">
+                Atualizar visão
+            </button>
+            <button type="button" class="ecgm62-btn ecgm62-btn--primary"
+                    aria-label="Distribuição automática — abrir prévia de distribuição"
+                    x-on:click="view='distribution'; showConfirm=false">
+                Distribuir carteira
+            </button>
         </div>
-
-        <a
-            href="{{ route('leads.index') }}"
-            wire:navigate
-            class="ecgm-button ecgm-primary"
-        >
-            Abrir fila de leads →
-        </a>
     </header>
 
-<nav class="lf34-manager-nav" aria-label="Áreas da gestão comercial">
-        <button type="button" x-on:click="view='overview'" x-bind:aria-pressed="view==='overview'">Visão geral</button>
-        <button type="button" x-on:click="view='distribution'" x-bind:aria-pressed="view==='distribution'">Distribuição automática</button>
-        <button type="button" x-on:click="view='access'" x-bind:aria-pressed="view==='access'">Acessos comerciais</button>
-    </nav>
-
-    <div class="lf34-manager-overview" x-show="view==='overview'">
-    <section class="ecgm-metrics" aria-label="Indicadores da operação">
-        @foreach ($metrics as [$key, $label, $caption, $tone, $filters])
-            @if ($filters !== null)
-                <a class="ecgm-metric" data-tone="{{ $tone }}"
-                   href="{{ route('leads.index', $filters) }}" wire:navigate>
-                    <span class="ecgm-v2-metric-icon" aria-hidden="true">
-                        @include('partials.commercial-management-icon', ['name' => $key])
-                    </span>
-                    <span class="ecgm-v2-metric-body">
-                        <span class="ecgm-v2-metric-label">{{ $label }}</span>
-                        <strong>{{ $number($summary[$key]) }}</strong>
-                        <small>{{ $caption }}</small>
-                    </span>
-                    <span class="ecgm-v2-metric-arrow" aria-hidden="true">›</span>
-                </a>
-            @else
-                <div class="ecgm-metric" data-tone="{{ $tone }}">
-                    <span class="ecgm-v2-metric-icon" aria-hidden="true">
-                        @include('partials.commercial-management-icon', ['name' => $key])
-                    </span>
-                    <span class="ecgm-v2-metric-body">
-                        <span class="ecgm-v2-metric-label">{{ $label }}</span>
-                        <strong>{{ $number($summary[$key]) }}</strong>
-                        <small>{{ $caption }}</small>
-                    </span>
-                </div>
-            @endif
-        @endforeach
-    </section>
-
-    {{-- A fila continua acessível, mas não ocupa toda a tela ao entrar na Gestão. --}}
-    <details class="ecgm-v2-attention-drawer">
-        <summary>
-            <span class="ecgm-v2-attention-intro">
-                <span class="ecgm-v2-attention-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 3 2.8 19a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L12 3Z" />
-                        <path d="M12 9v5m0 3h.01" />
-                    </svg>
-                </span>
-                <span>
-                    <strong>{{ $number($summary['attention_total']) }} pendência(s) exigem atenção</strong>
-                    <small>Fila gerencial: {{ count($attentionQueue) }} empresas prioritárias exibidas</small>
-                </span>
-            </span>
-            <span class="ecgm-v2-attention-cta">
-                Ver prioridades
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="m6 9 6 6 6-6" />
-                </svg>
-            </span>
-        </summary>
-
-        @include('partials.commercial-attention-queue')
-    </details>
-
-
-    <section
-        class="ecgm-panel ecgm-team-focus"
-        aria-labelledby="ecgm-focus-title"
-    >
-
-        <header class="ecgm-panel-head">
-
-            <div>
-
-                <span class="ecgm-eyebrow">
-                    ATENÇÃO DA EQUIPE
-                </span>
-
-                <h2 id="ecgm-focus-title">
-                    Carga e pendências por vendedor
-                </h2>
-
-                <p>
-                    Quem concentra mais trabalho e onde
-                    existem retornos que precisam de ação.
-                </p>
-
-            </div>
-
-            <span class="ecgm-focus-total">
-                {{
-                    $number(
-                        $summary[
-                            'attention_total'
-                        ]
-                    )
-                }}
-                item(ns) exigem atenção
-            </span>
-
-        </header>
-
-
-        <div class="ecgm-team-focus-grid">
-
-            @forelse (
-                $sellers
-                as $seller
-            )
-
-                @php
-                    $loadPercent =
-                        min(
-                            100,
-                            (int) round(
-                                (
-                                    (int) $seller[
-                                        'active_total'
-                                    ]
-                                    / $maxSellerLoad
-                                )
-                                * 100
-                            )
-                        );
-                @endphp
-
-                <article
-                    class="
-                        ecgm-seller-card
-                        {{
-                            (int) $seller[
-                                'attention_total'
-                            ] > 0
-                                ? 'has-attention'
-                                : ''
-                        }}
-                    "
-                    wire:key="
-                        ecgm-focus-{{
-                            $seller[
-                                'user_id'
-                            ]
-                        }}
-                    "
-                >
-
-                    <div class="ecgm-seller-card-head">
-
-                        <div class="ecgm-v2-seller-identity">
-                            <span class="ecgm-v2-avatar" aria-hidden="true">{{ \Illuminate\Support\Str::initials((string) $seller['name'], true) }}</span>
-                            <div>
-
-                            <strong>
-                                {{ $seller['name'] }}
-                            </strong>
-
-                            <span>
-                                {{
-                                    $number(
-                                        $seller[
-                                            'active_total'
-                                        ]
-                                    )
-                                }}
-                                na carteira
-                            </span>
-
-                            </div>
-                        </div>
-
-                        @if (
-                            (int) $seller[
-                                'attention_total'
-                            ] > 0
-                        )
-
-                            <span class="ecgm-attention-pill">
-                                {{
-                                    $number(
-                                        $seller[
-                                            'attention_total'
-                                        ]
-                                    )
-                                }}
-                                atenção
-                            </span>
-
-                        @else
-
-                            <span
-                                class="
-                                    ecgm-attention-pill
-                                    is-clear
-                                "
-                            >
-                                Em dia
-                            </span>
-
-                        @endif
-
-                    </div>
-
-
-                    <div
-                        class="ecgm-load-track"
-                        title="
-                            Carga relativa da carteira
-                        "
-                    >
-                        <span
-                            style="
-                                width:
-                                {{ $loadPercent }}%;
-                            "
-                        ></span>
-                    </div>
-
-
-                    <div class="ecgm-seller-signals">
-
-                        <span
-                            class="{{
-                                (int) $seller[
-                                    'overdue_total'
-                                ] > 0
-                                    ? 'is-danger'
-                                    : ''
-                            }}"
-                        >
-                            Atrasados
-                            <strong>
-                                {{
-                                    $number(
-                                        $seller[
-                                            'overdue_total'
-                                        ]
-                                    )
-                                }}
-                            </strong>
-                        </span>
-
-                        <span>
-                            Hoje
-                            <strong>
-                                {{
-                                    $number(
-                                        $seller[
-                                            'due_today_total'
-                                        ]
-                                    )
-                                }}
-                            </strong>
-                        </span>
-
-                        <span>
-                            Sem prazo
-                            <strong>
-                                {{
-                                    $number(
-                                        $seller[
-                                            'unscheduled_total'
-                                        ]
-                                    )
-                                }}
-                            </strong>
-                        </span>
-
-                        <span>
-                            Parados
-                            <strong>
-                                {{
-                                    $number(
-                                        $seller[
-                                            'stale_total'
-                                        ]
-                                    )
-                                }}
-                            </strong>
-                        </span>
-
-                    </div>
-
-
-                    <a
-                        href="{{
-                            route(
-                                'leads.index',
-                                [
-                                    'owner' =>
-                                        (string) $seller[
-                                            'user_id'
-                                        ],
-                                ]
-                            )
-                        }}"
-                        wire:navigate
-                        class="ecgm-seller-open"
-                    >
-                        Abrir carteira →
-                    </a>
-
-                </article>
-
-            @empty
-
-                <div class="ecgm-focus-empty">
-                    <div class="ecgm-empty-state">
-
-                                    <strong>
-                                        Nenhuma carteira atribuída.
-                                    </strong>
-
-                                    <span>
-                                        Distribua novos leads ou atribua
-                                        empresas para começar a acompanhar
-                                        a carga da equipe.
-                                    </span>
-
-                                </div>
-                </div>
-
-            @endforelse
-
-        </div>
-
-    </section>
-
-
-    <section
-        class="ecgm-panel"
-        aria-labelledby="ecgm-team-title"
-    >
-        <header class="ecgm-panel-head">
-            <div>
-                <h2 id="ecgm-team-title">
-                    Distribuição da carteira
-                </h2>
-
-                <p>
-                    Compare carteira, oportunidades e pendências.
-                    Clique nos números para abrir a fila correspondente.
-                </p>
-            </div>
-
-            <span class="ecgm-caption">
-                Atualização a cada 30 s enquanto a tela estiver visível.
-            </span>
-        </header>
-
-        <div class="ecgm-table-scroll">
-            <table class="ecgm-table ecgm-management-table">
-                <caption class="ecgm-sr">
-                    Carteira e pendências por responsável comercial
-                </caption>
-
-                <thead>
-                    <tr>
-                        <th scope="col">Responsável</th>
-
-                        @foreach ($columns as [$key, $label, $filters])
-                            <th scope="col">{{ $label }}</th>
-                        @endforeach
-                        <th scope="col" class="ecgm-v2-actions-col">Ações</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @forelse ($sellers as $seller)
-                        <tr wire:key="ecgm-seller-{{ $seller['user_id'] }}">
-                            <th scope="row">
-                                <div class="ecgm-v2-table-user">
-                                    <span class="ecgm-v2-avatar" aria-hidden="true">{{ \Illuminate\Support\Str::initials((string) $seller['name'], true) }}</span>
-                                    <div>
-                                <a
-                                    href="{{
-                                        route(
-                                            'leads.index',
-                                            [
-                                                'owner' => (string) $seller['user_id'],
-                                            ]
-                                        )
-                                    }}"
-                                    wire:navigate
-                                >
-                                    {{ $seller['name'] }}
-                                </a>
-
-                                <small>{{ $seller['email'] }}</small>
-                                    </div>
-                                </div>
-                            </th>
-
-                            @foreach ($columns as [$key, $label, $filters])
-                                <td data-label="{{ $label }}">
-                                    <a
-                                        class="ecgm-table-number {{
-                                            $key === 'overdue_total'
-                                            && (int) $seller[$key] > 0
-                                                ? 'ecgm-danger-text'
-                                                : ''
-                                        }}"
-                                        href="{{
-                                            route(
-                                                'leads.index',
-                                                array_merge(
-                                                    [
-                                                        'owner' => (string) $seller['user_id'],
-                                                    ],
-                                                    $filters
-                                                )
-                                            )
-                                        }}"
-                                        wire:navigate
-                                        aria-label="{{ $label }} de {{ $seller['name'] }}: {{ $number($seller[$key]) }}"
-                                    >
-                                        {{ $number($seller[$key]) }}
-                                    </a>
-                                </td>
-                            @endforeach
-                            <td data-label="Ações" class="ecgm-v2-table-actions">
-                                <a class="ecgm-v2-table-action"
-                                   href="{{ route('leads.index', ['owner' => (string) $seller['user_id']]) }}"
-                                   wire:navigate>
-                                    Ver fila <span aria-hidden="true">→</span>
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="9" class="ecgm-empty">
-                                Nenhuma carteira atribuída.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <footer class="ecgm-totals">
-
-            <span>
-                Novos
-                <strong>
-                    {{
-                        $number(
-                            $summary[
-                                'new_total'
-                            ]
-                        )
-                    }}
-                </strong>
-            </span>
-
-            <span>
-                Sem prazo
-                <strong>
-                    {{
-                        $number(
-                            $summary[
-                                'unscheduled_total'
-                            ]
-                        )
-                    }}
-                </strong>
-            </span>
-
-            <span>
-                Contatos parados
-                <strong>
-                    {{
-                        $number(
-                            $summary[
-                                'stale_total'
-                            ]
-                        )
-                    }}
-                </strong>
-            </span>
-
-            <span>
-                Futuras
-                <strong>
-                    {{
-                        $number(
-                            $summary[
-                                'future_total'
-                            ]
-                        )
-                    }}
-                </strong>
-            </span>
-
-        </footer>
-    </section>
-
-    </div> {{-- lf34-manager-overview --}}
-    <div class="ecgm-controls" x-show="view!=='overview'" x-cloak>
-
-        <section
-            class="ecgm-panel"
-            aria-labelledby="ecgm-distribution-title"
-            x-show="view==='distribution'" x-cloak
-        >
-            <header class="ecgm-panel-head">
-                <div>
-                    <span class="ecgm-eyebrow">
-                        Distribuição automática
-                    </span>
-
-                    <h2 id="ecgm-distribution-title">
-                        Balancear novos leads
-                    </h2>
-                </div>
-
-                <div class="ecgm-available">
-                    <span>Novos disponíveis</span>
-                    <strong>{{ $number($available) }}</strong>
-                </div>
+    {{-- L04: visão principal. A ordem segue exatamente a referência. --}}
+    <div class="lf34-manager-overview ecgm62-overview" x-show="view === 'overview'">
+        <section class="ecgm-metrics ecgm62-kpis" aria-label="Indicadores da Gestão Comercial">
+            <article class="ecgm-metric ecgm62-kpi">
+                <span>Empresas na base local</span>
+                <strong>{{ $number($localCompanies) }}</strong>
+                <small>Universo cadastral do Prospector</small>
+            </article>
+            <a class="ecgm-metric ecgm62-kpi" href="{{ route('leads.index', ['owner' => 'unassigned']) }}" wire:navigate>
+                <span>Sem responsável</span>
+                <strong>{{ $number($summary['unassigned_total']) }}</strong>
+                <small>Elegibilidade revalidada na distribuição</small>
+            </a>
+            <a class="ecgm-metric ecgm62-kpi" href="{{ route('leads.index', ['workStatus' => 'waiting', 'followUp' => 'overdue']) }}" wire:navigate>
+                <span>Retornos atrasados</span>
+                <strong>{{ $number($summary['overdue_total']) }}</strong>
+                <small>Abra a fila de retornos vencidos</small>
+            </a>
+            <article class="ecgm-metric ecgm62-kpi">
+                <span>Vendedores ativos</span>
+                <strong>{{ $number($activeSellers) }}</strong>
+                <small>Usuários vendedores com acesso verificado</small>
+            </article>
+        </section>
+
+        {{-- L04: tabela compacta em vez do painel duplicado de cartões de vendedores. --}}
+        <section class="ecgm-panel ecgm62-card ecgm62-load-card" aria-labelledby="ecgm62-load-title">
+            <header class="ecgm62-card-header">
+                <h2 id="ecgm62-load-title">Carga por vendedor</h2>
+                <span class="ecgm62-sr">Carga e pendências por vendedor · Distribuição da carteira</span>
             </header>
-
-            <div class="ecgm-panel-body">
-                <p class="ecgm-description">
-                    Somente leads novos e sem responsável.
-                    A distribuição considera a carga da carteira
-                    e prioriza os maiores scores.
-                </p>
-
-                @if ($distributionMessage !== '')
-                    <div
-                        class="ecgm-message"
-                        data-tone="success"
-                        role="status"
-                    >
-                        {{ $distributionMessage }}
-                    </div>
-                @endif
-
-                @if ($distributionMessage !== '')
-                    <div class="lf34-success" role="status">
-                        <h3>Distribuição concluída</h3>
-                        <p>{{ $distributionMessage }}</p>
-                        <a href="{{ route('leads.index') }}" wire:navigate>Ver fila de leads →</a>
-                    </div>
-                @endif
-
-                @if ($distributionError !== '')
-                    <div
-                        class="ecgm-message"
-                        data-tone="danger"
-                        role="alert"
-                    >
-                        {{ $distributionError }}
-                    </div>
-                @endif
-
-                <div class="ecgm-options-head">
-                    <h3>Responsáveis participantes</h3>
-
-                    <div>
-                        <button
-                            type="button"
-                            wire:click="selectAllDistributionSellers"
-                            wire:loading.attr="disabled"
-                            class="ecgm-text-button"
-                        >
-                            Selecionar todos
-                        </button>
-
-                        <button
-                            type="button"
-                            wire:click="clearDistributionSellers"
-                            wire:loading.attr="disabled"
-                            class="ecgm-text-button"
-                        >
-                            Limpar
-                        </button>
-                    </div>
+            <div class="ecgm-team-focus-grid ecgm62-table-shell">
+                <div class="ecgm-table-scroll ecgm62-scroll" role="region" tabindex="0" aria-label="Carteira e pendências por vendedor">
+                    <table class="ecgm-management-table ecgm62-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Responsável</th>
+                                <th scope="col" title="Carteira ativa de leads">Carteira</th>
+                                <th scope="col" title="Oportunidades ativas vinculadas">Ativos</th>
+                                <th scope="col">Atrasados</th>
+                                <th scope="col">Hoje</th>
+                                <th scope="col">Sem prazo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($sellers as $index => $seller)
+                                <tr wire:key="ecgm62-seller-{{ $seller['user_id'] }}"
+                                    x-show="sellerPage === {{ intdiv($index, 5) + 1 }}"
+                                    x-cloak>
+                                    <th scope="row">
+                                        <a href="{{ route('leads.index', ['owner' => (string) $seller['user_id']]) }}"
+                                           wire:navigate class="ecgm-v2-table-action ecgm62-person-link"
+                                           title="Abrir carteira de {{ $seller['name'] }}">
+                                            {{ $seller['name'] }}
+                                            <span class="ecgm62-sr">Abrir carteira</span>
+                                        </a>
+                                    </th>
+                                    <td>
+                                        <a href="{{ route('leads.index', ['owner' => (string) $seller['user_id']]) }}" wire:navigate>
+                                            {{ $number($seller['active_total']) }}
+                                        </a>
+                                    </td>
+                                    <td title="Oportunidades ativas">
+                                        <a href="{{ route('leads.index', ['owner' => (string) $seller['user_id'], 'dashboardView' => 'with_deal']) }}" wire:navigate>
+                                            {{ $number($seller['opportunities_total']) }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('leads.index', ['owner' => (string) $seller['user_id'], 'workStatus' => 'waiting', 'followUp' => 'overdue']) }}" wire:navigate
+                                           class="{{ (int) $seller['overdue_total'] > 0 ? 'ecgm62-overdue' : '' }}">
+                                            {{ $number($seller['overdue_total']) }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('leads.index', ['owner' => (string) $seller['user_id'], 'workStatus' => 'waiting', 'followUp' => 'today']) }}" wire:navigate>
+                                            {{ $number($seller['due_today_total']) }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('leads.index', ['owner' => (string) $seller['user_id'], 'workStatus' => 'waiting', 'followUp' => 'unscheduled']) }}" wire:navigate>
+                                            {{ $number($seller['unscheduled_total']) }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="ecgm-empty ecgm-empty-state">Nenhuma carteira atribuída.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
-
-                <fieldset
-                    class="ecgm-people"
-                    wire:loading.attr="disabled"
-                    wire:target="autoDistribute"
-                >
-                    <legend class="ecgm-sr">
-                        Selecione quem receberá novos leads
-                    </legend>
-
-                    @forelse ($participants as $participant)
-                        <label
-                            class="ecgm-person"
-                            wire:key="ecgm-participant-{{ $participant->id }}"
-                        >
-                            <input
-                                type="checkbox"
-                                value="{{ $participant->id }}"
-                                wire:model.live="distributionSellerIds"
-                            >
-
-                            <span class="ecgm-v2-avatar ecgm-v2-participant-avatar" aria-hidden="true">{{ \Illuminate\Support\Str::initials((string) $participant->name, true) }}</span>
-                            <span>
-                                <strong>{{ $participant->name }}</strong>
-                                <small>{{ $participant->email }}</small>
-                            </span>
-                        </label>
-                    @empty
-                        <p class="ecgm-description">
-                            Nenhum usuário com e-mail verificado disponível.
-                        </p>
-                    @endforelse
-                </fieldset>
-
-                @include(
-                    'partials.commercial-distribution-preview'
-                )
-
-
-                <div class="ecgm-distribution-actions">
-                    <div class="ecgm-field">
-                        <label for="ecgm-limit">
-                            Quantidade nesta rodada
-                        </label>
-
-                        <input
-                            id="ecgm-limit"
-                            type="number"
-                            min="1"
-                            max="500"
-                            step="1"
-                            wire:model.blur="distributionLimit"
-                            wire:loading.attr="disabled"
-                            wire:target="autoDistribute"
-                            aria-describedby="ecgm-limit-help"
-                        >
-
-                        <small id="ecgm-limit-help">
-                            Máximo de 500 por execução.
-                        </small>
-                    </div>
-
-                    <button
-                        type="button"
-                        class="ecgm-button ecgm-primary"
-                        x-on:click="showConfirm = true"
-                        wire:loading.attr="disabled"
-                        @disabled($distributionSellerIds === [] || $available === 0 || $distributionPreview === null)
-                    >
-                        <span
-                            wire:loading.remove
-                            wire:target="autoDistribute"
-                        >
-                            Distribuir automaticamente
-                        </span>
-
-                        <span
-                            wire:loading
-                            wire:target="autoDistribute"
-                        >
-                            Distribuindo...
-                        </span>
-                    </button>
-                </div>
-
-                @if ($distributionSellerIds === [])
-                    <p class="ecgm-hint">
-                        Selecione pelo menos um responsável
-                        para habilitar a distribuição.
-                    </p>
-                @elseif ($available === 0)
-                    <p class="ecgm-hint">
-                        Nenhum lead novo disponível para esta distribuição.
-                    </p>
-                @endif
             </div>
-
-            <footer class="ecgm-note">
-                Define somente o responsável interno.
-                Não altera etapa, status ou negócio no HubSpot.
+            <footer class="ecgm62-card-footer">
+                <span>Clique em um recorte para abrir a fila correspondente. <a href="{{ route('leads.index') }}" wire:navigate>Ver todos os leads</a></span>
+                <div class="ecgm62-pagination" role="group" aria-label="Paginação dos vendedores">
+                    <button type="button" class="ecgm62-btn ecgm62-btn--small"
+                            x-on:click="sellerPage = Math.max(1, sellerPage - 1)"
+                            x-bind:disabled="sellerPage <= 1">Anterior</button>
+                    <button type="button" class="ecgm62-btn ecgm62-btn--small"
+                            x-on:click="sellerPage = Math.min({{ $sellerPages }}, sellerPage + 1)"
+                            x-bind:disabled="sellerPage >= {{ $sellerPages }}">Próxima</button>
+                </div>
             </footer>
         </section>
 
-        <section
-            class="ecgm-panel"
-            aria-labelledby="ecgm-access-title"
-            x-show="view==='access'" x-cloak
-        >
-            <header class="ecgm-panel-head">
-                <div>
-                    <span class="ecgm-eyebrow">
-                        ACESSOS COMERCIAIS
-                    </span>
+        {{-- A fila é aberta por padrão, mas pode ser recolhida sem perder ações. --}}
+        <details class="ecgm-v2-attention-drawer ecgm62-attention-details" open>
+            <summary class="ecgm62-attention-summary"><span>Fila de atenção</span>
+                <span class="ecgm62-attention-hint">{{ $number(count($attentionQueue)) }} exibida(s) <span aria-hidden="true">⌄</span></span>
+            </summary>
+            <div class="ecgm62-attention-content">
+                <span class="ecgm62-sr">Empresas que precisam de atenção · Exigem atenção · Ver prioridades</span>
+                <div class="ecgm62-scroll" role="region" tabindex="0" aria-label="Fila gerencial de atenção">
+                    <table class="ecgm62-table ecgm62-attention-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Empresa</th>
+                                <th scope="col">Motivo</th>
+                                <th scope="col">SDR</th>
+                                <th scope="col">Responsável</th>
+                                <th scope="col">Próxima ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse (array_slice($attentionQueue, 0, 5) as $attention)
+                                @php $attentionCompany = $attentionCompanies->get((int) $attention['company_id']); @endphp
+                                <tr wire:key="ecgm62-attention-{{ $attention['company_id'] }}">
+                                    <th scope="row">
+                                        @if ($attentionCompany)
+                                            <a href="{{ route('companies.show', $attentionCompany) }}" wire:navigate
+                                               class="ecgm62-person-link" title="Abrir dossiê de {{ $attention['company_name'] }}">
+                                                {{ $attention['company_name'] }}
+                                                <span class="ecgm62-sr">Abrir dossiê</span>
+                                            </a>
+                                        @else
+                                            {{ $attention['company_name'] }}
+                                        @endif
+                                    </th>
+                                    <td><span class="ecgm62-reason">{{ $attention['reason'] }}</span></td>
+                                    <td>{{ $number($attention['score']) }}</td>
+                                    <td>{{ $attention['owner_name'] ?: 'Não atribuído' }}</td>
+                                    <td>
+                                        <a href="{{ route('leads.index', $attention['filters']) }}" wire:navigate
+                                           title="Ver fila — {{ $attention['detail'] }}">
+                                            {{ $attention['moment'] ?: $attention['detail'] }}
+                                            <span class="ecgm62-sr">Ver fila</span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="ecgm-empty ecgm-empty-state">
+                                        <strong>Nenhuma pendência crítica agora</strong>
+                                        <small>Não há atrasos, acompanhamentos sem prazo ou contatos parados nesta fila.</small>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                <div class="ecgm62-attention-footer">
+                    <span>Mostrando até 5 de {{ $number(count($attentionQueue)) }} empresas prioritárias. Parados: {{ $number($summary['stale_total']) }} · Sem prazo: {{ $number($summary['unscheduled_total']) }}.</span>
+                    <a href="{{ route('leads.index') }}" wire:navigate>Ver todos os leads →</a>
+                </div>
+            </div>
+        </details>
 
-                    <h2 id="ecgm-access-title">
-                        Gestores e vendedores
-                    </h2>
+        <section class="ecgm-panel ecgm62-card ecgm62-role-card" aria-labelledby="ecgm62-roles-title">
+            <header class="ecgm62-card-header">
+                <h2 id="ecgm62-roles-title">Papéis comerciais</h2>
+                <span class="ecgm62-sr">Gestores e vendedores</span>
+            </header>
+            <div class="ecgm62-role-body"
+                 x-data="{ selectedUser: @js((string) ($firstUser?->id ?? '')), selectedRole: @js((string) ($firstUser?->commercial_role ?? 'seller')), roles: @js($rolesById) }">
+                <div class="ecgm62-role-field">
+                    <label for="ecgm62-user">Usuário</label>
+                    <select id="ecgm62-user" x-model="selectedUser"
+                            x-on:change="selectedRole = roles[selectedUser] || 'seller'">
+                        @foreach ($commercialUsers as $commercialUser)
+                            <option value="{{ $commercialUser->id }}">{{ $commercialUser->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="ecgm62-role-field">
+                    <label for="ecgm62-role">Papel</label>
+                    <select id="ecgm62-role" x-model="selectedRole" @disabled($commercialUsers->isEmpty())>
+                        <option value="seller">Vendedor</option>
+                        <option value="manager">Gestor</option>
+                    </select>
+                    <small>Alterações administrativas exigem confirmação e validação.</small>
+                </div>
+                <div class="ecgm62-role-action">
+                    @foreach ($commercialUsers as $commercialUser)
+                        @foreach (['manager' => 'Gestor', 'seller' => 'Vendedor'] as $role => $label)
+                            <button type="button" class="ecgm62-btn ecgm62-btn--small"
+                                    x-show="selectedUser === '{{ $commercialUser->id }}' && selectedRole === '{{ $role }}' && roles[selectedUser] !== selectedRole"
+                                    x-cloak
+                                    x-bind:disabled="roles[selectedUser] === selectedRole"
+                                    wire:click="updateCommercialRole({{ $commercialUser->id }}, '{{ $role }}')"
+                                    wire:confirm="Alterar o perfil comercial de {{ $commercialUser->name }} para {{ $label }}?"
+                                    wire:loading.attr="disabled"
+                                    wire:target="updateCommercialRole">Salvar</button>
+                        @endforeach
+                    @endforeach
+                </div>
+            </div>
+            @if ($roleMessage !== '')
+                <div class="ecgm62-message ecgm62-message--success" role="status">{{ $roleMessage }}</div>
+            @endif
+            @if ($roleError !== '')
+                <div class="ecgm62-message ecgm62-message--error" role="alert">{{ $roleError }}</div>
+            @endif
+        </section>
+    </div>
+
+    {{-- L05: distribuição continua como uma área separada, sem poluir o L04. --}}
+    <div class="ecgm62-distribution" x-show="view === 'distribution'" x-cloak>
+        <header class="ecgm62-dist-header">
+            <div>
+                <span class="ecgm62-eyebrow">DISTRIBUIÇÃO AUTOMÁTICA</span>
+                <h2>Balancear novos leads</h2>
+                <p>Escolha os vendedores, defina a quantidade e confira a prévia antes de confirmar.</p>
+            </div>
+            <button type="button" class="ecgm62-btn" x-on:click="view='overview'; showConfirm=false">Voltar à gestão</button>
+        </header>
+
+        @if ($distributionMessage !== '')
+            <div class="ecgm62-result" role="status">
+                <strong>Distribuição concluída</strong>
+                <span>{{ $distributionMessage }}</span>
+                <a href="{{ route('leads.index') }}" wire:navigate>Ver fila de leads →</a>
+            </div>
+        @endif
+        @if ($distributionError !== '')
+            <div class="ecgm62-message ecgm62-message--error" role="alert">{{ $distributionError }}</div>
+        @endif
+
+        <section class="ecgm62-dist-stats" aria-label="Resumo da distribuição">
+            <div><span>Novos disponíveis</span><strong>{{ $number($available) }}</strong></div>
+            <div><span>Responsáveis selecionados</span><strong>{{ $number(count($distributionSellerIds)) }}</strong></div>
+            <div><span>Quantidade nesta rodada</span><strong>{{ $number($distributionLimit) }}</strong></div>
+        </section>
+        <section class="ecgm-panel ecgm62-card" aria-labelledby="ecgm62-dist-options-title">
+            <header class="ecgm62-card-header ecgm62-card-header--wrap">
+                <div>
+                    <h3 id="ecgm62-dist-options-title">Responsáveis participantes</h3>
+                    <p>Somente leads novos e sem responsável. A carga atual é considerada no balanceamento.</p>
+                </div>
+                <div class="ecgm62-inline-actions">
+                    <button type="button" class="ecgm62-link-btn" wire:click="selectAllDistributionSellers">Selecionar todos</button>
+                    <button type="button" class="ecgm62-link-btn" wire:click="clearDistributionSellers">Limpar</button>
                 </div>
             </header>
-
-            <div class="ecgm-panel-body">
-                <p class="ecgm-description">
-                    Gestores acompanham a operação e distribuem leads.
-                    Vendedores trabalham com a própria carteira.
-                </p>
-
-                @if ($roleMessage !== '')
-                    <div
-                        class="ecgm-message"
-                        data-tone="success"
-                        role="status"
-                    >
-                        {{ $roleMessage }}
-                    </div>
-                @endif
-
-                @if ($roleError !== '')
-                    <div
-                        class="ecgm-message"
-                        data-tone="danger"
-                        role="alert"
-                    >
-                        {{ $roleError }}
-                    </div>
-                @endif
-
-                <div class="ecgm-roles">
-                    @forelse ($commercialUsers as $commercialUser)
-                        <div
-                            class="ecgm-role-row"
-                            wire:key="ecgm-role-{{ $commercialUser->id }}-{{ $commercialUser->commercial_role }}"
-                        >
-                            <div class="ecgm-v2-role-identity">
-                                <span class="ecgm-v2-avatar" aria-hidden="true">{{ \Illuminate\Support\Str::initials((string) $commercialUser->name, true) }}</span>
-                                <span>
-                                    <strong>{{ $commercialUser->name }}</strong>
-                                    <small>{{ $commercialUser->email }}</small>
-                                </span>
-                            </div>
-
-                            <div
-                                class="ecgm-role-buttons"
-                                role="group"
-                                aria-label="Perfil comercial de {{ $commercialUser->name }}"
-                            >
-                                @foreach (['manager' => 'Gestor', 'seller' => 'Vendedor'] as $role => $label)
-                                    <button
-                                        type="button"
-                                        wire:click="updateCommercialRole({{ $commercialUser->id }}, '{{ $role }}')"
-                                        wire:confirm="Alterar o perfil comercial de {{ $commercialUser->name }} para {{ $label }}?"
-                                        wire:loading.attr="disabled"
-                                        @disabled($commercialUser->commercial_role === $role)
-                                        aria-pressed="{{ $commercialUser->commercial_role === $role ? 'true' : 'false' }}"
-                                    >
-                                        {{ $label }}
-                                    </button>
-                                @endforeach
-                            </div>
-                        </div>
-                    @empty
-                        <p class="ecgm-description">
-                            Nenhum usuário com e-mail verificado.
-                        </p>
-                    @endforelse
-                </div>
-
-                <p class="ecgm-hint">
-                    Clique no perfil desejado e confirme.
-                    As regras de acesso existentes continuam sendo aplicadas.
-                </p>
+            <fieldset class="ecgm62-people" wire:loading.attr="disabled" wire:target="autoDistribute">
+                <legend class="ecgm62-sr">Vendedores que participarão da distribuição</legend>
+                @forelse ($participants as $participant)
+                    <label class="ecgm62-person" wire:key="ecgm62-participant-{{ $participant->id }}">
+                        <input type="checkbox" value="{{ $participant->id }}" wire:model.live="distributionSellerIds">
+                        <span class="ecgm62-avatar" aria-hidden="true">{{ \Illuminate\Support\Str::initials((string) $participant->name, true) }}</span>
+                        <span><strong>{{ $participant->name }}</strong><small>{{ $participant->email }}</small></span>
+                    </label>
+                @empty
+                    <div class="ecgm-empty-state">Nenhum usuário com e-mail verificado disponível.</div>
+                @endforelse
+            </fieldset>
+            <div class="ecgm62-dist-config">
+                <label for="ecgm62-limit">Quantidade nesta rodada</label>
+                <input id="ecgm62-limit" type="number" min="1" max="500" step="1"
+                       wire:model.blur="distributionLimit" wire:loading.attr="disabled" wire:target="autoDistribute">
+                <small>Máximo de 500 leads por execução. Nenhuma alteração ocorre durante a prévia.</small>
             </div>
         </section>
 
+        @include('partials.commercial-distribution-preview-v61')
+
+        <div class="ecgm62-dist-footer">
+            <button type="button" class="ecgm62-btn" x-on:click="view='overview'; showConfirm=false">Cancelar</button>
+            <button type="button" class="ecgm62-btn" wire:click="$refresh" wire:loading.attr="disabled">Recalcular prévia</button>
+            <button type="button" class="ecgm62-btn ecgm62-btn--primary"
+                    x-on:click="showConfirm=true"
+                    @disabled($distributionSellerIds === [] || $available === 0 || $distributionPreview === null)>
+                Distribuir automaticamente
+            </button>
+        </div>
+        @if ($distributionSellerIds === [] || $available === 0)
+            <p class="ecgm62-help">Selecione pelo menos um responsável e verifique se há novos leads disponíveis.</p>
+        @endif
+        <p class="ecgm62-help">Esta operação altera apenas a atribuição comercial local. Não modifica proprietários, negócios ou etapas no HubSpot.</p>
     </div>
 
-    {{-- L05: confirmação real. Nenhuma ação é realizada antes de Confirmar. --}}
-    <div class="lf34-confirm-overlay" x-show="showConfirm" x-cloak
-        x-on:keydown.escape.window="showConfirm=false"
-        x-on:click.self="showConfirm=false">
-        <section class="lf34-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="lf34-confirm-title">
-            <h2 id="lf34-confirm-title">Confirmar distribuição?</h2>
-            <p>A prévia considera a situação atual da carteira. Ao confirmar, o serviço revalidará as regras e atribuirá somente leads elegíveis.</p>
-            <div class="lf34-confirm-stats">
-                <div><small>Leads nesta rodada</small><strong>{{ number_format((int) ($distributionPreview['planned'] ?? 0), 0, ',', '.') }}</strong></div>
-                <div><small>Responsáveis selecionados</small><strong>{{ count($distributionSellerIds) }}</strong></div>
+    {{-- L05: confirmação explícita antes de qualquer gravação. --}}
+    <div class="lf34-confirm-overlay ecgm62-modal-backdrop" x-show="showConfirm" x-cloak
+         x-on:keydown.escape.window="showConfirm=false" x-on:click.self="showConfirm=false">
+        <section class="lf34-confirm-dialog ecgm62-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="ecgm62-confirm-title">
+            <h2 id="ecgm62-confirm-title">Confirmar distribuição?</h2>
+            <p>Atribuiremos apenas leads elegíveis após nova validação. A simulação não garante que a carteira permanecerá inalterada por outros usuários.</p>
+            <div class="ecgm62-confirm-stats">
+                <div><small>Leads nesta rodada</small><strong>{{ $number($distributionPreview['planned'] ?? 0) }}</strong></div>
+                <div><small>Responsáveis</small><strong>{{ $number(count($distributionSellerIds)) }}</strong></div>
+                <div><small>Restantes sem responsável</small><strong>{{ $number($distributionPreview['remaining_after'] ?? 0) }}</strong></div>
             </div>
-            @if ($distributionPreview !== null)
-                <div class="lf34-confirm-stats">
-                    <div><small>Sem responsável após a prévia</small><strong>{{ number_format((int) ($distributionPreview['remaining_after'] ?? 0), 0, ',', '.') }}</strong></div>
-                    <div><small>Limite configurado</small><strong>{{ number_format($distributionLimit, 0, ',', '.') }}</strong></div>
-                </div>
-            @endif
-            <p class="lf34-confirm-warning">Esta ação muda apenas a atribuição comercial local. Não altera negócios, etapas ou responsáveis no HubSpot.</p>
-            <div class="lf34-confirm-buttons">
-                <button type="button" x-on:click="showConfirm=false">Cancelar</button>
-                <button class="lf34-confirm-yes" type="button"
-                    wire:click="autoDistribute" x-on:click="showConfirm=false"
-                    wire:loading.attr="disabled" wire:target="autoDistribute"
-                    @disabled($distributionSellerIds === [] || $available === 0 || $distributionPreview === null)>
+            <p class="ecgm62-help">Não altera diretamente o proprietário no HubSpot.</p>
+            <div class="lf34-confirm-buttons ecgm62-confirm-actions">
+                <button type="button" class="ecgm62-btn" x-on:click="showConfirm=false">Cancelar</button>
+                <button type="button" class="ecgm62-btn ecgm62-btn--primary"
+                        wire:click="autoDistribute" x-on:click="showConfirm=false"
+                        wire:loading.attr="disabled" wire:target="autoDistribute"
+                        @disabled($distributionSellerIds === [] || $available === 0 || $distributionPreview === null)>
                     Confirmar distribuição
                 </button>
             </div>
         </section>
     </div>
+
+    <footer class="ecgm62-page-footer">ExportControl Prospector · Dados da operação comercial</footer>
 </div>

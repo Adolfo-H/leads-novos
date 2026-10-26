@@ -38,8 +38,14 @@
         'status' => $unit->registration_status ?: 'Não informada',
         'email' => $unit->email ?: '—',
         'phone' => collect([$unit->phone_1, $unit->phone_2])->filter()->implode(' · ') ?: '—',
-        'address' => collect([$unit->address_type, $unit->street, $unit->number, $unit->neighborhood])->filter()->implode(' ') ?: 'Não informado',
+        'address' => $this->establishmentAddress($unit),
         'zip' => $unit->zip_code ?: '—',
+        'startDate' => $this->formatEstablishmentDate($unit->start_date),
+        'statusSince' => $this->formatEstablishmentDate($unit->registration_status_date),
+        'statusReason' => (string) ($unit->registration_status_reason_code ?: 'Não informado'),
+        'specialSituation' => (string) ($unit->special_situation ?: 'Não informada'),
+        'specialDate' => $this->formatEstablishmentDate($unit->special_situation_date),
+        'sourceUpdatedAt' => $this->formatEstablishmentDate($unit->source_updated_at),
     ]]);
 @endphp
 <div class="e53-modal-backdrop" x-data="{units: @js($e53UnitMap)}" x-show="e53SelectedUnit !== null" x-cloak x-on:keydown.escape.window="e53SelectedUnit=null" x-on:click.self="e53SelectedUnit=null">
@@ -57,6 +63,12 @@
             <div class="e53-field"><span>Telefone</span><strong x-text="units[e53SelectedUnit]?.phone || '—'"></strong></div>
             <div class="e53-field"><span>Endereço</span><strong x-text="units[e53SelectedUnit]?.address || '—'"></strong></div>
             <div class="e53-field"><span>CEP</span><strong x-text="units[e53SelectedUnit]?.zip || '—'"></strong></div>
+            <div class="e53-field"><span>Cadastro</span><strong x-text="units[e53SelectedUnit]?.startDate || '—'"></strong></div>
+            <div class="e53-field"><span>Situação desde</span><strong x-text="units[e53SelectedUnit]?.statusSince || '—'"></strong></div>
+            <div class="e53-field"><span>Motivo:</span><strong x-text="units[e53SelectedUnit]?.statusReason || '—'"></strong></div>
+            <div class="e53-field"><span>Situação especial</span><strong x-text="units[e53SelectedUnit]?.specialSituation || '—'"></strong></div>
+            <div class="e53-field"><span>Data da situação especial</span><strong x-text="units[e53SelectedUnit]?.specialDate || '—'"></strong></div>
+            <div class="e53-field"><span>Fonte atualizada em</span><strong x-text="units[e53SelectedUnit]?.sourceUpdatedAt || '—'"></strong></div>
         </div>
         <button type="button" class="e53-button e53-button--outline" x-on:click="e53SelectedUnit=null">Voltar às unidades</button>
     </div>

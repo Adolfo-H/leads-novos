@@ -252,7 +252,7 @@
 
         <div class="ec-topbar-context">
 
-            @unless (request()->routeIs('leads.index', 'companies.show'))
+            @unless (request()->routeIs('leads.index', 'leads.management', 'companies.show'))
                 <span class="ec-topbar-eyebrow">
                     ExportControl
                 </span>
@@ -272,113 +272,51 @@
         <div class="ec-topbar-tools">
 
             {{-- USUARIO --}}
-            <flux:dropdown
-                position="bottom"
-                align="end"
-            >
+            {{-- DOSSIE_UI_HUBSPOT_V592: menu desktop independente do tema escuro do Flux. --}}
+<div class="e592-account-root"
+     x-data="{ open: false }"
+     x-on:keydown.escape.window="open = false"
+     x-on:click.outside="open = false">
+    <button type="button"
+            class="e592-account-trigger"
+            aria-label="Abrir menu do usuário"
+            aria-haspopup="menu"
+            x-bind:aria-expanded="open ? 'true' : 'false'"
+            x-on:click="open = !open">
+        <span class="e592-account-avatar">{{ auth()->user()->initials() }}</span>
+        <span class="e592-account-name">{{ auth()->user()->name }}</span>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
 
-                <flux:button
-                    variant="ghost"
-                    class="ec-topbar-profile-trigger"
-                >
-
-                    <span class="ec-topbar-avatar">
-                        {{
-                            auth()
-                                ->user()
-                                ->initials()
-                        }}
-                    </span>
-
-                    <span class="ec-topbar-profile-name">
-                        {{
-                            auth()
-                                ->user()
-                                ->name
-                        }}
-                    </span>
-
-                    <svg
-                        class="ec-topbar-profile-chevron"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="1.8"
-                        aria-hidden="true"
-                    >
-                        <path
-                            d="m8 10 4 4 4-4"
-                        />
-                    </svg>
-
-                </flux:button>
-
-
-                <flux:menu class="ec-topbar-account-menu">
-
-                    <div
-                        class="ec-profile-menu-header
-                            flex items-center gap-2
-                            px-2 py-2 text-start
-                        "
-                    >
-
-
-                        <div
-                            class="
-                                grid flex-1
-                                text-start text-sm
-                                leading-tight
-                            "
-                        >
-
-                            <flux:heading class="ec-profile-menu-name truncate">
-                                {{ auth()->user()->name }}
-                            </flux:heading>
-
-                            <flux:text class="ec-profile-menu-email truncate">
-                                {{ auth()->user()->email }}
-                            </flux:text>
-
-                        </div>
-
-                    </div>
-
-
-                    <flux:menu.separator />
-
-
-                    <flux:menu.item
-                        :href="route('profile.edit')"
-                        icon="cog"
-                        wire:navigate
-                     class="ec-profile-menu-item">
-                        Configurações
-                    </flux:menu.item>
-
-
-                    <form
-                        method="POST"
-                        action="{{ route('logout') }}"
-                        class="w-full"
-                    >
-                        @csrf
-
-                        <flux:menu.item
-                            as="button"
-                            type="submit"
-                            icon="arrow-right-start-on-rectangle"
-                            class="ec-profile-menu-item ec-profile-menu-logout w-full cursor-pointer"
-                            data-test="logout-button"
-                        >
-                            Sair
-                        </flux:menu.item>
-
-                    </form>
-
-                </flux:menu>
-
-            </flux:dropdown>
+    <div class="e592-account-panel ec-topbar-account-menu"
+         x-cloak
+         x-show="open"
+         x-transition.opacity.duration.120ms
+         role="menu"
+         aria-label="Opções da conta">
+        <div class="e592-account-header ec-profile-menu-header">
+            <span class="e592-account-avatar e592-account-avatar--large">{{ auth()->user()->initials() }}</span>
+            <span class="e592-account-identity">
+                <strong class="ec-profile-menu-name">{{ auth()->user()->name }}</strong>
+                <small class="ec-profile-menu-email">{{ auth()->user()->email }}</small>
+            </span>
+        </div>
+        <div class="e592-account-divider" aria-hidden="true"></div>
+        <a href="{{ route('profile.edit') }}" wire:navigate
+           class="e592-account-item ec-profile-menu-item"
+           x-on:click="open = false" role="menuitem">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/><path d="M19.4 15a2 2 0 0 0 .4 2.2l.1.1-2 2-.1-.1a2 2 0 0 0-2.2-.4 2 2 0 0 0-1.3 1.8V21h-2.8v-.4a2 2 0 0 0-1.3-1.8 2 2 0 0 0-2.2.4l-.1.1-2-2 .1-.1A2 2 0 0 0 6.4 15a2 2 0 0 0-1.8-1.3H4v-2.8h.6A2 2 0 0 0 6.4 9.6 2 2 0 0 0 6 7.4l-.1-.1 2-2 .1.1A2 2 0 0 0 10.2 5a2 2 0 0 0 1.3-1.8V3h2.8v.2A2 2 0 0 0 15.6 5a2 2 0 0 0 2.2.4l.1-.1 2 2-.1.1a2 2 0 0 0-.4 2.2 2 2 0 0 0 1.8 1.3h.3v2.8h-.3a2 2 0 0 0-1.8 1.3Z"/></svg>
+            <span>Configurações</span>
+        </a>
+        <form method="POST" action="{{ route('logout') }}" class="e592-account-logout-form">
+            @csrf
+            <button type="submit" class="e592-account-item e592-account-signout ec-profile-menu-item ec-profile-menu-logout" role="menuitem" data-test="logout-button">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>
+                <span>Sair</span>
+            </button>
+        </form>
+    </div>
+</div>
 
         </div>
 
@@ -387,6 +325,7 @@
 
 
         <!-- EC_TOPBAR_V31 -->
+    {{-- DOSSIE_UI_HUBSPOT_V591: layout claro também no mobile --}}
 {{-- TOPBAR MOBILE --}}
     <flux:header
         class="ec-topbar lg:hidden"
@@ -407,81 +346,48 @@
 
         <flux:spacer />
 
-        <flux:dropdown
-            position="bottom"
-            align="end"
-        >
+        {{-- DOSSIE_UI_HUBSPOT_V592: o mesmo menu claro no celular. --}}
+<div class="e592-account-root e592-account-root--mobile"
+     x-data="{ open: false }"
+     x-on:keydown.escape.window="open = false"
+     x-on:click.outside="open = false">
+    <button type="button"
+            class="e592-account-trigger e592-mobile-profile-trigger"
+            aria-label="Abrir menu do usuário"
+            aria-haspopup="menu"
+            x-bind:aria-expanded="open ? 'true' : 'false'"
+            x-on:click="open = !open">
+        <span class="e592-account-avatar">{{ auth()->user()->initials() }}</span>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
 
-            <flux:profile
-                :initials="auth()->user()->initials()"
-                icon-trailing="chevron-down"
-            />
-
-            <flux:menu>
-
-                <div
-                    class="
-                        flex items-center gap-2
-                        px-2 py-2 text-start
-                    "
-                >
-
-                    <flux:avatar
-                        :name="auth()->user()->name"
-                        :initials="auth()->user()->initials()"
-                    />
-
-                    <div
-                        class="
-                            grid flex-1
-                            text-start text-sm
-                            leading-tight
-                        "
-                    >
-
-                        <flux:heading class="truncate">
-                            {{ auth()->user()->name }}
-                        </flux:heading>
-
-                        <flux:text class="truncate">
-                            {{ auth()->user()->email }}
-                        </flux:text>
-
-                    </div>
-
-                </div>
-
-                <flux:menu.separator />
-
-                <flux:menu.item
-                    :href="route('profile.edit')"
-                    icon="cog"
-                    wire:navigate
-                >
-                    Configurações
-                </flux:menu.item>
-
-                <form
-                    method="POST"
-                    action="{{ route('logout') }}"
-                    class="w-full"
-                >
-                    @csrf
-
-                    <flux:menu.item
-                        as="button"
-                        type="submit"
-                        icon="arrow-right-start-on-rectangle"
-                        class="w-full cursor-pointer"
-                    >
-                        Sair
-                    </flux:menu.item>
-
-                </form>
-
-            </flux:menu>
-
-        </flux:dropdown>
+    <div class="e592-account-panel ec-topbar-account-menu e591-account-menu-mobile"
+         x-cloak
+         x-show="open"
+         x-transition.opacity.duration.120ms
+         role="menu"
+         aria-label="Opções da conta">
+        <div class="e592-account-header ec-profile-menu-header">
+            <span class="e592-account-avatar e592-account-avatar--large">{{ auth()->user()->initials() }}</span>
+            <span class="e592-account-identity">
+                <strong class="ec-profile-menu-name">{{ auth()->user()->name }}</strong>
+                <small class="ec-profile-menu-email">{{ auth()->user()->email }}</small>
+            </span>
+        </div>
+        <div class="e592-account-divider" aria-hidden="true"></div>
+        <a href="{{ route('profile.edit') }}" wire:navigate class="e592-account-item ec-profile-menu-item" role="menuitem" x-on:click="open = false">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M19.1 4.9l-1.5 1.5M6.4 17.6l-1.5 1.5"/></svg>
+            <span>Configurações</span>
+        </a>
+        <form method="POST" action="{{ route('logout') }}" class="e592-account-logout-form">
+            @csrf
+            <button type="submit" class="e592-account-item e592-account-signout ec-profile-menu-item ec-profile-menu-logout" role="menuitem" data-test="logout-button">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>
+                <span>Sair</span>
+            </button>
+        </form>
+    </div>
+</div>
 
     </flux:header>
 

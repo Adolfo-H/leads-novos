@@ -28,21 +28,29 @@ it('renders the five real Figma E05–E09 screens without fictitious company dat
         ->assertDontSee('Serra Verde Grãos');
 });
 
-it('preserves the original dossier services, HubSpot actions and CNAE forms in an accessible advanced section', function (): void {
+it('preserves the original services and actions but renders exclusively modern dossier screens', function (): void {
     $show = file_get_contents(resource_path('views/pages/companies/⚡show.blade.php'));
     $figma = file_get_contents(resource_path('views/partials/company-dossier/figma-v53.blade.php'));
+    $group = file_get_contents(resource_path('views/partials/company-dossier/figma-group-v53.blade.php'));
     $modals = file_get_contents(resource_path('views/partials/company-dossier/figma-modals-v53.blade.php'));
 
     expect($show)->toContain('EC_PROSPECTOR_E53')
-        ->toContain('showAdvancedDossier')
-        ->toContain('partials.company-dossier.commercial')
-        ->toContain('partials.company-dossier.company')
-        ->toContain('partials.company-dossier.cnaes')
+        ->toContain('PROSPECTOR_DOSSIE_V56')
+        ->toContain('partials.company-dossier.figma-v53')
+        ->not->toContain('showAdvancedDossier')
+        ->not->toContain('e53-legacy')
+        ->not->toContain('partials.company-dossier.commercial')
+        ->not->toContain('partials.company-dossier.company')
+        ->not->toContain('partials.company-dossier.cnaes')
         ->and($figma)->toContain('figma-summary-v53')
         ->toContain('figma-crm-v53')
         ->toContain('figma-history-v53')
         ->toContain('figma-group-v53')
         ->toContain('figma-cnaes-v53')
+        ->not->toContain('showAdvancedDossier')
+        ->not->toContain('e53-footer')
+        ->and($group)->toContain('e53-contact-extra')
+        ->not->toContain('showAdvancedDossier')
         ->and($modals)->toContain('wire:click="researchExports"')
         ->toContain('wire:click="researchExportsForce"')
         ->toContain('wire:submit="addCnae"')

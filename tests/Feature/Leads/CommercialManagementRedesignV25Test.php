@@ -37,12 +37,12 @@ it('keeps the attention queue accessible without occupying the first screen', fu
     expect($blade)
         ->toContain('ecgm-page ecgm-v2')
         ->toContain('wire:poll.visible.30s')
-        ->toContain('<details class="ecgm-v2-attention-drawer">')
-        ->toContain("@include('partials.commercial-attention-queue')")
+        ->toContain('<details class="ecgm-v2-attention-drawer ecgm62-attention-details" open>')
+        ->toContain("ecgm62-attention-table")
         ->toContain('ecgm-team-focus-grid')
         ->toContain('ecgm-management-table')
         ->toContain('ecgm-v2-table-action')
-        ->toContain('partials.commercial-distribution-preview')
+        ->toContain('partials.commercial-distribution-preview-v61')
         ->toContain('wire:click="autoDistribute"')
         ->toContain('wire:click="updateCommercialRole');
 });

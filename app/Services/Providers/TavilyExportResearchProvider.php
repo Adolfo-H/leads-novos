@@ -322,6 +322,18 @@ final class TavilyExportResearchProvider implements ExportResearchProvider
 
                         'tavily_score' => $score,
 
+                        // DOSSIE_EXPORTACAO_V58: data original apenas quando
+                        // o provedor retornar o campo da publicação.
+                        ...(
+                            is_string($result['published_date'] ?? null)
+                                ? ['source_published_at' => $result['published_date']]
+                                : (is_string($result['published_at'] ?? null)
+                                    ? ['source_published_at' => $result['published_at']]
+                                    : (is_string($result['publication_date'] ?? null)
+                                        ? ['source_published_at' => $result['publication_date']]
+                                        : []))
+                        ),
+
                         'search_depth' => 'basic',
 
                         'matched_rule' => $matchedRule,

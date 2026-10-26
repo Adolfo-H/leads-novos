@@ -122,10 +122,6 @@
 .ec-dossier-page.e53-dossier .e53-cnae-main p{font-size:12px}
 .ec-dossier-page.e53-dossier .e53-cnae-actions{white-space:nowrap}
 .ec-dossier-page.e53-dossier .e53-cnae-actions>span{margin:0 5px;color:var(--e53-muted)}
-.ec-dossier-page.e53-dossier .e53-footer{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:8px 0 16px;color:#7a91a3;font-size:10px}
-.ec-dossier-page.e53-dossier .e53-footer button{font-size:11px;font-weight:650;background:transparent;border:0;color:var(--e53-teal);cursor:pointer}
-.ec-dossier-page.e53-dossier .e53-legacy{margin:22px auto 0;max-width:1410px;border:1px solid var(--e53-line);border-radius:12px;background:var(--e53-white);padding:16px;color:var(--e53-ink)}
-.ec-dossier-page.e53-dossier .e53-legacy .ec-dossier-hero{background:transparent}
 /* Dialogs E05-RESEARCH / E06-PROGRESS / E08-UNIT / E09-ADD/REMOVE */
 .ec-dossier-page.e53-dossier .e53-modal-backdrop{position:fixed;inset:0;z-index:1200;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:5vh 15px 4vh;background:rgba(7,22,37,.59);backdrop-filter:blur(2px)}
 .ec-dossier-page.e53-dossier .e53-modal-backdrop--server{z-index:1250}
@@ -304,27 +300,6 @@ body.ec-app-body:has(.ec-dossier-page.e53-dossier) .ec-sidebar-world-v7 {
   padding-top: 8px;
   margin-top: 6px !important;
 }
-.ec-dossier-page.e53-dossier .e53-footer {
-  margin-top: 2px;
-  padding: 4px 0 8px;
-}
-.ec-dossier-page.e53-dossier .e53-footer button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 6px 10px;
-  border: 1px solid #cfe1e2;
-  border-radius: 9px;
-  background: #fff;
-}
-.ec-dossier-page.e53-dossier .e53-footer button:hover {
-  background: #f6fbfa;
-  border-color: #b9d9d5;
-}
-.ec-dossier-page.e53-dossier .e53-legacy {
-  margin-top: 14px;
-}
 
 /* Compactação adicional nas telas secundárias. */
 .ec-dossier-page.e53-dossier .e53-history-layout {
@@ -397,3 +372,351 @@ body.ec-app-body:has(.ec-dossier-page.e53-dossier) .ec-page-shell.ec-dossier-pag
 .ec-dossier-page.e53-dossier .e53-crumb {
   letter-spacing: .08em;
 }
+
+/* PROSPECTOR_DOSSIE_V56: contatos completos expandidos na interface E53, sem legado. */
+.ec-dossier-page.e53-dossier .e53-contact-extra {
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 8px 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f4f8fa;
+}
+.ec-dossier-page.e53-dossier .e53-contact-extra .e53-line {
+  overflow-wrap: anywhere;
+}
+
+/* DOSSIE_UI_HUBSPOT_V591 DOSSIER CSS BEGIN */
+.ec-dossier-page.e53-dossier .e53-hero-side.e591-hero-side {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    max-width: 100%;
+    white-space: normal;
+    padding-top: 5px;
+}
+.ec-dossier-page.e53-dossier .e591-legal-state {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 5px;
+    min-width: 143px;
+    min-height: 49px;
+    padding: 10px 13px;
+    background: #fff;
+    border: 1px solid #d5e5e9;
+    border-radius: 12px;
+    box-shadow: 0 8px 22px rgba(12,44,70,.05);
+}
+.ec-dossier-page.e53-dossier .e591-legal-state small { font-size: 10px; color: #6a8394; }
+.ec-dossier-page.e53-dossier .e591-hubspot-link {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 9px;
+    min-height: 49px;
+    padding: 10px 16px;
+    border: 1px solid #a6d9d0;
+    border-radius: 12px;
+    background: #eaf8f4;
+    color: #087b6d;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 750;
+    box-shadow: 0 8px 22px rgba(12,44,70,.04);
+    transition: background 150ms ease, transform 150ms ease;
+}
+.ec-dossier-page.e53-dossier .e591-hubspot-link:hover {
+    background: #d5f1e7;
+    color: #036558;
+    transform: translateY(-1px);
+}
+.ec-dossier-page.e53-dossier .e591-channel-grid { align-items: stretch; gap: 14px; }
+.ec-dossier-page.e53-dossier .e591-channel-card {
+    min-width: 0;
+    min-height: 205px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 15px;
+    padding: 19px 20px;
+    background: #fff;
+    overflow: visible;
+}
+.ec-dossier-page.e53-dossier .e591-channel-heading {
+    display: grid;
+    grid-template-columns: 40px minmax(0,1fr) auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+.ec-dossier-page.e53-dossier .e591-channel-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    background: #e9f8f4;
+    border: 1px solid #ccebe3;
+    border-radius: 12px;
+    color: #0b877b;
+}
+.ec-dossier-page.e53-dossier .e591-channel-heading h3 { font-size: 14px; margin: 0 0 4px; color: #163b50; }
+.ec-dossier-page.e53-dossier .e591-channel-heading p { font-size: 10px; margin: 0; color: #70879a; }
+.ec-dossier-page.e53-dossier .e591-channel-count {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 31px;
+    height: 27px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #e5f7f0;
+    color: #078071;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+.ec-dossier-page.e53-dossier .e591-channel-list,
+.ec-dossier-page.e53-dossier .e591-channel-extra {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    gap: 9px;
+    width: 100%;
+}
+.ec-dossier-page.e53-dossier .e591-channel-extra { margin-top: 4px; }
+/* Sobrescreve a rolagem interna herdada da V56.1. */
+.ec-dossier-page.e53-dossier .e591-channel-extra.e53-contact-extra {
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+.ec-dossier-page.e53-dossier .e591-channel-list a.e591-channel-item,
+.ec-dossier-page.e53-dossier .e591-channel-list span.e591-channel-item {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    min-height: 32px;
+    padding: 7px 10px;
+    border: 1px solid #dce9ee;
+    border-radius: 9px;
+    background: #f7fafc;
+    color: #31576e;
+    font-size: 11px;
+    line-height: 1.45;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-decoration: none;
+}
+.ec-dossier-page.e53-dossier .e591-channel-list a.e591-channel-item:hover {
+    background: #eaf7f4;
+    border-color: #b9ddd4;
+    color: #087b6d;
+}
+.ec-dossier-page.e53-dossier .e591-channel-empty { color: #78909c; font-size: 11px; margin: 0; }
+.ec-dossier-page.e53-dossier .e591-channel-toggle {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    justify-content: center;
+    gap: 7px;
+    margin-top: auto;
+    padding: 7px 0 0;
+    border: 0;
+    background: transparent;
+    color: #087f72;
+    font-size: 11px;
+    font-weight: 750;
+    cursor: pointer;
+}
+.ec-dossier-page.e53-dossier .e591-channel-toggle:hover { color: #065e55; }
+.ec-dossier-page.e53-dossier .e591-channel-toggle svg { transition: transform .15s ease; }
+@media (max-width: 800px) {
+    .ec-dossier-page.e53-dossier .e53-hero-side.e591-hero-side { width: 100%; justify-content: flex-start; }
+    .ec-dossier-page.e53-dossier .e591-hubspot-link { flex: 0 1 auto; }
+    .ec-dossier-page.e53-dossier .e591-channel-card { padding: 15px; }
+    .ec-dossier-page.e53-dossier .e591-channel-heading { grid-template-columns: 36px minmax(0,1fr) auto; }
+    .ec-dossier-page.e53-dossier .e591-channel-icon { width: 36px; height: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ec-dossier-page.e53-dossier .e591-hubspot-link, .ec-dossier-page.e53-dossier .e591-channel-toggle svg { transition: none; }
+}
+/* DOSSIE_UI_HUBSPOT_V591 DOSSIER CSS END */
+
+/* DOSSIE_UI_HUBSPOT_V592 DOSSIER CSS BEGIN */
+/* Link externo é um botão independente, separado do cartão de situação cadastral. */
+.ec-dossier-page.e53-dossier .e53-hero:has(.e592-hubspot-icon) {
+    column-gap: 16px;
+    row-gap: 10px;
+}
+.ec-dossier-page.e53-dossier .e592-hubspot-icon.e591-hubspot-link {
+    display: inline-grid !important;
+    place-items: center !important;
+    align-self: flex-start;
+    flex: 0 0 49px;
+    width: 49px;
+    min-width: 49px;
+    max-width: 49px;
+    min-height: 49px;
+    height: 49px;
+    box-sizing: border-box;
+    margin-top: 4px;
+    padding: 0 !important;
+    background: #ffffff !important;
+    border: 1px solid #f3c8bc !important;
+    border-radius: 13px;
+    color: #ff7a59 !important;
+    box-shadow: 0 6px 18px rgba(18, 50, 76, .06);
+    text-decoration: none;
+    transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
+}
+.ec-dossier-page.e53-dossier .e592-hubspot-icon.e591-hubspot-link:hover,
+.ec-dossier-page.e53-dossier .e592-hubspot-icon.e591-hubspot-link:focus-visible {
+    background: #fff1eb !important;
+    border-color: #ff9c81 !important;
+    color: #f56b44 !important;
+    transform: translateY(-1px);
+}
+.ec-dossier-page.e53-dossier .e592-hubspot-icon .e592-hubspot-mark {
+    display: block;
+    width: 26px;
+    height: 26px;
+    color: #ff7a59;
+}
+.ec-dossier-page.e53-dossier .e592-status-card.e53-hero-side {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+    align-self: flex-start;
+    max-width: 220px;
+    margin-top: 0;
+    padding: 4px 0 0;
+    white-space: normal;
+}
+.ec-dossier-page.e53-dossier .e592-status-card .e591-legal-state {
+    min-width: 142px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    background: #ffffff;
+}
+@media (max-width: 700px) {
+    .ec-dossier-page.e53-dossier .e592-hubspot-icon.e591-hubspot-link {
+        flex-basis: 49px;
+    }
+    .ec-dossier-page.e53-dossier .e592-status-card.e53-hero-side {
+        width: auto;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ec-dossier-page.e53-dossier .e592-hubspot-icon.e591-hubspot-link { transition: none; }
+}
+/* DOSSIE_UI_HUBSPOT_V592 DOSSIER CSS END */
+
+/* DOSSIE_NAVEGACAO_ICP_V60 DOSSIER CSS BEGIN */
+/* Cabeçalho: botão de retorno explícito e status sem o cartão vazio/legado. */
+.ec-dossier-page.e53-dossier .e60-back-to-leads {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 31px;
+    padding: 5px 9px;
+    margin-right: 4px;
+    border: 1px solid #cbdfe2;
+    border-radius: 9px;
+    background: #fff;
+    color: #245b6c;
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.1;
+    text-decoration: none;
+    letter-spacing: 0;
+    text-transform: none;
+    transition: border-color .16s ease, background-color .16s ease;
+}
+.ec-dossier-page.e53-dossier .e60-back-to-leads:hover,
+.ec-dossier-page.e53-dossier .e60-back-to-leads:focus-visible {
+    background: #e9f7f3;
+    border-color: #87cabe;
+    color: #007f73;
+}
+.ec-dossier-page.e53-dossier .e60-back-to-leads svg {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+}
+.ec-dossier-page.e53-dossier .e53-crumb {flex-wrap: wrap;}
+.ec-dossier-page.e53-dossier .e592-status-card.e53-hero-side {
+    width: auto;
+    max-width: none;
+    min-width: 0;
+    padding-top: 7px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+.ec-dossier-page.e53-dossier .e592-status-card .e591-legal-state {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0 !important;
+    min-height: 0;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.ec-dossier-page.e53-dossier .e592-status-card .e53-chip {
+    min-height: 29px;
+    padding: 7px 12px;
+    font-size: 11px;
+}
+/* Fatores do ICP: títulos comerciais legíveis, barra de pontuação e valor. */
+.ec-dossier-page.e53-dossier .e60-icp-details > h2 {
+    margin-bottom: 19px;
+    font-size: 15px;
+}
+.ec-dossier-page.e53-dossier .e60-icp-factor {
+    grid-template-columns: minmax(150px, 1.35fr) minmax(75px, .95fr) auto;
+    gap: 14px;
+    margin: 17px 0;
+    align-items: center;
+}
+.ec-dossier-page.e53-dossier .e60-icp-label {
+    color: #546f85;
+    font-size: 12px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+.ec-dossier-page.e53-dossier .e60-icp-factor strong {
+    font-size: 11px;
+    font-weight: 750;
+    color: #24445a;
+    white-space: nowrap;
+}
+.ec-dossier-page.e53-dossier .e60-icp-factor .e53-factor-track {
+    min-width: 75px;
+    height: 8px;
+    background: #edf2f4;
+}
+@media (max-width: 600px) {
+    .ec-dossier-page.e53-dossier .e60-back-to-leads { width: auto; }
+    .ec-dossier-page.e53-dossier .e60-icp-factor {
+        grid-template-columns: minmax(96px, 1.1fr) minmax(50px, .9fr) auto;
+        gap: 8px;
+    }
+    .ec-dossier-page.e53-dossier .e60-icp-label { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ec-dossier-page.e53-dossier .e60-back-to-leads {transition: none;}
+}
+/* DOSSIE_NAVEGACAO_ICP_V60 DOSSIER CSS END */

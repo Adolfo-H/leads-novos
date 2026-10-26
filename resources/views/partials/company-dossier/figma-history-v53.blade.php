@@ -31,21 +31,23 @@
                     </tbody>
                 </table></div>
             </article>
-            <article class="e53-panel e53-icp-details">
-                <h2>ICP {{ $e53Icp?->grade ?? '—' }} · {{ $e53Icp?->score ?? '—' }} / 100 pontos</h2>
-                @php $e53Factors = is_array($e53Icp?->factors) ? $e53Icp->factors : []; @endphp
-                @forelse ($e53Factors as $factorKey=>$factor)
-                    @php
-                        $e53FactorLabel = is_array($factor) ? (string)($factor['label'] ?? $factor['name'] ?? $factor['key'] ?? $factorKey) : (string)$factorKey;
-                        $e53FactorPoints = is_array($factor) ? ($factor['score'] ?? $factor['points'] ?? null) : (is_numeric($factor)?$factor:null);
-                        $e53FactorMax = is_array($factor) ? ($factor['max_score'] ?? $factor['max_points'] ?? $factor['max'] ?? null) : null;
-                        $e53FactorPct = is_numeric($e53FactorPoints) && is_numeric($e53FactorMax) && (float)$e53FactorMax > 0
-                            ? min(100, max(0, 100 * (float)$e53FactorPoints / (float)$e53FactorMax)) : null;
-                    @endphp
-                    <div class="e53-factor">
-                        <span>{{ $e53FactorLabel }}</span>
-                        <div class="e53-factor-track" aria-hidden="true"><i style="width:{{ $e53FactorPct ?? 0 }}%"></i></div>
-                        <strong>{{ is_numeric($e53FactorPoints) ? $e53FactorPoints : '—' }}@if(is_numeric($e53FactorMax)) / {{ $e53FactorMax }}@endif</strong>
+
+            {{-- DOSSIE_NAVEGACAO_ICP_V60: descrições do ICP v3 obtidas dos fatores reais. --}}
+            <article class="e53-panel e53-icp-details e60-icp-details">
+                <h2>ICP {{ $e53Icp?->version ?: 'v3' }} · {{ $e53Icp?->score ?? '—' }} / 100 pontos</h2>
+                @php
+                    $e60Factors = $e53Icp?->factors;
+                    $e60IcpRows = app(\App\Services\DossierIcpPresentationV60Service::class)
+                        ->rows(is_array($e60Factors) ? $e60Factors : []);
+                @endphp
+                @forelse ($e60IcpRows as $row)
+                    <div class="e53-factor e60-icp-factor" title="{{ $row['reason'] }}">
+                        <span class="e60-icp-label">{{ $row['label'] }}</span>
+                        <div class="e53-factor-track" role="progressbar" aria-label="{{ $row['label'] }}"
+                             aria-valuemin="0" aria-valuemax="{{ $row['max'] }}" aria-valuenow="{{ $row['points'] }}">
+                            <i style="width:{{ $row['pct'] }}%"></i>
+                        </div>
+                        <strong>{{ $row['points'] }} / {{ $row['max'] }}</strong>
                     </div>
                 @empty
                     <p class="e53-muted">A composição detalhada do ICP ainda não foi disponibilizada para esta empresa.</p>
@@ -61,7 +63,7 @@
                 <span class="e53-chip e53-chip--green">{{ ucfirst((string) ($evidence->signal ?: 'Evidência')) }}</span>
                 <h3>{{ $evidence->title ?: $evidence->source_name ?: 'Fonte pública' }}</h3>
                 <p>{{ \Illuminate\Support\Str::limit((string) ($evidence->evidence_text ?: 'Sem resumo textual'), 230) }}</p>
-                <p>Fonte: {{ $evidence->source_name ?: 'Não informada' }} · {{ $evidence->observed_at?->format('d/m/Y') ?: 'Sem data' }}</p>
+                <p>Fonte: {{ $evidence->source_name ?: 'Não informada' }} · {{ app(\App\Services\CompanyExportDossierV58Service::class)->publicationDate($evidence) ?? 'Não informada' }} {{-- DOSSIE_EXPORTACAO_V58 --}}</p>
                 @if (filter_var($evidence->source_url, FILTER_VALIDATE_URL) && in_array(parse_url($evidence->source_url, PHP_URL_SCHEME), ['https','http'], true))
                     <a class="e53-text-link" href="{{ $evidence->source_url }}" target="_blank" rel="noopener noreferrer">Abrir fonte <span aria-hidden="true">↗</span></a>
                 @endif

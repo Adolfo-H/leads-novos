@@ -58,8 +58,9 @@
     $e53ExportTitle = is_array($e53ExportSummary) && filled($e53ExportSummary['headline'] ?? null)
         ? (string) $e53ExportSummary['headline']
         : (filled($e53Export?->overall_summary) ? (string) $e53Export->overall_summary : 'Sem pesquisa concluída');
-    $e53Direct = (bool) ($e53Export?->direct_confirmed ?? false);
-    $e53Signal = $e53Direct ? 'Sinal direto' : (($e53Export?->direct_status === 'positive') ? 'Indícios diretos' : 'Não confirmado');
+    // DOSSIE_EXPORTACAO_V58: leitura comercial derivada das fontes reais, não de um status isolado.
+    $e58Dossier = app(\App\Services\CompanyExportDossierV58Service::class)->build($company);
+    $e53Signal = $e58Dossier['status'];
     $e53LastActivity = $e53Lead?->last_activity_at ?? $e53Crm?->last_contacted_at
         ?? $e53HubCompanies->pluck('last_activity_at')->filter()->sortDesc()->first();
     $e53Owner = $company->leadWorkState?->assignedUser?->name
@@ -70,10 +71,22 @@
     $e53ResearchRunning = in_array($e53ResearchStatus, ['queued', 'processing'], true);
     $e53ResearchConfigured = $this->exportResearchConfigured();
     $e53ResearchEligibility = $this->exportResearchEligibility;
+    $e53HubSpotCompanyUrl = $this->hubSpotCompanyUrl();
 @endphp
 
 <div class="e53-figma" data-ec-dossier-figma="E05-E09">
-    <div class="e53-crumb"><a href="{{ route('companies.index') }}" wire:navigate>EMPRESAS</a><span x-show="dossierTab==='commercial' && dossierView==='summary'">/ Dossiê</span></div>
+    <div class="e53-crumb">
+    {{-- DOSSIE_NAVEGACAO_ICP_V60 BACK: rota segura com fallback caso não haja origem. --}}
+    <a href="{{ route('leads.index') }}" class="e60-back-to-leads" data-ec-return-leads
+       title="Voltar para a listagem de Leads preservando filtros e posição"
+       aria-label="Voltar aos leads com os filtros anteriores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m15 18-6-6 6-6"/><path d="M20 12H9"/>
+        </svg>
+        <span>Voltar aos leads</span>
+    </a>
+<a href="{{ route('companies.index') }}" wire:navigate>EMPRESAS</a><span x-show="dossierTab==='commercial' && dossierView==='summary'">/ Dossiê</span></div>
 
     <header class="e53-hero">
         <div class="e53-hero-main">
@@ -94,6 +107,9 @@
                 <button x-show="dossierTab === 'commercial' && dossierView !== 'summary'" x-cloak type="button" class="e53-button e53-button--outline" x-on:click="dossierView='summary'">Voltar ao dossiê</button>
                 <a x-show="dossierTab === 'commercial' && dossierView === 'summary'" x-cloak class="e53-button e53-button--outline" href="{{ route('companies.edit', $company) }}" wire:navigate>Editar empresa</a>
                 <button x-show="dossierTab === 'commercial' && dossierView === 'summary'" x-cloak type="button" class="e53-button e53-button--primary" x-on:click="e53ResearchOpen=true">Pesquisar exportações</button>
+                @if ($e53HubSpotCompanyUrl)
+                <a x-show="dossierTab === 'commercial' && dossierView === 'crm'" x-cloak class="e53-button e53-button--outline" href="{{ $e53HubSpotCompanyUrl }}" target="_blank" rel="noopener noreferrer">Abrir empresa no HubSpot ↗</a>
+                @endif
                 @can('createHubSpotOpportunity', $company)
                 <button x-show="dossierTab === 'commercial' && dossierView === 'crm'" x-cloak type="button" class="e53-button e53-button--primary" wire:click="createHubSpotOpportunity" wire:loading.attr="disabled" wire:target="createHubSpotOpportunity">Criar oportunidade</button>
                 @endcan
@@ -104,9 +120,26 @@
                 @endcan
             </div>
         </div>
-        <div class="e53-hero-side" x-show="dossierTab === 'commercial' && dossierView === 'summary'">
-            <span class="e53-chip e53-chip--green">{{ $e53Matrix?->registration_status === 'ATIVA' ? 'Ativa' : ($e53Matrix?->registration_status ?: 'Situação não informada') }}</span>
-            <small>Dados da base local</small>
+                {{-- DOSSIE_UI_HUBSPOT_V591 preservado; DOSSIE_UI_HUBSPOT_V592: atalho HubSpot e cartão cadastral são elementos separados. --}}
+        @if ($e53HubSpotCompanyUrl)
+            <a class="e591-hubspot-link e592-hubspot-icon"
+               href="{{ $e53HubSpotCompanyUrl }}"
+               x-show="dossierTab === 'commercial' && dossierView === 'summary'" x-cloak
+               target="_blank" rel="noopener noreferrer"
+               title="Abrir no HubSpot"
+               aria-label="Abrir no HubSpot em nova aba">
+                {{-- Ícone HubSpot · Font Awesome Free 6.7.2, CC BY 4.0; crédito no LEIA-ME. --}}
+                <svg class="e592-hubspot-mark" viewBox="0 0 512 512" width="26" height="26" fill="currentColor" aria-hidden="true">
+                    <path d="M267.4 211.6c-25.1 23.7-40.8 57.3-40.8 94.6 0 29.3 9.7 56.3 26 78L203.1 434c-4.4-1.6-9.1-2.5-14-2.5-10.8 0-20.9 4.2-28.5 11.8-7.6 7.6-11.8 17.8-11.8 28.6s4.2 20.9 11.8 28.5c7.6 7.6 17.8 11.6 28.5 11.6 10.8 0 20.9-3.9 28.6-11.6 7.6-7.6 11.8-17.8 11.8-28.5 0-4.2-.6-8.2-1.9-12.1l50-50.2c22 16.9 49.4 26.9 79.3 26.9 71.9 0 130-58.3 130-130.2 0-65.2-47.7-119.2-110.2-128.7V116c17.5-7.4 28.2-23.8 28.2-42.9 0-26.1-20.9-47.9-47-47.9S311.2 47 311.2 73.1c0 19.1 10.7 35.5 28.2 42.9v61.2c-15.2 2.1-29.6 6.7-42.7 13.6-27.6-20.9-117.5-85.7-168.9-124.8 1.2-4.4 2-9 2-13.8C129.8 23.4 106.3 0 77.4 0 48.6 0 25.2 23.4 25.2 52.2c0 28.9 23.4 52.3 52.2 52.3 9.8 0 18.9-2.9 26.8-7.6l163.2 114.7zm89.5 163.6c-38.1 0-69-30.9-69-69s30.9-69 69-69 69 30.9 69 69-30.9 69-69 69z"/>
+                </svg>
+                <span class="sr-only">Abrir no HubSpot</span>
+            </a>
+        @endif
+        <div class="e53-hero-side e592-status-card" x-show="dossierTab === 'commercial' && dossierView === 'summary'" x-cloak>
+            <div class="e591-legal-state">
+                <span class="e53-chip e53-chip--green">{{ $e53Matrix?->registration_status === 'ATIVA' ? 'Ativa' : ($e53Matrix?->registration_status ?: 'Situação não informada') }}</span>
+
+            </div>
         </div>
     </header>
 
@@ -122,12 +155,6 @@
     @include('partials.company-dossier.figma-group-v53')
     @include('partials.company-dossier.figma-cnaes-v53')
 
-    <footer class="e53-footer">
-        <span>ExportControl Prospector · Dados locais e vínculos confirmados</span>
-        <button type="button" x-on:click="showAdvancedDossier = !showAdvancedDossier" x-bind:aria-expanded="showAdvancedDossier ? 'true' : 'false'">
-            <span x-text="showAdvancedDossier ? 'Ocultar funcionalidades avançadas' : 'Ver funcionalidades avançadas'">Ver funcionalidades avançadas</span> <span aria-hidden="true">↗</span>
-        </button>
-    </footer>
 
     @include('partials.company-dossier.figma-modals-v53')
 </div>

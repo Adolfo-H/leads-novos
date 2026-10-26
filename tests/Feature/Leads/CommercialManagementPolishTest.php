@@ -27,7 +27,7 @@ it('contains the responsive commercial management workspace structure', function
             'ecgm-empty-state'
         )
         ->toContain(
-            'partials.commercial-attention-queue'
+            'ecgm62-attention-table'
         )
         ->toContain(
             'partials.commercial-distribution-preview'

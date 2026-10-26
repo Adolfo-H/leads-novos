@@ -61,5 +61,7 @@
         placeholder="Buscar empresas, CNPJ..."
     >
 
-    <kbd aria-hidden="true">Enter</kbd>
+    @unless (request()->routeIs('leads.management'))
+        <kbd aria-hidden="true">Enter</kbd>
+    @endunless
 </form>

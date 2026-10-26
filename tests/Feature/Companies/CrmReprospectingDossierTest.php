@@ -1,5 +1,7 @@
 <?php
 
+/* PROSPECTOR_DOSSIE_V56: linguagem da aba moderna de relacionamento. */
+
 use App\Models\Company;
 use App\Models\User;
 
@@ -51,13 +53,13 @@ it('shows the future reprospecting date for a recent prospect', function () {
         )
         ->assertSuccessful()
         ->assertSee(
-            'Aguardando reprospecção'
+            'Verificação de retomada'
         )
         ->assertSee(
-            'Reprospecção a partir de'
+            'Próxima janela:'
         )
         ->assertSee(
-            'Última atividade considerada'
+            'Último contato'
         );
 });
 
@@ -109,9 +111,9 @@ it('shows old prospects as released for reprospecting', function () {
         )
         ->assertSuccessful()
         ->assertSee(
-            'Reprospecção liberada'
+            'Retomada liberada'
         )
         ->assertSee(
-            'Liberada agora'
+            'Elegível'
         );
 });

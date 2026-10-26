@@ -205,6 +205,7 @@ it('does not duplicate baseline HubSpot events', function () {
     )->toBe(1);
 });
 
+/* PROSPECTOR_DOSSIE_V56: a nova tela renderiza a timeline real; preserva dados legados em DB. */
 it('renders commercial timeline in the company dossier', function () {
     $user =
         User::factory()
@@ -295,16 +296,14 @@ it('renders commercial timeline in the company dossier', function () {
         ->assertSee(
             'Histórico comercial'
         )
-        ->assertSee(
-            'Aguardando retorno'
-        )
-        ->assertSee(
-            'Prospects'
-        )
-        ->assertSee(
-            'Retornar contato'
-        )
+
         ->assertSee(
             'Lead enviado ao HubSpot'
         );
+
+    // Dados legados continuam preservados no espelho, mesmo sem a UI duplicada.
+    expect($lead->work_status)->toBe('waiting')
+        ->and($lead->deal_stage_id)->toBe('appointmentscheduled')
+        ->and(data_get($lead->metadata, 'hubspot_status.open_tasks.0.subject'))
+        ->toBe('Retornar contato');
 });

@@ -35,12 +35,16 @@ new class extends Component
     #[Url]
     public string $search = '';
 
+    #[Url] // V60: restaurar filtro na volta do dossiê
     public string $priority = '';
 
+    #[Url] // V60: restaurar filtro na volta do dossiê
     public string $icp = '';
 
+    #[Url] // V60: restaurar filtro na volta do dossiê
     public string $crm = '';
 
+    #[Url] // V60: restaurar filtro na volta do dossiê
     public string $state = '';
 
     #[Url]
@@ -56,9 +60,11 @@ new class extends Component
     public string $dashboardStage = '';
 
     // EC_PROSPECTOR_V41_LEADS: filtro global disponivel somente para gestores.
+    #[Url] // V60: restaurar filtro na volta do dossiê
     public string $globalHubSpotStage = '';
 
     // EC_PROSPECTOR_V48: etapa selecionada SOMENTE na carteira pessoal.
+    #[Url] // V60: restaurar filtro na volta do dossiê
     public string $personalHubSpotStage = '';
 
     // EC_PROSPECTOR_V45_LEADS: seleção persiste no Livewire e respeita filtros/permissões.
@@ -81,16 +87,20 @@ new class extends Component
     #[Url] // EC_PROSPECTOR_V40_LEADS — permite abrir vencimentos pela URL do Dashboard
     public bool $dueActionOnly = false;
 
-    // EC_PROSPECTOR_V42_LEADS: subtipo exclusivo dos cards de tarefas.
+    // V55: permite abrir a fila filtrada diretamente pelo Dashboard.
+    #[Url]
     public string $queueDuePeriod = '';
 
     #[Url]
     public string $followUp = '';
 
+    #[Url] // V60: restaurar filtro na volta do dossiê
     public string $dailyView = '';
 
+    #[Url] // V60: restaurar filtro na volta do dossiê
     public bool $staleOnly = false;
 
+    #[Url] // V60: restaurar filtro na volta do dossiê
     public bool $reprospectingReadyOnly = false;
 
     #[Url]

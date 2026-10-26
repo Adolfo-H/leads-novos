@@ -256,6 +256,15 @@ Schedule::command(
     ->withoutOverlapping(30);
 /* HUBSPOT_TASK_RECONCILIATION_V22_END */
 
+/* HUBSPOT_OWNER_TASKS_V55: complementa o espelho quando o webhook não entregou uma tarefa.
+ * Busca por owner e janela de 1 dia anterior até o fim de hoje,
+ * com paginação, status reais e sem writes no HubSpot. */
+Schedule::command('prospector:sync-hubspot-owner-tasks --apply --days-back=1 --max-pages=30')
+    ->everyThirtyMinutes()
+    ->onOneServer()
+    ->withoutOverlapping(30);
+/* HUBSPOT_OWNER_TASKS_V55_END */
+
 /*
  * WEB_HEALTH_NONBLOCKING_V24103:
  * Testar a URL publica fora das requisicoes de usuario. Um timeout do
