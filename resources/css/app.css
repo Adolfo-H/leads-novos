@@ -12,6 +12,7 @@
 @import './campaigns-bounces-v7.css';
 @import './campaigns-pilot-v5.css';
 @import './contacts-reference-v3.css';
+@import './contacts-figma-v66.css';
 /* CONTACTS_RECEITA_V4_STYLES */
 @import './contacts-receita-v4.css';
 @import './company-list-workspace.css';
@@ -25,6 +26,7 @@
 @import '../../vendor/livewire/flux/dist/flux.css';
 @import './prospecting-workspace.css';
 @import './prospecting-workspace-v2.css';
+@import './prospecting-figma-v63.css';
 @import './leads-workspace.css';
 @import './commercial-management.css';
 @import './app-shell-v2.css';
@@ -33,9 +35,12 @@
 @import './dashboard-my-deals-v6.css';
 @import './dashboard-map-v7.css';
 @import './company-list-redesign-v26.css';
+@import './companies-figma-v64.css';
+@import './companies-figma-v643.css';
 @import './commercial-management-v2.css';
 @import './commercial-management-figma-v61.css';
 @import './commercial-management-figma-v62.css';
+@import './commercial-management-figma-v624.css';
 @import './leads-figma-v34.css';
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -18064,6 +18069,8 @@ body:not(.dark)
 @import './dashboard-v26.css';
 @import './dossier-company-commercial-v1.css';
 @import './imports-screen-v2.css';
+@import './imports-figma-v65.css';
+@import './imports-figma-v652.css';
 /* EC_SIMPLE_CAMPAIGNS_2026_V1 */
 @import './campaigns-simple-v1.css';
 /* EC_CAMPAIGN_REDESIGN_V21 */
@@ -21108,3 +21115,328 @@ body.ec-app-body .ec-topbar .e592-account-root--mobile .e592-account-trigger {
     body.ec-app-body .ec-topbar .e592-account-trigger { transition: none; }
 }
 /* DOSSIE_UI_HUBSPOT_V592 APP CSS END */
+
+/* EC_MOTOR_TOPBAR_BRANCO_GESTAO_V637_BEGIN */
+/* 1/2 — CABEÇALHO BRANCO DO MOTOR, COMO LEADS E GESTÃO COMERCIAL.
+   Este bloco fica ao FINAL do app.css para vencer os estilos navy globais. */
+body.ec-app-body:has(.prv63-page) .ec-topbar,
+body.ec-app-body .ec-topbar[data-ec-prospecting-topbar="v636"] {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #173149 !important;
+    border-bottom: 1px solid #dce5e8 !important;
+    box-shadow: none !important;
+}
+body.ec-app-body:has(.prv63-page) .ec-topbar .ec-topbar-context,
+body.ec-app-body .ec-topbar[data-ec-prospecting-topbar="v636"] .ec-topbar-context {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: flex-start;
+    justify-content: center;
+    min-width: max-content;
+    margin-right: 20px !important;
+}
+body.ec-app-body:has(.prv63-page) .ec-topbar .ec-topbar-title,
+body.ec-app-body .ec-topbar[data-ec-prospecting-topbar="v636"] .ec-topbar-title {
+    color: #294b60 !important;
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+    margin-top: 0 !important;
+    font-weight: 600 !important;
+}
+body.ec-app-body:has(.prv63-page) .ec-topbar .ec-global-search,
+body.ec-app-body .ec-topbar[data-ec-prospecting-topbar="v636"] .ec-global-search {
+    background: #f2f5f7 !important;
+    background-image: none !important;
+    border: 1px solid #e3e9ee !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+    color: #587387 !important;
+}
+body.ec-app-body:has(.prv63-page) .ec-topbar .ec-global-search :is(input, svg) {
+    color: #27465c !important;
+}
+body.ec-app-body:has(.prv63-page) .ec-topbar .ec-global-search input::placeholder {
+    color: #8196a7 !important;
+}
+body.ec-app-body:has(.prv63-page) .ec-topbar .e592-account-trigger,
+body.ec-app-body:has(.prv63-page) .ec-topbar .e592-account-name,
+body.ec-app-body .ec-topbar[data-ec-prospecting-topbar="v636"] .e592-account-name {
+    color: #17384c !important;
+}
+/* 2/2 — SÓ O PAINEL PROMOCIONAL DA GESTÃO COMERCIAL, NUNCA CONFIGURAÇÕES.
+   O Blade também deixa de renderizá-lo; esta regra cobre wire:navigate. */
+body.ec-app-body:has(.ecgm62) .ec-sidebar .ec-sidebar-world-v7,
+body.ec-app-body:has(.ecgm-page.ecgm-v2) .ec-sidebar .ec-sidebar-world-v7 {
+    display: none !important;
+}
+/* EC_MOTOR_TOPBAR_BRANCO_GESTAO_V637_END */
+
+/* CONTATOS_FIGMA_V661_BEGIN — CSS adicionado DEPOIS dos estilos globais.
+   Exclusivo do modulo de Contatos V66: sem regras em banco, jobs ou HubSpot. */
+body.ec-app-body:has(.ecc66-page) .ec-topbar,
+body.ec-app-body:has(.ecc66-receita) .ec-topbar {
+    background: #ffffff !important;
+    background-image: none !important;
+    border-bottom: 1px solid #dce6eb !important;
+    box-shadow: none !important;
+    color: #17354b !important;
+}
+body.ec-app-body:has(.ecc66-page) .ec-topbar :is(.ec-topbar-title,.ec-topbar-context,.ec-topbar-profile-name,.e592-account-name),
+body.ec-app-body:has(.ecc66-receita) .ec-topbar :is(.ec-topbar-title,.ec-topbar-context,.ec-topbar-profile-name,.e592-account-name) {
+    color: #17354b !important;
+    -webkit-text-fill-color: #17354b !important;
+}
+body.ec-app-body:has(.ecc66-page) .ec-topbar .ec-topbar-eyebrow,
+body.ec-app-body:has(.ecc66-receita) .ec-topbar .ec-topbar-eyebrow {display:none !important}
+body.ec-app-body:has(.ecc66-page) .ec-topbar .ec-global-search,
+body.ec-app-body:has(.ecc66-receita) .ec-topbar .ec-global-search {
+    background: #f2f6f8 !important;
+    background-image: none !important;
+    border: 1px solid #e0e9ee !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+    color: #526c80 !important;
+}
+body.ec-app-body:has(.ecc66-page) .ec-topbar .ec-global-search input,
+body.ec-app-body:has(.ecc66-receita) .ec-topbar .ec-global-search input {
+    background: transparent !important;
+    color: #24495e !important;
+    -webkit-text-fill-color: #24495e !important;
+}
+body.ec-app-body:has(.ecc66-page) .ec-topbar .ec-global-search input::placeholder,
+body.ec-app-body:has(.ecc66-receita) .ec-topbar .ec-global-search input::placeholder {
+    color: #8298aa !important;
+    -webkit-text-fill-color: #8298aa !important;
+}
+body.ec-app-body:has(.ecc66-page) .ec-topbar .ec-global-search kbd,
+body.ec-app-body:has(.ecc66-receita) .ec-topbar .ec-global-search kbd {display:none !important}
+body.ec-app-body:has(.ecc66-page) .ec-topbar .e592-account-trigger,
+body.ec-app-body:has(.ecc66-receita) .ec-topbar .e592-account-trigger {
+    background: transparent !important;
+    color: #17354b !important;
+    border-color: transparent !important;
+}
+body.ec-app-body:has(.ecc66-page) .ec-topbar .e592-account-trigger:hover,
+body.ec-app-body:has(.ecc66-receita) .ec-topbar .e592-account-trigger:hover {
+    background: #eff8f5 !important;
+    border-color: #c5e8df !important;
+}
+/* Permanece somente Configurações no rodapé do menu, sem o globo promocional. */
+body.ec-app-body:has(.ecc66-page,.ecc66-receita) .ec-sidebar-world-v7 {display:none !important}
+
+/* Botão Filtros: popover compacto, ancorado na listagem; não estica a página. */
+body.ec-app-body .ecc66-page .ecc3-shell {position:relative !important;isolation:isolate}
+body.ec-app-body .ecc66-page .ecc3-filters.is-open {
+    position:absolute !important;
+    z-index:95 !important;
+    top:0 !important;
+    left:0 !important;
+    width:min(760px,100%) !important;
+    max-height:min(78dvh,690px) !important;
+    overflow:hidden !important;
+    display:flex !important;
+    flex-direction:column !important;
+    border:1px solid #d8e5e9 !important;
+    border-radius:12px !important;
+    background:#fff !important;
+    box-shadow:0 22px 65px #173c5240 !important;
+}
+body.ec-app-body .ecc66-page .ecc3-filters-head {
+    flex:0 0 auto !important;
+    min-height:55px;
+    padding:15px 18px !important;
+    background:#f9fbfc !important;
+}
+body.ec-app-body .ecc66-page .ecc3-filter-search {
+    flex:0 0 auto !important;
+    margin:12px 18px !important;
+    min-height:38px !important;
+}
+body.ec-app-body .ecc66-page .ecc3-filter-scroll {
+    flex:1 1 auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    overflow-y:auto !important;
+    overscroll-behavior:contain;
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    align-content:start;
+    gap:12px 20px !important;
+    padding:4px 18px 18px !important;
+    scrollbar-width:thin;
+    scrollbar-color:#c3d7df transparent;
+}
+body.ec-app-body .ecc66-page .ecc3-filter-group {
+    min-width:0 !important;
+    margin:0 !important;
+    padding:0 !important;
+    border:1px solid #e1ebef !important;
+    border-radius:9px !important;
+    background:#fff !important;
+    overflow:visible !important;
+}
+body.ec-app-body .ecc66-page .ecc3-filter-group > summary {
+    min-height:41px !important;
+    padding:10px 12px !important;
+    border-bottom:1px solid #e6edf0 !important;
+    color:#23495d !important;
+    font-size:12px !important;
+    font-weight:740 !important;
+}
+body.ec-app-body .ecc66-page .ecc3-filter-list {
+    padding:7px !important;
+    display:grid !important;
+    gap:2px !important;
+    max-height:250px !important;
+    overflow-y:auto !important;
+    scrollbar-width:thin;
+}
+body.ec-app-body .ecc66-page .ecc3-filter-option {
+    min-height:34px !important;
+    padding:8px 9px !important;
+    display:flex !important;
+    align-items:center !important;
+    border-radius:6px !important;
+    color:#2e4f63 !important;
+    font-size:12px !important;
+    text-align:left !important;
+}
+body.ec-app-body .ecc66-page .ecc3-filter-option strong {margin-left:auto;color:#698d9a !important}
+body.ec-app-body .ecc66-page .ecc3-filter-option.is-active strong {color:#078679 !important}
+body.ec-app-body .ecc66-page .ecc3-fake-check {
+    display:inline-grid !important;
+    place-items:center !important;
+    width:17px !important;
+    height:17px !important;
+    flex:0 0 17px !important;
+    border:1px solid #9eb8c6 !important;
+    border-radius:4px !important;
+    background:#fff !important;
+    color:#fff !important;
+    font-size:12px !important;
+    line-height:1 !important;
+}
+body.ec-app-body .ecc66-page .ecc3-filter-option.is-active .ecc3-fake-check {
+    background:#078b7b !important;
+    border-color:#078b7b !important;
+    color:#fff !important;
+}
+body.ec-app-body .ecc66-page .ecc3-filters-foot {grid-column:1/-1;min-width:0}
+
+/* Selecionar todos é um controle real com Livewire, não um caractere. */
+body.ec-app-body .ecc66-page .c661-select-all {
+    display:inline-grid !important;
+    place-items:center !important;
+    width:20px !important;
+    height:20px !important;
+    min-height:20px !important;
+    padding:0 !important;
+    margin:0 auto !important;
+    border:1.5px solid #9eb8c6 !important;
+    border-radius:5px !important;
+    background:#fff !important;
+    color:#fff !important;
+    cursor:pointer;
+}
+body.ec-app-body .ecc66-page .c661-select-all[aria-pressed="true"] {
+    border-color:#078b7b !important;
+    background:#078b7b !important;
+}
+body.ec-app-body .ecc66-page .c661-select-all:hover,
+body.ec-app-body .ecc66-page .c661-select-all:focus-visible {
+    outline:2px solid #7fcec0 !important;
+    outline-offset:2px !important;
+}
+body.ec-app-body .ecc66-page .ecc3-table input[type=checkbox] {
+    width:18px !important;
+    height:18px !important;
+    min-height:18px !important;
+    margin:0 auto !important;
+    cursor:pointer !important;
+    appearance:auto !important;
+    accent-color:#078b7b !important;
+}
+
+/* Detalhes C03: toda a janela é rolável, até a última seção de Negócios. */
+body.ec-app-body .ecc66-page .ecc3-inspector {
+    display:block !important;
+    height:calc(100dvh - 56px) !important;
+    max-height:calc(100dvh - 56px) !important;
+    min-height:0 !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    overscroll-behavior:contain !important;
+    scrollbar-width:thin;
+    scrollbar-color:#9fbecb transparent;
+    -webkit-overflow-scrolling:touch;
+}
+body.ec-app-body .ecc66-page .ecc3-inspector-title {
+    position:sticky !important;
+    top:0 !important;
+    z-index:2 !important;
+}
+body.ec-app-body .ecc66-page .ecc3-inspector-scroll {
+    display:block !important;
+    flex:none !important;
+    height:auto !important;
+    min-height:0 !important;
+    max-height:none !important;
+    overflow:visible !important;
+    padding-bottom:32px !important;
+}
+body.ec-app-body .ecc66-page .ecc3-inspector-tabs {
+    position:sticky !important;
+    top:61px !important;
+    z-index:2 !important;
+}
+/* Canais da Receita: remoção do painel visual; as tabelas e vínculos no banco permanecem. */
+body.ec-app-body .ecc66-page .c661-receita-card,
+body.ec-app-body .ecc66-page a[href*="/contatos/receita"] {
+    display:none !important;
+}
+/* Marcas reconhecíveis e botões com descrição acessível. */
+body.ec-app-body .ecc66-page .c661-brand-icon,
+body.ec-app-body .ecc66-page .c661-brand-icon svg,
+body.ec-app-body .ecc66-page .c661-brand-icon--hubspot,
+body.ec-app-body .ecc66-page .c661-brand-icon--whatsapp {
+    display:inline-block !important;
+    width:19px !important;
+    height:19px !important;
+    flex:0 0 19px !important;
+    vertical-align:middle !important;
+}
+body.ec-app-body .ecc66-page .c661-brand-icon--hubspot {color:#ff7a59 !important}
+body.ec-app-body .ecc66-page .c661-brand-icon--whatsapp {color:#138d6f !important}
+body.ec-app-body .ecc66-page .c661-hubspot-link,
+body.ec-app-body .ecc66-page .c661-whatsapp-link,
+body.ec-app-body .ecc66-page .c661-bulk-whatsapp {
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:7px !important;
+    text-decoration:none !important;
+}
+body.ec-app-body .ecc66-page .c661-hubspot-link {flex:0 0 auto !important}
+body.ec-app-body .ecc66-page .c661-hubspot-link .c661-brand-icon--hubspot {color:#ff7a59 !important}
+body.ec-app-body .ecc66-page .c661-whatsapp-link .c661-brand-icon--whatsapp,
+body.ec-app-body .ecc66-page .c661-bulk-whatsapp .c661-brand-icon--whatsapp {color:#138d6f !important}
+@media (max-width:820px) {
+    body.ec-app-body .ecc66-page .ecc3-filters.is-open {
+        position:fixed !important;
+        top:75px !important;
+        left:12px !important;
+        width:calc(100vw - 24px) !important;
+        max-height:calc(100dvh - 92px) !important;
+    }
+    body.ec-app-body .ecc66-page .ecc3-filter-scroll {grid-template-columns:1fr !important}
+    body.ec-app-body .ecc66-page .ecc3-inspector {
+        top:8px !important;
+        bottom:8px !important;
+        right:8px !important;
+        height:calc(100dvh - 16px) !important;
+        max-height:calc(100dvh - 16px) !important;
+    }
+}
+/* CONTATOS_FIGMA_V661_END */

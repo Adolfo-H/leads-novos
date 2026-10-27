@@ -423,339 +423,135 @@ new class extends Component
     }
 };
 ?>
-<div class="ecnc-page" x-data="{ section: 'identificacao' }">
 
-    <header class="ecnc-header">
-        <div>
-            <div class="ecnc-breadcrumb">
-                <a href="{{ route('companies.index') }}" wire:navigate>
-                    Empresas
-                </a>
-                <span aria-hidden="true">/</span>
-                <span>Novo cadastro</span>
-            </div>
-
-            <h1>Nova empresa</h1>
-            <p>Cadastre os dados da empresa e do estabelecimento.</p>
+{{-- EMPRESAS_FIGMA_V64_E02: apresentação do cadastro. O método save e as validações continuam no componente original. --}}
+<div class="ecnc-page ec-e02-page" data-ec-companies-figma="E02-V64">
+    <header class="ecnc-header ec-e02-header">
+        <span class="ecnc-breadcrumb">EMPRESAS</span>
+        <h1>Nova empresa</h1>
+        <p>Cadastre a empresa e seu estabelecimento de referência.</p>
+        <div class="ec-e02-actions">
+            <a class="ecnc-button ecnc-secondary" href="{{ route('companies.index') }}" wire:navigate>Cancelar</a>
+            <button class="ecnc-button ecnc-primary" type="submit" form="ec-e02-form" wire:loading.attr="disabled" wire:target="save">
+                <span wire:loading.remove wire:target="save">Salvar empresa</span>
+                <span wire:loading wire:target="save">Salvando...</span>
+            </button>
         </div>
-
-        <a
-            class="ecnc-button ecnc-secondary"
-            href="{{ route('companies.index') }}"
-            wire:navigate
-        >
-            ← Voltar
-        </a>
     </header>
 
+    @if ($errors->any())
+        <div class="ecnc-alert" role="alert" tabindex="-1">
+            <strong>Revise o cadastro antes de salvar.</strong>
+            @foreach ($errors->all() as $message)
+                <p>{{ $message }}</p>
+            @endforeach
+        </div>
+    @endif
 
-    <nav class="ecnc-sections" aria-label="Seções do cadastro">
-
-        <a
-            href="#ecnc-identificacao"
-            x-on:click="section = 'identificacao'"
-            x-bind:aria-current="section === 'identificacao' ? 'step' : null"
-        >
-            <span>01</span>
-            Identificação
-        </a>
-
-        <a
-            href="#ecnc-cadastro"
-            x-on:click="section = 'cadastro'"
-            x-bind:aria-current="section === 'cadastro' ? 'step' : null"
-        >
-            <span>02</span>
-            Cadastro e porte
-        </a>
-
-        <a
-            href="#ecnc-contato"
-            x-on:click="section = 'contato'"
-            x-bind:aria-current="section === 'contato' ? 'step' : null"
-        >
-            <span>03</span>
-            Localização e contato
-        </a>
-
-    </nav>
-
-
-    <form wire:submit="save" novalidate class="ecnc-form">
-
-        @if ($errors->any())
-            <div
-                class="ecnc-alert"
-                role="alert"
-                tabindex="-1"
-                x-init="$nextTick(() => $el.focus())"
-            >
-                <strong>Confira os dados antes de salvar.</strong>
-
-                @foreach ($errors->all() as $message)
-                    <p>{{ $message }}</p>
-                @endforeach
-            </div>
-        @endif
-
-
+    <form id="ec-e02-form" class="ecnc-form" wire:submit="save" novalidate>
         <div class="ecnc-layout">
-
-            <fieldset
-                class="ecnc-main"
-                wire:loading.attr="disabled"
-                wire:target="save"
-            >
-                <legend class="ecnc-sr">
-                    Dados da nova empresa
-                </legend>
-
-
-                <section
-                    class="ecnc-card"
-                    id="ecnc-identificacao"
-                    x-on:focusin="section = 'identificacao'"
-                >
-                    <header class="ecnc-card-head">
-                        <span class="ecnc-number">01</span>
-
-                        <div>
-                            <h2>Identificação</h2>
-                            <p>Os campos com * são obrigatórios.</p>
-                        </div>
-                    </header>
-
+            <fieldset class="ecnc-main" wire:loading.attr="disabled" wire:target="save">
+                <legend class="ecnc-sr">Dados da nova empresa</legend>
+                <section class="ecnc-card" aria-labelledby="ec-e02-ident">
+                    <h2 id="ec-e02-ident">Identificação</h2>
                     <div class="ecnc-grid">
-                        <div class="ecnc-field"><label for="ecnc-cnpj">CNPJ <span class="ecnc-required" aria-hidden="true">*</span></label>
-<input type="text" id="ecnc-cnpj" wire:model="cnpj" aria-invalid="{{ $errors->has('cnpj') ? 'true' : 'false' }}" @if ($errors->has('cnpj')) aria-describedby="ecnc-cnpj-error" @endif required maxlength="30" placeholder="00.000.000/0000-00">
-@error('cnpj')
-<span class="ecnc-error" id="ecnc-cnpj-error">{{ $message }}</span>
-@enderror
-</div>
-<div class="ecnc-field"><label for="ecnc-type">Tipo do estabelecimento <span class="ecnc-required" aria-hidden="true">*</span></label>
-<select id="ecnc-type" wire:model="type" aria-invalid="{{ $errors->has('type') ? 'true' : 'false' }}" @if ($errors->has('type')) aria-describedby="ecnc-type-error" @endif required><option value="matrix">Matriz</option><option value="branch">Filial</option></select>
-@error('type')
-<span class="ecnc-error" id="ecnc-type-error">{{ $message }}</span>
-@enderror
-</div>
-<div class="ecnc-field"><label for="ecnc-corporateName">Razão social <span class="ecnc-required" aria-hidden="true">*</span></label>
-<input type="text" id="ecnc-corporateName" wire:model="corporateName" aria-invalid="{{ $errors->has('corporateName') ? 'true' : 'false' }}" @if ($errors->has('corporateName')) aria-describedby="ecnc-corporateName-error" @endif required maxlength="255" placeholder="Razão social completa">
-@error('corporateName')
-<span class="ecnc-error" id="ecnc-corporateName-error">{{ $message }}</span>
-@enderror
-</div>
-<div class="ecnc-field"><label for="ecnc-fantasyName">Nome fantasia</label>
-<input type="text" id="ecnc-fantasyName" wire:model="fantasyName" aria-invalid="{{ $errors->has('fantasyName') ? 'true' : 'false' }}" @if ($errors->has('fantasyName')) aria-describedby="ecnc-fantasyName-error" @endif maxlength="255" placeholder="Opcional">
-@error('fantasyName')
-<span class="ecnc-error" id="ecnc-fantasyName-error">{{ $message }}</span>
-@enderror
-</div>
-                    </div>
-
-                    <p class="ecnc-help">
-                        CNPJ com ou sem pontuação.
-                        A validação acontece ao salvar.
-                    </p>
-                </section>
-
-
-                <section
-                    class="ecnc-card"
-                    id="ecnc-cadastro"
-                    x-on:focusin="section = 'cadastro'"
-                >
-                    <header class="ecnc-card-head">
-                        <span class="ecnc-number">02</span>
-
-                        <div>
-                            <h2>Cadastro e porte</h2>
-                            <p>Informações cadastrais e societárias.</p>
+                        <div class="ecnc-field">
+                            <label for="ecnc-cnpj">CNPJ <span class="ecnc-required">*</span></label>
+                            <input id="ecnc-cnpj" type="text" wire:model="cnpj" maxlength="30" required placeholder="00.000.000/0000-00" aria-invalid="{{ $errors->has('cnpj') ? 'true' : 'false' }}">
+                            @error('cnpj') <span class="ecnc-error">{{ $message }}</span> @enderror
                         </div>
-                    </header>
-
-                    <div class="ecnc-grid">
-                        <div class="ecnc-field"><label for="ecnc-registrationStatus">Situação cadastral</label>
-<select id="ecnc-registrationStatus" wire:model="registrationStatus" aria-invalid="{{ $errors->has('registrationStatus') ? 'true' : 'false' }}" @if ($errors->has('registrationStatus')) aria-describedby="ecnc-registrationStatus-error" @endif><option value="ATIVA">Ativa</option><option value="SUSPENSA">Suspensa</option><option value="INAPTA">Inapta</option><option value="BAIXADA">Baixada</option><option value="NULA">Nula</option><option value="">Não informada</option></select>
-@error('registrationStatus')
-<span class="ecnc-error" id="ecnc-registrationStatus-error">{{ $message }}</span>
-@enderror
-</div>
-<div class="ecnc-field"><label for="ecnc-shareCapital">Capital social (R$)</label>
-<input type="text" id="ecnc-shareCapital" wire:model="shareCapital" aria-invalid="{{ $errors->has('shareCapital') ? 'true' : 'false' }}" @if ($errors->has('shareCapital')) aria-describedby="ecnc-shareCapital-error" @endif maxlength="40" placeholder="Ex.: 2.500.000,00">
-@error('shareCapital')
-<span class="ecnc-error" id="ecnc-shareCapital-error">{{ $message }}</span>
-@enderror
-</div>
-<div class="ecnc-field"><label for="ecnc-sizeCode">Código de porte</label>
-<input type="text" id="ecnc-sizeCode" wire:model="sizeCode" aria-invalid="{{ $errors->has('sizeCode') ? 'true' : 'false' }}" @if ($errors->has('sizeCode')) aria-describedby="ecnc-sizeCode-error" @endif maxlength="10" placeholder="Ex.: 05">
-@error('sizeCode')
-<span class="ecnc-error" id="ecnc-sizeCode-error">{{ $message }}</span>
-@enderror
-</div>
-<div class="ecnc-field"><label for="ecnc-legalNatureCode">Código de natureza jurídica</label>
-<input type="text" id="ecnc-legalNatureCode" wire:model="legalNatureCode" aria-invalid="{{ $errors->has('legalNatureCode') ? 'true' : 'false' }}" @if ($errors->has('legalNatureCode')) aria-describedby="ecnc-legalNatureCode-error" @endif maxlength="10" placeholder="Código cadastral">
-@error('legalNatureCode')
-<span class="ecnc-error" id="ecnc-legalNatureCode-error">{{ $message }}</span>
-@enderror
-</div>
+                        <div class="ecnc-field">
+                            <label for="ecnc-type">Tipo do estabelecimento <span class="ecnc-required">*</span></label>
+                            <select id="ecnc-type" wire:model="type" required><option value="matrix">Matriz</option><option value="branch">Filial</option></select>
+                            @error('type') <span class="ecnc-error">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="ecnc-field">
+                            <label for="ecnc-corporateName">Razão social <span class="ecnc-required">*</span></label>
+                            <input id="ecnc-corporateName" wire:model="corporateName" maxlength="255" required placeholder="Razão social completa">
+                            @error('corporateName') <span class="ecnc-error">{{ $message }}</span> @enderror
+                            <small>Máximo de 255 caracteres.</small>
+                        </div>
+                        <div class="ecnc-field">
+                            <label for="ecnc-fantasyName">Nome fantasia</label>
+                            <input id="ecnc-fantasyName" wire:model="fantasyName" maxlength="255" placeholder="Nome utilizado comercialmente">
+                            @error('fantasyName') <span class="ecnc-error">{{ $message }}</span> @enderror
+                        </div>
                     </div>
                 </section>
 
-
-                <section
-                    class="ecnc-card"
-                    id="ecnc-contato"
-                    x-on:focusin="section = 'contato'"
-                >
-                    <header class="ecnc-card-head">
-                        <span class="ecnc-number">03</span>
-
-                        <div>
-                            <h2>Localização e contato</h2>
-                            <p>Informe os canais disponíveis para contato.</p>
-                        </div>
-                    </header>
-
+                <section class="ecnc-card" aria-labelledby="ec-e02-location">
+                    <h2 id="ec-e02-location">Cadastro e localização</h2>
                     <div class="ecnc-grid">
-                        <div class="ecnc-field"><label for="ecnc-state">UF</label>
-<input type="text" id="ecnc-state" wire:model="state" aria-invalid="{{ $errors->has('state') ? 'true' : 'false' }}" @if ($errors->has('state')) aria-describedby="ecnc-state-error" @endif maxlength="2" placeholder="Ex.: PR">
-@error('state')
-<span class="ecnc-error" id="ecnc-state-error">{{ $message }}</span>
-@enderror
-</div>
-<div class="ecnc-field"><label for="ecnc-municipalityName">Município</label>
-<input type="text" id="ecnc-municipalityName" wire:model="municipalityName" aria-invalid="{{ $errors->has('municipalityName') ? 'true' : 'false' }}" @if ($errors->has('municipalityName')) aria-describedby="ecnc-municipalityName-error" @endif maxlength="150" placeholder="Nome do município">
-@error('municipalityName')
-<span class="ecnc-error" id="ecnc-municipalityName-error">{{ $message }}</span>
-@enderror
-</div>
-<div class="ecnc-field"><label for="ecnc-email">E-mail cadastral</label>
-<input type="email" id="ecnc-email" wire:model="email" aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}" @if ($errors->has('email')) aria-describedby="ecnc-email-error" @endif maxlength="255" placeholder="contato@empresa.com.br">
-@error('email')
-<span class="ecnc-error" id="ecnc-email-error">{{ $message }}</span>
-@enderror
-</div>
-<div class="ecnc-field"><label for="ecnc-phone1">Telefone cadastral</label>
-<input type="tel" id="ecnc-phone1" wire:model="phone1" aria-invalid="{{ $errors->has('phone1') ? 'true' : 'false' }}" @if ($errors->has('phone1')) aria-describedby="ecnc-phone1-error" @endif maxlength="50" placeholder="(00) 00000-0000">
-@error('phone1')
-<span class="ecnc-error" id="ecnc-phone1-error">{{ $message }}</span>
-@enderror
-</div>
+                        <div class="ecnc-field">
+                            <label for="ecnc-registrationStatus">Situação cadastral</label>
+                            <select id="ecnc-registrationStatus" wire:model="registrationStatus">
+                                <option value="ATIVA">Ativa</option><option value="SUSPENSA">Suspensa</option>
+                                <option value="INAPTA">Inapta</option><option value="BAIXADA">Baixada</option>
+                                <option value="NULA">Nula</option><option value="">Não informada</option>
+                            </select>
+                            @error('registrationStatus') <span class="ecnc-error">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="ecnc-field">
+                            <label for="ecnc-shareCapital">Capital social</label>
+                            <input id="ecnc-shareCapital" wire:model="shareCapital" maxlength="40" placeholder="R$ 2.500.000,00">
+                            @error('shareCapital') <span class="ecnc-error">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="ecnc-field">
+                            <label for="ecnc-sizeCode">Código de porte</label>
+                            <input id="ecnc-sizeCode" wire:model="sizeCode" maxlength="10" placeholder="05">
+                            @error('sizeCode') <span class="ecnc-error">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="ecnc-field">
+                            <label for="ecnc-legalNatureCode">Código de natureza jurídica</label>
+                            <input id="ecnc-legalNatureCode" wire:model="legalNatureCode" maxlength="10" placeholder="2062">
+                            @error('legalNatureCode') <span class="ecnc-error">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="ecnc-field">
+                            <label for="ecnc-state">UF</label>
+                            <input id="ecnc-state" wire:model="state" maxlength="2" placeholder="SP">
+                            @error('state') <span class="ecnc-error">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="ecnc-field">
+                            <label for="ecnc-municipalityName">Município</label>
+                            <input id="ecnc-municipalityName" wire:model="municipalityName" maxlength="150" placeholder="Município da empresa">
+                            @error('municipalityName') <span class="ecnc-error">{{ $message }}</span> @enderror
+                        </div>
                     </div>
                 </section>
 
+                <section class="ecnc-card" aria-labelledby="ec-e02-channels">
+                    <h2 id="ec-e02-channels">Canais empresariais</h2>
+                    <div class="ecnc-grid">
+                        <div class="ecnc-field">
+                            <label for="ecnc-email">E-mail cadastral</label>
+                            <input id="ecnc-email" type="email" wire:model="email" maxlength="255" placeholder="contato@empresa.com.br">
+                            @error('email') <span class="ecnc-error">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="ecnc-field">
+                            <label for="ecnc-phone1">Telefone cadastral</label>
+                            <input id="ecnc-phone1" type="tel" wire:model="phone1" maxlength="50" placeholder="(00) 00000-0000">
+                            @error('phone1') <span class="ecnc-error">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+                </section>
             </fieldset>
 
-
-            <aside class="ecnc-aside" aria-label="Resumo do cadastro">
-
+            <aside class="ecnc-aside" aria-label="Prévia do cadastro">
+                <h2>Prévia do cadastro</h2>
                 <section class="ecnc-summary">
-                    <span class="ecnc-tag">CADASTRO MANUAL</span>
-
-                    <h2>Resumo do cadastro</h2>
-                    <p>Confira as informações enquanto preenche.</p>
-
-                    <dl>
-                        <div>
-                            <dt>Razão social</dt>
-                            <dd x-text="$wire.corporateName || 'Não informada'">
-                                {{ $corporateName ?: 'Não informada' }}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt>CNPJ</dt>
-                            <dd x-text="$wire.cnpj || 'Não informado'">
-                                {{ $cnpj ?: 'Não informado' }}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt>Estabelecimento</dt>
-                            <dd x-text="$wire.type === 'matrix' ? 'Matriz' : 'Filial'">
-                                {{ $type === 'matrix' ? 'Matriz' : 'Filial' }}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt>Situação cadastral</dt>
-                            <dd x-text="$wire.registrationStatus || 'Não informada'">
-                                {{ $registrationStatus ?: 'Não informada' }}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt>Localização</dt>
-                            <dd x-text="[$wire.municipalityName, $wire.state].filter(Boolean).join(' / ') || 'Não informada'">
-                                {{ trim($municipalityName.' '.$state) ?: 'Não informada' }}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt>E-mail</dt>
-                            <dd x-text="$wire.email || 'Não informado'">
-                                {{ $email ?: 'Não informado' }}
-                            </dd>
-                        </div>
-
-                        <div>
-                            <dt>Telefone</dt>
-                            <dd x-text="$wire.phone1 || 'Não informado'">
-                                {{ $phone1 ?: 'Não informado' }}
-                            </dd>
-                        </div>
-                    </dl>
+                    <span class="ecnc-tag">Cadastro manual</span>
+                    <h3 x-text="$wire.corporateName || 'Nova empresa'">{{ $corporateName ?: 'Nova empresa' }}</h3>
+                    <p x-text="$wire.cnpj || 'CNPJ não informado'">{{ $cnpj ?: 'CNPJ não informado' }}</p>
+                    <p><span x-text="$wire.type === 'matrix' ? 'Matriz' : 'Filial'">{{ $type === 'matrix' ? 'Matriz' : 'Filial' }}</span>
+                       · <span x-text="$wire.registrationStatus || 'Não informada'">{{ $registrationStatus ?: 'Não informada' }}</span></p>
+                    <p x-text="[$wire.municipalityName, $wire.state].filter(Boolean).join(' / ') || 'Localização não informada'">{{ trim($municipalityName.' / '.$state, ' /') ?: 'Localização não informada' }}</p>
                 </section>
-
-
                 <section class="ecnc-note">
-                    <h3>Antes de salvar</h3>
-
-                    <p>
-                        Confira a razão social e o tipo do estabelecimento.
-                        O sistema verifica o CNPJ e evita cadastrar novamente
-                        um estabelecimento existente.
-                    </p>
+                    <h3>Canais da empresa</h3>
+                    <p>E-mail e telefone cadastrais permanecem canais empresariais. Eles não criam uma pessoa de contato.</p>
                 </section>
-
             </aside>
-
         </div>
-
-
-        <footer class="ecnc-actions">
-
-            <span class="ecnc-action-note">
-                Revise os dados antes de concluir.
-            </span>
-
-            <div>
-                <a
-                    class="ecnc-button ecnc-secondary"
-                    href="{{ route('companies.index') }}"
-                    wire:navigate
-                >
-                    Cancelar
-                </a>
-
-                <button
-                    type="submit"
-                    class="ecnc-button ecnc-primary"
-                    wire:loading.attr="disabled"
-                    wire:target="save"
-                >
-                    <span wire:loading.remove wire:target="save">
-                        Salvar empresa
-                    </span>
-
-                    <span wire:loading wire:target="save" role="status">
-                        Salvando...
-                    </span>
-                </button>
-            </div>
-
-        </footer>
-
     </form>
-
+    <footer class="ec-e02-footer">ExportControl Prospector · Cadastro e vínculos empresariais</footer>
 </div>

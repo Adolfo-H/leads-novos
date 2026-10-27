@@ -165,6 +165,7 @@ new class extends Component
             return;
         }
         $this->selectedKey = $key;
+        $this->inspectorOpen = true;
         $this->peoplePage = 1;
         $this->peopleSearch = '';
         $this->selectedPersonKey = null;
@@ -321,7 +322,7 @@ new class extends Component
     /** @var list<string> */
     public array $checkedContactKeys = [];
 
-    public bool $inspectorOpen = true;
+    public bool $inspectorOpen = false;
 
     // Contadores pesados carregam depois da primeira pintura da listagem.
     public bool $totalsReady = false;
@@ -639,7 +640,7 @@ new class extends Component
     ];
 @endphp
 
-<div class="ecc-page ecc3-page" data-test="contacts-module"
+<div class="ecc-page ecc3-page ecc66-page" data-test="contacts-module" data-ec-contacts-figma="C01-C05-V66" data-ec-contacts-v661="fixes" data-ec-contacts-v662="no-receita-panel-copy"
      data-test-ux="contacts-ux-v2" data-contacts-design="v3-reference"
      wire:init="loadTotals"
      x-data="{ inspectorTab: 'overview', mobileFilters: false, showHelp: false, filterKeyword: '' }"
@@ -647,12 +648,14 @@ new class extends Component
 >
     <header class="ecc3-header">
         <div class="ecc3-heading">
-            <div class="ecc3-breadcrumb">ExportControl <span aria-hidden="true">›</span> <strong>Contatos</strong></div>
-            <h1>Central de Contatos</h1>
-            <p>Pessoas do HubSpot, contatos manuais e canais da Receita Federal reunidos para prospecção.</p>
+            <div class="ecc3-breadcrumb">CONTATOS</div>
+            <span class="c66-accessible">Central de Contatos</span>
+            <span class="c66-accessible">Detalhes do contato</span>
+            <h1>@if ($selectedKeys !== []){{ count($selectedKeys) }} contatos selecionados @else Pessoas e canais de contato @endif</h1>
+            <p>@if ($selectedKeys !== [])A seleção é limitada aos contatos da página atual. @else Encontre o contato certo sem perder a origem da informação. @endif</p>
         </div>
         <div class="ecc3-heading-actions">
-            <button type="button" class="ecc3-button ecc3-button-ghost ecc3-only-small" x-on:click="mobileFilters = !mobileFilters">☷ Filtros</button>
+            <button type="button" class="ecc3-button ecc3-button-ghost ecc3-only-small c661-filter-toggle" x-on:click="mobileFilters = !mobileFilters">☷ Filtros</button>
             <button type="button" class="ecc3-button ecc3-button-primary" wire:click="startNewContactFromWorkspace">
                 <span aria-hidden="true">＋</span> Novo contato
             </button>
@@ -666,9 +669,49 @@ new class extends Component
         <div class="ecc3-notice ecc3-error" role="alert">{{ $message }}</div>
     @enderror
 
+
+    {{-- FIGMA C01 – segmentos e indicadores reais, sem consultas extras. --}}
+    <div class="c66-quick-segments">
+            <nav class="ecc3-chips" aria-label="Segmentos rápidos">
+                @foreach ([
+                    ['all', 'Todos', 'all'],
+                    ['clients', 'Clientes', 'clients'],
+                    ['deals', 'Com negócios', 'deals'],
+                    ['hubspot', 'HubSpot', 'hubspot'],
+                    ['receita', 'Receita', 'receita'],
+                    ['unlinked', 'Sem vínculo', 'unlinked'],
+                ] as [$code, $label, $countKey])
+                    <button type="button" class="ecc3-chip {{ $segment === $code ? 'is-active' : '' }}"
+                            wire:click="chooseSegment('{{ $code }}')"
+                            aria-pressed="{{ $segment === $code ? 'true' : 'false' }}">
+                        {{ $label }}
+                        @if ($countKey !== null)<b>{{ $fmt($totals[$countKey]) }}</b>@endif
+                    </button>
+                @endforeach
+                <button type="button" class="ecc3-chip ecc3-chip-filter" x-on:click="mobileFilters = !mobileFilters">☷ Mais filtros</button>
+            </nav>
+    </div>
+    <section class="c66-metrics" aria-label="Indicadores de contatos">
+        <article class="c66-metric"><span>Contatos no diretório</span><strong>{{ $fmt($totals['all'] ?? null) }}</strong></article>
+        <article class="c66-metric"><span>Com e-mail nesta página</span><strong>{{ $fmt(collect($rows)->filter(fn ($row) => filter_var(trim((string) ($row->email ?? '')), FILTER_VALIDATE_EMAIL) !== false)->count()) }}</strong><small>Registros exibidos</small></article>
+        <article class="c66-metric"><span>WhatsApp confirmado</span><strong>{{ $fmt($totals['wa_yes'] ?? null) }}</strong></article>
+        <article class="c66-metric"><span>Pendentes de verificação</span><strong>{{ $fmt($totals['wa_unknown'] ?? null) }}</strong><small>Estado de verificação cadastrado</small></article>
+    </section>
+    @if ($selectedKeys !== [])
+        <div class="c66-selected-actions" role="status">
+            <strong>{{ count($selectedKeys) }} selecionado(s) nesta página</strong>
+            <span>Ao mudar de página, sua seleção será limpa. Criar campanha abre o fluxo de rascunho; não envia mensagens.</span>
+            <div class="c66-selected-buttons">
+                <button type="button" class="ecc3-button" wire:click="clearChecked">Limpar seleção</button>
+                <button type="button" class="ecc3-button" wire:click="exportSelectedCsv">Exportar seleção CSV</button>
+                <button type="button" class="ecc3-button ecc3-button-primary" wire:click="createCampaignFromSelected" @disabled($selectedEmails === [])>Criar campanha</button>
+            </div>
+        </div>
+    @endif
+
     <div class="ecc3-shell {{ $inspectorOpen ? '' : 'is-inspector-collapsed' }}">
         {{-- Coluna 1: filtros agrupados, como na referência. --}}
-        <aside class="ecc3-filters" aria-label="Filtros da Central de Contatos" :class="mobileFilters ? 'is-open' : ''">
+        <aside class="ecc3-filters" aria-label="Filtros da Central de Contatos" :class="mobileFilters ? 'is-open' : ''" x-on:click.outside="if (!$event.target.closest('.c661-filter-toggle, .ecc3-chip-filter')) mobileFilters = false">
             <header class="ecc3-filters-head">
                 <h2>Filtros</h2>
                 <button type="button" wire:click="clearFilters" x-on:click="mobileFilters=false; filterKeyword=''">Limpar tudo</button>
@@ -749,37 +792,58 @@ new class extends Component
                 </details>
                 <div class="ecc3-filters-foot">
                     <span>Dados locais do HubSpot e do Prospector</span>
-                    <small>HubSpot, manual e canais empresariais da Receita na mesma lista. Canais da Receita não são pessoas físicas.</small>
+                    <small>Os filtros respeitam as origens e os vínculos registrados na base do Prospector.</small>
                 </div>
             </div>
         </aside>
 
         {{-- Coluna 2: tabela central de todas as pessoas, não apenas de uma empresa. --}}
         <section class="ecc3-center" aria-label="Contatos encontrados">
-            <nav class="ecc3-chips" aria-label="Segmentos rápidos">
-                @foreach ([
-                    ['all', 'Todos', 'all'],
-                    ['clients', 'Clientes', 'clients'],
-                    ['deals', 'Com negócios', 'deals'],
-                    ['hubspot', 'HubSpot', 'hubspot'],
-                    ['receita', 'Receita', 'receita'],
-                    ['unlinked', 'Sem vínculo', 'unlinked'],
-                ] as [$code, $label, $countKey])
-                    <button type="button" class="ecc3-chip {{ $segment === $code ? 'is-active' : '' }}"
-                            wire:click="chooseSegment('{{ $code }}')"
-                            aria-pressed="{{ $segment === $code ? 'true' : 'false' }}">
-                        {{ $label }}
-                        @if ($countKey !== null)<b>{{ $fmt($totals[$countKey]) }}</b>@endif
-                    </button>
-                @endforeach
-                <button type="button" class="ecc3-chip ecc3-chip-filter" x-on:click="mobileFilters = !mobileFilters">☷ Mais filtros</button>
-            </nav>
+
+            {{-- FIGMA C01 – filtros existentes apresentados em duas linhas. --}}
+            <section class="c66-refine" aria-labelledby="c66-refine-title">
+                <h2 id="c66-refine-title">Pesquisar e refinar</h2>
+                <div class="c66-refine-grid">
+                    <label><span>Contato, empresa, cargo, CNPJ ou e-mail</span>
+                        <input type="search" wire:model.live.debounce.350ms="searchTerm" placeholder="Buscar contato, empresa ou CNPJ..." autocomplete="off">
+                    </label>
+                    <label><span>Fonte</span>
+                        <select wire:model.live="peopleOrigin" aria-label="Filtrar por origem">
+                            <option value="all">Todas</option><option value="hubspot">HubSpot</option>
+                            <option value="manual">Manual</option><option value="receita">Receita Federal</option>
+                        </select>
+                    </label>
+                    <label><span>Situação</span>
+                        <select wire:model.live="segment" aria-label="Filtrar situação dos contatos">
+                            <option value="all">Todas</option><option value="with_email">Com e-mail</option>
+                            <option value="with_phone">Com telefone</option><option value="unlinked">Sem vínculo</option>
+                            <option value="clients">Clientes</option><option value="deals">Com negócios</option>
+                        </select>
+                    </label>
+                    <label><span>WhatsApp</span>
+                        <select wire:model.live="whatsappFilter" aria-label="Filtrar WhatsApp">
+                            <option value="all">Todos</option><option value="yes">Confirmado</option>
+                            <option value="no">Não possui</option><option value="unknown">Não verificado</option>
+                        </select>
+                    </label>
+                    <label><span>Ordenação</span>
+                        <select wire:model.live="contactsSort" aria-label="Ordenar contatos">
+                            <option value="recent">Mais recentes</option><option value="name">Nome A–Z</option>
+                        </select>
+                    </label>
+                    <label><span>Por página</span>
+                        <select wire:model.live="contactsPerPage" aria-label="Contatos por página">
+                            <option value="12">12</option><option value="25">25</option><option value="50">50</option>
+                        </select>
+                    </label>
+                </div>
+            </section>
 
             <div class="ecc3-table-panel">
                 <div class="ecc3-list-header">
                     <div class="ecc3-list-title">
-                        <strong>{{ $fmt($index->total()) }} contatos</strong>
-                        <span>{{ $selectedKey ? 'Vinculados à empresa selecionada' : 'Encontrados com os filtros atuais' }}</span>
+                        <strong>Diretório de contatos</strong>
+                        <span>{{ $fmt($index->total()) }} contatos · {{ $selectedKey ? 'Vinculados à empresa selecionada' : 'Encontrados com os filtros atuais' }}</span>
                         @if ($selectedKey)
                             <button type="button" class="ecc3-text-link" wire:click="$set('selectedKey', null)">× Ver todos</button>
                         @endif
@@ -795,32 +859,7 @@ new class extends Component
                         @endif
                     </div>
                 </div>
-                <div class="ecc3-table-tools">
-                    <div class="ecc3-search-list">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></svg>
-                        <input type="search" wire:model.live.debounce.350ms="searchTerm"
-                               placeholder="Buscar contato, empresa, cargo, CNPJ, e-mail..."
-                               aria-label="Pesquisar contatos e empresas" autocomplete="off">
-                    </div>
-                    <span class="ecc3-origin-select">
-                        <select wire:model.live="peopleOrigin" aria-label="Filtrar por origem">
-                            <option value="all">Todas as origens</option>
-                            <option value="hubspot">HubSpot</option>
-                            <option value="manual">Manual</option>
-                            <option value="receita">Receita Federal</option>
-                        </select>
-                    </span>
-                    <span class="ecc3-origin-select">
-                        <select wire:model.live="whatsappFilter" aria-label="Filtrar WhatsApp">
-                            <option value="all">Todo WhatsApp</option>
-                            <option value="yes">Confirmados</option>
-                            <option value="no">Não possui</option>
-                            <option value="unknown">Não verificados</option>
-                        </select>
-                    </span>
-                </div>
-
-                <div class="ecc3-bulk">
+                <div class="ecc3-bulk {{ $selectedKeys !== [] ? 'has-selection' : '' }}">
                     <button type="button" class="ecc3-bulk-check {{ $allPageSelected ? 'is-active' : '' }}"
                             wire:click="toggleCurrentPage" aria-label="Selecionar todos os contatos desta página"
                             title="Selecionar a página">{{ $allPageSelected ? '☑' : '□' }}</button>
@@ -833,7 +872,9 @@ new class extends Component
                     @endif
                     @if ($singleSelectedWhatsapp)
                         <a href="{{ $singleSelectedWhatsapp }}" target="_blank" rel="noopener noreferrer"
-                           class="ecc3-button ecc3-button-mini" title="Abre a conversa; não envia automaticamente">◉ Abrir WhatsApp</a>
+                           class="ecc3-button ecc3-button-mini c661-bulk-whatsapp" title="Abre a conversa; não envia automaticamente">
+                            @include('partials.contacts.integration-icon-v661', ['service' => 'whatsapp']) <span>Abrir WhatsApp</span>
+                        </a>
                     @else
                         <button type="button" class="ecc3-button ecc3-button-mini" disabled
                                 title="Selecione um contato com telefone. Envio em lote não integrado.">◉ Enviar WhatsApp</button>
@@ -852,11 +893,19 @@ new class extends Component
                 <div class="ecc3-table-scroll" wire:loading.class="is-loading" wire:target="searchTerm,segment,contactsPage,peopleOrigin,whatsappFilter">
                     <table class="ecc3-table">
                         <thead><tr>
-                            <th aria-label="Selecionar">□</th>
+                            <th scope="col" aria-label="Selecionar contatos da página">
+                                <button type="button" class="c661-select-all" wire:click="toggleCurrentPage"
+                                    wire:loading.attr="disabled" wire:target="toggleCurrentPage"
+                                    aria-label="{{ $allPageSelected ? 'Desmarcar todos os contatos desta página' : 'Selecionar todos os contatos desta página' }}"
+                                    aria-pressed="{{ $allPageSelected ? 'true' : 'false' }}"
+                                    title="{{ $allPageSelected ? 'Desmarcar página' : 'Selecionar página' }}">
+                                    <span aria-hidden="true">{{ $allPageSelected ? '✓' : '' }}</span>
+                                </button>
+                            </th>
                             <th>Contato</th>
-                            <th>Empresa</th>
+                            <th>Empresa / cargo</th>
                             <th>Cargo</th>
-                            <th>Telefone</th>
+                            <th>Telefone / WhatsApp</th>
                             <th>WhatsApp</th>
                             <th>Origem</th>
                             <th>Negócios</th>
@@ -888,7 +937,8 @@ new class extends Component
                                         </span>
                                     </button>
                                 </td>
-                                <td><span class="ecc3-company-name" title="{{ $row->company_label }}">{{ $row->company_label }}</span></td>
+                                <td><span class="ecc3-company-name" title="{{ $row->company_label }}">{{ $row->company_label }}</span>
+                                    <small class="c66-company-role">{{ $row->job_title ?: 'Cargo não informado' }}</small></td>
                                 <td><span class="ecc3-clamp" title="{{ $row->job_title }}">{{ $row->job_title ?: 'Não informado' }}</span></td>
                                 <td>
                                     @if ($phoneLink)
@@ -896,6 +946,7 @@ new class extends Component
                                     @else
                                         <span class="ecc3-muted">{{ $phone ?: '—' }}</span>
                                     @endif
+                                    <small class="c66-phone-status">{{ match ($wa) { 'yes' => 'WhatsApp confirmado', 'no' => 'Sem WhatsApp', 'none' => 'Sem número', default => 'Não verificado' } }}</small>
                                 </td>
                                 <td>
                                     <span class="ecc3-wa ecc3-wa-{{ $wa }}">
@@ -941,6 +992,7 @@ new class extends Component
 
         {{-- Coluna 3: inspetor sempre visível, seleção com dados reais. --}}
         @if ($inspectorOpen)
+            <div class="c66-inspector-backdrop" wire:click="$set('inspectorOpen', false)" aria-hidden="true"></div>
             <aside class="ecc3-inspector" aria-label="Detalhes do contato">
                 <div class="ecc3-inspector-title">
                     <h2>Detalhes do contato</h2>
@@ -964,8 +1016,12 @@ new class extends Component
                         <div class="ecc3-profile-buttons">
                             @if ($telLink)<a class="ecc3-button ecc3-button-primary" href="{{ $telLink }}">☎ Ligar</a>@else<button class="ecc3-button" disabled>☎ Ligar</button>@endif
                             @if ($selected->email)<a class="ecc3-button" href="mailto:{{ $selected->email }}">✉ E-mail</a>@else<button class="ecc3-button" disabled>✉ E-mail</button>@endif
-                            @if ($waLink)<a href="{{ $waLink }}" target="_blank" rel="noopener noreferrer" class="ecc3-button" title="Abrir WhatsApp; isso não confirma o cadastro">◉ WhatsApp</a>@endif
-                            @if ($hubspotPersonUrl)<a class="ecc3-button ecc3-button-icon" href="{{ $hubspotPersonUrl }}" target="_blank" rel="noopener noreferrer" title="Abrir contato no HubSpot">↗</a>@endif
+                            @if ($waLink)<a href="{{ $waLink }}" target="_blank" rel="noopener noreferrer" class="ecc3-button c661-whatsapp-link" title="Abrir WhatsApp; isso não confirma o cadastro">
+                                @include('partials.contacts.integration-icon-v661', ['service' => 'whatsapp']) <span>WhatsApp</span>
+                            </a>@endif
+                            @if ($hubspotPersonUrl)<a class="ecc3-button ecc3-button-icon c661-hubspot-link" href="{{ $hubspotPersonUrl }}" target="_blank" rel="noopener noreferrer" title="Abrir contato no HubSpot" aria-label="Abrir contato no HubSpot">
+                                @include('partials.contacts.integration-icon-v661', ['service' => 'hubspot']) <span>HubSpot</span>
+                            </a>@endif
                         </div>
                     </section>
                     <nav class="ecc3-inspector-tabs" aria-label="Abas do contato">
@@ -1028,7 +1084,7 @@ new class extends Component
                             </section>
                             {{-- CONTACTS_RECEITA_V4_PREVIEW: so empresa com vinculo fiscal confiavel --}}
                             @if ($company && !empty($company['receipt']) && $company['companyUuid'])
-                                <section class="ecc3-info-card">
+                                <section class="ecc3-info-card c661-receita-card">
                                     <div class="ecc3-card-title"><h3>Canais cadastrais da Receita</h3></div>
                                     <p>E-mails e telefones dos estabelecimentos da empresa (nao sao contatos pessoais).</p>
                                     @foreach (array_slice($company['receipt'], 0, 3) as $est)
@@ -1070,7 +1126,7 @@ new class extends Component
                                 <p>{{ $company['status'] ?? 'Situação comercial não informada' }}</p>
                                 @if ($company && $company['companyUuid'])<a href="{{ route('companies.show', ['company' => $company['companyUuid']]) }}" wire:navigate>Abrir dossiê ↗</a>@endif
                             </section>
-                            <section class="ecc3-info-card">
+                            <section class="ecc3-info-card c661-receita-card">
                                 <div class="ecc3-card-title"><h3>Canais cadastrais da Receita</h3></div>
                                 <p>Dados do estabelecimento, separados de contatos pessoais. Somente quando o vínculo fiscal foi confirmado.</p>
                                 @forelse (($company['receipt'] ?? []) as $est)
@@ -1111,7 +1167,7 @@ new class extends Component
                 @elseif ($company)
                     <div class="ecc3-inspector-scroll">
                         <section class="ecc3-info-card"><h3>Empresa selecionada</h3><strong>{{ $company['name'] }}</strong><p>Não há contato pessoal com os filtros atuais.</p></section>
-                        <section class="ecc3-info-card"><h3>Canais cadastrais da Receita</h3>
+                        <section class="ecc3-info-card c661-receita-card"><h3>Canais cadastrais da Receita</h3>
                             @forelse ($company['receipt'] as $est)
                                 <div class="ecc3-receipt"><strong>{{ $est['cnpj'] }}</strong>
                                     @if ($est['email'])<a href="mailto:{{ $est['email'] }}">{{ $est['email'] }}</a>@endif
@@ -1172,5 +1228,5 @@ new class extends Component
             </section>
         </div>
     @endif
-    <p class="ecc3-disclaimer">Contatos do HubSpot, manuais e canais cadastrais da Receita aparecem juntos, com origem explícita. Canais da Receita pertencem ao CNPJ do estabelecimento e não são pessoas. Somente e-mails válidos e não bloqueados são elegíveis para rascunhos de campanhas; WhatsApp continua exigindo confirmação manual.</p>
+    <p class="ecc3-disclaimer">Somente e-mails válidos e não bloqueados são elegíveis para rascunhos de campanhas. O uso de WhatsApp continua exigindo confirmação manual.</p>
 </div>

@@ -1,0 +1,258 @@
+/*
+ * ExportControl Prospector — Remodelagem Figma Contatos C01–C05 / V66.
+ * Escopo exclusivamente /contatos e /contatos/receita.
+ * Os métodos Livewire, filtros, validações, permissões, campanhas e integrações
+ * permanecem nos componentes originais. NÃO usa JavaScript para ocultar a barra.
+ */
+body.ec-app-body:has(.ecc66-page,.ecc66-receita) .ec-main,
+body.ec-app-body:has(.ecc66-page,.ecc66-receita) .ec-content {background:#f3f6f8!important;color:#17354b!important}
+body.ec-app-body:has(.ecc66-page,.ecc66-receita) .ec-topbar {background:#fff!important;border-bottom:1px solid #dce5e9!important;box-shadow:none!important;color:#17354b!important}
+body.ec-app-body:has(.ecc66-page,.ecc66-receita) .ec-topbar :is(.ec-topbar-title,.e592-account-name){color:#17354b!important;-webkit-text-fill-color:#17354b!important}
+body.ec-app-body:has(.ecc66-page,.ecc66-receita) .ec-topbar .ec-topbar-eyebrow {display:none!important}
+body.ec-app-body:has(.ecc66-page,.ecc66-receita) .ec-topbar .ec-global-search {background:#f2f5f7!important;border:1px solid #e1e8ed!important;border-radius:9px!important;box-shadow:none!important}
+body.ec-app-body:has(.ecc66-page,.ecc66-receita) .ec-topbar .ec-global-search input {color:#193d55!important;background:transparent!important;-webkit-text-fill-color:#193d55!important}
+body.ec-app-body:has(.ecc66-page,.ecc66-receita) .ec-topbar .ec-global-search input::placeholder {color:#8095a4!important;-webkit-text-fill-color:#8095a4!important}
+body.ec-app-body:has(.ecc66-page,.ecc66-receita) .ec-topbar .ec-global-search kbd {display:none!important}
+/* O globo promocional some; o item Configurações permanece. */
+body.ec-app-body:has(.ecc66-page,.ecc66-receita) .ec-sidebar-world-v7 {display:none!important}
+
+body.ec-app-body .ecc-page.ecc3-page.ecc66-page {
+ --c66-ink:#17354b;--c66-muted:#6a8396;--c66-line:#dce6eb;--c66-teal:#087f73;--c66-mint:#e5f5ee;
+ --ecc3-ink:#17354b;--ecc3-muted:#6a8396;--ecc3-line:#dce6eb;--ecc3-line-soft:#e9eff2;--ecc3-accent:#087f73;
+ width:100%!important;max-width:1490px!important;padding:28px clamp(18px,2.2vw,38px) 52px!important;margin:0 auto!important;
+ color:var(--c66-ink)!important;background:transparent!important;font-size:13px!important;line-height:1.5!important;
+ font-family:'Instrument Sans',Inter,ui-sans-serif,system-ui,sans-serif;
+}
+.ecc66-page *, .ecc66-page *::before, .ecc66-page *::after {box-sizing:border-box}
+.ecc66-page [x-cloak]{display:none!important}
+.ecc66-page .c66-accessible{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+body.ec-app-body .ecc66-page :is(h1,h2,h3,h4,strong){text-shadow:none!important}
+body.ec-app-body .ecc66-page .ecc3-header {display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:12px!important;min-height:0!important;margin:0 0 18px!important;padding:0!important}
+body.ec-app-body .ecc66-page .ecc3-breadcrumb {font-size:10px!important;letter-spacing:.07em;color:#668093!important;font-weight:750!important;margin:0 0 8px!important}
+body.ec-app-body .ecc66-page .ecc3-heading h1 {font-size:clamp(27px,2.4vw,35px)!important;letter-spacing:-.042em!important;color:var(--c66-ink)!important;-webkit-text-fill-color:var(--c66-ink)!important;font-weight:770!important;line-height:1.2!important;margin:0!important}
+body.ec-app-body .ecc66-page .ecc3-heading p {font-size:13px!important;line-height:1.6!important;color:var(--c66-muted)!important;margin:8px 0 0!important}
+body.ec-app-body .ecc66-page .ecc3-heading-actions {display:flex;gap:9px;align-items:center;flex-wrap:wrap;order:2}
+body.ec-app-body .ecc66-page .ecc3-button {display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:9px 14px;background:#fff!important;border:1px solid var(--c66-line)!important;border-radius:8px!important;color:#173d52!important;font-size:12px!important;line-height:1.2;text-decoration:none!important;font-weight:700!important;box-shadow:none!important}
+body.ec-app-body .ecc66-page .ecc3-button:hover:not(:disabled){background:#f0faf7!important;border-color:#addbcf!important;color:#066e65!important}
+body.ec-app-body .ecc66-page .ecc3-button.ecc3-button-primary {background:var(--c66-teal)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:var(--c66-teal)!important}
+body.ec-app-body .ecc66-page .ecc3-button.ecc3-button-primary:hover:not(:disabled){background:#00695f!important;color:#fff!important}
+body.ec-app-body .ecc66-page :is(input,select,textarea){color:#274e65!important;-webkit-text-fill-color:#274e65!important;background:#fff!important;color-scheme:light!important}
+body.ec-app-body .ecc66-page :is(input,textarea)::placeholder {color:#8399a8!important;-webkit-text-fill-color:#8399a8!important;opacity:1!important}
+body.ec-app-body .ecc66-page :is(input,select,textarea):focus-visible {outline:2px solid #67c5b6!important;outline-offset:1px}
+
+/* C01: segmentos acima dos indicadores. */
+body.ec-app-body .ecc66-page .c66-quick-segments {margin:18px 0 16px;min-width:0}
+body.ec-app-body .ecc66-page .ecc3-chips {display:flex!important;align-items:center;gap:6px!important;padding:0!important;overflow-x:auto!important}
+body.ec-app-body .ecc66-page .ecc3-chip {border:1px solid transparent!important;background:transparent!important;border-radius:8px!important;color:#587287!important;min-height:36px!important;padding:9px 13px!important;box-shadow:none!important;font-size:12px!important;font-weight:660!important}
+body.ec-app-body .ecc66-page .ecc3-chip:hover {background:#edf7f4!important;color:var(--c66-teal)!important}
+body.ec-app-body .ecc66-page .ecc3-chip.is-active {background:var(--c66-mint)!important;color:var(--c66-teal)!important}
+body.ec-app-body .ecc66-page .ecc3-chip b {display:none!important}
+body.ec-app-body .ecc66-page .c66-metrics {display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin:0 0 20px}
+body.ec-app-body .ecc66-page .c66-metric {min-width:0;min-height:119px;border:1px solid var(--c66-line);border-radius:11px;background:#fff;padding:19px 20px;display:flex;flex-direction:column;gap:7px}
+body.ec-app-body .ecc66-page .c66-metric span {color:var(--c66-muted)!important;font-size:12px}
+body.ec-app-body .ecc66-page .c66-metric strong {color:var(--c66-ink)!important;font-size:29px;font-weight:790;line-height:1.15;letter-spacing:-.037em}
+body.ec-app-body .ecc66-page .c66-metric small {font-size:10px;color:var(--c66-muted)!important}
+body.ec-app-body .ecc66-page .c66-selected-actions {display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:15px 18px;margin-bottom:18px;border-radius:9px;background:#e4f6ef;color:#0e766e}
+body.ec-app-body .ecc66-page .c66-selected-actions strong {font-size:13px!important;color:#0e766e!important}
+body.ec-app-body .ecc66-page .c66-selected-actions span {color:#577d80!important;font-size:11px;flex:1 1 280px}
+body.ec-app-body .ecc66-page .c66-selected-buttons {display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* Estrutura: filtros e listagem em toda a largura, sem colunas escuras fixas. */
+body.ec-app-body .ecc66-page .ecc3-shell,
+body.ec-app-body .ecc66-page .ecc3-shell.is-inspector-collapsed {display:flex!important;flex-direction:column!important;gap:18px!important;grid-template-columns:none!important;align-items:stretch!important;min-width:0!important}
+body.ec-app-body .ecc66-page .ecc3-center {display:flex!important;flex-direction:column!important;gap:19px!important;min-width:0!important}
+body.ec-app-body .ecc66-page .ecc3-filters {display:none!important;min-height:0!important;margin:0!important;background:#fff!important;border:1px solid var(--c66-line)!important;border-radius:11px!important;box-shadow:none!important;overflow:visible}
+body.ec-app-body .ecc66-page .ecc3-filters.is-open {display:block!important}
+body.ec-app-body .ecc66-page .ecc3-filters-head {padding:15px 18px!important;border-bottom:1px solid var(--c66-line)!important}
+body.ec-app-body .ecc66-page .ecc3-filters-head h2 {color:var(--c66-ink)!important;font-size:15px!important}
+body.ec-app-body .ecc66-page .ecc3-filters-head button {color:var(--c66-teal)!important}
+body.ec-app-body .ecc66-page .ecc3-filter-search {margin:12px 18px!important;background:#fff!important;border:1px solid var(--c66-line)!important}
+body.ec-app-body .ecc66-page .ecc3-filter-scroll {max-height:380px;overflow:auto;padding:0 18px 15px!important}
+body.ec-app-body .ecc66-page .ecc3-filter-group summary {color:#35576d!important;background:transparent!important}
+body.ec-app-body .ecc66-page .ecc3-filter-option {color:#2d5468!important;background:transparent!important;border-color:transparent!important}
+body.ec-app-body .ecc66-page .ecc3-filter-option:hover {background:#f1faf7!important}
+body.ec-app-body .ecc66-page .ecc3-filter-option.is-active {background:#e6f5ef!important;color:var(--c66-teal)!important}
+body.ec-app-body .ecc66-page .ecc3-filters-foot {color:#7590a1!important;background:#f7fafb!important}
+body.ec-app-body .ecc66-page .ecc3-filters-foot :is(span,small) {color:#7590a1!important}
+body.ec-app-body .ecc66-page .ecc3-filter-search input {color:var(--c66-ink)!important;background:transparent!important}
+
+/* Filtros visíveis C01. */
+body.ec-app-body .ecc66-page .c66-refine {display:block;padding:20px 21px 23px;background:#fff!important;border:1px solid var(--c66-line)!important;border-radius:11px!important;box-shadow:none!important}
+body.ec-app-body .ecc66-page .c66-refine h2 {font-size:15px!important;line-height:1.35!important;font-weight:750!important;color:var(--c66-ink)!important;margin:0 0 14px!important}
+body.ec-app-body .ecc66-page .c66-refine-grid {display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 17px}
+body.ec-app-body .ecc66-page .c66-refine-grid label {display:flex;flex-direction:column;min-width:0;gap:6px}
+body.ec-app-body .ecc66-page .c66-refine-grid label span {font-size:11px;color:#34546b!important;font-weight:670}
+body.ec-app-body .ecc66-page .c66-refine-grid :is(input,select) {display:block;min-height:40px;width:100%;padding:9px 12px;border:1px solid var(--c66-line)!important;border-radius:8px!important;background:#fff!important;color:#32576c!important;-webkit-text-fill-color:#32576c!important;font-size:12px!important;box-shadow:none!important;outline:0}
+
+/* Diretório C01. Ações e dados continuam acessíveis no painel C03. */
+body.ec-app-body .ecc66-page .ecc3-table-panel {display:block!important;width:100%;min-width:0;overflow:hidden;background:#fff!important;border:1px solid var(--c66-line)!important;border-radius:11px!important;box-shadow:none!important;color:var(--c66-ink)!important}
+body.ec-app-body .ecc66-page .ecc3-list-header {display:flex;align-items:center;min-height:62px;padding:18px 20px 13px!important}
+body.ec-app-body .ecc66-page .ecc3-list-title {display:flex;flex-direction:column;gap:3px}
+body.ec-app-body .ecc66-page .ecc3-list-title strong {color:var(--c66-ink)!important;font-size:15px!important;font-weight:750!important}
+body.ec-app-body .ecc66-page .ecc3-list-title span {color:#7a91a2!important;font-size:11px!important}
+body.ec-app-body .ecc66-page .ecc3-controls,
+body.ec-app-body .ecc66-page .ecc3-table-tools {display:none!important}
+body.ec-app-body .ecc66-page .ecc3-bulk:not(.has-selection) {display:none!important}
+body.ec-app-body .ecc66-page .ecc3-bulk {min-height:45px;padding:10px 18px!important;background:#e7f6f0!important;border-top:1px solid #b5e2d5!important;border-bottom:1px solid #b5e2d5!important}
+body.ec-app-body .ecc66-page .ecc3-bulk :is(span,strong) {color:#0c7168!important}
+body.ec-app-body .ecc66-page .ecc3-more-menu {background:#fff!important;border:1px solid var(--c66-line)!important;box-shadow:0 10px 30px #16334822!important}
+body.ec-app-body .ecc66-page .ecc3-more-menu button {color:var(--c66-ink)!important;background:transparent!important}
+body.ec-app-body .ecc66-page .ecc3-more-menu button:hover {background:#edf8f4!important}
+body.ec-app-body .ecc66-page .ecc3-table-scroll {overflow-x:auto!important;scrollbar-color:#d0e2e8 transparent}
+body.ec-app-body .ecc66-page .ecc3-table {min-width:800px!important;table-layout:auto!important;border-collapse:collapse;background:#fff!important}
+body.ec-app-body .ecc66-page .ecc3-table thead {background:#f2f5f7!important}
+body.ec-app-body .ecc66-page .ecc3-table th {background:#f2f5f7!important;color:#6c8497!important;border-bottom:1px solid #e1e9ee!important;text-align:left;padding:12px 13px!important;font-size:11px!important;font-weight:590!important;white-space:nowrap}
+body.ec-app-body .ecc66-page .ecc3-table td {background:#fff!important;color:#27465b!important;border-bottom:1px solid #e4ecef!important;padding:15px 13px!important;font-size:12px!important;vertical-align:middle!important;min-width:0!important;line-height:1.45!important}
+body.ec-app-body .ecc66-page .ecc3-table tbody tr:nth-child(even) td {background:#fff!important}
+body.ec-app-body .ecc66-page .ecc3-table tbody tr:hover td {background:#f7fbfa!important}
+body.ec-app-body .ecc66-page .ecc3-table tbody tr.is-selected td {background:#f3faf7!important}
+body.ec-app-body .ecc66-page .ecc3-table :is(th,td):nth-child(4),
+body.ec-app-body .ecc66-page .ecc3-table :is(th,td):nth-child(6),
+body.ec-app-body .ecc66-page .ecc3-table :is(th,td):nth-child(10) {display:none!important}
+body.ec-app-body .ecc66-page .ecc3-table th:nth-child(1){width:42px!important}
+body.ec-app-body .ecc66-page .ecc3-table th:nth-child(2){width:25%!important}
+body.ec-app-body .ecc66-page .ecc3-table th:nth-child(3){width:24%!important}
+body.ec-app-body .ecc66-page .ecc3-table th:nth-child(5){width:21%!important}
+body.ec-app-body .ecc66-page .ecc3-table th:nth-child(7){width:12%!important}
+body.ec-app-body .ecc66-page .ecc3-table th:nth-child(8){width:8%!important}
+body.ec-app-body .ecc66-page .ecc3-table th:nth-child(9){width:12%!important}
+body.ec-app-body .ecc66-page .ecc3-person-cell {display:flex;align-items:center;gap:10px;color:var(--c66-ink)!important;background:transparent!important;border:0!important}
+body.ec-app-body .ecc66-page .ecc3-avatar {display:grid;place-items:center;width:35px;height:35px;flex:0 0 35px;border:1px solid #b8e5d8;border-radius:999px;background:#e4f6ef!important;color:#087b70!important;font-size:12px!important}
+body.ec-app-body .ecc66-page .ecc3-person-words strong {font-size:12px!important;color:#1e4159!important}
+body.ec-app-body .ecc66-page .ecc3-person-words small {font-size:11px!important;color:#658194!important}
+body.ec-app-body .ecc66-page .ecc3-company-name {color:#274d62!important;font-size:12px!important;white-space:normal!important;line-height:1.5!important}
+body.ec-app-body .ecc66-page .c66-company-role {display:block;font-size:11px!important;color:#72899b!important;margin-top:3px}
+body.ec-app-body .ecc66-page .ecc3-tel {color:#1d4c62!important;font-size:12px!important}
+body.ec-app-body .ecc66-page .c66-phone-status {display:block;margin-top:4px;font-size:10px;color:#678499!important;white-space:nowrap}
+body.ec-app-body .ecc66-page .ecc3-source {background:transparent!important;color:#365d6e!important;border:0!important;font-size:11px!important;padding:0!important;font-weight:560!important}
+body.ec-app-body .ecc66-page .ecc3-source-receita::before {content:none!important}
+body.ec-app-body .ecc66-page .ecc3-deals-cell {color:#20465d!important;text-align:left;font-size:12px!important}
+body.ec-app-body .ecc66-page .ecc3-date {color:#59798d!important;font-size:11px!important}
+body.ec-app-body .ecc66-page .ecc3-table input[type=checkbox] {appearance:auto!important;accent-color:#078779!important;background:#fff!important;width:16px!important;height:16px!important}
+body.ec-app-body .ecc66-page .ecc3-no-results {color:var(--c66-ink)!important}
+body.ec-app-body .ecc66-page .ecc3-no-results :is(h3,strong) {color:var(--c66-ink)!important}
+body.ec-app-body .ecc66-page .ecc3-pagination {padding:16px 20px!important;background:#fff!important;border-top:1px solid #e3ebee!important;color:#6e8799!important;font-size:11px!important}
+body.ec-app-body .ecc66-page .ecc3-pagination-actions button {min-width:34px;height:34px;border:1px solid var(--c66-line)!important;border-radius:7px;background:#fff!important;color:#244b62!important;font-size:16px!important}
+body.ec-app-body .ecc66-page .ecc3-pagination-actions button:disabled {opacity:.4!important}
+body.ec-app-body .ecc66-page .ecc3-pagination-actions strong {background:#e6f5ef!important;color:#087e70!important}
+body.ec-app-body .ecc66-page .ecc3-pagination select {background:#fff!important;border:1px solid var(--c66-line)!important;color:#25495e!important}
+body.ec-app-body .ecc66-page .ecc3-disclaimer {padding:14px 3px;color:#6f8b9b!important;font-size:11px!important;line-height:1.7!important}
+
+/* C03: painel lateral realmente sobreposto, aberto somente após clique. */
+body.ec-app-body .ecc66-page .c66-inspector-backdrop {position:fixed;z-index:998;inset:0;background:#0c233a88;cursor:pointer}
+body.ec-app-body .ecc66-page .ecc3-inspector {position:fixed!important;z-index:999!important;top:38px!important;right:18px!important;bottom:18px!important;width:min(540px,calc(100vw - 30px))!important;height:auto!important;min-height:0!important;margin:0!important;overflow:hidden!important;background:#fff!important;border:1px solid var(--c66-line)!important;border-radius:15px!important;box-shadow:0 30px 80px #10273f33!important;display:flex!important;flex-direction:column!important;grid-column:auto!important}
+body.ec-app-body .ecc66-page .ecc3-inspector-title {flex:0 0 auto;min-height:61px!important;height:auto!important;background:#fff!important;border-bottom:1px solid #e4ecef!important;padding:15px 20px!important}
+body.ec-app-body .ecc66-page .ecc3-inspector-title h2 {color:var(--c66-ink)!important;font-size:13px!important;font-weight:760!important}
+body.ec-app-body .ecc66-page .ecc3-inspector-title button {background:transparent!important;color:#5b7687!important;font-size:22px!important}
+body.ec-app-body .ecc66-page .ecc3-profile-card {background:#fff!important;padding:17px 20px!important;border-bottom:1px solid #e7edef!important}
+body.ec-app-body .ecc66-page .ecc3-profile-name h3 {font-size:22px!important;color:#183b53!important}
+body.ec-app-body .ecc66-page .ecc3-profile-name p {font-size:12px!important;color:#6c8798!important}
+body.ec-app-body .ecc66-page .ecc3-profile-name small {font-size:11px!important;color:#6a8495!important}
+body.ec-app-body .ecc66-page .ecc3-avatar-large {width:47px;height:47px;flex-basis:47px}
+body.ec-app-body .ecc66-page .ecc3-inspector-tabs {flex:0 0 auto;display:flex;gap:6px;padding:9px 15px!important;border-bottom:1px solid #e1e9ed!important;background:#fff!important}
+body.ec-app-body .ecc66-page .ecc3-inspector-tabs button {flex:1;background:transparent!important;border:1px solid transparent;border-radius:7px;padding:10px 5px!important;color:#5c7688!important;font-size:11px!important;white-space:normal!important}
+body.ec-app-body .ecc66-page .ecc3-inspector-tabs button.is-active {background:#e6f5ef!important;color:#077c72!important;border-color:#e6f5ef!important}
+body.ec-app-body .ecc66-page .ecc3-inspector-scroll {flex:1 1 auto;max-height:none!important;overflow:auto!important;padding:16px 20px 25px!important;scrollbar-color:#cbdbdf transparent}
+body.ec-app-body .ecc66-page .ecc3-info-card {background:#fff!important;border:1px solid var(--c66-line)!important;border-radius:10px!important;padding:17px 18px!important;margin-bottom:12px!important;color:#34536a!important}
+body.ec-app-body .ecc66-page .ecc3-card-title h3 {color:#173a52!important;font-size:13px!important}
+body.ec-app-body .ecc66-page .ecc3-company-strong {color:#173a52!important;font-size:12px!important}
+body.ec-app-body .ecc66-page .ecc3-info-line {border-color:#e5edef!important;font-size:12px!important;padding:10px 0!important}
+body.ec-app-body .ecc66-page .ecc3-info-line small {color:#718b9d!important;font-size:10px!important}
+body.ec-app-body .ecc66-page .ecc3-info-line strong {color:#244a61!important;font-size:12px!important}
+body.ec-app-body .ecc66-page .ecc3-info-line a,
+body.ec-app-body .ecc66-page .ecc3-receipt a,
+body.ec-app-body .ecc66-page .ecc3-info-card>a {color:#078879!important;font-size:11px!important}
+body.ec-app-body .ecc66-page .ecc3-info-card p,
+body.ec-app-body .ecc66-page .ecc3-receipt :is(small,span) {color:#607e92!important;font-size:11px!important}
+body.ec-app-body .ecc66-page .ecc3-receipt {border-color:#e3ebef!important}
+body.ec-app-body .ecc66-page .ecc3-receipt strong {color:#23475f!important;font-size:11px!important}
+body.ec-app-body .ecc66-page .ecc3-source-line small {color:#617d91!important}
+body.ec-app-body .ecc66-page .ecc3-verify-buttons button {border:1px solid #c6e0dc!important;border-radius:6px;background:#f3faf7!important;color:#087b70!important;font-size:10px!important;padding:7px 9px!important}
+body.ec-app-body .ecc66-page .ecc3-notes {background:#f6fafb!important;border:1px solid #e1eaed!important;color:#31556b!important}
+body.ec-app-body .ecc66-page .ecc3-notes p {color:#637f8f!important}
+
+/* C04: cadastro/edição e escolha de empresa, em modais claros. */
+body.ec-app-body .ecc66-page :is(.ecc3-modal-overlay,.ecc-modal-mask) {position:fixed!important;z-index:1150!important;inset:0!important;background:#0d273f88!important;padding:18px!important;display:grid!important;place-items:center!important}
+body.ec-app-body .ecc66-page :is(.ecc3-modal,.ecc-modal) {display:block!important;width:min(590px,100%)!important;max-height:calc(100vh - 45px)!important;overflow:auto!important;background:#fff!important;color:#183a50!important;border:1px solid var(--c66-line)!important;border-radius:15px!important;box-shadow:0 25px 75px #17374f38!important}
+body.ec-app-body .ecc66-page :is(.ecc3-modal,.ecc-modal) header {background:#fff!important;border-bottom:1px solid #e2e9ee!important;display:flex;justify-content:space-between;align-items:flex-start;padding:19px 22px!important}
+body.ec-app-body .ecc66-page :is(.ecc3-modal,.ecc-modal) header h2 {color:#17394e!important;-webkit-text-fill-color:#17394e!important;font-size:21px!important}
+body.ec-app-body .ecc66-page :is(.ecc3-modal,.ecc-modal) header p {color:#647f91!important;font-size:12px!important;line-height:1.5!important}
+body.ec-app-body .ecc66-page :is(.ecc3-modal,.ecc-modal) header button {color:#5e7b8b!important;background:transparent!important}
+body.ec-app-body .ecc66-page .ecc-modal form {display:flex;flex-direction:column;gap:14px;padding:18px 22px 23px!important}
+body.ec-app-body .ecc66-page .ecc-modal form label {display:flex;flex-direction:column;gap:7px;color:#244a60!important;font-size:12px!important;font-weight:660!important}
+body.ec-app-body .ecc66-page :is(.ecc-modal,.ecc3-modal) :is(input,select,textarea) {min-height:41px;border:1px solid var(--c66-line)!important;border-radius:8px!important;background:#fff!important;color:#2d5066!important;-webkit-text-fill-color:#2d5066!important;padding:10px 12px!important;font-size:13px!important;box-shadow:none!important}
+body.ec-app-body .ecc66-page .ecc-modal form textarea {min-height:96px!important;resize:vertical!important}
+body.ec-app-body .ecc66-page .ecc-modal form footer {display:flex;justify-content:flex-end;gap:9px;padding:12px 0 0!important}
+body.ec-app-body .ecc66-page .ecc3-modal :is(strong,h3) {color:#1a3f55!important}
+body.ec-app-body .ecc66-page .ecc3-modal .ecc3-choose-list button {background:#fff!important;color:#214459!important;border-bottom:1px solid #e3ebee!important}
+body.ec-app-body .ecc66-page .ecc3-modal .ecc3-choose-list button:hover {background:#f3faf8!important}
+body.ec-app-body .ecc66-page .ecc3-modal .ecc3-choose-list small {color:#718b9b!important}
+
+/* C05 – canais de matriz e filiais mantidos separados das pessoas. */
+body.ec-app-body .eccr-page.ecc66-receita {--eccr-line:#dce6eb;--eccr-muted:#728a9a;--eccr-cyan:#087e72;max-width:1490px!important;min-height:0!important;margin:0 auto!important;padding:28px clamp(18px,2.2vw,38px) 52px!important;background:transparent!important;color:#1b3b52!important;font-size:13px!important}
+body.ec-app-body .ecc66-receita .eccr-heading {margin-bottom:20px!important;gap:14px!important}
+body.ec-app-body .ecc66-receita .eccr-eyebrow {color:#71899b!important;font-size:10px!important}
+body.ec-app-body .ecc66-receita .eccr-heading h1 {color:#17364a!important;font-size:clamp(26px,2.4vw,35px)!important}
+body.ec-app-body .ecc66-receita .eccr-heading p {color:#698295!important;font-size:13px!important}
+body.ec-app-body .ecc66-receita .eccr-back {background:#fff!important;color:#20516b!important;border:1px solid #d7e5e9!important;border-radius:8px!important;padding:10px 15px!important}
+body.ec-app-body .ecc66-receita .eccr-tabs {border-bottom:0!important;gap:8px!important}
+body.ec-app-body .ecc66-receita .eccr-tabs :is(a,span) {background:transparent!important;color:#557587!important;border:1px solid transparent!important;border-radius:8px!important;font-size:12px!important}
+body.ec-app-body .ecc66-receita .eccr-tabs .eccr-tab-active {background:#e6f5ef!important;color:#087e72!important;border-color:#e6f5ef!important}
+body.ec-app-body .ecc66-receita .eccr-intro {background:#e7f7f2!important;border:1px solid #cfebe3!important;border-radius:9px!important}
+body.ec-app-body .ecc66-receita .eccr-intro :is(strong,p) {color:#245c62!important;font-size:12px!important}
+body.ec-app-body .ecc66-receita .eccr-filters {background:#fff!important;border:1px solid #dae6ea!important;border-radius:11px!important;padding:20px!important;gap:14px!important}
+body.ec-app-body .ecc66-receita .eccr-filters label {color:#25495f!important;font-size:12px!important}
+body.ec-app-body .ecc66-receita .eccr-filters :is(input,select) {background:#fff!important;color:#315369!important;-webkit-text-fill-color:#315369!important;min-height:41px;border:1px solid #dbe6eb!important;border-radius:8px!important;font-size:12px!important;color-scheme:light!important}
+body.ec-app-body .ecc66-receita .eccr-filters input::placeholder {color:#8199aa!important}
+body.ec-app-body .ecc66-receita .eccr-filters button {background:#f0faf7!important;color:#087f72!important;border:1px solid #cde8df!important;border-radius:8px!important;font-size:12px!important}
+body.ec-app-body .ecc66-receita .eccr-summary {gap:13px!important}
+body.ec-app-body .ecc66-receita .eccr-summary>div {background:#fff!important;border:1px solid #dce6eb!important;border-radius:11px!important;min-height:112px!important;padding:18px 19px!important}
+body.ec-app-body .ecc66-receita .eccr-summary small {color:#6c8596!important;font-size:11px!important}
+body.ec-app-body .ecc66-receita .eccr-summary strong {color:#193c54!important;font-size:26px!important}
+body.ec-app-body .ecc66-receita .eccr-results,
+body.ec-app-body .ecc66-receita .eccr-inspector {background:#fff!important;color:#1d3f55!important;border:1px solid #dce6eb!important;border-radius:11px!important;box-shadow:none!important}
+body.ec-app-body .ecc66-receita .eccr-section-head {border-color:#e4ecef!important}
+body.ec-app-body .ecc66-receita .eccr-section-head h2 {color:#1b3d54!important}
+body.ec-app-body .ecc66-receita .eccr-section-head span {color:#7a91a1!important}
+body.ec-app-body .ecc66-receita .eccr-entry {background:#fff!important;color:#234760!important;border-bottom:1px solid #e0e9ee!important;padding:15px 18px!important}
+body.ec-app-body .ecc66-receita .eccr-entry:hover {background:#f7fbfa!important}
+body.ec-app-body .ecc66-receita .eccr-entry.is-active {background:#eef8f5!important;border-left:3px solid #0b9486!important}
+body.ec-app-body .ecc66-receita .eccr-entry-title strong {color:#1a3f54!important;font-size:12px!important}
+body.ec-app-body .ecc66-receita .eccr-entry-title span {background:#e6f5ef!important;border:1px solid #c6e6da!important;color:#088173!important}
+body.ec-app-body .ecc66-receita .eccr-company,
+body.ec-app-body .ecc66-receita .eccr-entry-meta {color:#638193!important;font-size:11px!important}
+body.ec-app-body .ecc66-receita .eccr-entry-channels {color:#068576!important;font-size:11px!important}
+body.ec-app-body .ecc66-receita .eccr-inspector-title {background:#fff!important;border-color:#e4ecef!important}
+body.ec-app-body .ecc66-receita .eccr-inspector-title h2 {color:#1c3f55!important}
+body.ec-app-body .ecc66-receita .eccr-inspector-title :is(small,span) {color:#6e8798!important}
+body.ec-app-body .ecc66-receita .eccr-card {background:#fff!important;border:1px solid #e2ebee!important;border-radius:8px!important;padding:16px!important}
+body.ec-app-body .ecc66-receita .eccr-card h3 {color:#1f455c!important}
+body.ec-app-body .ecc66-receita .eccr-info {border-color:#e5ecef!important}
+body.ec-app-body .ecc66-receita .eccr-info small {color:#748d9b!important}
+body.ec-app-body .ecc66-receita .eccr-info :is(strong,em) {color:#264b62!important}
+body.ec-app-body .ecc66-receita :is(.eccr-info a,.eccr-dossier) {color:#078374!important}
+body.ec-app-body .ecc66-receita .eccr-note {color:#668395!important}
+body.ec-app-body .ecc66-receita .eccr-empty,
+body.ec-app-body .ecc66-receita .eccr-empty strong {color:#234961!important}
+body.ec-app-body .ecc66-receita .eccr-empty p {color:#728c9b!important}
+body.ec-app-body .ecc66-receita .eccr-pagination {color:#5e7a8b!important}
+body.ec-app-body .ecc66-receita .eccr-pagination button {background:#fff!important;border:1px solid #dbe5eb!important;color:#244a61!important}
+
+@media(max-width:1100px) {
+ body.ec-app-body .ecc66-page .c66-metrics {grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.ec-app-body .ecc66-page .c66-refine-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:680px) {
+ body.ec-app-body .ecc-page.ecc3-page.ecc66-page {padding:17px 12px 32px!important}
+ body.ec-app-body .ecc66-page .c66-metrics {grid-template-columns:1fr 1fr;gap:9px}
+ body.ec-app-body .ecc66-page .c66-metric {padding:15px 13px;min-height:96px}
+ body.ec-app-body .ecc66-page .c66-metric strong {font-size:22px}
+ body.ec-app-body .ecc66-page .c66-refine-grid {grid-template-columns:1fr}
+ body.ec-app-body .ecc66-page .c66-selected-buttons {width:100%}
+ body.ec-app-body .ecc66-page .ecc3-inspector {top:9px!important;right:9px!important;bottom:9px!important;width:calc(100vw - 18px)!important}
+ body.ec-app-body .ecc66-page .ecc3-table {min-width:790px!important}
+ body.ec-app-body .ecc66-page .ecc3-header {align-items:flex-start!important}
+ body.ec-app-body .ecc66-receita .eccr-summary {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:420px) {body.ec-app-body .ecc66-page .c66-metrics {grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce) {body.ec-app-body .ecc66-page *{transition:none!important;scroll-behavior:auto!important}}

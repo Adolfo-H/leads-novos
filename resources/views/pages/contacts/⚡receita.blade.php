@@ -114,7 +114,7 @@ new class extends Component
         return substr($digits, 0, 2).'.'.substr($digits, 2, 3).'.'.substr($digits, 5, 3).'/'.substr($digits, 8, 4).'-'.substr($digits, 12, 2);
     };
 @endphp
-<div class="eccr-page" data-test="contacts-receita-v4">
+<div class="eccr-page ecc66-receita" data-test="contacts-receita-v4" data-ec-contacts-figma="C05-V66">
     <header class="eccr-heading">
         <div>
             <div class="eccr-eyebrow">RELACIONAMENTO <span>›</span> CENTRAL DE CONTATOS</div>

@@ -1,0 +1,300 @@
+/*
+ * ExportControl Prospector — Empresas Figma E01–E09 · V64
+ * E01 listagem; E02 criação; E03 edição; E04 filiais.
+ * E05–E09 permanecem sob o dossiê Figma V53 já implementado.
+ * Nada altera tabelas, rotas, regras do CRM, Receita ou HubSpot.
+ */
+body.ec-app-body:has(.ec-e01-page,.ec-e02-page,.ec-e03-page,.ec-e04-page) .ec-main {
+    background: #f3f6f8 !important;
+}
+body.ec-app-body:has(.ec-e01-page,.ec-e02-page,.ec-e03-page,.ec-e04-page) .ec-topbar {
+    background: #fff !important;
+    color: #203e53 !important;
+    border-bottom: 1px solid #dce5eb !important;
+    box-shadow: none !important;
+}
+body.ec-app-body:has(.ec-e01-page,.ec-e02-page,.ec-e03-page,.ec-e04-page) .ec-topbar .ec-topbar-eyebrow {display:none!important;}
+body.ec-app-body:has(.ec-e01-page,.ec-e02-page,.ec-e03-page,.ec-e04-page) .ec-topbar .ec-topbar-title,
+body.ec-app-body:has(.ec-e01-page,.ec-e02-page,.ec-e03-page,.ec-e04-page) .ec-topbar .e592-account-name {
+    color: #1c3a50 !important;
+}
+body.ec-app-body:has(.ec-e01-page,.ec-e02-page,.ec-e03-page,.ec-e04-page) .ec-topbar .ec-global-search {
+    background: #f2f5f7 !important;
+    border: 1px solid #e1e8ed !important;
+    border-radius: 9px !important;
+    color: #547086 !important;
+    box-shadow: none !important;
+}
+body.ec-app-body:has(.ec-e01-page,.ec-e02-page,.ec-e03-page,.ec-e04-page) .ec-topbar .ec-global-search input {
+    background: transparent !important;
+    color: #284960 !important;
+    -webkit-text-fill-color: #284960 !important;
+}
+body.ec-app-body:has(.ec-e01-page,.ec-e02-page,.ec-e03-page,.ec-e04-page) .ec-topbar .ec-global-search kbd {display:none!important;}
+
+/* E01 — listagem */
+.eccl-page.eccl-v26.ec-e01-page {
+    --e64-ink:#17354b;
+    --e64-muted:#6f8798;
+    --e64-line:#dce6eb;
+    --e64-teal:#008779;
+    max-width: 1370px !important;
+    width:100% !important;
+    margin:0 auto !important;
+    padding: 26px clamp(16px,2.1vw,32px) 40px !important;
+    color: var(--e64-ink) !important;
+    background: transparent !important;
+    font-family: 'Instrument Sans',Inter,ui-sans-serif,system-ui,sans-serif;
+    font-size: 13px;
+}
+.ec-e01-page *, .ec-e01-page *::before, .ec-e01-page *::after {box-sizing:border-box;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-header {
+    isolation:auto;
+    min-height:0;
+    display:block;
+    padding:0;
+    margin:0 0 19px;
+    border:0;
+    border-radius:0;
+    background:transparent !important;
+    overflow:visible;
+}
+.eccl-page.eccl-v26.ec-e01-page .eccl-header::before,
+.eccl-page.eccl-v26.ec-e01-page .eccl-header::after {content:none !important;display:none !important;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-header > div {z-index:auto;position:static;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-eyebrow {
+    display:block;
+    margin-bottom:11px;
+    color:#688298 !important;
+    font-size:10px;
+    font-weight:750;
+    letter-spacing:.08em;
+}
+.eccl-page.eccl-v26.ec-e01-page h1 {
+    margin:0;
+    color:var(--e64-ink) !important;
+    font-size:clamp(25px,2.3vw,32px);
+    line-height:1.19;
+    letter-spacing:-.037em;
+    font-weight:775;
+}
+.eccl-page.eccl-v26.ec-e01-page .eccl-header p {margin:10px 0 13px;color:var(--e64-muted)!important;font-size:13px;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-button,
+.eccl-page.eccl-v26.ec-e01-page .eccl-button.eccl-primary {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:39px;
+    padding:9px 16px;
+    border:1px solid #d7e5ea;
+    border-radius:8px;
+    background:#fff !important;
+    color:#31526b !important;
+    box-shadow:none !important;
+    font-size:12px;
+    font-weight:700;
+    text-decoration:none;
+}
+.eccl-page.eccl-v26.ec-e01-page .eccl-button.eccl-primary {background:var(--e64-teal)!important;color:#fff!important;border-color:var(--e64-teal)!important;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-button.eccl-primary:hover {background:#006e64!important;border-color:#006e64!important;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-stats {
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:14px;
+    margin:0 0 19px;
+}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-stat {
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-height:117px;
+    padding:19px 19px 21px;
+    background:#fff;
+    border:1px solid var(--e64-line);
+    border-radius:11px;
+    box-shadow:none;
+}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-stat span {font-size:12px;color:var(--e64-muted);font-weight:550;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-stat strong {font-size:29px;color:var(--e64-ink);font-weight:800;line-height:1.1;letter-spacing:-.04em;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-panel.ec-e01-filter-card,
+.eccl-page.eccl-v26.ec-e01-page .eccl-toolbar,
+.eccl-page.eccl-v26.ec-e01-page .eccl-v26-results-panel.ec-e01-results {
+    display:block;
+    overflow:visible;
+    background:#fff !important;
+    border:1px solid var(--e64-line) !important;
+    border-radius:11px !important;
+    box-shadow:none !important;
+    color:var(--e64-ink) !important;
+}
+.eccl-page.eccl-v26.ec-e01-page .eccl-panel.ec-e01-filter-card {margin:0 0 19px;padding:0;border:0!important;background:transparent!important;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-toolbar {margin:0;padding:20px 21px 22px;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-toolbar-title {margin:0 0 17px;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-toolbar-title h2,
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-results-head h2 {margin:0;font-size:15px;font-weight:760;color:var(--e64-ink)!important;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-text-button {background:transparent;border:none;color:var(--e64-teal)!important;font-size:11px;font-weight:700;cursor:pointer;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-filters {
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:14px 16px;
+}
+.eccl-page.eccl-v26.ec-e01-page .eccl-field label {
+    display:block;
+    margin:0 0 7px;
+    font-size:11px;
+    color:#24455b!important;
+    font-weight:700;
+}
+.eccl-page.eccl-v26.ec-e01-page .eccl-field input,
+.eccl-page.eccl-v26.ec-e01-page .eccl-field select {
+    display:block;
+    width:100%;
+    min-height:40px;
+    border:1px solid var(--e64-line) !important;
+    border-radius:7px;
+    padding:9px 12px;
+    background:#fff !important;
+    color:#294b62!important;
+    -webkit-text-fill-color:#294b62!important;
+    color-scheme:light;
+    font-size:12px;
+    box-shadow:none!important;
+}
+.eccl-page.eccl-v26.ec-e01-page .eccl-field input::placeholder {color:#879cab!important;-webkit-text-fill-color:#879cab!important;opacity:1;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-field :is(input,select):focus-visible {outline:2px solid #3db6a4;outline-offset:1px;}
+.eccl-page.eccl-v26.ec-e01-page .eccl-active-filters button {background:#eaf7f3!important;color:#087c70!important;border:1px solid #c5e7dc!important;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-results {padding:0;overflow:hidden!important;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-results-head {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 21px 13px;color:var(--e64-ink);}
+.eccl-page.eccl-v26.ec-e01-page .eccl-results-meta {font-size:11px;color:var(--e64-muted);}
+.eccl-page.eccl-v26.ec-e01-page .eccl-results-meta strong {font-size:11px;color:var(--e64-ink);}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table-scroll {width:100%;max-width:100%;overflow-x:auto;padding:0 21px;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table {width:100%;min-width:800px!important;border-collapse:collapse;table-layout:auto;background:#fff!important;color:var(--e64-ink)!important;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table thead {background:#f1f5f7!important;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table th {background:#f1f5f7!important;color:#71899b!important;font-size:11px;font-weight:580;padding:12px 13px;white-space:nowrap;text-align:left;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table td {background:#fff!important;color:#335269!important;font-size:12px;font-weight:500;padding:13px 13px;vertical-align:middle;border-bottom:1px solid #e2eaf0!important;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table tbody tr:hover td {background:#f9fcfb!important;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table .eccl-company-name {display:block;padding:0;background:transparent!important;border:none!important;color:#173b52!important;font-weight:740;text-decoration:none;font-size:12px;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table .eccl-company-name:hover {color:var(--e64-teal)!important;text-decoration:underline;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table .eccl-units,
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table .eccl-subtext {display:block;color:#5e7c8f!important;font-size:11px;margin-top:2px;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table .eccl-cnpj,
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table .eccl-cnae-code {font-weight:680;color:#274d62!important;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table .ec-e01-origin,
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table .ec-e01-cnae-label,
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table .ec-e01-uf {color:#56798c;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-table .eccl-empty {text-align:center!important;padding:35px 18px!important;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-pagination {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:15px 21px 20px;font-size:11px;color:#728a9a;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-pagination nav {display:flex;align-items:center;gap:9px;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-pagination button {min-height:36px;padding:8px 14px;border:1px solid var(--e64-line);border-radius:8px;background:#fff!important;color:#2e5066!important;font-size:12px;font-weight:630;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-pagination button:disabled {opacity:.4!important;cursor:not-allowed;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-explain {display:flex;gap:12px;align-items:flex-start;margin:20px 14px;color:#72899b;font-size:12px;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-explain span {color:#758fa2;font-size:18px;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-explain p {margin:4px 0 0;font-size:11px;color:#718899;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-footer {margin-top:24px;font-size:10px;color:#8599a7;}
+.eccl-page.eccl-v26.ec-e01-page .ec-e01-visually-hidden {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;}
+
+/* E02 — formulário de nova empresa */
+.ecnc-page.ec-e02-page {
+    --e64-ink:#16374c;
+    --e64-muted:#6d8395;
+    --e64-line:#dce6eb;
+    --e64-teal:#008577;
+    width:100%!important;
+    max-width:1390px!important;
+    padding:27px clamp(16px,2.1vw,32px) 35px!important;
+    margin:0 auto!important;
+    color:var(--e64-ink)!important;
+    background:transparent!important;
+    font-size:13px;
+}
+.ecnc-page.ec-e02-page *, .ecnc-page.ec-e02-page *::before, .ecnc-page.ec-e02-page *::after {box-sizing:border-box;}
+.ecnc-page.ec-e02-page .ecnc-header {display:block;margin:0 0 20px;padding:0;background:transparent!important;}
+.ecnc-page.ec-e02-page .ecnc-breadcrumb {display:block;margin:0 0 12px;color:#688397!important;font-size:10px;font-weight:770;letter-spacing:.07em;}
+.ecnc-page.ec-e02-page h1 {color:var(--e64-ink)!important;font-size:clamp(26px,2.2vw,32px);line-height:1.2;font-weight:780;}
+.ecnc-page.ec-e02-page .ecnc-header p {margin:9px 0 14px;color:var(--e64-muted)!important;font-size:13px;}
+.ecnc-page.ec-e02-page .ec-e02-actions {display:flex;align-items:center;gap:9px;}
+.ecnc-page.ec-e02-page .ecnc-button {display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 16px;border:1px solid #dbe6eb;border-radius:8px;background:#fff!important;color:#284d63!important;font-size:12px;font-weight:700;}
+.ecnc-page.ec-e02-page .ecnc-button.ecnc-primary {background:var(--e64-teal)!important;border-color:var(--e64-teal)!important;color:#fff!important;}
+.ecnc-page.ec-e02-page .ecnc-button.ecnc-primary:hover {background:#006d63!important;}
+.ecnc-page.ec-e02-page .ecnc-layout {display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start;}
+.ecnc-page.ec-e02-page .ecnc-main {display:grid;gap:18px;min-width:0;}
+.ecnc-page.ec-e02-page .ecnc-card {display:block;background:#fff!important;border:1px solid var(--e64-line)!important;border-radius:11px;padding:22px 23px;box-shadow:none!important;}
+.ecnc-page.ec-e02-page .ecnc-card h2 {color:var(--e64-ink)!important;font-size:15px;font-weight:770;margin:0 0 17px;}
+.ecnc-page.ec-e02-page .ecnc-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 18px;}
+.ecnc-page.ec-e02-page .ecnc-field {display:flex;flex-direction:column;min-width:0;gap:5px;}
+.ecnc-page.ec-e02-page .ecnc-field label {font-size:11px;color:#24465c!important;font-weight:690;}
+.ecnc-page.ec-e02-page .ecnc-field :is(input,select) {width:100%;min-height:41px;padding:9px 12px;border:1px solid #dbe6ec!important;border-radius:8px;background:#fff!important;color:#304f64!important;-webkit-text-fill-color:#304f64!important;color-scheme:light;font-size:12px;box-shadow:none!important;}
+.ecnc-page.ec-e02-page .ecnc-field input::placeholder {color:#8ba0b0!important;-webkit-text-fill-color:#8ba0b0!important;}
+.ecnc-page.ec-e02-page .ecnc-field small {font-size:10px;color:#7890a0;}
+.ecnc-page.ec-e02-page .ecnc-field :is(input,select):focus-visible {outline:2px solid #3ab6a3;outline-offset:1px;}
+.ecnc-page.ec-e02-page .ecnc-aside {display:flex;flex-direction:column;gap:15px;min-width:0;padding:0;background:transparent;border:0;}
+.ecnc-page.ec-e02-page .ecnc-aside > h2 {font-size:16px;color:var(--e64-ink);font-weight:750;margin:0;}
+.ecnc-page.ec-e02-page .ecnc-summary {display:flex;flex-direction:column;gap:8px;min-height:178px;padding:22px;border:1px solid var(--e64-line)!important;border-radius:11px;background:#fff!important;box-shadow:none!important;}
+.ecnc-page.ec-e02-page .ecnc-tag {align-self:flex-start;padding:6px 10px;border-radius:99px;background:#e4f5ef!important;color:#0a8577!important;font-size:11px;font-weight:720;}
+.ecnc-page.ec-e02-page .ecnc-summary h3 {margin:8px 0 2px;font-size:15px;font-weight:780;color:var(--e64-ink);line-height:1.4;overflow-wrap:anywhere;}
+.ecnc-page.ec-e02-page .ecnc-summary p {color:#658092!important;margin:0;font-size:12px;overflow-wrap:anywhere;}
+.ecnc-page.ec-e02-page .ecnc-note {display:block;padding:16px 16px 13px;background:transparent!important;border:0!important;color:#6d8595;box-shadow:none!important;}
+.ecnc-page.ec-e02-page .ecnc-note h3 {margin:0 0 7px;font-size:13px;font-weight:710;color:#617d8f!important;}
+.ecnc-page.ec-e02-page .ecnc-note p {margin:0;color:#728a9b!important;font-size:11px;line-height:1.6;}
+.ecnc-page.ec-e02-page .ecnc-alert {border:1px solid #f1c4c2;border-radius:10px;background:#fff4f3;color:#ad4744;padding:14px 18px;margin-bottom:18px;}
+.ecnc-page.ec-e02-page .ec-e02-footer {margin-top:24px;font-size:10px;color:#8697a7;}
+
+/* E03 e E04: manter todos os dados existentes e mudar somente a apresentação. */
+body.ec-app-body .ec-form-page.ec-e03-page,
+body.ec-app-body .ec-form-page.ec-e04-page {
+    width:100%!important;
+    max-width:1390px!important;
+    padding:27px clamp(16px,2.1vw,32px) 40px!important;
+    margin:0 auto!important;
+    color:#1b3b50!important;
+    background:transparent!important;
+    font-family:'Instrument Sans',Inter,ui-sans-serif,system-ui,sans-serif;
+    font-size:13px;
+}
+body.ec-app-body .ec-form-page.ec-e03-page .ec-e64-hero,
+body.ec-app-body .ec-form-page.ec-e04-page .ec-e64-hero {display:block;margin:0 0 20px;}
+body.ec-app-body .ec-form-page.ec-e03-page .ec-e64-eyebrow,
+body.ec-app-body .ec-form-page.ec-e04-page .ec-e64-eyebrow {display:block;margin:0 0 11px;font-size:10px;font-weight:740;letter-spacing:.08em;color:#678197;}
+body.ec-app-body .ec-form-page.ec-e03-page .ec-e64-hero h1,
+body.ec-app-body .ec-form-page.ec-e04-page .ec-e64-hero h1 {margin:0!important;color:#14364b!important;font-size:clamp(25px,2.25vw,32px)!important;line-height:1.2!important;letter-spacing:-.035em;font-weight:780!important;}
+body.ec-app-body .ec-form-page.ec-e03-page .ec-e64-hero p,
+body.ec-app-body .ec-form-page.ec-e04-page .ec-e64-hero p {margin:10px 0 14px!important;color:#70899a!important;font-size:12px!important;}
+body.ec-app-body .ec-form-page.ec-e03-page .ec-e64-top-actions,
+body.ec-app-body .ec-form-page.ec-e04-page .ec-e64-top-actions {display:flex;gap:9px;align-items:center;}
+body.ec-app-body .ec-form-page.ec-e03-page .ec-e64-top-actions :is(a,button),
+body.ec-app-body .ec-form-page.ec-e04-page .ec-e64-top-actions :is(a,button) {display:inline-flex;align-items:center;justify-content:center;min-height:39px;padding:9px 15px;border:1px solid #d9e5eb;border-radius:8px;background:#fff!important;color:#284a60!important;font-weight:700;font-size:12px;text-decoration:none;}
+body.ec-app-body .ec-form-page.ec-e03-page .ec-e64-top-actions button,
+body.ec-app-body .ec-form-page.ec-e04-page .ec-e64-top-actions button {background:#008679!important;color:#fff!important;border-color:#008679!important;}
+body.ec-app-body .ec-form-page.ec-e03-page form > section,
+body.ec-app-body .ec-form-page.ec-e04-page form > section {padding:22px 24px!important;background:#fff!important;border:1px solid #dce6eb!important;border-radius:11px!important;box-shadow:none!important;}
+body.ec-app-body .ec-form-page.ec-e03-page section > h2,
+body.ec-app-body .ec-form-page.ec-e04-page section > h2 {margin:0!important;font-size:15px!important;line-height:1.4!important;color:#19394c!important;font-weight:740!important;}
+body.ec-app-body .ec-form-page.ec-e03-page form > section > div.grid,
+body.ec-app-body .ec-form-page.ec-e04-page form > section > div.grid {display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:15px 18px!important;}
+body.ec-app-body .ec-form-page.ec-e03-page form > section label,
+body.ec-app-body .ec-form-page.ec-e04-page form > section label {font-size:11px!important;font-weight:690!important;color:#2a4c61!important;margin-bottom:6px!important;}
+body.ec-app-body .ec-form-page.ec-e03-page form > section :is(input,select,textarea),
+body.ec-app-body .ec-form-page.ec-e04-page form > section :is(input,select,textarea) {width:100%;min-height:40px;padding:9px 12px!important;border:1px solid #d9e5eb!important;border-radius:8px;background:#fff!important;color:#304f64!important;-webkit-text-fill-color:#304f64!important;color-scheme:light;font-size:12px!important;box-shadow:none!important;}
+body.ec-app-body .ec-form-page.ec-e03-page form > section input:disabled,
+body.ec-app-body .ec-form-page.ec-e04-page form > section input:disabled {background:#f4f7f9!important;color:#6a8295!important;-webkit-text-fill-color:#6a8295!important;cursor:not-allowed;}
+body.ec-app-body .ec-form-page.ec-e03-page form > section input::placeholder,
+body.ec-app-body .ec-form-page.ec-e04-page form > section input::placeholder {color:#93a6b5!important;-webkit-text-fill-color:#93a6b5!important;}
+body.ec-app-body .ec-form-page.ec-e03-page form > div:last-child :is(a,button),
+body.ec-app-body .ec-form-page.ec-e04-page form > div:last-child :is(a,button) {min-height:39px;border-radius:8px;font-size:12px;}
+body.ec-app-body .ec-form-page.ec-e03-page form > div:last-child button,
+body.ec-app-body .ec-form-page.ec-e04-page form > div:last-child button {background:#008678!important;color:#fff!important;border-color:#008678!important;}
+body.ec-app-body .ec-form-page.ec-e04-page > div[class*="bg-blue"] {background:#edf8f4!important;border:1px solid #c6e9de!important;color:#1d6158!important;border-radius:9px!important;}
+body.ec-app-body .ec-form-page.ec-e04-page > div[class*="bg-blue"] p {color:#315f60!important;}
+
+@media(max-width:880px){
+ .eccl-page.eccl-v26.ec-e01-page .ec-e01-stats {grid-template-columns:1fr;}
+ .eccl-page.eccl-v26.ec-e01-page .eccl-filters {grid-template-columns:1fr!important;}
+ .ecnc-page.ec-e02-page .ecnc-layout {grid-template-columns:1fr;}
+ .ecnc-page.ec-e02-page .ecnc-grid {grid-template-columns:1fr;}
+ body.ec-app-body .ec-form-page.ec-e03-page form > section > div.grid,
+ body.ec-app-body .ec-form-page.ec-e04-page form > section > div.grid {grid-template-columns:1fr!important;}
+}
+@media(prefers-reduced-motion:reduce){.ec-e01-page *, .ec-e02-page * {transition:none!important;}}
+
+/* E04: a empresa/raiz agora aparecem na identificação; elimina a caixa duplicada. */
+body.ec-app-body .ec-form-page.ec-e04-page > div[class*="bg-blue"] {display:none!important;}

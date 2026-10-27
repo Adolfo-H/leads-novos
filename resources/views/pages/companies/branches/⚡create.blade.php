@@ -399,27 +399,18 @@ new class extends Component
 };
 ?>
 
-<div class="ec-form-page mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+<div class="ec-form-page ec-e04-page" data-ec-companies-figma="E04-V64">
 
-    <div>
 
-        <a
-            href="{{ route('companies.show', $company) }}"
-            wire:navigate
-            class="text-sm font-medium text-blue-600 hover:text-blue-700"
-        >
-            ← Voltar para empresa
-        </a>
-
-        <h1 class="mt-4 text-2xl font-semibold text-zinc-900 dark:text-white">
-            Adicionar filial
-        </h1>
-
-        <p class="mt-2 text-sm text-zinc-500">
-            Cadastre outro estabelecimento pertencente à mesma empresa.
-        </p>
-
-    </div>
+    <header class="ec-e64-hero">
+        <span class="ec-e64-eyebrow">EMPRESAS</span>
+        <h1>Adicionar filial</h1>
+        <p>Nova unidade de {{ $company->corporate_name }} · raiz {{ $company->cnpj_root }}.</p>
+        <div class="ec-e64-top-actions">
+            <a href="{{ route('companies.show', $company) }}" wire:navigate>Cancelar</a>
+            <button type="submit" form="ec-e04-form" wire:loading.attr="disabled" wire:target="save">Cadastrar filial</button>
+        </div>
+    </header>
 
     <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950/30">
 
@@ -439,6 +430,7 @@ new class extends Component
     </div>
 
     <form
+        id="ec-e04-form"
         wire:submit="save"
         class="space-y-6"
     >
@@ -447,10 +439,13 @@ new class extends Component
         <section class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
 
             <h2 class="text-base font-semibold text-zinc-900 dark:text-white">
-                Identificação
+                Vínculo e identificação
             </h2>
 
             <div class="mt-5 grid gap-5 md:grid-cols-2">
+                <div class="ec-e04-readonly"><label class="mb-1.5 block">Empresa · somente leitura</label><input disabled value="{{ $company->corporate_name }}"></div>
+                <div class="ec-e04-readonly"><label class="mb-1.5 block">Raiz do CNPJ · somente leitura</label><input disabled value="{{ $company->cnpj_root }}"></div>
+
 
                 <div>
 
@@ -601,7 +596,7 @@ new class extends Component
         <section class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
 
             <h2 class="text-base font-semibold text-zinc-900 dark:text-white">
-                Endereço
+                Endereço da filial
             </h2>
 
             <div class="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -739,7 +734,7 @@ new class extends Component
         <section class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
 
             <h2 class="text-base font-semibold text-zinc-900 dark:text-white">
-                Contato cadastral
+                Canais da filial
             </h2>
 
             <div class="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-4">

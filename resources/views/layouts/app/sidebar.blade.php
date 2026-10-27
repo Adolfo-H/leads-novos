@@ -190,12 +190,15 @@
 
 
 
+        {{-- EC_PROSPECTING_SHELL_V636_WORLD --}}
+        @unless (request()->routeIs('prospecting.*', 'leads.management'))
         <div class="ec-sidebar-world-v7" aria-label="Inteligência ExportControl">
             <img src="{{ asset('images/dashboard/sidebar-world-v7.webp') }}"
                  alt="Globo e conexões internacionais" loading="lazy">
             <div class="ec-sidebar-world-v7__caption">
                 <p>Inteligência que conecta<br>seu negócio ao mundo.</p>
             </div>
+        @endunless
         </div>
 
         <div class="ec-sidebar-footer">
@@ -248,11 +251,12 @@
     {{-- TOPBAR DESKTOP --}}
     <flux:header
         class="ec-topbar hidden lg:flex"
+        data-ec-prospecting-topbar="{{ request()->routeIs('prospecting.*') ? 'v636' : '' }}"
     >
 
         <div class="ec-topbar-context">
 
-            @unless (request()->routeIs('leads.index', 'leads.management', 'companies.show'))
+            @unless (request()->routeIs('leads.index', 'leads.management', 'companies.show', 'prospecting.*'))
                 <span class="ec-topbar-eyebrow">
                     ExportControl
                 </span>
@@ -329,6 +333,7 @@
 {{-- TOPBAR MOBILE --}}
     <flux:header
         class="ec-topbar lg:hidden"
+        data-ec-prospecting-topbar="{{ request()->routeIs('prospecting.*') ? 'v636' : '' }}"
     >
 
         <flux:sidebar.toggle

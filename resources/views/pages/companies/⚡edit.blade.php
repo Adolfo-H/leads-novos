@@ -685,31 +685,17 @@ new class extends Component
 };
 ?>
 
-<div class="ec-form-page mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
-        <div>
-
-            <a
-                href="{{ route('companies.show', $company) }}"
-                wire:navigate
-                class="text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-                ← Voltar para empresa
-            </a>
-
-            <h1 class="mt-4 text-2xl font-semibold text-zinc-900 dark:text-white">
-                Editar empresa
-            </h1>
-
-            <p class="mt-2 text-sm text-zinc-500">
-                Atualize os dados cadastrais da empresa e da matriz.
-            </p>
-
+<div class="ec-form-page ec-e03-page" data-ec-companies-figma="E03-V64">
+    <header class="ec-e64-hero">
+        <span class="ec-e64-eyebrow">EMPRESAS</span>
+        <h1>Editar empresa e matriz</h1>
+        <p>Alterações aplicadas ao cadastro local do Prospector.</p>
+        <div class="ec-e64-top-actions">
+            <a href="{{ route('companies.show', $company) }}" wire:navigate>Cancelar</a>
+            <button type="submit" form="ec-e03-form" wire:loading.attr="disabled" wire:target="save">Salvar alterações</button>
         </div>
+    </header>
 
-    </div>
 
     @if ($errors->any())
 
@@ -720,6 +706,7 @@ new class extends Component
     @endif
 
     <form
+        id="ec-e03-form"
         wire:submit="save"
         class="space-y-6"
     >
