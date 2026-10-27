@@ -1,0 +1,122 @@
+/* CAMPANHAS_FIGMA_V67 — remodelagem visual M01-M15.
+   A aplicação e a verificação usam dados reais; este CSS não altera envios. */
+body.ec-app-body:has(.ec22-page,.ec21-queue) .ec-topbar{background:#fff!important;color:#193b52!important;border-bottom:1px solid #dbe5eb!important;box-shadow:none!important}
+body.ec-app-body:has(.ec22-page,.ec21-queue) .ec-topbar .ec-topbar-title,
+body.ec-app-body:has(.ec22-page,.ec21-queue) .ec-topbar .e592-account-name,
+body.ec-app-body:has(.ec22-page,.ec21-queue) .ec-topbar .ec-topbar-profile-name{color:#16364c!important;-webkit-text-fill-color:#16364c!important}
+body.ec-app-body:has(.ec22-page,.ec21-queue) .ec-topbar .ec-topbar-eyebrow,
+body.ec-app-body:has(.ec22-page,.ec21-queue) .ec-topbar .ec-global-search kbd{display:none!important}
+body.ec-app-body:has(.ec22-page,.ec21-queue) .ec-topbar .ec-global-search{background:#f3f6f8!important;border:1px solid #dde7ec!important;color:#5e788a!important;box-shadow:none!important}
+body.ec-app-body:has(.ec22-page,.ec21-queue) .ec-topbar .ec-global-search input{background:transparent!important;color:#244d60!important;-webkit-text-fill-color:#244d60!important}
+body.ec-app-body:has(.ec22-page,.ec21-queue) .ec-topbar .ec-global-search input::placeholder{color:#8ba1af!important;-webkit-text-fill-color:#8ba1af!important}
+body.ec-app-body:has(.ec22-page,.ec21-queue) .ec-sidebar-world-v7{display:none!important}
+body.ec-app-body:has(.ec22-page,.ec21-queue) .ec-main{background:#f2f6f8!important}
+
+.ec22-page,.ec22-page.ecm2,.ec22-page.ecm6-page{--ec22-text:#15374f;--ec22-muted:#6a8397;--ec22-panel:#fff;--ec22-surface:#f7fafb;--ec22-line:#dce7ed;--ec22-teal:#008b7d;--ec22-deep:#f2f6f8;color:#15374f!important;background:transparent!important;width:100%!important;max-width:1510px!important;margin:0 auto!important;padding:34px clamp(18px,3vw,48px) 60px!important;font-family:'Instrument Sans',Inter,ui-sans-serif,system-ui,sans-serif}
+.ec22-page :is(h1,h2,h3,h4){color:#15374f!important;-webkit-text-fill-color:#15374f!important;text-shadow:none!important}
+.ec22-page h1{font-size:clamp(28px,2.8vw,38px)!important;letter-spacing:-.035em}
+.ec22-page h2{font-size:clamp(19px,1.7vw,25px)!important}
+.ec22-page h3{font-size:16px!important}
+.ec22-page p,.ec22-page small,.ec22-page .ec22-home-footnote{color:#6a8397!important}
+.ec22-page .ec22-kicker,.ec22-page .ecm2-breadcrumb,.ec22-page .ecm6-eyebrow,.ec22-page .ec21-eyebrow{color:#0a8e80!important}
+.ec22-page a{color:#078a7d!important}
+.ec22-page :is(button,a,input,textarea,select,summary):focus-visible{outline:2px solid #24b4a4!important;outline-offset:2px!important}
+.ec22-page button:disabled{opacity:.45}
+
+/* M01: cabeçalho, navegação e cartões de campanha. */
+.ec22-page .ecm2-head,.ec22-page .ec22-module-head,.ec22-page .ec21-module-header,.ec22-page .ecm6-heading{background:transparent!important;border:0!important;box-shadow:none!important}
+.ec22-page .ecm6-nav{background:#fff!important;border:1px solid #dce7ed!important;border-radius:11px!important;padding:6px 9px!important;gap:5px!important;margin:0 0 22px!important}
+.ec22-page .ecm6-nav a{background:transparent!important;border:1px solid transparent!important;border-radius:7px!important;color:#45677d!important;font-size:13px!important;min-height:37px!important;padding:9px 14px!important}
+.ec22-page .ecm6-nav a.is-active{background:#e5f6ef!important;color:#007f73!important;border-color:#bde6d8!important;box-shadow:none!important}
+.ec22-page .ecm6-nav a:hover{background:#f1f8f8!important}
+.ec22-page .ecm2-stats,.ec22-page .ecm6-metric-grid{gap:12px!important}
+.ec22-page .ecm2-stat,.ec22-page .ecm6-metric,.ec22-page .ecm7-metric{background:#fff!important;border:1px solid #dce7ed!important;border-radius:12px!important;box-shadow:none!important;color:#24445c!important}
+.ec22-page .ecm2-stat :is(strong,small),.ec22-page .ecm6-metric :is(strong,small){color:#183d55!important}
+.ec22-page .ecm2-stat strong{font-size:28px!important}
+.ec22-page .ecm2-stat small{font-size:12px!important;color:#72879a!important}
+.ec22-page .ecm2-stat-icon{background:#e8f6f2!important;color:#008e81!important}
+.ec22-page .ecm2-shell.ec21-shell.is-overview{display:grid!important;grid-template-columns:minmax(300px,360px) minmax(0,1fr)!important;grid-template-areas:'list main'!important;gap:17px!important}
+.ec22-page .ecm2-list-panel,.ec22-page .ecm2-main,.ec22-page .ecm2-context,.ec22-page .ecm2-detail,.ec22-page .ec21-panel{background:#fff!important;border:1px solid #dce7ed!important;border-radius:12px!important;box-shadow:none!important;color:#183c53!important}
+.ec22-page .ecm2-list-panel{grid-area:list}
+.ec22-page .ecm2-main{grid-area:main}
+.ec22-page .ecm2-panel-header,.ec22-page .ecm2-list-controls{background:#fff!important;border-color:#e1e9ef!important}
+.ec22-page .ecm2-panel-header h2{font-size:20px!important}
+.ec22-page .ecm2-campaign{background:#fff!important;border-color:#e4ecf0!important;color:#193a50!important}
+.ec22-page .ecm2-campaign:hover,.ec22-page .ecm2-campaign.is-selected,.ec22-page .ecm2-campaign[aria-current=true]{background:#eefaf5!important;border-color:#9bdacc!important}
+.ec22-page .ecm2-campaign strong{color:#14384f!important}
+.ec22-page .ecm2-campaign :is(small,time,.ecm2-campaign-sub,.ecm2-campaign-footer){color:#6c8797!important}
+.ec22-page .ecm2-filters button,.ec22-page .ecm2-btn,.ec22-page .ec22-button,.ec22-page .ecm6-secondary,.ec22-page .ecm7-refresh{border-radius:8px!important;box-shadow:none!important}
+.ec22-page .ecm2-btn-primary,.ec22-page .ec22-button-primary,.ec22-page button.ec22-button-primary{background:#008d7f!important;border-color:#008d7f!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
+.ec22-page .ecm2-btn-primary:hover,.ec22-page .ec22-button-primary:hover{background:#006f65!important;border-color:#006f65!important}
+.ec22-page .ecm2-btn:not(.ecm2-btn-primary),.ec22-page .ec22-button-outline,.ec22-page .ecm6-secondary,.ec22-page .ecm7-refresh{background:#fff!important;border:1px solid #d5e4eb!important;color:#264960!important}
+.ec22-page .ecm2-filters button{background:#fff!important;color:#587383!important;border:1px solid #dae7ed!important}
+.ec22-page .ecm2-filters button.is-active{background:#e6f7f0!important;color:#00887a!important;border-color:#a9dfd1!important}
+.ec22-page .ecm2-search input,.ec22-page :is(input,select,textarea){color:#24485e!important;-webkit-text-fill-color:#24485e!important;color-scheme:light!important}
+.ec22-page :is(input,textarea)::placeholder{color:#8199aa!important;-webkit-text-fill-color:#8199aa!important;opacity:1!important}
+.ec22-page .ecm2-search input{background:#f8fafb!important;border-color:#dce7eb!important}
+
+/* M01 cards informativos e modelos prontos. */
+.ec22-page .ec22-home-hero,.ec22-page .ec22-home-templates,.ec22-page .ec22-card,.ec22-page .ec21-panel,.ec22-page .ecm6-panel{background:#fff!important;border:1px solid #dce7ed!important;box-shadow:none!important;border-radius:12px!important;color:#1b3f54!important}
+.ec22-page .ec22-home-steps li,.ec22-page .ec22-home-template-grid button,.ec22-page .ec22-pick,.ec22-page .ec22-current-policy,.ec22-page .ec22-review-grid>div,.ec22-page .ec22-metric-grid>div,.ec22-page .ec22-tool-grid>a{background:#f9fbfc!important;border:1px solid #dbe8ed!important;color:#173f56!important;box-shadow:none!important}
+.ec22-page .ec22-home-steps li strong,.ec22-page .ec22-home-template-grid button strong,.ec22-page .ec22-pick strong,.ec22-page .ec22-review-grid strong,.ec22-page .ec22-metric-grid strong,.ec22-page .ec22-current-policy :is(strong,dd){color:#173b50!important}
+.ec22-page .ec22-home-steps li>span,.ec22-page .ec22-home-template-grid button>span,.ec22-page .ec22-home-template-grid button em{color:#008b7e!important}
+.ec22-page .ec22-hero-symbol{background:#e4f5ef!important;color:#008b7e!important}
+.ec22-page .ec22-home-template-grid button:hover,.ec22-page .ec22-tool-grid>a:hover{background:#effaf6!important;border-color:#84c9b9!important}
+
+/* M02-M04: seleção, mensagem, revisão e confirmação. */
+.ec22-page .ec22-stepper{border-color:#d9e7eb!important}
+.ec22-page .ec22-stepper button{background:#fff!important;border:1px solid #d9e5ea!important;color:#3e6174!important}
+.ec22-page .ec22-stepper b{border-color:#c5d9e0!important;color:#5b7789!important}
+.ec22-page .ec22-stepper button.is-current{background:#edfaf5!important;border-color:#53bba9!important;box-shadow:none!important}
+.ec22-page .ec22-stepper button.is-current b,.ec22-page .ec22-stepper button.is-done b{background:#008b7e!important;border-color:#008b7e!important;color:#fff!important}
+.ec22-page .ec22-stepper span strong,.ec22-page .ec22-card-head h2{color:#153950!important}
+.ec22-page .ec22-stepper span small,.ec22-page .ec22-card-head p{color:#748c9c!important}
+.ec22-page .ec22-search,.ec22-page .ec22-input :is(input,select,textarea),.ec22-page .ec22-pick,.ec22-page .ec22-table-scroll{background:#fff!important;border:1px solid #d8e4eb!important;color:#284c61!important}
+.ec22-page .ec22-search input{background:transparent!important;color:#284c61!important}
+.ec22-page .ec22-input label{color:#274c62!important}
+.ec22-page .ec22-tabs button,.ec22-page .ec22-recipient-tools button,.ec22-page .ec22-token-row button,.ec22-page .ec22-quick-templates button,.ec22-page .ec22-duration-grid button{background:#fff!important;border:1px solid #d6e4eb!important;color:#486a7d!important}
+.ec22-page .ec22-tabs button.is-active,.ec22-page .ec22-duration-grid button.is-active{background:#e7f6f0!important;color:#008477!important;border-color:#a4ddce!important;box-shadow:none!important}
+.ec22-page .ec22-contact-table{background:#fff!important;color:#2b4d62!important}
+.ec22-page .ec22-contact-table th{background:#eef3f5!important;color:#698296!important;border-color:#dfe9ee!important}
+.ec22-page .ec22-contact-table td{border-color:#e0eaf0!important;color:#305069!important}
+.ec22-page .ec22-contact-table tbody tr:nth-child(even){background:#fafcfd!important}
+.ec22-page .ec22-contact-table tbody tr:hover,.ec22-page .ec22-contact-table tbody tr.is-picked{background:#eef9f5!important}
+.ec22-page .ec22-person-cell strong{color:#193f55!important}
+.ec22-page .ec22-person-cell small,.ec22-page .ec22-table-footer{color:#758fa1!important}
+.ec22-page .ec22-avatar{background:#dff5ec!important;color:#008a7b!important}
+.ec22-page .ec22-origin{background:#edf6f8!important;border-color:#cde3e8!important;color:#426b7d!important}
+.ec22-page .ec22-big-count{color:#008f81!important}
+.ec22-page .ec22-table-footer button{background:#fff!important;border-color:#dae6ec!important;color:#36566b!important}
+.ec22-page .ec22-info-note,.ec22-page .ec22-tip{background:#eef8f7!important;border-color:#cbe7e1!important;color:#486c75!important}
+.ec22-page .ec22-warning{background:#fff7e9!important;border-color:#f1dcae!important;color:#906425!important}
+.ec22-page .ec22-error{background:#fff1f0!important;border-color:#f1cccb!important;color:#a04742!important}
+.ec22-page .ec22-success{background:#e6f8ef!important;border-color:#bde8d8!important;color:#197b68!important}
+.ec22-page .ec22-current-policy dl>div,.ec22-page .ec22-test-block{background:#f4f9fa!important;border-color:#dbe8ed!important}
+.ec22-page .ec22-current-policy dt,.ec22-page .ec22-review-grid span,.ec22-page .ec22-metric-grid span{color:#6e889b!important}
+.ec22-page .ec22-consent{color:#30536a!important}
+.ec22-page .ec22-consent input,.ec22-page .ec22-contact-table input[type=checkbox]{accent-color:#008b7e!important}
+.ec22-page .ec22-footer{border-color:#d9e5ea!important}
+.ec22-page .ec22-email-paper{background:#fff!important;border-color:#d7e3e8!important;color:#1a3c52!important}
+
+/* M05–M13: resultados, respostas, fila e ferramentas. */
+.ec22-page .ec21-inbox-list,.ec22-page .ec21-inbox-message,.ec22-page .ec21-reader-heading,.ec22-page .ec21-message-sheet,.ec22-page .ec21-inbox-item,.ec22-page .ec22-settings-intro,.ec22-page .ec22-real-limits,.ec22-page .ec22-advanced-summary{background:#fff!important;color:#21445c!important;border-color:#dbe7ed!important}
+.ec22-page .ec21-inbox-item:hover,.ec22-page .ec21-inbox-item.is-active{background:#ecfaf5!important}
+.ec22-page .ec21-reader-person strong,.ec22-page .ec21-reader-heading h3,.ec22-page .ec21-inbox-copy strong,.ec22-page .ec21-message-sheet pre{color:#24485e!important}
+.ec22-page .ec21-message-sheet{background:#f8fafb!important;border:1px solid #e0e9ee!important}
+.ec22-page .ec22-state{background:#e7f8f1!important;color:#007f72!important;border-color:#c6e7dd!important}
+.ec22-page .ec22-state.is-safe{background:#fff7e8!important;color:#946d32!important;border-color:#ead7ad!important}
+.ec22-page .ec22-real-limits dl>div,.ec22-page .ec22-settings-effective,.ec22-page .ec22-advanced-summary{border-color:#dae7ed!important}
+.ec22-page .ec22-real-limits dd,.ec22-page .ec22-advanced-summary dd{color:#173e54!important}
+.ec22-page .ec22-advanced-summary dt,.ec22-page .ec22-real-limits dt{color:#688397!important}
+.ec22-page .ec22-tool-grid>a{color:#193e55!important}
+.ec22-page .ec22-tool-grid>a strong{color:#193e55!important}
+.ec22-page .ec22-tool-grid>a span{color:#0a8c7d!important}
+.ec22-page .ec22-tool-grid>a small{color:#7890a1!important}
+.ec22-page .ec22-advanced-tabs{gap:12px}
+/* Telas de fila ainda têm algumas classes do pacote M10 anterior. */
+.ec22-page .ecm7-simulator,.ec22-page .ecm6-queue-simulator,.ec22-page .ecm7-small-card,.ec22-page .ecm7-section-heading{background:#fff!important;border-color:#dce6eb!important;color:#183e55!important}
+.ec22-page .ecm6-keyvals,.ec22-page .ecm7-simulator-inner,.ec22-page .ecm6-forecast{color:#224960!important}
+.ec22-page .ecm6-progress{background:#dfe9ed!important}
+.ec22-page .ecm6-progress>span{background:#008e80!important}
+@media(max-width:1050px){.ec22-page .ecm2-shell.ec21-shell.is-overview{grid-template-columns:1fr!important;grid-template-areas:'main' 'list'!important}}
+@media(max-width:740px){.ec22-page.ecm2,.ec22-page.ecm6-page{padding:20px 13px 36px!important}.ec22-page .ec22-two-columns{grid-template-columns:1fr!important}.ec22-page .ecm6-nav{overflow-x:auto!important;flex-wrap:nowrap!important}.ec22-page .ecm6-nav a{white-space:nowrap!important}.ec22-page .ecm2-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}}

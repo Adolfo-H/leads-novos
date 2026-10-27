@@ -114,14 +114,30 @@ new class extends Component
     }
 };
 ?>
-<div class="ecm6-page ecm7-page ec21-page ec22-page ec21-replies ec22-replies" data-ec21-screen="replies" data-ec22-screen="replies" wire:poll.90s>
-    <header class="ec21-module-header"><div><span class="ec22-kicker">CAMPANHAS / RESPOSTAS</span><h1>Caixa de respostas</h1><p>Veja quem respondeu às suas campanhas, sem misturar com a caixa pessoal.</p></div><span class="ec21-status">IMAP · leitura restrita</span></header>
+<div class="ecm6-page ecm7-page ec21-page ec22-page ec21-replies ec22-replies ec69-replies" data-ec69-replies="M07-V69" data-ec21-screen="replies" data-ec22-screen="replies" wire:poll.90s>
+    <header class="ec21-module-header"><div><span class="ec22-kicker">CAMPANHAS / RESPOSTAS</span><h1>Caixa de respostas</h1><p>Somente conversas relacionadas às suas campanhas.</p></div><span class="ec21-status">Respostas registradas</span></header>
     @include('campaigns.module-nav')
+    <section class="ec69-reply-filter-card" aria-label="Encontre uma conversa">
+        <h2>Encontre uma conversa</h2>
+        <div class="ec69-reply-filter-grid">
+            <label class="ec69-filter-field">
+                <span>Pesquisa</span>
+                <input type="search" wire:model.live.debounce.400ms="search" placeholder="Remetente ou assunto" maxlength="100" autocomplete="off" aria-label="Buscar respostas">
+                <small>Pesquise por e-mail ou assunto da mensagem</small>
+            </label>
+            <div class="ec69-filter-field">
+                <span>Categoria</span>
+                <div class="ec69-reply-categories" role="group" aria-label="Tipo de resposta">
+                    <button type="button" wire:click="chooseKind('commercial')" class="{{ $kind === 'commercial' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'commercial' ? 'true' : 'false' }}">Comerciais</button>
+                    <button type="button" wire:click="chooseKind('pilot')" class="{{ $kind === 'pilot' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'pilot' ? 'true' : 'false' }}">Respostas de teste</button>
+                </div>
+                <small>Somente respostas vinculadas a campanhas</small>
+            </div>
+        </div>
+    </section>
     <div class="ec21-inbox">
         <section class="ec21-panel ec21-inbox-list" aria-label="Conversas recebidas">
             <div class="ec21-panel-heading"><div><h3>Respostas recebidas</h3><p>{{ number_format($this->conversations->total(), 0, ',', '.') }} resultado(s)</p></div><span class="ec21-counter">{{ $this->conversations->total() }}</span></div>
-            <label class="ec21-search"><span class="sr-only">Buscar respostas</span><span aria-hidden="true">⌕</span><input type="search" wire:model.live.debounce.400ms="search" placeholder="Buscar por remetente ou assunto..."></label>
-            <div class="ec21-inbox-tabs" role="group" aria-label="Tipo de resposta"><button type="button" wire:click="chooseKind('commercial')" class="{{ $kind === 'commercial' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'commercial' ? 'true' : 'false' }}">Comerciais</button><button type="button" wire:click="chooseKind('pilot')" class="{{ $kind === 'pilot' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'pilot' ? 'true' : 'false' }}">Testes piloto</button></div>
             <div class="ec21-inbox-items">
                 @forelse ($this->conversations as $entry)
                     @php
@@ -161,7 +177,7 @@ new class extends Component
                 @else
                     <div class="ec21-inbox-empty"><span aria-hidden="true">✉</span><h3>Mensagem pronta para consulta</h3><p>Abra apenas esta resposta pela identificação IMAP; não importamos sua caixa pessoal inteira.</p><button type="button" class="ec21-primary" wire:click="loadBody" wire:loading.attr="disabled" wire:target="loadBody">Ler mensagem completa</button><span wire:loading wire:target="loadBody">Consultando IMAP...</span></div>
                 @endif
-                <div class="ec21-reader-actions"><a class="ec21-outline" href="{{ route('campaigns.index') }}" wire:navigate>← Ver campanhas</a><a class="ec21-outline" href="{{ route('campaigns.intelligence.index') }}">Ferramentas de follow-up ↗</a></div>
+                <div class="ec21-reader-actions"><a class="ec21-outline" href="{{ route('campaigns.index') }}" wire:navigate>← Ver campanhas</a><a class="ec21-outline" href="{{ route('campaigns.replies') }}" wire:navigate>Ver outras respostas</a></div>
                 @error('reply') <p class="ec21-error" role="alert">{{ $message }}</p> @enderror
             @else
                 <div class="ec21-inbox-empty ec21-inbox-placeholder"><span aria-hidden="true">↩</span><h3>Selecione uma conversa</h3><p>Abra uma resposta à esquerda para conferir assunto, remetente e mensagem recebida.</p></div>

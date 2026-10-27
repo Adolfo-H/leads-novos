@@ -16,6 +16,12 @@ it('shows the simplified campaign navigation without deleting operational routes
 });
 
 it('keeps SMTP and daily limits enforced for unrealistic sending plans', function (): void {
+    // A asserção verifica limites explicitamente definidos pelo teste,
+    // sem assumir que o ambiente real ainda está limitado a 100/h e 500/dia.
+    config()->set('campaign_mail.smtp_approved_per_hour', 100);
+    config()->set('campaign_mail.smtp_approved_per_day', 500);
+    config()->set('campaign_mail.smtp_approved_per_tick', 5);
+
     $policy = app(CampaignSendPolicy::class);
     expect($policy->quote(500, 1)['possible'])->toBeFalse()
         ->and($policy->quote(500, 2)['possible'])->toBeFalse()

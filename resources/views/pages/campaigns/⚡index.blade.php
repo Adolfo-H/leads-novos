@@ -55,6 +55,13 @@ new class extends Component
 
     public string $campaignStatus = 'all';
 
+    // EC_CAMPAIGNS_REVIEW_AND_CONFIRM_V73: revisão legível, sem enviar ao abrir.
+    public int $reviewRecipientsPage = 1;
+
+    public bool $sendConfirmationOpen = false;
+
+    public int $campaignTablePage = 1;
+
     public int $recipientPage = 1;
 
     public function mount(): void
@@ -238,12 +245,19 @@ new class extends Component
 
     public function updatedCampaignSearch(): void
     {
+        $this->campaignTablePage = 1;
         unset($this->campaigns);
     }
 
     public function updatedCampaignStatus(): void
     {
+        $this->campaignTablePage = 1;
         unset($this->campaigns);
+    }
+
+    public function changeCampaignTablePage(int $page): void
+    {
+        $this->campaignTablePage = max(1, min(5, $page));
     }
 
     public function changeAudiencePage(int $page): void
@@ -258,9 +272,153 @@ new class extends Component
         unset($this->recipients);
     }
 
+    /**
+     * Limita consultas do painel de prévia à página atual; não resolve milhares
+     * de endereços durante uma única renderização do Livewire.
+     */
+    public function reviewRecipientsPerPage(): int
+    {
+        return min(15, max(1, (int) config('campaign_mail.max_recipients', 100)));
+    }
+
+    public function reviewRecipientPageCount(): int
+    {
+        return max(1, (int) ceil(count($this->audienceKeys) / $this->reviewRecipientsPerPage()));
+    }
+
+    /**
+     * @return list<array{source_key:string,email:string,normalized_email:string,contact_name:string,company_name:string,job_title:string,suppressed:bool}>
+     */
+    #[Computed]
+    public function reviewRecipientPreview(): array
+    {
+        $this->assertManager();
+        if ($this->screen !== 'composer' || $this->audienceKeys === []) {
+            return [];
+        }
+        $page = min(max(1, $this->reviewRecipientsPage), $this->reviewRecipientPageCount());
+        $offset = ($page - 1) * $this->reviewRecipientsPerPage();
+        $keys = array_slice($this->audienceKeys, $offset, $this->reviewRecipientsPerPage());
+
+        // Mesma validação de e-mail, duplicatas e opt-out do salvamento real.
+        return app(CampaignAudience::class)->resolve($keys);
+    }
+
+    public function changeReviewRecipientsPage(int $page): void
+    {
+        $this->assertManager();
+        $this->reviewRecipientsPage = max(1, min($this->reviewRecipientPageCount(), $page));
+        unset($this->reviewRecipientPreview);
+    }
+
+    /** Abre a confirmação visual, sem salvar, reservar ou enviar mensagens. */
+    public function requestSendConfirmation(): void
+    {
+        $this->assertManager();
+        if ($this->screen !== 'composer' || ! in_array($this->composerStep, ['pace', 'review'], true)) {
+            $this->addError('campaign', 'Conclua a etapa de revisão antes de confirmar o envio.');
+
+            return;
+        }
+        $this->validate([
+            'name' => ['required', 'string', 'min:3', 'max:180'],
+            'subject' => ['required', 'string', 'min:3', 'max:180'],
+            'body' => ['required', 'string', 'min:10', 'max:12000'],
+            'audienceKeys' => ['required', 'array', 'min:1'],
+            'audienceKeys.*' => ['string', 'max:160', 'regex:/^(?:(?:hubspot|manual):[0-9]+|receita:[0-9a-fA-F-]{36})$/'],
+        ]);
+        if (! $this->lawfulBasisConfirmed) {
+            $this->addError('lawfulBasisConfirmed', 'Confirme a base legal e o descadastro antes de enviar.');
+
+            return;
+        }
+        if (! config('campaign_mail.enabled') || ! config('campaign_mail.live_enabled')
+            || ! app(\App\Services\Campaigns\CampaignUnsubscribeLink::class)->isReady()) {
+            $this->addError('campaign', 'O envio ainda não está habilitado. Confira o SMTP e o descadastro público.');
+
+            return;
+        }
+        if (! $this->pacePreview['within_policy']) {
+            $this->addError('campaign', 'O ritmo solicitado ultrapassa os limites ativos.');
+
+            return;
+        }
+        $this->sendConfirmationOpen = true;
+    }
+
+    public function cancelSendConfirmation(): void
+    {
+        $this->sendConfirmationOpen = false;
+    }
+
+    /**
+     * Confirmação expressa: preserva o fluxo de salvamento/aprovação do CampaignManager.
+     * A V74 exibe falhas reais sem devolver um 500 genérico ao usuário.
+     * Nunca repete a operação, descarta um rascunho existente ou aciona fila.
+     */
+    public function confirmSendCampaign(CampaignManager $manager): void
+    {
+        $this->assertManager();
+        abort_unless($this->sendConfirmationOpen, 422);
+        $this->sendConfirmationOpen = false;
+
+        // EC_CAMPAIGN_CONFIRMATION_DIAGNOSTIC_V74
+        try {
+            $this->saveAndStart($manager);
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            // Mostra a mensagem de negócio do backend, em vez de esconder a causa.
+            $this->setErrorBag($exception->errors());
+        } catch (\InvalidArgumentException $exception) {
+            report($exception);
+            $maxSelected = min(1000, max(1, (int) config('campaign_mail.max_recipients', 100)));
+            $this->addError(
+                'recipients',
+                'Não foi possível validar os destinatários. O limite efetivo por campanha é '
+                .$maxSelected.' e-mail(s). Revise a seleção e tente novamente somente após conferir o rascunho.'
+            );
+        } catch (\Throwable $exception) {
+            // A exceção fica no laravel.log com stack trace para diagnóstico.
+            // Como saveDraft e start executam transações distintas, verificar
+            // o status ANTES de mostrar um resultado. Não fazer nova tentativa.
+            report($exception);
+            $currentStatus = null;
+            if ($this->selectedCampaignId !== null) {
+                try {
+                    $currentStatus = EmailCampaign::query()
+                        ->whereKey($this->selectedCampaignId)
+                        ->value('status');
+                } catch (\Throwable $lookupError) {
+                    report($lookupError);
+                }
+            }
+
+            if ($currentStatus === 'running') {
+                session()->flash(
+                    'campaign_success',
+                    'A campanha foi autorizada, mas houve erro ao atualizar a tela. '
+                    .'Não confirme novamente. Consulte a campanha e a fila antes de qualquer ação.'
+                );
+            } elseif ($currentStatus === 'draft') {
+                $this->addError(
+                    'campaign',
+                    'O rascunho foi salvo, mas o envio não foi autorizado. '
+                    .'Confira o erro no laravel.log. Não repita a confirmação sem revisar o rascunho.'
+                );
+            } else {
+                $this->addError(
+                    'campaign',
+                    'Houve um erro interno na confirmação. O resultado precisa ser conferido '
+                    .'nos registros das campanhas e no laravel.log antes de tentar novamente.'
+                );
+            }
+        }
+    }
+
     public function newCampaign(): void
     {
         $this->assertManager();
+        $this->sendConfirmationOpen = false;
+        $this->reviewRecipientsPage = 1;
         $this->reset(['editingCampaignId', 'selectedCampaignId', 'name', 'subject', 'body',
             'audienceSearch', 'audienceOrigin', 'audiencePage', 'audienceKeys', 'lawfulBasisConfirmed']);
         $this->screen = 'composer';
@@ -273,6 +431,7 @@ new class extends Component
     public function showOverview(): void
     {
         $this->assertManager();
+        $this->sendConfirmationOpen = false;
         $this->screen = 'overview';
         $this->editingCampaignId = null;
     }
@@ -291,6 +450,8 @@ new class extends Component
     public function editDraft(int $id): void
     {
         $this->assertManager();
+        $this->sendConfirmationOpen = false;
+        $this->reviewRecipientsPage = 1;
         $campaign = EmailCampaign::query()->findOrFail($id);
         abort_unless($campaign->status === 'draft', 422);
         $this->editingCampaignId = $id;
@@ -587,12 +748,12 @@ new class extends Component
     $progress = $totalCount > 0 ? min(100, (int) round($sentCount * 100 / $totalCount)) : 0;
 @endphp
 
-<div class="ecm2 ec21-page ec22-page" data-ec21="EC_CAMPAIGN_REDESIGN_V21" data-ec22-screen="{{ $screen }}" @if ($screen === 'detail') wire:poll.60s @endif>
+<div class="ecm2 ec21-page ec22-page ec68-page ec69-page" data-ec-campaigns-simple="M01-M10-V69" data-ec-campaigns-figma="M01-M10-V68" data-ec21="EC_CAMPAIGN_REDESIGN_V21" data-ec22-screen="{{ $screen }}" @if ($screen === 'detail') wire:poll.60s @endif>
     <header class="ecm2-head">
         <div>
-            <div class="ecm2-breadcrumb">RELACIONAMENTO <span>/</span> EXPORTCONTROL</div>
+            <div class="ecm2-breadcrumb">CAMPANHAS</div>
             <h1>Campanhas de E-mail</h1>
-            <p>Crie, personalize e acompanhe seus e-mails comerciais em um único lugar.</p>
+            <p>Prepare mensagens, acompanhe a fila e continue as conversas.</p>
         </div>
         <div class="ecm2-head-actions">
             <span class="ecm2-safe {{ $canStart ? 'is-live' : '' }}" aria-label="Status dos disparos comerciais">
@@ -606,6 +767,7 @@ new class extends Component
             <button type="button" class="ecm2-btn ecm2-btn-primary" wire:click="newCampaign">
                 <span aria-hidden="true">＋</span> Nova campanha
             </button>
+            <a href="{{ route('campaigns.replies') }}" wire:navigate class="ec68-replies-shortcut">Ver respostas</a>
         </div>
     </header>
 
@@ -628,6 +790,12 @@ new class extends Component
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-red">!</span><div><small>Não confirmados</small><strong>{{ number_format($counts['uncertain'], 0, ',', '.') }}</strong><span>Conferir tentativas</span></div></div>
     </section>
     </details>
+
+    @if ($screen === 'overview')
+        @include('campaigns.figma-home-v68')
+    @elseif ($screen === 'detail' && $selected)
+        @include('campaigns.figma-detail-header-v761')
+    @endif
 
     <div class="ecm2-shell ec21-shell is-{{ $screen }}">
         <aside class="ecm2-list-panel" aria-label="Campanhas cadastradas">
@@ -718,7 +886,7 @@ new class extends Component
                     <header class="ec22-wizard-head">
                         <div>
                             <span class="ec22-kicker">CAMPANHAS DE E-MAIL / {{ $editingCampaignId ? 'EDITAR RASCUNHO' : 'NOVA CAMPANHA' }}</span>
-                            <h1>Nova campanha</h1>
+                            <h1>{{ match ($composerStep) { 'audience' => 'Selecione os contatos', 'message' => 'Escreva a mensagem', default => 'Ritmo e revisão' } }}</h1><small class="ec68-composer-subtitle">Nova campanha</small>
                             <p>{{ match ($composerStep) { 'audience' => 'Escolha quem vai receber seu e-mail.', 'message' => 'Escreva sua mensagem e confira a prévia.', default => 'Confira o ritmo e revise antes de solicitar o envio.' } }}</p>
                         </div>
                         <button type="button" class="ec22-button ec22-button-outline" wire:click="showOverview">Cancelar e voltar</button>
@@ -814,13 +982,26 @@ new class extends Component
                         <section class="ec22-card ec22-review-card">
                             <header class="ec22-card-head"><div><h2>Revisão final</h2><p>Confira antes de salvar ou solicitar o envio.</p></div><button type="button" class="ec22-button ec22-button-outline" wire:click="goToComposerStep('message')">Editar mensagem</button></header>
                             <div class="ec22-review-grid"><div><span>Campanha</span><strong>{{ $name ?: '(sem nome)' }}</strong></div><div><span>Destinatários selecionados</span><strong>{{ count($audienceKeys) }}</strong></div><div><span>Remetente</span><strong>{{ config('campaign_mail.from_address') ?: 'Não configurado' }}</strong></div><div><span>Assunto</span><strong>{{ $subject ?: '(sem assunto)' }}</strong></div></div>
-                            <div class="ec22-test-block"><div><strong>Envio de teste</strong><p>Vai somente para a caixa configurada. Nenhum contato da campanha receberá este teste.</p></div><button type="button" class="ec22-button ec22-button-outline" wire:click="sendTest" wire:loading.attr="disabled" wire:target="sendTest" @disabled(! $mailEnabled)>Enviar teste</button></div>
+                            @include('campaigns.review-recipients-v73')
+                            <div class="ec22-test-block ec73-test-block" data-ec73-test-block>
+                                <div class="ec73-test-content">
+                                    <span class="ec73-test-label">TESTE DE MENSAGEM</span>
+                                    <strong>Envio de teste</strong>
+                                    <p>Confira como a mensagem chegará à sua caixa. Nenhum dos contatos selecionados receberá esse teste.</p>
+                                    <div class="ec73-test-target">Destino: <b>{{ config('campaign_mail.test_to') ?: 'E-mail de teste não configurado' }}</b></div>
+                                    <small>O teste é separado do envio da campanha e não altera seus destinatários.</small>
+                                </div>
+                                <button type="button" class="ec22-button ec73-test-action" wire:click="sendTest" wire:loading.attr="disabled" wire:target="sendTest" @disabled(! $mailEnabled)>
+                                    <span wire:loading.remove wire:target="sendTest">✉ Enviar teste</span>
+                                    <span wire:loading wire:target="sendTest">Enviando teste…</span>
+                                </button>
+                            </div>
                             <label class="ec22-consent"><input type="checkbox" wire:model.live="lawfulBasisConfirmed"> Confirmo que revisei os destinatários, a base legal do contato e a política de descadastro.</label>
-                            @unless ($canStart)<div class="ec22-warning" role="status"><strong>Modo seguro ativo.</strong> Você pode salvar o rascunho, mas o envio comercial está bloqueado até a homologação.</div>@endunless
+                            @unless ($canStart)<div class="ec22-warning" role="status"><strong>Modo seguro ativo.</strong> Você pode salvar o rascunho agora. Para enviar, configure seu SMTP e o descadastro em <a href="{{ route('campaigns.settings') }}" target="_blank" rel="noopener noreferrer">Preparar envio</a>.</div>@endunless
                             @error('campaign')<div class="ec22-error" role="alert">{{ $message }}</div>@enderror
                             @error('lawfulBasisConfirmed')<div class="ec22-error" role="alert">{{ $message }}</div>@enderror
                         </section>
-                        <footer class="ec22-footer"><button type="button" class="ec22-button ec22-button-outline" wire:click="goToComposerStep('message')">← Voltar</button><div><button type="button" class="ec22-button ec22-button-outline" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">Salvar rascunho</button><button type="button" class="ec22-button ec22-button-primary" wire:click="saveAndStart" wire:confirm="Confirma a autorização do envio real? O motor aplicará os limites e as proteções do sistema." wire:loading.attr="disabled" wire:target="saveAndStart" @disabled(! $canStart || ! $lawfulBasisConfirmed || ! $this->pacePreview['within_policy'])>Solicitar envio</button></div></footer>
+                        <footer class="ec22-footer"><button type="button" class="ec22-button ec22-button-outline" wire:click="goToComposerStep('message')">← Voltar</button><div><button type="button" class="ec22-button ec22-button-outline" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">Salvar rascunho</button><button type="button" class="ec22-button ec22-button-primary" wire:click="requestSendConfirmation" wire:loading.attr="disabled" wire:target="saveAndStart" @disabled(! $canStart || ! $lawfulBasisConfirmed || ! $this->pacePreview['within_policy'])>Solicitar envio</button></div></footer>
                     @endif
                 </section>
             @elseif ($screen === 'detail' && $selected)
@@ -841,11 +1022,14 @@ new class extends Component
                     @if ($detailTab === 'overview')
                         <div class="ecm2-overview-body">
                             <div class="ecm2-section-top"><div><h3>Visão geral do envio</h3><p>Estados registrados pelo sistema para esta campanha.</p></div></div>
+                            <details class="ec76-breakdown" @if ((int) ($stats['uncertain'] ?? 0) > 0) open @endif>
+                                <summary>Ver todos os estados do envio <span>Detalhes técnicos da fila</span></summary>
                             <div class="ecm2-state-grid">
                                 @foreach (['pending' => 'Pendentes', 'reserved' => 'Reservados', 'sending' => 'Processando', 'sent' => 'Aceitos SMTP', 'suppressed' => 'Bloqueados', 'uncertain' => 'Não confirmados', 'canceled' => 'Cancelados'] as $key => $caption)
                                     <div><small>{{ $caption }}</small><strong>{{ number_format((int) ($stats[$key] ?? 0), 0, ',', '.') }}</strong></div>
                                 @endforeach
                             </div>
+                            </details>
                             @if ($selected->status === 'draft')
                                 <div class="ecm2-information"><strong>Campanha em rascunho</strong><p>Você pode editar destinatários e conteúdo. Depois revise as regras de descadastro e autorize o envio quando o ambiente estiver pronto.</p></div>
                             @elseif ($selected->status === 'running')
@@ -1029,5 +1213,6 @@ new class extends Component
             </details>
         </aside>
     </div>
+    @include('campaigns.send-confirmation-v73')
     <footer class="ecm2-footer"><span aria-hidden="true">●</span> Dados locais · SMTP individual · IMAP por cabeçalhos · Sem métricas fictícias de abertura</footer>
 </div>

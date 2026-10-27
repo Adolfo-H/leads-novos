@@ -75,10 +75,25 @@ it('keeps settings, replies and advanced tools accessible only to managers', fun
     $this->actingAs($seller)->get(route('campaigns.advanced'))->assertForbidden();
 
     $this->actingAs(ux22Manager());
-    $this->get(route('campaigns.settings'))->assertOk()
-        ->assertSee('Configurações de envio')
-        ->assertSee('Limites efetivos neste momento')
-        ->assertSee('Envios comerciais bloqueados');
+
+    // CAMPANHAS_V701_TESTE_STATUS_ENVIO: valida os dois estados da UI
+    // sem depender do .env do desenvolvedor ou mudar a configuração persistente.
+    $originalLiveEnabled = config('campaign_mail.live_enabled');
+    try {
+        config()->set('campaign_mail.live_enabled', false);
+        $this->get(route('campaigns.settings'))->assertOk()
+            ->assertSee('Configurações de envio')
+            ->assertSee('Limites efetivos neste momento')
+            ->assertSee('Envios comerciais bloqueados')
+            ->assertDontSee('Envio comercial habilitado');
+
+        config()->set('campaign_mail.live_enabled', true);
+        $this->get(route('campaigns.settings'))->assertOk()
+            ->assertSee('Envio comercial habilitado')
+            ->assertDontSee('Envios comerciais bloqueados');
+    } finally {
+        config()->set('campaign_mail.live_enabled', $originalLiveEnabled);
+    }
     $this->get(route('campaigns.replies'))->assertOk()->assertSee('Caixa de respostas');
     $this->get(route('campaigns.advanced'))->assertOk()
         ->assertSee('Central avançada')

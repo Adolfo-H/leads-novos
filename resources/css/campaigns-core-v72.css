@@ -1,0 +1,54 @@
+/* ExportControl Prospector | Campanhas essenciais V72
+ * Escopo estrito: módulo de Campanhas/Respostas/Configurações.
+ * As tarefas de SMTP, opt-out, aprovação e métricas não são modificadas.
+ */
+body.ec-app-body .ec72-core-nav {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    padding: 5px !important;
+    margin: 0 0 21px !important;
+    border: 1px solid #dbe7eb !important;
+    border-radius: 11px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+}
+body.ec-app-body .ec72-core-nav > a {
+    min-height: 38px !important;
+    padding: 10px 17px !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    color: #385d70 !important;
+    -webkit-text-fill-color: #385d70 !important;
+    text-decoration: none !important;
+    font-size: 12px !important;
+    font-weight: 680 !important;
+    line-height: 1.3 !important;
+}
+body.ec-app-body .ec72-core-nav > a.is-active,
+body.ec-app-body .ec72-core-nav > a[aria-current="page"] {
+    background: #e5f5ef !important;
+    color: #007f72 !important;
+    -webkit-text-fill-color: #007f72 !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+body.ec-app-body .ec72-core-nav > a:hover:not(.is-active) {
+    background: #f4f8fa !important;
+    color: #20495f !important;
+}
+
+/* O antigo painel de diagnósticos era mostrado dentro da tela de campanhas.
+   Ocultá-lo na interface conserva jobs, validações e dados históricos. */
+body.ec-app-body .ec69-page .ecm6-advanced,
+body.ec-app-body .ec68-page .ecm2-context > .ecm6-advanced,
+body.ec-app-body .ec22-page.ecm2 > .ecm2-shell .ecm2-context > .ecm6-advanced {
+    display: none !important;
+}
+
+@media (max-width: 640px) {
+    body.ec-app-body .ec72-core-nav { gap: 4px !important; }
+    body.ec-app-body .ec72-core-nav > a { flex: 1 1 auto; text-align: center; padding: 9px 10px !important; }
+}

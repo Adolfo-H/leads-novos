@@ -28,8 +28,8 @@ final class CampaignProductionReadinessController extends Controller
         }
 
         $data = $request->validate([
-            'smtp_per_hour' => ['required', 'integer', 'min:1', 'max:100'],
-            'smtp_per_day' => ['required', 'integer', 'min:1', 'max:500'],
+            'smtp_per_hour' => ['required', 'integer', 'min:1', 'max:'.max(1, (int) config('campaign_mail.smtp_approved_per_hour', 100))],
+            'smtp_per_day' => ['required', 'integer', 'min:1', 'max:'.max(1, (int) config('campaign_mail.smtp_approved_per_day', 500))],
             'smtp_evidence' => ['required', 'string', 'min:12', 'max:500'],
             'smtp_confirmed' => ['nullable', 'accepted'],
             'public_tested' => ['nullable', 'boolean'],

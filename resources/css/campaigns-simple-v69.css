@@ -1,0 +1,163 @@
+/*
+ * ExportControl Prospector — Campanhas V69
+ * Foco em campanhas, respostas e envio; painéis técnicos ficam em Mais opções.
+ * Camada somente de interface. Não substitui limites, descadastro nem aprovação.
+ */
+
+body.ec-app-body:has(.ec69-page,.ec69-replies) .ec-main { background:#f2f6f8!important; }
+body.ec-app-body:has(.ec69-page,.ec69-replies) .ec-topbar {
+    background:#fff!important; border-bottom:1px solid #dbe6ec!important;
+    box-shadow:none!important; color:#173c51!important;
+}
+body.ec-app-body:has(.ec69-page,.ec69-replies) .ec-topbar :is(.ec-topbar-title,.ec-topbar-profile-name,.e592-account-name) {
+    color:#17394f!important; -webkit-text-fill-color:#17394f!important;
+}
+body.ec-app-body:has(.ec69-page,.ec69-replies) .ec-sidebar-world-v7 { display:none!important; }
+
+/* Navegação principal: somente Campanhas e Respostas à vista. */
+body.ec-app-body .ec69-campaign-nav {
+    display:flex!important; align-items:center; flex-wrap:wrap; gap:7px!important;
+    margin:0 0 22px!important; background:transparent!important;
+    padding:0!important; border:0!important; position:relative;
+}
+body.ec-app-body .ec69-campaign-nav > a {
+    display:inline-flex;align-items:center;justify-content:center;
+    padding:9px 17px!important;min-height:38px!important;
+    background:transparent!important;border:1px solid transparent!important;
+    color:#506b7c!important;border-radius:8px!important;text-decoration:none!important;
+    font-weight:680;font-size:13px!important;
+}
+body.ec-app-body .ec69-campaign-nav > a.is-active { background:#e0f4ec!important;color:#007e72!important; }
+body.ec-app-body .ec69-campaign-nav > a:hover:not(.is-active) { background:#fff!important; }
+.ec69-more-options { position:relative; margin-left:auto; z-index:15; }
+.ec69-more-options > summary { list-style:none;cursor:pointer;font-size:12px;font-weight:700;
+    color:#678091;background:#fff;border:1px solid #dbe6eb;border-radius:8px;
+    min-height:37px;padding:8px 13px;display:flex;gap:8px;align-items:center; }
+.ec69-more-options > summary::-webkit-details-marker {display:none;}
+.ec69-more-options[open] > summary { background:#edf8f4; color:#087c6c; }
+.ec69-more-options-panel { position:absolute; z-index:30; right:0; top:calc(100% + 5px);
+    display:grid;gap:3px;width:230px; padding:7px;
+    background:#fff; border:1px solid #dae5eb;border-radius:10px;
+    box-shadow:0 12px 32px rgba(15,45,64,.12); }
+body.ec-app-body .ec69-campaign-nav .ec69-more-options-panel > a {
+    border:0!important;min-height:35px;display:flex;align-items:center;
+    padding:9px 12px!important; background:#fff!important;color:#25495e!important;
+    text-decoration:none!important; border-radius:6px!important;font-size:12px!important;
+}
+body.ec-app-body .ec69-campaign-nav .ec69-more-options-panel > a:hover,
+body.ec-app-body .ec69-campaign-nav .ec69-more-options-panel > a.is-active { background:#eaf7f1!important;color:#008577!important; }
+
+/* M01: status compacto e direto, sem painel de homologação. */
+.ec69-page .ec69-send-status { display:flex;align-items:center;gap:12px;min-height:60px;
+    background:#fff;border:1px solid #dae7eb;border-radius:10px;padding:13px 17px;
+    color:#2d5269; }
+.ec69-page .ec69-send-status.is-ready { border-color:#b7e3d1;background:#edf9f3; }
+.ec69-page .ec69-send-mark { display:grid;place-items:center;width:28px;height:28px;flex:0 0 28px;
+    font-size:14px;font-weight:800;border-radius:50%;background:#e4f3f0;color:#087a6b; }
+.ec69-page .ec69-send-copy { flex:1;min-width:0; }
+.ec69-page .ec69-send-copy strong { display:block;color:#244b5e!important;font-size:13px; }
+.ec69-page .ec69-send-copy p { margin:2px 0 0!important;color:#6e8697!important;font-size:12px!important; }
+.ec69-page .ec69-configure-link { color:#008779!important;text-decoration:none;font-size:12px;font-weight:750;white-space:nowrap; }
+.ec69-page .ec69-configure-link:hover { text-decoration:underline; }
+
+/* M02-M04: área de trabalho em largura total, sem contexto operacional duplicado. */
+body.ec-app-body .ec69-page .ecm2-shell.is-composer > .ecm2-context { display:none!important; }
+body.ec-app-body .ec69-page .ecm2-shell.is-composer > .ecm2-main { width:100%!important;max-width:none!important; }
+body.ec-app-body .ec69-page .ec22-wizard { width:100%!important; }
+body.ec-app-body .ec69-page .ec22-wizard-head { margin-bottom:4px; }
+body.ec-app-body .ec69-page .ec22-review-card { margin-top:13px; }
+body.ec-app-body .ec69-page .ec22-review-card .ec22-warning { color:#7c6333!important; }
+/* Operação técnica mantida acessível via Mais opções, não no detalhe diário. */
+body.ec-app-body .ec69-page .ecm2-shell.is-detail .ecm6-advanced,
+body.ec-app-body .ec69-page .ecm2-shell.is-detail .ecm2-imap-health,
+body.ec-app-body .ec69-page .ecm2-shell.is-detail .ecm2-server-card { display:none!important; }
+body.ec-app-body .ec69-page .ecm2-shell.is-detail > .ecm2-context > .ecm7-context-heading { display:none!important; }
+body.ec-app-body .ec69-page .ecm2-shell.is-detail > .ecm2-context { display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px!important; }
+body.ec-app-body .ec69-page .ecm2-shell.is-detail .ecm2-context-card { margin:0!important; }
+body.ec-app-body .ec69-page .ecm2-shell.is-detail .ecm2-context-card .ecm2-alert-note {background:#f6f9fb!important;color:#597588!important;border-color:#dce6ed!important;}
+body.ec-app-body .ec69-page .ecm2-shell.is-detail .ecm2-legal {color:#22475f!important;}
+body.ec-app-body .ec69-page .ecm2-shell.is-detail .ecm2-btn-primary {background:#008d7f!important;color:#fff!important;}
+
+/* M07: caixa de respostas refeita para o tema claro, inspirada na tela Figma. */
+body.ec-app-body .ec22-page.ec69-replies {
+    --ec21-panel:#fff;--ec21-border:#dce6ec;--ec21-muted:#71899a;
+    width:100%!important;max-width:1480px!important;margin:0 auto!important;
+    padding:32px clamp(20px,2.8vw,45px) 48px!important;
+    color:#193e55!important;background:transparent!important; font-size:13px!important;
+}
+body.ec-app-body .ec69-replies :is(h1,h2,h3,h4,strong) {
+    color:#183b51!important;-webkit-text-fill-color:#183b51!important;
+}
+body.ec-app-body .ec69-replies :is(p,small) {color:#71899b!important;}
+body.ec-app-body .ec69-replies .ec21-module-header {margin:0 0 17px!important;}
+body.ec-app-body .ec69-replies .ec21-module-header h1 {font-size:clamp(28px,2.7vw,38px)!important;line-height:1.16!important;letter-spacing:-.035em!important;}
+body.ec-app-body .ec69-replies .ec21-module-header p {font-size:14px!important;margin-top:8px!important;}
+body.ec-app-body .ec69-replies .ec21-status {border:1px solid #cfe9dd!important;background:#e8f6ef!important;color:#07796b!important;box-shadow:none!important;font-size:11px!important;}
+body.ec-app-body .ec69-replies .ecm6-nav {margin-bottom:18px!important;}
+body.ec-app-body .ec69-replies .ec69-reply-filter-card {background:#fff;border:1px solid #dce7ed;border-radius:11px;padding:21px 22px;margin:0 0 17px;}
+body.ec-app-body .ec69-replies .ec69-reply-filter-card h2 {font-size:17px!important;margin:0 0 15px!important;}
+body.ec-app-body .ec69-replies .ec69-reply-filter-grid {display:grid;grid-template-columns:minmax(0,1.6fr) minmax(240px,.8fr);gap:17px;}
+body.ec-app-body .ec69-replies .ec69-filter-field {display:grid;gap:7px;min-width:0;}
+body.ec-app-body .ec69-replies .ec69-filter-field > span {font-size:12px;font-weight:700;color:#26475c;}
+body.ec-app-body .ec69-replies .ec69-filter-field input {width:100%;min-height:43px;padding:10px 12px;background:#fff!important;border:1px solid #d9e6ec!important;border-radius:8px!important;outline:none!important;color:#21465d!important;-webkit-text-fill-color:#21465d!important;box-shadow:none!important;font-size:13px!important;}
+body.ec-app-body .ec69-replies .ec69-filter-field input::placeholder {color:#89a0af!important;-webkit-text-fill-color:#89a0af!important;}
+body.ec-app-body .ec69-replies .ec69-reply-categories {display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+body.ec-app-body .ec69-replies .ec69-reply-categories button {min-height:40px;border-radius:8px;padding:9px 14px;background:#fff!important;border:1px solid #d8e6ec!important;color:#3d6577!important;font-size:12px!important;}
+body.ec-app-body .ec69-replies .ec69-reply-categories button.is-active {background:#e4f6ee!important;border-color:#9edbc9!important;color:#007f71!important;}
+body.ec-app-body .ec69-replies .ec69-internal-filters {position:relative;margin-left:auto;}
+body.ec-app-body .ec69-replies .ec69-internal-filters summary {cursor:pointer;min-height:38px;display:flex;align-items:center;border:1px solid #d9e5ed;border-radius:7px;background:#f9fbfc;padding:9px 12px;font-size:12px;color:#628092;}
+body.ec-app-body .ec69-replies .ec69-internal-filters > div {position:absolute;top:100%;right:0;z-index:20;border-radius:8px;border:1px solid #dce7ed;background:#fff;box-shadow:0 12px 28px #203c5020;padding:7px;white-space:nowrap;}
+body.ec-app-body .ec69-replies .ec69-internal-filters > div button {border:0!important;padding:9px 13px!important;}
+body.ec-app-body .ec69-replies .ec69-filter-field small {font-size:11px!important;color:#8097a8!important;}
+body.ec-app-body .ec69-replies .ec21-inbox {display:grid!important;grid-template-columns:minmax(320px,1.12fr) minmax(320px,.88fr)!important;gap:17px!important;align-items:start!important;min-height:0!important;}
+body.ec-app-body .ec69-replies .ec21-panel {background:#fff!important;border:1px solid #dce6eb!important;border-radius:12px!important;box-shadow:none!important;color:#1c4056!important;padding:20px!important;min-height:460px!important;}
+body.ec-app-body .ec69-replies .ec21-panel-heading {border:0!important;margin:0 0 14px!important;}
+body.ec-app-body .ec69-replies .ec21-panel-heading h3 {font-size:17px!important;}
+body.ec-app-body .ec69-replies .ec21-counter {border-radius:8px!important;background:#e1f4ec!important;border:0!important;color:#087d71!important;-webkit-text-fill-color:#087d71!important;padding:5px 11px!important;}
+body.ec-app-body .ec69-replies .ec21-inbox-items {margin:0!important;max-height:610px;overflow-y:auto;scrollbar-color:#bed2d9 transparent;}
+body.ec-app-body .ec69-replies .ec21-inbox-item {width:100%;background:#fff!important;border:0!important;border-bottom:1px solid #e4ebef!important;padding:13px 11px!important;text-align:left!important;color:#31566b!important;border-radius:0!important;}
+body.ec-app-body .ec69-replies .ec21-inbox-item:hover,
+body.ec-app-body .ec69-replies .ec21-inbox-item.is-selected {background:#eef9f4!important;}
+body.ec-app-body .ec69-replies .ec21-inbox-item.is-selected {border-left:3px solid #23bda6!important;padding-left:8px!important;}
+body.ec-app-body .ec69-replies .ec21-inbox-copy :is(strong,span,small) {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
+body.ec-app-body .ec69-replies .ec21-inbox-copy strong {color:#1b435c!important;font-size:13px!important;}
+body.ec-app-body .ec69-replies .ec21-inbox-copy span {color:#5a7387!important;font-size:12px!important;}
+body.ec-app-body .ec69-replies .ec21-inbox-item time {color:#8399a8!important;font-size:11px!important;}
+body.ec-app-body .ec69-replies .ec21-avatar {background:#e3f4ef!important;color:#087f72!important;border:1px solid #c5e8de!important;}
+body.ec-app-body .ec69-replies .ec21-inbox-message {overflow-y:auto!important;max-height:calc(100dvh - 195px)!important;scrollbar-color:#b9ceda transparent;}
+body.ec-app-body .ec69-replies .ec21-reader-heading {border-color:#e3eaef!important;padding-bottom:16px!important;}
+body.ec-app-body .ec69-replies .ec21-reader-heading h3 {font-size:19px!important;color:#1d4155!important;overflow-wrap:anywhere;}
+body.ec-app-body .ec69-replies .ec21-reader-person {border-color:#e2eaf0!important;}
+body.ec-app-body .ec69-replies .ec21-reader-person strong {color:#29495e!important;overflow-wrap:anywhere;}
+body.ec-app-body .ec69-replies .ec21-reader-person time {color:#7d95a5!important;}
+body.ec-app-body .ec69-replies .ec21-message-sheet {background:#f7fafb!important;border:1px solid #dce6eb!important;border-radius:10px!important;box-shadow:none!important;color:#284b60!important;padding:22px 23px!important;}
+body.ec-app-body .ec69-replies .ec21-message-sheet pre,
+body.ec-app-body .ec69-replies .ec21-history pre {font-family:inherit!important;color:#284b60!important;-webkit-text-fill-color:#284b60!important;font-size:13px!important;line-height:1.65!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;word-break:break-word!important;max-width:100%!important;}
+body.ec-app-body .ec69-replies .ec21-history {margin-top:10px!important;padding:11px 13px!important;background:#fff!important;border:1px solid #dbe6ed!important;border-radius:8px!important;color:#416b7f!important;}
+body.ec-app-body .ec69-replies .ec21-history summary {cursor:pointer;color:#258f81!important;font-weight:650;font-size:12px;}
+body.ec-app-body .ec69-replies .ec21-note {background:#edf7f3!important;border:1px solid #cde5da!important;border-radius:8px!important;color:#3f7369!important;}
+body.ec-app-body .ec69-replies .ec21-note p {color:#456f67!important;}
+body.ec-app-body .ec69-replies .ec21-reader-actions {border-color:#e0e9ed!important;}
+body.ec-app-body .ec69-replies .ec21-outline,
+body.ec-app-body .ec69-replies .ec21-primary {background:#fff!important;color:#254b60!important;border:1px solid #d8e6ed!important;border-radius:8px!important;padding:9px 15px!important;min-height:38px!important;font-size:12px!important;box-shadow:none!important;}
+body.ec-app-body .ec69-replies .ec21-primary {background:#008b7d!important;color:#fff!important;border-color:#008b7d!important;}
+body.ec-app-body .ec69-replies .ec21-tag {background:#edf6f1!important;color:#0c8274!important;border-color:#c6e9da!important;}
+body.ec-app-body .ec69-replies .ec21-inbox-empty > span {color:#10a18c!important;}
+body.ec-app-body .ec69-replies .ec21-inbox-empty h3 {color:#1f465c!important;font-size:15px!important;}
+body.ec-app-body .ec69-replies .ec21-inbox-empty p {color:#72899a!important;}
+
+@media(max-width:1060px) {
+ body.ec-app-body .ec69-replies .ec21-inbox {grid-template-columns:1fr!important;}
+ body.ec-app-body .ec69-replies .ec21-inbox-message {max-height:none!important;overflow:visible!important;}
+ body.ec-app-body .ec69-replies .ec69-reply-filter-grid {grid-template-columns:1fr;}
+ body.ec-app-body .ec69-page .ecm2-shell.is-detail > .ecm2-context {grid-template-columns:1fr;}
+}
+@media(max-width:620px) {
+ body.ec-app-body .ec69-replies .ec69-reply-filter-card {padding:16px;}
+ body.ec-app-body .ec69-replies .ec21-panel {padding:15px!important;min-height:0!important;}
+ body.ec-app-body .ec69-replies .ec21-inbox-items {max-height:440px;}
+ .ec69-more-options {margin-left:0;}
+ .ec69-more-options-panel {left:0;right:auto;}
+ .ec69-page .ec69-send-status {align-items:flex-start;flex-wrap:wrap;}
+ .ec69-page .ec69-configure-link {margin-left:40px;}
+}

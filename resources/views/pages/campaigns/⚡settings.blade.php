@@ -55,7 +55,7 @@ new class extends Component
     {
         $this->ensureManager();
         $this->validate([
-            'volume' => ['required', 'integer', 'min:1', 'max:500'],
+            'volume' => ['required', 'integer', 'min:1', 'max:'.max(1, (int) config('campaign_mail.smtp_approved_per_day', 500))],
             'duration' => ['required', 'integer', 'min:1', 'max:24'],
             'start' => ['required', 'date_format:H:i'],
             'activate' => ['boolean'],
@@ -67,12 +67,12 @@ new class extends Component
         unset($this->activePolicy);
         $this->capacityConfirmed = false;
         session()->flash('policy_success', $this->activate
-            ? 'Política de ritmo salva. O envio comercial permanece controlado pelo modo seguro.'
+            ? 'Limites atualizados. As campanhas em andamento passam a respeitar o novo ritmo.'
             : 'Plano salvo para simulação. Os limites ativos de envio não foram alterados.');
     }
 };
 ?>
-<div class="ecm6-page ecm7-page ec21-page ec22-page ec22-settings" data-ec21-screen="settings" data-ec22-screen="settings">
+<div class="ecm6-page ecm7-page ec21-page ec22-page ec22-settings ec70-settings" data-campaigns-settings="M08-V70" data-ec21-screen="settings" data-ec22-screen="settings">
     <header class="ec22-module-head"><div><span class="ec22-kicker">CAMPANHAS / CONFIGURAÇÕES</span><h1>Configurações de envio</h1><p>Configure os limites uma vez. Na campanha, você só escolhe o público, a mensagem e o prazo desejado.</p></div><span class="ec22-state {{ config('campaign_mail.live_enabled') ? 'is-live' : 'is-safe' }}">{{ config('campaign_mail.live_enabled') ? 'Envio comercial habilitado' : 'Envios comerciais bloqueados' }}</span></header>
     @include('campaigns.module-nav')
     @if (session('policy_success'))<div class="ec22-success" role="status">{{ session('policy_success') }}</div>@endif
@@ -82,7 +82,7 @@ new class extends Component
             <header class="ec22-card-head"><div><h2>Quanto você pretende enviar?</h2><p>As configurações efetivas são globais e exigem aprovação do SMTP.</p></div></header>
             <form wire:submit="saveSettings">
                 <div class="ec22-settings-fields">
-                    <div class="ec22-input"><label for="ec22-volume">Volume total de mensagens</label><input id="ec22-volume" type="number" min="1" max="500" wire:model.live.debounce.400ms="volume" required><small>Máximo técnico atual: 500 por 24h.</small>@error('volume')<small role="alert">{{ $message }}</small>@enderror</div>
+                    <div class="ec22-input"><label for="ec22-volume">Volume total de mensagens</label><input id="ec22-volume" type="number" min="1" max="{{ max(1, (int) config('campaign_mail.smtp_approved_per_day', 500)) }}" wire:model.live.debounce.400ms="volume" required><small>Você escolhe o volume; capacidade autorizada: {{ number_format((int) config('campaign_mail.smtp_approved_per_day', 500), 0, ',', '.') }} mensagens em 24h.</small>@error('volume')<small role="alert">{{ $message }}</small>@enderror</div>
                     <div class="ec22-input"><label for="ec22-duration">Duração da janela de envio</label><select id="ec22-duration" wire:model.live="duration"><option value="1">1 hora</option><option value="2">2 horas</option><option value="4">4 horas</option><option value="6">6 horas</option><option value="8">8 horas</option><option value="12">12 horas</option><option value="16">16 horas</option><option value="24">24 horas</option></select><small>Tempo planejado, sujeito às cotas autorizadas.</small>@error('duration')<small role="alert">{{ $message }}</small>@enderror</div>
                     <div class="ec22-input"><label for="ec22-start">Horário de início da janela</label><input id="ec22-start" type="time" wire:model.live="start" required><small>Fuso horário configurado na aplicação.</small>@error('start')<small role="alert">{{ $message }}</small>@enderror</div>
                 </div>
@@ -93,8 +93,7 @@ new class extends Component
                     @error('capacityConfirmed')<div class="ec22-error" role="alert">{{ $message }}</div>@enderror
                     @error('policy')<div class="ec22-error" role="alert">{{ $message }}</div>@enderror
                 </div>
-                @if (config('campaign_mail.live_enabled'))<div class="ec22-warning" role="alert">É necessário pausar os disparos comerciais antes de modificar a política.</div>@endif
-                <button type="submit" class="ec22-button ec22-button-primary" wire:loading.attr="disabled" wire:target="saveSettings" @disabled(config('campaign_mail.live_enabled'))>{{ $activate ? 'Salvar política autorizada' : 'Salvar planejamento' }}</button>
+                <button type="submit" class="ec22-button ec22-button-primary" wire:loading.attr="disabled" wire:target="saveSettings">{{ $activate ? 'Salvar política autorizada' : 'Salvar planejamento' }}</button>
                 <span wire:loading wire:target="saveSettings">Salvando...</span>
             </form>
         </section>
@@ -103,15 +102,8 @@ new class extends Component
             <div class="ec22-metric-grid"><div><span>Por hora (solicitado)</span><strong>{{ $this->preview['hourly_limit'] }}</strong></div><div><span>Por minuto (solicitado)</span><strong>{{ $this->preview['per_tick_limit'] }}</strong></div><div><span>Volume</span><strong>{{ number_format((int) $volume, 0, ',', '.') }}</strong></div><div><span>Início da janela</span><strong>{{ $start }}</strong></div></div>
             @if ($this->preview['possible'])<div class="ec22-success">Dentro do teto técnico do motor. Ainda é necessário confirmar a capacidade SMTP.</div>@else<div class="ec22-warning" role="status">Esse volume não cabe no prazo dentro do teto técnico. Ajuste a duração.</div>@endif
             <div class="ec22-real-limits"><h3>Limites efetivos neste momento</h3><dl><div><dt>Por hora</dt><dd>{{ $this->activePolicy['hour'] }}</dd></div><div><dt>Por minuto</dt><dd>{{ $this->activePolicy['tick'] }}</dd></div><div><dt>Em 24 horas</dt><dd>{{ $this->activePolicy['day'] }}</dd></div><div><dt>Origem</dt><dd>{{ $this->activePolicy['source'] === 'prospector' ? 'Prospector' : 'Ambiente' }}</dd></div></dl></div>
-            <div class="ec22-info-note">Aceitação pelo SMTP não significa entrega na caixa de entrada. Salvar configurações não inicia nenhum envio.</div>
+            <div class="ec22-info-note">Aceitação pelo SMTP não garante entrega. Salvar configurações não inicia nenhum envio. Para ampliar a cota autorizada, utilize o assistente de limites SMTP incluído no pacote.</div>
         </aside>
     </div>
-    <section class="ec22-settings-tools"><header class="ec22-section-head"><div><h2>Ferramentas e informações</h2><p>A parte técnica fica separada da criação de campanhas.</p></div><a href="{{ route('campaigns.advanced') }}" wire:navigate>Abrir Central avançada →</a></header>
-        <div class="ec22-tool-grid">
-            <a href="{{ route('campaigns.queue') }}" wire:navigate><span aria-hidden="true">➤</span><strong>Envios e fila</strong><small>Estado da fila, devoluções e simulação.</small><b aria-hidden="true">↗</b></a>
-            <a href="{{ route('campaigns.production.index') }}"><span aria-hidden="true">◇</span><strong>Homologação e segurança</strong><small>Liberações, cotas e descadastro.</small><b aria-hidden="true">↗</b></a>
-            <a href="{{ route('campaigns.replies') }}" wire:navigate><span aria-hidden="true">↩</span><strong>Respostas e IMAP</strong><small>Converse com quem respondeu.</small><b aria-hidden="true">↗</b></a>
-            <a href="{{ route('campaigns.intelligence.index') }}"><span aria-hidden="true">▥</span><strong>Inteligência comercial</strong><small>Segmentação e planejamento de follow-up.</small><b aria-hidden="true">↗</b></a>
-        </div>
-    </section>
+
 </div>

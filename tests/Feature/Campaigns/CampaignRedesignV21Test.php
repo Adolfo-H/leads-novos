@@ -54,6 +54,12 @@ it('opens the new recipients screen but does not enable real delivery', function
 });
 
 it('keeps the real policy while a user selects a desired sending time', function (): void {
+    // Uma cota SMTP conservadora mantém o comportamento originalmente testado,
+    // independentemente dos limites que o desenvolvedor autorizou no .env.
+    config()->set('campaign_mail.smtp_approved_per_hour', 100);
+    config()->set('campaign_mail.smtp_approved_per_day', 500);
+    config()->set('campaign_mail.smtp_approved_per_tick', 5);
+
     $policy = app(CampaignSendPolicy::class);
 
     expect($policy->quote(500, 2)['possible'])->toBeFalse()

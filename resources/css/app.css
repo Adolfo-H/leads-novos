@@ -18077,6 +18077,13 @@ body:not(.dark)
 @import './campaigns-redesign-v21.css';
 /* EC_CAMPAIGNS_UX_V22 */
 @import './campaigns-v22.css';
+@import './campaigns-figma-v67.css';
+@import './campaigns-figma-v68.css';
+@import './campaigns-simple-v69.css';
+@import './campaigns-queue-v70.css';
+@import './campaigns-core-v72.css';
+@import './campaigns-review-v73.css';
+@import './campaigns-detail-v761.css';
 @import './dashboard-figma-v29.css';
 @import './dashboard-map-v30.css';
 @import './dashboard-base-v32.css';

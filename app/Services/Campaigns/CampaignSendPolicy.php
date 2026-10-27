@@ -17,12 +17,14 @@ final class CampaignSendPolicy
     /** @return array{target_volume:int,duration_hours:int,window_start:string,hourly_limit:int,per_tick_limit:int,active:bool,updated_at:string|null} */
     public function snapshot(): array
     {
+        // CAMPANHAS_V70_LIMITES_DINAMICOS: cap configurável, sem teto fixo 500/100.
+        $approvedDaily = max(1, (int) config('campaign_mail.smtp_approved_per_day', 500));
         $defaults = [
-            'target_volume' => min(500, max(1, (int) config('campaign_mail.per_day', 500))),
+            'target_volume' => min($approvedDaily, max(1, (int) config('campaign_mail.per_day', 500))),
             'duration_hours' => 24,
             'window_start' => '00:00',
-            'hourly_limit' => min(100, max(1, (int) config('campaign_mail.per_hour', 25))),
-            'per_tick_limit' => min(5, max(1, (int) config('campaign_mail.per_tick', 1))),
+            'hourly_limit' => min(max(1, (int) config('campaign_mail.smtp_approved_per_hour', 100)), max(1, (int) config('campaign_mail.per_hour', 25))),
+            'per_tick_limit' => min(max(1, (int) config('campaign_mail.smtp_approved_per_tick', 5)), max(1, (int) config('campaign_mail.per_tick', 1))),
             'active' => false,
             'updated_at' => null,
         ];
@@ -50,13 +52,16 @@ final class CampaignSendPolicy
     public function effective(): array
     {
         $plan = $this->snapshot();
+        $maxHour = max(1, (int) config('campaign_mail.smtp_approved_per_hour', 100));
+        $maxDay = max(1, (int) config('campaign_mail.smtp_approved_per_day', 500));
+        $maxTick = max(1, (int) config('campaign_mail.smtp_approved_per_tick', 5));
 
         return [
-            'hour' => $plan['active'] ? $plan['hourly_limit'] : min(100, max(1, (int) config('campaign_mail.per_hour', 25))),
-            'day' => $plan['active']
-                ? min(500, max(1, (int) config('campaign_mail.per_day', 500)), $plan['target_volume'])
-                : min(500, max(1, (int) config('campaign_mail.per_day', 500))),
-            'tick' => $plan['active'] ? $plan['per_tick_limit'] : min(5, max(1, (int) config('campaign_mail.per_tick', 1))),
+            'hour' => min($maxHour, max(1, $plan['active'] ? $plan['hourly_limit'] : (int) config('campaign_mail.per_hour', 25))),
+            'day' => min($maxDay, max(1, $plan['active']
+                ? min((int) config('campaign_mail.per_day', 500), $plan['target_volume'])
+                : (int) config('campaign_mail.per_day', 500))),
+            'tick' => min($maxTick, max(1, $plan['active'] ? $plan['per_tick_limit'] : (int) config('campaign_mail.per_tick', 1))),
             'window_active' => $plan['active'],
             'window_start' => $plan['window_start'],
             'duration_hours' => $plan['duration_hours'],
@@ -69,8 +74,11 @@ final class CampaignSendPolicy
     {
         $perHour = (int) ceil($volume / max(1, $hours));
         $perTick = (int) ceil($volume / max(1, $hours * 60));
-        $possible = $volume >= 1 && $volume <= 500 && $hours >= 1 && $hours <= 24
-            && $perHour <= 100 && $perTick <= 5;
+        $approvedDay = max(1, (int) config('campaign_mail.smtp_approved_per_day', 500));
+        $approvedHour = max(1, (int) config('campaign_mail.smtp_approved_per_hour', 100));
+        $approvedTick = max(1, (int) config('campaign_mail.smtp_approved_per_tick', 5));
+        $possible = $volume >= 1 && $volume <= $approvedDay && $hours >= 1 && $hours <= 24
+            && $perHour <= $approvedHour && $perTick <= $approvedTick;
 
         return [
             'hourly_limit' => $perHour,
@@ -78,7 +86,7 @@ final class CampaignSendPolicy
             'possible' => $possible,
             'reason' => $possible
                 ? 'Capacidade teórica, sujeita a cotas SMTP, filas e janela móvel de 24h.'
-                : 'Volume ou duração incompatíveis com os limites máximos do motor.',
+                : 'O volume ou prazo ultrapassa a capacidade SMTP autorizada e configurada.',
         ];
     }
 
@@ -86,19 +94,18 @@ final class CampaignSendPolicy
     public function save(User $user, int $volume, int $hours, string $start, bool $activate, bool $capacityConfirmed): void
     {
         abort_unless($user->isCommercialManager(), 403);
-        if (config('campaign_mail.live_enabled')) {
-            throw ValidationException::withMessages(['policy' => 'Pause os disparos comerciais antes de alterar a política.']);
-        }
+        // Alterações de política durante o envio são serializadas com a trava
+        // global utilizada pelo despachante. Salvar não inicia nenhum envio.
         $startValid = preg_match('/^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/D', $start) === 1;
         $quote = $this->quote($volume, $hours);
         if (! $startValid || ! $quote['possible']) {
-            throw ValidationException::withMessages(['policy' => 'Informe de 1 a 500 destinatários, duração de 1 a 24 horas e início HH:MM.']);
+            throw ValidationException::withMessages(['policy' => 'Informe uma quantidade dentro da cota SMTP autorizada, duração de 1 a 24 horas e horário de início válido.']);
         }
         if ($activate && ! $capacityConfirmed) {
             throw ValidationException::withMessages(['capacityConfirmed' => 'Confirme primeiro a autorização da capacidade pelo administrador do SMTP.']);
         }
         if ($activate && $volume > (int) config('campaign_mail.per_day', 500)) {
-            throw ValidationException::withMessages(['policy' => 'O plano ultrapassa o teto técnico global de 24 horas.']);
+            throw ValidationException::withMessages(['policy' => 'O volume solicitado supera o limite diário autorizado configurado no ambiente.']);
         }
 
         $now = now('UTC');

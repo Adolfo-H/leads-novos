@@ -25,18 +25,12 @@ final class CampaignDispatcher
             return 0;
         }
 
-        // CAMPANHAS_V6_POLICY: ritmo global do Prospector com fallback seguro do ambiente.
+        // CAMPANHAS_V70_LIMITES_DINAMICOS: lemos o ritmo DENTRO da trava global.
+        // Assim mudanças em andamento e novas reservas não usam cotas defasadas.
         $policyService = app(CampaignSendPolicy::class);
-        $policy = $policyService->effective();
-        if (! $policyService->windowOpen($policy)) {
-            return 0;
-        }
-        $hour = max(1, min(100, $policy['hour']));
-        $day = max(1, min(500, $policy['day']));
-        $tick = max(1, min(5, $policy['tick']));
 
         /** @var list<array{id: int, token: string}> $reserved */
-        $reserved = DB::transaction(static function () use ($hour, $day, $tick): array {
+        $reserved = DB::transaction(static function () use ($policyService): array {
             // Todas as execuções travam a MESMA linha, não apenas a campanha
             // ativa. Isso serializa a verificação das cotas entre campanhas.
             // A trava id=1 é independente das campanhas e criada pela migration V4.
@@ -45,6 +39,14 @@ final class CampaignDispatcher
             if ($gate === null) {
                 throw new LogicException('Campaign dispatch quota gate is missing.');
             }
+
+            $policy = $policyService->effective();
+            if (! $policyService->windowOpen($policy)) {
+                return [];
+            }
+            $hour = max(1, min((int) config('campaign_mail.smtp_approved_per_hour', 100), $policy['hour']));
+            $day = max(1, min((int) config('campaign_mail.smtp_approved_per_day', 500), $policy['day']));
+            $tick = max(1, min((int) config('campaign_mail.smtp_approved_per_tick', 5), $policy['tick']));
 
             $campaign = EmailCampaign::query()
                 ->where('status', 'running')->orderBy('id')->lockForUpdate()->first();

@@ -39,10 +39,12 @@ final class CampaignQueueSimulator
         // CAMPANHAS_V6_SIM_POLICY: mesmo limite e janela usados pelo despachante.
         $policyService = app(CampaignSendPolicy::class);
         $policy = $policyService->effective();
-        $hour = max(1, min(100, $policy['hour']));
-        $day = max(1, min(500, $policy['day']));
-        $tick = max(1, min(5, $policy['tick']));
-        $requested = max(1, min(500, $requested));
+        // CAMPANHAS_V70_LIMITES_DINAMICOS: a simulação replica o despachante.
+        $hour = max(1, min((int) config('campaign_mail.smtp_approved_per_hour', 100), $policy['hour']));
+        $day = max(1, min((int) config('campaign_mail.smtp_approved_per_day', 500), $policy['day']));
+        $tick = max(1, min((int) config('campaign_mail.smtp_approved_per_tick', 5), $policy['tick']));
+        // Limite de memória exclusivo da prévia; não é um limite de envio real.
+        $requested = max(1, min(100000, $requested));
 
         $start = CarbonImmutable::now((string) config('app.timezone', 'UTC'))->startOfMinute();
         $firstDay = $start->toDateString();
