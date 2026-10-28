@@ -8,6 +8,7 @@ import email
 import imaplib
 import json
 import re
+from datetime import datetime, timedelta, timezone
 import ssl
 import sys
 from email.header import decode_header, make_header
@@ -43,7 +44,9 @@ def run():
     folder = str(cfg.get("folder", "INBOX"))
     since_uid = max(0, int(cfg.get("since_uid", 0)))
     known_validity = str(cfg.get("known_validity") or "")
-    maximum = min(80, max(1, int(cfg.get("limit", 60))))
+    # EC77_IMAP_BACKFILL: ativado só manualmente no Artisan, jamais pelo scheduler.
+    backfill_days = max(0, min(14, int(cfg.get("backfill_days", 0))))
+    maximum = min(300 if backfill_days else 80, max(1, int(cfg.get("limit", 60))))
 
     if port != 993 or not host or not username or not password or folder != "INBOX":
         raise RuntimeError("Configuracao IMAP invalida ou nao suportada")
@@ -60,7 +63,7 @@ def run():
 
         # Primeira execução e UIDVALIDITY alterado: apenas inicializa.
         # NUNCA varre as mensagens pessoais antigas da caixa.
-        if not known_validity or known_validity != uidvalidity:
+        if not backfill_days and (not known_validity or known_validity != uidvalidity):
             return {
                 "uidvalidity": uidvalidity,
                 "last_uid": max(0, uidnext - 1),
@@ -69,12 +72,18 @@ def run():
                 "message_errors": [],
             }
 
-        status, searched = imap.uid("SEARCH", None, "UID", f"{since_uid + 1}:*")
+        if backfill_days:
+            if known_validity and known_validity != uidvalidity:
+                raise RuntimeError("UIDVALIDITY mudou. Inicialize a caixa antes de recuperar mensagens")
+            since = (datetime.now(timezone.utc) - timedelta(days=backfill_days)).strftime("%d-%b-%Y")
+            status, searched = imap.uid("SEARCH", None, "SINCE", since)
+        else:
+            status, searched = imap.uid("SEARCH", None, "UID", f"{since_uid + 1}:*")
         if status != "OK":
             raise RuntimeError("Falha na busca de UIDs IMAP")
         raw = searched[0] or b""
-        ids = [int(x) for x in raw.split() if x.isdigit() and int(x) > since_uid]
-        ids = sorted(set(ids))[:maximum]
+        ids = [int(x) for x in raw.split() if x.isdigit() and (backfill_days or int(x) > since_uid)]
+        ids = sorted(set(ids))[-maximum:] if backfill_days else sorted(set(ids))[:maximum]
         items = []
         message_errors = []
         last_uid = since_uid
@@ -126,7 +135,9 @@ def run():
             last_uid = uid
         return {
             "uidvalidity": uidvalidity,
-            "last_uid": last_uid,
+            # Recuperação não avança um cursor já inicializado e não perde futuros e-mails.
+            # Sem cursor prévio, parte-se do UIDNEXT atual após ler os cabeçalhos recentes.
+            "last_uid": (max(0, uidnext - 1) if backfill_days and not known_validity else (since_uid if backfill_days else last_uid)),
             "initialized": False,
             "messages": items,
             "message_errors": message_errors,

@@ -45,3 +45,11 @@ __pycache__/
 /hubspot-app/**/local.json
 /hubspot-app/hsprofile.*.json
 /hubspot-app/.hubspot/
+
+# BEGIN PROSPECTOR_ORGANIZACAO_A03
+# Instaladores e backups locais: arquivados fora do projeto.
+/Prospector_*.zip
+/Prospector_*.zip:Zone.Identifier
+/.exportcontrol_backups/
+/.backup-pacote-*/
+# END PROSPECTOR_ORGANIZACAO_A03
