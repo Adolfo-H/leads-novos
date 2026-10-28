@@ -27,6 +27,15 @@ final class AccessRequestPageData
         'activated' => ['activated', 'active', 'accepted', 'completed', 'ativado', 'ativada'],
     ];
 
+    /** @var array<string, string> */
+    private const ACTION_ROUTES = [
+        'approve' => 'access.requests.approve',
+        'reject' => 'access.requests.reject',
+        'resend-invitation' => 'access.requests.resend',
+        'resend-notification' => 'access.requests.resend-notification',
+        'revoke' => 'access.requests.revoke',
+    ];
+
     /**
      * @return array{items: LengthAwarePaginator<int, AccountAccessRequest>, counts: array<string, int>, filter: string, search: string, sort: string}
      */
@@ -232,79 +241,75 @@ final class AccessRequestPageData
     }
 
     /**
-     * Resolve somente rotas de escrita já registradas no projeto.
-     * Não cria URLs/rotas nem contorna o middleware do módulo de acesso.
+     * Ações exibidas para o estado atual. Isto não substitui a autorização
+     * no controller ou as validações de estado feitas pelo backend.
+     *
+     * @return array<string, array{url: string, method: string}>
+     */
+    public static function availableActions(object $row): array
+    {
+        $types = match (self::status($row)) {
+            'pending' => ['approve', 'reject', 'resend-notification'],
+            'approved' => ['resend-invitation', 'revoke'],
+            default => [],
+        };
+
+        // O endpoint de revogação aceita exclusivamente status bruto "approved".
+        if (data_get($row, 'status') !== 'approved') {
+            $types = array_filter($types, static fn (string $type): bool => $type !== 'revoke');
+        }
+
+        $actions = [];
+        foreach ($types as $type) {
+            $action = self::action($row, $type);
+            if ($action !== null) {
+                $actions[$type] = $action;
+            }
+        }
+
+        return $actions;
+    }
+
+    /**
+     * Mapeia cada ação para sua rota nomeada, sem varrer todas as rotas.
+     * A rota e o controller continuam responsáveis pela autorização.
      *
      * @return array{url: string, method: string}|null
      */
     public static function action(object $row, string $type): ?array
     {
-        $variants = match ($type) {
-            'approve' => ['aprovar', 'approve'],
-            'reject' => ['recusar', 'reject', 'rejeitar', 'deny'],
-            'resend-invitation' => ['reenviar-convite', 'resend-invitation', 'reinvite'],
-            'resend-notification' => ['reenviar-aviso', 'resend-notification'],
-            default => [],
-        };
-        if ($variants === []) {
+        $routeName = self::ACTION_ROUTES[$type] ?? null;
+        if ($routeName === null) {
             return null;
         }
-        foreach (Route::getRoutes()->getRoutes() as $route) {
-            $uri = strtolower(trim($route->uri(), '/'));
-            $name = strtolower((string) $route->getName());
-            if (! str_contains($uri, 'acessos/solicitacoes') && ! str_starts_with($name, 'access.requests.')) {
-                continue;
-            }
-            $writeMethods = array_values(array_intersect(
-                $route->methods(),
-                ['POST', 'PUT', 'PATCH', 'DELETE'],
-            ));
-            $method = $writeMethods[0] ?? null;
-            if (! is_string($method)) {
-                continue;
-            }
-            $routeText = $uri.' '.$name;
-            $matched = false;
-            foreach ($variants as $variant) {
-                if (str_contains($routeText, $variant)) {
-                    $matched = true;
-                    break;
-                }
-            }
-            // A rota real é access.requests.resend / .../reenviar.
-            // O sufixo exato impede capturar reenviar-aviso por engano.
-            if ($type === 'resend-invitation') {
-                $matched = $matched
-                    || str_ends_with($name, '.resend')
-                    || str_ends_with($uri, '/reenviar');
-            }
-            if (! $matched || $route->getName() === null) {
-                continue;
-            }
-            $params = $route->parameterNames();
-            if (count($params) !== 1) {
-                continue;
-            }
-            try {
-                $key = method_exists($row, 'getRouteKey') ? $row->getRouteKey() : data_get($row, 'id');
-                // Suporta explicit binding: {accessRequest:uuid}, sem assumir que a chave da rota e id.
-                $paramName = (string) $params[0];
-                if (preg_match('/\{'.preg_quote($paramName, '/').':([a-zA-Z_][a-zA-Z_0-9]*)\}/', $route->uri(), $binding)) {
-                    $key = data_get($row, $binding[1]);
-                }
-                if ($key === null) {
-                    continue;
-                }
 
-                return [
-                    'url' => route((string) $route->getName(), [$paramName => $key]),
-                    'method' => $method,
-                ];
-            } catch (Throwable) {
-                continue;
-            }
+        $route = Route::getRoutes()->getByName($routeName);
+        if ($route === null || count($route->parameterNames()) !== 1) {
+            return null;
         }
 
-        return null;
+        $writeMethods = array_values(array_intersect($route->methods(), ['POST', 'PUT', 'PATCH', 'DELETE']));
+        if ($writeMethods === []) {
+            return null;
+        }
+
+        try {
+            $paramName = (string) $route->parameterNames()[0];
+            $key = method_exists($row, 'getRouteKey') ? $row->getRouteKey() : data_get($row, 'id');
+            // Continua a reconhecer parâmetros com vinculação explícita {modelo:uuid}.
+            if (preg_match('/\{'.preg_quote($paramName, '/').':([a-zA-Z_][a-zA-Z_0-9]*)\}/', $route->uri(), $binding)) {
+                $key = data_get($row, $binding[1]);
+            }
+            if ($key === null) {
+                return null;
+            }
+
+            return [
+                'url' => route($routeName, [$paramName => $key]),
+                'method' => $writeMethods[0],
+            ];
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

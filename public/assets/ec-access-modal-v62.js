@@ -45,7 +45,7 @@
         const current = getDialog();
         if (!current || typeof current.showModal !== 'function') return;
         const action = form.dataset.ecAccessConfirm;
-        if (!['approve', 'reject'].includes(action)) return;
+        if (!['approve', 'reject', 'revoke'].includes(action)) return;
         event.preventDefault();
         event.stopImmediatePropagation();
         pendingForm = form;
@@ -54,17 +54,24 @@
 
         const name = (form.dataset.ecRequester || 'esta pessoa').trim().slice(0, 150);
         const isReject = action === 'reject';
-        current.classList.toggle('is-rejection', isReject);
-        current.querySelector('#ec-access-v62-icon').textContent = isReject ? '×' : '✓';
-        current.querySelector('#ec-access-v62-title').textContent = isReject ? 'Recusar solicitação?' : 'Aprovar solicitação?';
-        current.querySelector('#ec-access-v62-description').textContent = isReject
-            ? `Você está prestes a recusar a solicitação de ${name}. Nenhum novo usuário será criado.`
-            : `Ao confirmar, você aprovará o pedido de ${name} e o sistema emitirá um convite individual por e-mail.`;
+        const isRevoke = action === 'revoke';
+        current.classList.toggle('is-rejection', isReject || isRevoke);
+        current.querySelector('#ec-access-v62-icon').textContent = (isReject || isRevoke) ? '×' : '✓';
+        current.querySelector('#ec-access-v62-title').textContent = isRevoke
+            ? 'Revogar convite?'
+            : (isReject ? 'Recusar solicitação?' : 'Aprovar solicitação?');
+        current.querySelector('#ec-access-v62-description').textContent = isRevoke
+            ? `O convite de ${name} será invalidado. O link antigo não poderá ativar uma conta.`
+            : (isReject
+                ? `Você está prestes a recusar a solicitação de ${name}. Nenhum novo usuário será criado.`
+                : `Ao confirmar, você aprovará o pedido de ${name} e o sistema emitirá um convite individual por e-mail.`);
         const reasonWrap = current.querySelector('#ec-access-v62-reason-wrap');
         const reason = current.querySelector('#ec-access-v62-reason');
         reasonWrap.hidden = !isReject;
         if (isReject) reason.value = form.querySelector('input[name="review_note"]')?.value || '';
-        current.querySelector('#ec-access-v62-confirm').textContent = isReject ? 'Confirmar recusa' : 'Aprovar e enviar convite';
+        current.querySelector('#ec-access-v62-confirm').textContent = isRevoke
+            ? 'Revogar convite'
+            : (isReject ? 'Confirmar recusa' : 'Aprovar e enviar convite');
         current.querySelector('#ec-access-v62-confirm').disabled = false;
         current.showModal();
         (isReject ? reason : current.querySelector('[data-ec-modal-cancel]')).focus();

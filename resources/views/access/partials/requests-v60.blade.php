@@ -25,7 +25,7 @@
 <link rel="stylesheet" href="{{ asset('assets/ec-access-shell-v61.css') }}?v=61.0">
 <script defer src="{{ asset('assets/ec-access-shell-v61.js') }}?v=61.0"></script>
 <link rel="stylesheet" href="{{ asset('assets/ec-access-modal-v62.css') }}?v=62.0">
-<script defer src="{{ asset('assets/ec-access-modal-v62.js') }}?v=62.0"></script>
+<script defer src="{{ asset('assets/ec-access-modal-v62.js') }}?v=62.1"></script>
 
 <div class="ec-access-v60" id="ec-access-v60">
     <div class="ec-access-v60__inner">
@@ -118,10 +118,12 @@
                         @forelse($accessItems as $accessRequest)
                             @php
                                 $rowStatus = \App\Support\Access\AccessRequestPageData::status($accessRequest);
-                                $rowApprove = $rowStatus === 'pending' ? \App\Support\Access\AccessRequestPageData::action($accessRequest, 'approve') : null;
-                                $rowReject = $rowStatus === 'pending' ? \App\Support\Access\AccessRequestPageData::action($accessRequest, 'reject') : null;
-                                $rowResendNotice = $rowStatus === 'pending' ? \App\Support\Access\AccessRequestPageData::action($accessRequest, 'resend-notification') : null;
-                                $rowResendInvite = $rowStatus === 'approved' ? \App\Support\Access\AccessRequestPageData::action($accessRequest, 'resend-invitation') : null;
+                                $rowActions = \App\Support\Access\AccessRequestPageData::availableActions($accessRequest);
+                                $rowApprove = $rowActions['approve'] ?? null;
+                                $rowReject = $rowActions['reject'] ?? null;
+                                $rowResendNotice = $rowActions['resend-notification'] ?? null;
+                                $rowResendInvite = $rowActions['resend-invitation'] ?? null;
+                                $rowRevoke = $rowActions['revoke'] ?? null;
                                 $rowName = \App\Support\Access\AccessRequestPageData::field($accessRequest, ['name', 'full_name'], 'Sem nome');
                                 $rowEmail = \App\Support\Access\AccessRequestPageData::field($accessRequest, ['email'], '—');
                             @endphp
@@ -194,7 +196,14 @@
                                                     <button type="submit">Reenviar aviso ao administrador</button>
                                                 </form>
                                             @endif
-                                            @unless($rowApprove || $rowReject || $rowResendInvite || $rowResendNotice)
+                                            @if($rowRevoke)
+                                                <form method="POST" action="{{ $rowRevoke['url'] }}" data-ec-access-confirm="revoke" data-ec-requester="{{ $rowName }}">
+                                                    @csrf
+                                                    @if($rowRevoke['method'] !== 'POST') @method($rowRevoke['method']) @endif
+                                                    <button type="submit" class="ec-access-v60__action-reject">Revogar convite</button>
+                                                </form>
+                                            @endif
+                                            @unless($rowApprove || $rowReject || $rowResendInvite || $rowResendNotice || $rowRevoke)
                                                 <span class="ec-access-v60__no-actions">Nenhuma ação pendente</span>
                                             @endunless
                                         </div>
