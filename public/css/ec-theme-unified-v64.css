@@ -404,3 +404,124 @@ html.dark body.ec-app-body .ec-topbar.ec-topbar :is(
 html.dark body.ec-app-body .ec-topbar.ec-topbar :is(.ec-topbar-eyebrow,.ec-topbar-profile-chevron) {
   color:var(--v64-muted)!important;-webkit-text-fill-color:var(--v64-muted)!important;
 }
+
+/* EC_DOSSIER_THEME_A12 — tema global Flux aplicado ao dossie Figma E53.
+ * Escopo: SOMENTE html.dark e .ec-dossier-page.e53-dossier.
+ * A aparencia clara original, as abas, os modais e as regras permanecem intactos.
+ * Mantido aqui pois esta folha ja e carregada APOS o bundle Vite. */
+html.dark body.ec-app-body .ec-page-shell.ec-dossier-page.e53-dossier {
+    --e53-ink: var(--v64-ink);
+    --e53-text: var(--ec-text-soft);
+    --e53-muted: var(--v64-muted);
+    --e53-line: var(--v64-line);
+    --e53-canvas: var(--v64-page);
+    --e53-teal: var(--v64-teal);
+    --e53-soft: var(--v64-mint);
+    --e53-white: var(--v64-panel);
+    color: var(--e53-ink) !important;
+    background: var(--e53-canvas) !important;
+    color-scheme: dark;
+}
+/* O app.css antigo fixa #f3f6f8 na casca do dossie com !important. */
+html.dark body.ec-app-body:has(.ec-page-shell.ec-dossier-page.e53-dossier) .ec-main,
+html.dark body.ec-app-body:has(.ec-page-shell.ec-dossier-page.e53-dossier) .ec-main > .ec-page-shell.ec-dossier-page.e53-dossier,
+html.dark body.ec-app-body:has(.ec-page-shell.ec-dossier-page.e53-dossier) .ec-content-area,
+html.dark body.ec-app-body:has(.ec-page-shell.ec-dossier-page.e53-dossier) .ec-content-shell,
+html.dark body.ec-app-body:has(.ec-page-shell.ec-dossier-page.e53-dossier) main {
+    background: var(--v64-page) !important;
+    background-color: var(--v64-page) !important;
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier :is(
+    .e53-panel, .e53-metric, .e53-modal, .e591-channel-card
+) {
+    background: var(--e53-white) !important;
+    border-color: var(--e53-line) !important;
+    color: var(--e53-ink);
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier .e53-hero-side:not(.e592-status-card) {
+    background: var(--e53-white) !important;
+    border-color: var(--e53-line) !important;
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier :is(
+    .e53-field > strong, .e53-form input:not([type="checkbox"]),
+    .e53-form select, .e53-form textarea
+) {
+    background: var(--v64-input) !important;
+    color: var(--e53-ink) !important;
+    -webkit-text-fill-color: var(--e53-ink) !important;
+    border-color: var(--e53-line) !important;
+    color-scheme: dark;
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier :is(
+    .e53-table thead, .e53-contact-extra, .e53-tabs button:not(.is-active),
+    .e591-channel-list a.e591-channel-item,
+    .e591-channel-list span.e591-channel-item,
+    .e591-channel-icon, .e53-progress, .e53-factor-track
+) {
+    background: var(--v64-panel-soft) !important;
+    border-color: var(--e53-line) !important;
+    color: var(--e53-text);
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier :is(
+    .e53-button:not(.e53-button--primary):not(.e53-button--danger),
+    .e60-back-to-leads, .e591-legal-state,
+    .e592-hubspot-icon.e591-hubspot-link
+) {
+    background: var(--v64-panel-soft) !important;
+    border-color: var(--e53-line) !important;
+    color: var(--e53-ink) !important;
+}
+/* A versao V60 deixa a situacao legal transparente; nao recriar o cartao. */
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier .e592-status-card .e591-legal-state {
+    background: transparent !important;
+    border: 0 !important;
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier .e592-hubspot-icon .e592-hubspot-mark {
+    color: #ff9677;
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier .e53-button--primary {
+    background: #0b766c !important;
+    border-color: #0b766c !important;
+    color: #fff !important;
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier .e53-button--primary:hover {
+    background: #09645c !important;
+    border-color: #09645c !important;
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier :is(
+    .e53-tabs button.is-active, .e53-tabs button:hover,
+    .e53-count-badge, .e591-channel-count,
+    .e591-channel-icon, .e53-chip--green
+) {
+    background: var(--e53-soft) !important;
+    color: #8df1de !important;
+    border-color: #38685e !important;
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier .e53-chip {
+    background: var(--v64-panel-soft);
+    color: var(--e53-text);
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier :is(.e53-chip--amber, .e53-notice--amber) {
+    background: #483919 !important;
+    color: #ffda8b !important;
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier .e53-notice--green {
+    background: #17423b !important;
+    color: #9debd8 !important;
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier :is(
+    .e591-channel-heading h3, .e60-icp-factor strong,
+    .e53-origin-note strong
+) {
+    color: var(--e53-ink) !important;
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier :is(
+    .e591-channel-heading p, .e60-icp-label,
+    .e53-origin-note, .e591-channel-empty
+) {
+    color: var(--e53-muted) !important;
+}
+html.dark body.ec-app-body .ec-dossier-page.e53-dossier .e53-timeline-dot {
+    box-shadow: 0 0 0 3px var(--e53-white);
+}
+/* EC_DOSSIER_THEME_A12_END */

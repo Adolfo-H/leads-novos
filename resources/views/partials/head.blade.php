@@ -23,4 +23,4 @@
 @endif
 
 {{-- EC_THEME_GLOBAL_V64: após Vite/V63, em toda a aplicação. --}}
-<link rel="stylesheet" href="{{ asset('css/ec-theme-unified-v64.css') }}?v=64" data-ec-theme-unified="v64">
+<link rel="stylesheet" href="{{ asset('css/ec-theme-unified-v64.css') }}?v=64.12" data-ec-theme-unified="v64">
