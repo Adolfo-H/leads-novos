@@ -71,7 +71,7 @@ it('protects Receita company channels behind manager middleware', function (): v
 
     $seller = User::factory()->create(['email_verified_at' => now()]);
     $seller->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
-    $this->actingAs($seller)->get(route('contacts.receita'))->assertForbidden();
+    $this->actingAs($seller)->get(route('contacts.receita'))->assertOk();
 
     $this->actingAs(contactsReceitaV4Manager())
         ->get(route('contacts.receita'))

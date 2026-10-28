@@ -29,7 +29,7 @@ final class LeadGlobalStageExcelV45Service
     ];
 
     /**
-     * @param Collection<int, HubSpotDeal> $deals
+     * @param  Collection<int, HubSpotDeal>  $deals
      */
     public function excel(Collection $deals, ?string $stageLabel = null): StreamedResponse
     {

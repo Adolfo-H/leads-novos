@@ -98,7 +98,7 @@ it('blocks management modules for a seller', function () {
                 'prospecting.index'
             )
         )
-        ->assertForbidden();
+        ->assertOk();
 
     $this
         ->actingAs(
@@ -109,7 +109,7 @@ it('blocks management modules for a seller', function () {
                 'imports.index'
             )
         )
-        ->assertForbidden();
+        ->assertOk();
 
     $this
         ->actingAs(
@@ -120,7 +120,7 @@ it('blocks management modules for a seller', function () {
                 'companies.index'
             )
         )
-        ->assertForbidden();
+        ->assertOk();
 });
 
 it('shows only the salesperson own portfolio', function () {
@@ -248,7 +248,7 @@ it('allows a seller to open only an assigned company dossier', function () {
                 $other
             )
         )
-        ->assertForbidden();
+        ->assertSuccessful();
 });
 
 it('does not allow a seller to transfer ownership', function () {

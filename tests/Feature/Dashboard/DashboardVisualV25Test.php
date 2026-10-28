@@ -50,7 +50,7 @@ it('uses isolated styles with bounded images and no global search overrides', fu
         ->toContain('LeadCrmSituationService')
         ->toContain('myHubSpotStageSummary')
         ->toContain('map-panel-v30')
-        ->toContain("'dashboardView' => 'overdue'")
+        ->toContain("'queueDuePeriod' => 'overdue'")
         ->toContain("'hubSpotOnly' => 1")
         ->not->toContain('$dashboard[\'summary_cards\']');
 

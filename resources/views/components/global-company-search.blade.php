@@ -9,18 +9,19 @@
      * Telas novas herdam automaticamente esse fallback.
      */
     $manager = auth()->user()?->isCommercialManager() === true;
+    $workspace = $manager || auth()->user()?->isCommercialSeller() === true;
 
     $searchEvent = match (true) {
         request()->routeIs('dashboard') && $manager => 'dashboard-global-search',
         request()->routeIs('leads.index') => 'leads-topbar-search',
-        request()->routeIs('companies.index') && $manager => 'companies-topbar-search',
+        request()->routeIs('companies.index') && $workspace => 'companies-topbar-search',
         default => null,
     };
 
     $destination = match (true) {
         request()->routeIs('leads.management') => 'leads.index',
-        request()->routeIs('contacts.*') && $manager => 'contacts.index',
-        $manager => 'companies.index',
+        request()->routeIs('contacts.*') && $workspace => 'contacts.index',
+        $workspace => 'companies.index',
         default => 'leads.index',
     };
 

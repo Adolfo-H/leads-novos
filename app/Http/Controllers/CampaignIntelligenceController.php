@@ -22,7 +22,7 @@ final class CampaignIntelligenceController extends Controller
 
     public function index(Request $request, CampaignSegmentation $segmentation, CampaignIntelligenceMetrics $metrics): View
     {
-        $this->manager();
+        $this->workspace();
         $filters = $this->filters($request);
         $preview = $segmentation->preview($filters, 40);
         $segments = DB::table('email_campaign_segments')->orderByDesc('id')->limit(25)->get();
@@ -141,6 +141,15 @@ final class CampaignIntelligenceController extends Controller
 
         return redirect()->route('campaigns.intelligence.index')->with('intelligence_success',
             $status === 'sent' ? 'SMTP aceitou a resposta; entrega não garantida.' : 'Resultado incerto: revise o servidor, não reenvie automaticamente.');
+    }
+
+    /** Leitura da área de campanhas para gestor e vendedor. */
+    private function workspace(): User
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof User && ($user->isCommercialManager() || $user->isCommercialSeller()), 403);
+
+        return $user;
     }
 
     private function manager(): User

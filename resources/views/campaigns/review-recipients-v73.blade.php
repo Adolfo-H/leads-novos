@@ -3,6 +3,15 @@
     $reviewPage = min(max(1, $reviewRecipientsPage), $this->reviewRecipientPageCount());
     $reviewPages = $this->reviewRecipientPageCount();
     $reviewRows = $this->reviewRecipientPreview;
+    // EC77_OPT_OUT_REVIEW: só consulta os e-mails desta página, não a base inteira.
+    $ec77ReviewEmails = array_values(array_unique(array_map(
+        static fn (array $row): string => mb_strtolower(trim((string) ($row['normalized_email'] ?? $row['email'] ?? ''))),
+        $reviewRows,
+    )));
+    $ec77UnsubscribedEmails = $ec77ReviewEmails === [] ? [] : \App\Models\EmailCampaignSuppression::query()
+        ->where('reason', 'unsubscribe')
+        ->whereIn('normalized_email', $ec77ReviewEmails)
+        ->pluck('normalized_email')->all();
     $reviewStart = count($audienceKeys) > 0 ? (($reviewPage - 1) * $this->reviewRecipientsPerPage()) + 1 : 0;
     $reviewEnd = min(count($audienceKeys), $reviewPage * $this->reviewRecipientsPerPage());
 @endphp
@@ -21,15 +30,17 @@
     @else
         <div class="ec73-recipients-list" role="list" aria-label="Endereços selecionados nesta página">
             @forelse ($reviewRows as $person)
+                @php $ec77Unsubscribed = in_array(mb_strtolower((string) ($person['normalized_email'] ?? $person['email'] ?? '')), $ec77UnsubscribedEmails, true); @endphp
                 <div class="ec73-recipient-row" role="listitem">
                     <span class="ec73-recipient-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr(trim((string) ($person['contact_name'] ?: $person['email'])), 0, 1)) }}</span>
                     <span class="ec73-recipient-identity">
                         <strong>{{ $person['contact_name'] ?: 'Contato sem nome' }}</strong>
                         <span>{{ $person['email'] }}</span>
                         @if ($person['company_name'] !== '')<small>{{ $person['company_name'] }}</small>@endif
+                        @if ($ec77Unsubscribed)<small class="ec77-unsubscribe-note">Este e-mail solicitou descadastro. O sistema não enviará novas campanhas para ele.</small>@endif
                     </span>
                     <span class="ec73-recipient-status {{ $person['suppressed'] ? 'is-blocked' : 'is-eligible' }}">
-                        {{ $person['suppressed'] ? 'Bloqueado' : 'Elegível' }}
+                        {{ $ec77Unsubscribed ? 'Descadastrado — envio impedido' : ($person['suppressed'] ? 'Bloqueado' : 'Elegível') }}
                     </span>
                 </div>
             @empty

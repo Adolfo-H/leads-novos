@@ -105,16 +105,22 @@
             <p x-show="dossierTab === 'cnaes'">CNAEs do estabelecimento de referência · matriz {{ $e53Matrix?->cnpj ? \App\Support\Cnpj::format($e53Matrix->cnpj) : $company->cnpj_root }}.</p>
             <div class="e53-hero-actions">
                 <button x-show="dossierTab === 'commercial' && dossierView !== 'summary'" x-cloak type="button" class="e53-button e53-button--outline" x-on:click="dossierView='summary'">Voltar ao dossiê</button>
+                @can('manageData', $company)
                 <a x-show="dossierTab === 'commercial' && dossierView === 'summary'" x-cloak class="e53-button e53-button--outline" href="{{ route('companies.edit', $company) }}" wire:navigate>Editar empresa</a>
+                @endcan
                 <button x-show="dossierTab === 'commercial' && dossierView === 'summary'" x-cloak type="button" class="e53-button e53-button--primary" x-on:click="e53ResearchOpen=true">Pesquisar exportações</button>
                 @if ($e53HubSpotCompanyUrl)
                 <a x-show="dossierTab === 'commercial' && dossierView === 'crm'" x-cloak class="e53-button e53-button--outline" href="{{ $e53HubSpotCompanyUrl }}" target="_blank" rel="noopener noreferrer">Abrir empresa no HubSpot ↗</a>
                 @endif
                 @can('createHubSpotOpportunity', $company)
-                <button x-show="dossierTab === 'commercial' && dossierView === 'crm'" x-cloak type="button" class="e53-button e53-button--primary" wire:click="createHubSpotOpportunity" wire:loading.attr="disabled" wire:target="createHubSpotOpportunity">Criar oportunidade</button>
+                    @if (($this->hubSpotManualOpportunityState)['can_queue'])
+                    <button x-show="dossierTab === 'commercial' && dossierView === 'crm'" x-cloak type="button" class="e53-button e53-button--primary" wire:click="createHubSpotOpportunity" wire:loading.attr="disabled" wire:target="createHubSpotOpportunity">{{ in_array(($this->hubSpotManualOpportunityState)['status'], ['failed', 'partial'], true) ? 'Tentar novamente' : 'Criar oportunidade no HubSpot' }}</button>
+                    @endif
                 @endcan
+                @can('manageData', $company)
                 <a x-show="dossierTab === 'company'" x-cloak class="e53-button e53-button--outline" href="{{ route('companies.edit', $company) }}" wire:navigate>Editar empresa</a>
                 <a x-show="dossierTab === 'company'" x-cloak class="e53-button e53-button--primary" href="{{ route('companies.branches.create', $company) }}" wire:navigate>Adicionar filial</a>
+                @endcan
                 @can('manageData', $company)
                 <button x-show="dossierTab === 'cnaes'" x-cloak type="button" class="e53-button e53-button--primary" x-on:click="e53AddCnaeOpen=true">Adicionar CNAE</button>
                 @endcan

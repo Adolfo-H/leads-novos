@@ -8,6 +8,7 @@ use App\Contracts\CrmCompanyProvider;
 use App\Contracts\ExportResearchProvider;
 use App\Http\Middleware\EnsureCommercialCompanyAccess;
 use App\Http\Middleware\EnsureCommercialManager;
+use App\Http\Middleware\EnsureCommercialWorkspace;
 use App\Models\Company;
 use App\Policies\CompanyPolicy;
 use App\Services\Providers\BrasilApiCnpjProvider;
@@ -71,6 +72,7 @@ class AppServiceProvider extends ServiceProvider
         Livewire::addPersistentMiddleware([
             EnsureEmailIsVerified::class,
             EnsureCommercialManager::class,
+            EnsureCommercialWorkspace::class,
             EnsureCommercialCompanyAccess::class,
         ]);
     }

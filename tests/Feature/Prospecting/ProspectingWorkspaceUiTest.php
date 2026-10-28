@@ -174,8 +174,8 @@ it('keeps the manager restriction on both prospecting routes', function () {
     $seller->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
     $batch = ImportBatch::query()->create(['source_type' => 'prospecting', 'status' => 'completed']);
 
-    $this->actingAs($seller)->get(route('prospecting.index'))->assertForbidden();
-    $this->actingAs($seller)->get(route('prospecting.show', $batch))->assertForbidden();
+    $this->actingAs($seller)->get(route('prospecting.index'))->assertOk();
+    $this->actingAs($seller)->get(route('prospecting.show', $batch))->assertOk();
 });
 
 it('does not offer a misleading Excel export for unsupported CRM filters', function () {

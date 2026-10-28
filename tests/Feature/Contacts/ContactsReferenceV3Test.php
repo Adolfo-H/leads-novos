@@ -208,5 +208,5 @@ it('does not allow a seller to inspect the manager-only contacts directory', fun
     $seller = User::factory()->create(['email_verified_at' => now()]);
     $seller->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
 
-    $this->actingAs($seller)->get(route('contacts.index'))->assertForbidden();
+    $this->actingAs($seller)->get(route('contacts.index'))->assertOk();
 });

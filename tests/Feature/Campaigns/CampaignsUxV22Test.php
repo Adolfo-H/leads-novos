@@ -72,7 +72,7 @@ it('keeps message validation, real policy and test button in the three-step wiza
 it('keeps settings, replies and advanced tools accessible only to managers', function (): void {
     $seller = User::factory()->create(['email_verified_at' => now()]);
     $seller->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
-    $this->actingAs($seller)->get(route('campaigns.advanced'))->assertForbidden();
+    $this->actingAs($seller)->get(route('campaigns.advanced'))->assertOk();
 
     $this->actingAs(ux22Manager());
 

@@ -9,7 +9,8 @@ use Symfony\Component\Process\Process;
 
 class SyncEmailCampaignReplies extends Command
 {
-    protected $signature = 'campaigns:sync-replies';
+    // EC77_RECOVERY_OPTIONS: recuperação manual de cabeçalhos recentes, sem envio.
+    protected $signature = 'campaigns:sync-replies {--backfill-days=0 : Recuperar respostas recentes (1 a 14 dias)} {--backfill-max=150 : Máximo de cabeçalhos recentes (10 a 300)}';
 
     protected $description = 'Importa cabeçalhos de respostas IMAP relacionadas a envios do Prospector';
 
@@ -27,6 +28,13 @@ class SyncEmailCampaignReplies extends Command
 
             return self::FAILURE;
         }
+        $backfillDays = (int) $this->option('backfill-days');
+        $backfillMax = (int) $this->option('backfill-max');
+        if ($backfillDays < 0 || $backfillDays > 14 || $backfillMax < 10 || $backfillMax > 300) {
+            $this->error('Informe 0–14 dias e 10–300 cabeçalhos.');
+
+            return self::FAILURE;
+        }
         $cursor = EmailCampaignInboxCursor::query()->where('mailbox', $mailbox)->first();
         $input = [
             'host' => (string) config('campaign_mail.imap_host'),
@@ -36,11 +44,12 @@ class SyncEmailCampaignReplies extends Command
             'folder' => (string) config('campaign_mail.imap_folder', 'INBOX'),
             'since_uid' => (int) ($cursor->last_uid ?? 0),
             'known_validity' => (string) ($cursor->uid_validity ?? ''),
-            'limit' => 60,
+            'limit' => $backfillDays > 0 ? $backfillMax : 60,
+            'backfill_days' => $backfillDays,
         ];
         $command = [(string) config('campaign_mail.python', 'python3'), base_path('tools/email/imap_fetch.py')];
         $process = new Process($command, base_path());
-        $process->setTimeout(90);
+        $process->setTimeout($backfillDays > 0 ? 240 : 90);
         try {
             $process->setInput(json_encode($input, JSON_THROW_ON_ERROR));
             $process->run();
@@ -59,6 +68,7 @@ class SyncEmailCampaignReplies extends Command
             }
             /** @var array{uidvalidity:string,last_uid:int,initialized:bool,messages:list<array<string,mixed>>,message_errors?:list<array{uid:int,error_type:string}>} $batch */
             $count = $inbox->import($mailbox, $batch);
+            $this->line('Cabeçalhos examinados: '.count($batch['messages']));
             $messageErrors = $batch['message_errors'] ?? [];
             if ($messageErrors !== []) {
                 $uids = implode(', ', array_map(
@@ -71,6 +81,9 @@ class SyncEmailCampaignReplies extends Command
                 $this->line('Cursor IMAP inicializado. Mensagens antigas não foram lidas.');
             }
             $this->info('Novas respostas identificadas: '.$count);
+            if ($backfillDays > 0 && $count === 0) {
+                $this->warn('Nenhuma resposta vinculada. Confira a caixa IMAP, o Reply-To e os cabeçalhos In-Reply-To/References da mensagem.');
+            }
 
             return self::SUCCESS;
         } catch (\Throwable $exception) {

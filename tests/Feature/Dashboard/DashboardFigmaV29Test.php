@@ -60,7 +60,7 @@ it('keeps only one visual import, uses local data and does not touch business se
         ->toContain('myHubSpotStageSummary')
         ->toContain('LeadCrmSituationService')
         ->toContain("'dashboardStage'")
-        ->toContain("'dashboardView' => 'overdue'")
+        ->toContain("'queueDuePeriod' => 'overdue'")
         ->toContain('map-panel-v30')
         ->toContain('map-panel-v30')
         ->not->toContain('<header class="ds25-hero ds26-hero">');

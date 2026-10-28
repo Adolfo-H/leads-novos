@@ -53,7 +53,7 @@ it('retains existing source services and dashboard-only styles without invented 
         ->toContain('map-panel-v30')
         ->toContain('ef29-layout--first')
         ->toContain("'hubSpotOnly' => 1")
-        ->toContain("'dashboardView' => 'overdue'")
+        ->toContain("'queueDuePeriod' => 'overdue'")
         ->not->toContain('+12%');
 
     expect($css)

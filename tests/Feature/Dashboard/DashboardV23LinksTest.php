@@ -62,7 +62,7 @@ it('links dashboard charts, risk alerts and profiles to corresponding Leads filt
     $leads = file_get_contents(resource_path('views/pages/leads/⚡index.blade.php'));
 
     expect($blade)->toContain("'dashboardView' => 'all'")
-        ->toContain("'dashboardView' => 'overdue'")
+        ->toContain("'queueDuePeriod' => 'overdue'")
         ->toContain("'dashboardView' => 'stale90'")
         ->toContain('Outras ações rápidas')
         ->toContain('Meus negócios por etapa')

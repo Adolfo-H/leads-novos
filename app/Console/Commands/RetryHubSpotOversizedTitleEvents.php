@@ -32,15 +32,16 @@ final class RetryHubSpotOversizedTitleEvents extends Command
             $raw === ''
             || count($tokens) > 20
             || count($tokens) !== count(array_unique($tokens))
-            || count(array_filter($tokens, static fn (string $id): bool =>
-                ctype_digit($id) && (int) $id > 0)) !== count($tokens)
+            || count(array_filter($tokens, static fn (string $id): bool => ctype_digit($id) && (int) $id > 0)) !== count($tokens)
         ) {
             $this->error('Informe de 1 a 20 IDs distintos e numéricos com --ids=ID1,ID2.');
+
             return self::FAILURE;
         }
 
         if (! DB::table('migrations')->where('migration', self::MIGRATION)->exists()) {
             $this->error('A migration 39 não foi aplicada. Corrija o banco antes de reenfileirar.');
+
             return self::FAILURE;
         }
 
@@ -54,17 +55,20 @@ final class RetryHubSpotOversizedTitleEvents extends Command
             if ($event === null) {
                 $this->warn("Evento {$id}: inexistente. Ignorado.");
                 $skipped++;
+
                 continue;
             }
 
             if (! $this->eligible($event)) {
                 $this->warn("Evento {$id}: não é uma falha de título longo esgotada ou já mudou de estado. Ignorado.");
                 $skipped++;
+
                 continue;
             }
 
             if (! $apply) {
                 $this->line("APTO (prévia) {$id} | tipo=task | status=failed | tentativas={$event->attempts}");
+
                 continue;
             }
 
@@ -80,12 +84,14 @@ final class RetryHubSpotOversizedTitleEvents extends Command
                     'status' => 'queued',
                     'processed_at' => null,
                 ])->save();
+
                 return true;
             });
 
             if (! $reserved) {
                 $this->warn("Evento {$id}: outro processo o alterou. Ignorado.");
                 $skipped++;
+
                 continue;
             }
 

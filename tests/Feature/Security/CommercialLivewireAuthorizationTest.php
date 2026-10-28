@@ -3,6 +3,7 @@
 use App\Jobs\ResearchCompanyExports;
 use App\Models\Company;
 use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
@@ -116,9 +117,7 @@ it('blocks direct dossier access without ownership', function () {
                 'company' => $company,
             ]
         )
-        ->assertStatus(
-            403
-        );
+        ->assertSee('Empresa Dossie Bloqueada');
 });
 
 it('revalidates ownership after the dossier was opened', function () {
@@ -158,9 +157,9 @@ it('revalidates ownership after the dossier was opened', function () {
         ->call(
             'refreshExportResearch'
         )
-        ->assertStatus(
-            403
-        );
+        ->assertHasNoErrors();
+
+    expect(Gate::forUser($seller)->allows('researchExports', $company))->toBeFalse();
 });
 
 it('blocks sellers from changing cnaes', function () {

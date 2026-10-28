@@ -19,10 +19,11 @@ function lf42Company(string $root, string $name): Company
         'is_eligible' => true, 'is_provisional' => false, 'factors' => [],
         'version' => 'v42', 'metadata' => [], 'calculated_at' => now(),
     ]);
+
     return $company;
 }
 
-function lf42Task(Company $company, User $user, string $externalId, \DateTimeInterface $due): HubSpotTask
+function lf42Task(Company $company, User $user, string $externalId, DateTimeInterface $due): HubSpotTask
 {
     $hub = HubSpotCompany::query()->create([
         'hubspot_id' => 'v42-company-'.$externalId,
@@ -38,6 +39,7 @@ function lf42Task(Company $company, User $user, string $externalId, \DateTimeInt
         'completed_at' => null,
     ]);
     $hub->tasks()->attach($task->id);
+
     return $task;
 }
 

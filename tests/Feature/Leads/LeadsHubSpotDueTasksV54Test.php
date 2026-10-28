@@ -6,9 +6,11 @@ use App\Models\HubSpotTask;
 use App\Models\User;
 use App\Services\LeadDueTaskExcelV54Service;
 use App\Services\LeadDueTaskQueueV54Service;
+use App\Services\LeadExportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
+use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 
 uses(RefreshDatabase::class);
 
@@ -24,7 +26,7 @@ function v54Owner(): User
     return $manager;
 }
 
-function v54Task(int $number, string $owner, \DateTimeInterface $due, bool $withFiscal = false): HubSpotTask
+function v54Task(int $number, string $owner, DateTimeInterface $due, bool $withFiscal = false): HubSpotTask
 {
     $task = HubSpotTask::query()->create([
         'hubspot_id' => 'v54-task-'.$number,
@@ -154,7 +156,7 @@ it('limits the Excel download to selected tasks authorized for the current owner
             ->call('applyFigmaFollowUp', 'overdue')
             ->set('selectedDueTaskIds', [(string) $mine->id, (string) $other->id]);
 
-        $response = $page->instance()->exportExcel(app(\App\Services\LeadExportService::class));
+        $response = $page->instance()->exportExcel(app(LeadExportService::class));
         ob_start();
         try {
             $response->sendContent();
@@ -170,7 +172,7 @@ it('limits the Excel download to selected tasks authorized for the current owner
         $book = null;
         try {
             file_put_contents($file, $bytes);
-            $book = (new \PhpOffice\PhpSpreadsheet\Reader\Xlsx)->load($file);
+            $book = (new Xlsx)->load($file);
             $sheet = $book->getActiveSheet();
             expect($sheet->getHighestColumn())->toBe('U')
                 ->and($sheet->getHighestDataRow())->toBe(2)

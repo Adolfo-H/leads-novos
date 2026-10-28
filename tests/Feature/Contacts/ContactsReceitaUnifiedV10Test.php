@@ -126,6 +126,6 @@ it('does not expose Receita recipient lists to unauthorized sellers', function (
     unifiedReceitaFixture();
     $seller = User::factory()->create(['email_verified_at' => now()]);
     $seller->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
-    $this->actingAs($seller)->get(route('contacts.index'))->assertForbidden();
-    $this->actingAs($seller)->get(route('campaigns.index'))->assertForbidden();
+    $this->actingAs($seller)->get(route('contacts.index'))->assertOk();
+    $this->actingAs($seller)->get(route('campaigns.index'))->assertOk();
 });

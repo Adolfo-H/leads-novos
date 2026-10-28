@@ -23,6 +23,8 @@
         </div>
     </article>
 
+    @include('partials.company-dossier.hubspot-opportunity-v66')
+
     <article class="e53-panel e53-table-panel">
         <h2>Negócios da empresa</h2>
         <div class="e53-table-wrap"><table class="e53-table">

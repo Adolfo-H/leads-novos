@@ -3,9 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Services\LeadDueTaskQueueV54Service;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
-use App\Services\LeadDueTaskQueueV54Service;
 use Illuminate\Console\Command;
 
 /** Diagnóstico somente de leitura: contagem local com a MESMA regra da tela Leads. */
@@ -26,6 +26,7 @@ final class DiagnoseHubSpotDueTasksV54 extends Command
 
         if (! $user instanceof User) {
             $this->error('Usuário não encontrado; informe um e-mail ou ID local válido.');
+
             return self::FAILURE;
         }
 
@@ -70,6 +71,7 @@ final class DiagnoseHubSpotDueTasksV54 extends Command
         }
 
         $this->warn('Leitura somente do banco local. Se o HubSpot online mostrar mais tarefas, verifique a sincronização do espelho.');
+
         return self::SUCCESS;
     }
 }

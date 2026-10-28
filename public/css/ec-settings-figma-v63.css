@@ -1,0 +1,246 @@
+/*
+ * EXPORTCONTROL PROSPECTOR — CONFIGURAÇÕES FIGMA U01 / U02 / U03
+ * Pacote V63. Carregado APENAS nas rotas profile/security/appearance.
+ * Não altera CSS dos demais módulos nem o funcionamento do Livewire.
+ */
+body.ec-app-body {
+  background: #f3f6f8 !important;
+}
+body.ec-app-body .ec-main { background: #f3f6f8 !important; }
+body.ec-app-body .ec-topbar {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2eaf0 !important;
+  box-shadow: none !important;
+  color: #102f49 !important;
+}
+body.ec-app-body .ec-topbar .ec-topbar-title { color: #123450 !important; }
+body.ec-app-body .ec-topbar .ec-topbar-eyebrow { color: #078e83 !important; }
+/* O padrão da sidebar permanece azul-marinho; sem globo/slogan nas Configurações. */
+body.ec-app-body .ec-sidebar-world-v7 { display: none !important; }
+body.ec-app-body .ec-sidebar { background: #061d32 !important; color: #d9e7f1; }
+
+.ec-cfg-v63 {
+  --cfg-page: #f3f6f8;
+  --cfg-card: #ffffff;
+  --cfg-text: #12334f;
+  --cfg-soft: #5b7189;
+  --cfg-border: #d8e4ed;
+  --cfg-accent: #008c7b;
+  --cfg-accent-strong: #057967;
+  --cfg-accent-pale: #e3f6f1;
+  --cfg-blue-pale: #eaf2ff;
+  --cfg-input: #ffffff;
+  --cfg-shadow: 0 3px 14px rgba(28, 52, 75, 0.025);
+  box-sizing: border-box;
+  width: min(1220px, calc(100% - 68px));
+  margin: 0 auto;
+  padding: 40px 0 40px;
+  color: var(--cfg-text);
+  font-size: 14px;
+  font-family: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+}
+.ec-cfg-v63 *, .ec-cfg-v63 *::before, .ec-cfg-v63 *::after { box-sizing: border-box; }
+.ec-cfg-v63 .ec-cfg-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.ec-cfg-v63 .ec-cfg-hero { margin-bottom: 25px; }
+.ec-cfg-v63 .ec-cfg-kicker {
+  display: block; margin-bottom: 8px; color: #68809a;
+  font-size: 11px; font-weight: 700; letter-spacing: .055em;
+}
+.ec-cfg-v63 h1 {
+  color: var(--cfg-text); font-size: clamp(27px, 2.6vw, 36px);
+  line-height: 1.13; font-weight: 720; letter-spacing: -.045em; margin: 0;
+}
+.ec-cfg-v63 .ec-cfg-hero > p { margin: 9px 0 0; color: var(--cfg-soft); font-size: 14px; }
+.ec-cfg-v63 .ec-cfg-hero-actions {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 18px;
+}
+.ec-cfg-v63 .ec-cfg-btn {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 40px;
+  border: 1px solid var(--cfg-border); border-radius: 8px; padding: 0 15px;
+  background: var(--cfg-card); color: var(--cfg-text); font: inherit; font-size: 13px;
+  font-weight: 650; line-height: 1.3; text-decoration: none; white-space: nowrap;
+  cursor: pointer; transition: background .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.ec-cfg-v63 .ec-cfg-btn:hover { background: var(--cfg-accent-pale); border-color: #8fcfc2; }
+.ec-cfg-v63 .ec-cfg-btn-primary {
+  border-color: var(--cfg-accent); background: var(--cfg-accent); color: #fff;
+}
+.ec-cfg-v63 .ec-cfg-btn-primary:hover { background: var(--cfg-accent-strong); border-color: var(--cfg-accent-strong); }
+.ec-cfg-v63 .ec-cfg-btn-danger { background: #ae3642; color: #fff; border-color: #ae3642; }
+.ec-cfg-v63 .ec-cfg-btn-danger:hover { background: #912735; color: #fff; border-color: #912735; }
+.ec-cfg-v63 .ec-cfg-btn:disabled { opacity: .6; cursor: wait; }
+.ec-cfg-v63 .ec-cfg-tabs { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin: 0 0 26px; }
+.ec-cfg-v63 .ec-cfg-tab {
+  display: inline-flex; min-height: 41px; align-items: center; justify-content: center;
+  padding: 0 16px; border-radius: 9px; color: var(--cfg-soft);
+  font-size: 13px; font-weight: 560; text-decoration: none;
+}
+.ec-cfg-v63 .ec-cfg-tab:hover { color: var(--cfg-accent); background: var(--cfg-accent-pale); }
+.ec-cfg-v63 .ec-cfg-tab.is-active { color: var(--cfg-accent-strong); background: var(--cfg-accent-pale); font-weight: 700; }
+.ec-cfg-v63 .ec-cfg-section-title { color: var(--cfg-text); font-size: 15px; font-weight: 720; margin: 0 0 13px; }
+.ec-cfg-v63 .ec-cfg-card {
+  border: 1px solid var(--cfg-border); border-radius: 12px;
+  background: var(--cfg-card); box-shadow: var(--cfg-shadow);
+  padding: 22px 24px; margin-bottom: 22px;
+}
+.ec-cfg-v63 .ec-cfg-card-heading {
+  margin: 0 0 17px; font-size: 15px; font-weight: 720;
+  line-height: 1.4; letter-spacing: -.015em; color: var(--cfg-text);
+}
+.ec-cfg-v63 .ec-cfg-pill {
+  display: inline-flex; max-width: fit-content; align-items: center; min-height: 27px;
+  border-radius: 999px; padding: 4px 11px; background: var(--cfg-accent-pale);
+  color: var(--cfg-accent-strong); font-size: 11px; font-weight: 650;
+}
+.ec-cfg-v63 .ec-cfg-pill.is-muted { background: #eef5f6; color: #688399; }
+.ec-cfg-v63 .ec-cfg-pill.is-warning { background: #fff3dc; color: #a26812; }
+.ec-cfg-v63 .ec-cfg-account-overview { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-height: 138px; justify-content: center; }
+.ec-cfg-v63 .ec-cfg-account-overview strong { font-size: 16px; font-weight: 720; margin-top: 5px; }
+.ec-cfg-v63 .ec-cfg-subtle { color: var(--cfg-soft); font-size: 13px; }
+.ec-cfg-v63 .ec-cfg-fields { border: 0; margin: 0; padding: 0; display: grid; gap: 18px; grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 0; }
+.ec-cfg-v63 .ec-cfg-field { display: flex; flex-direction: column; min-width: 0; gap: 7px; }
+.ec-cfg-v63 .ec-cfg-field > label, .ec-cfg-v63 label.ec-cfg-field { font-size: 12px; font-weight: 680; color: var(--cfg-text); }
+.ec-cfg-v63 .ec-cfg-field > input,
+.ec-cfg-v63 select.ec-cfg-theme-select {
+  width: 100%; min-width: 0; height: 43px; padding: 0 12px;
+  border: 1px solid var(--cfg-border); background: var(--cfg-input) !important;
+  border-radius: 8px; color: var(--cfg-text) !important;
+  font: inherit; font-size: 13px; outline: none;
+}
+.ec-cfg-v63 .ec-cfg-field > input:focus,
+.ec-cfg-v63 select.ec-cfg-theme-select:focus {
+  border-color: var(--cfg-accent); box-shadow: 0 0 0 3px rgba(0, 140, 123, .11);
+}
+.ec-cfg-v63 .ec-cfg-field > input::placeholder { color: var(--cfg-soft); opacity: .75; }
+.ec-cfg-v63 .ec-cfg-field > small, .ec-cfg-v63 .ec-cfg-small-helper {
+  font-size: 11px; color: var(--cfg-soft); font-weight: 450; line-height: 1.55;
+}
+.ec-cfg-v63 .ec-cfg-error { color: #bf374b; margin: 2px 0 0; font-size: 12px; }
+.ec-cfg-v63 .ec-cfg-mobile-save { display: none; margin-top: 14px; }
+.ec-cfg-v63 .ec-cfg-note {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 17px 20px; margin-bottom: 26px; border-radius: 10px;
+  border: 1px solid transparent;
+}
+.ec-cfg-v63 .ec-cfg-note.is-success { background: #e4f5ef; color: #086f65; }
+.ec-cfg-v63 .ec-cfg-note.is-warning { background: #fff6e4; color: #875714; }
+.ec-cfg-v63 .ec-cfg-note.is-neutral { background: var(--cfg-blue-pale); color: #305c95; }
+.ec-cfg-v63 .ec-cfg-note-icon { font-size: 17px; font-weight: 900; line-height: 22px; flex: 0 0 20px; }
+.ec-cfg-v63 .ec-cfg-note strong { font-size: 12px; font-weight: 750; }
+.ec-cfg-v63 .ec-cfg-note p { margin: 5px 0 0; font-size: 12px; font-weight: 470; line-height: 1.5; }
+.ec-cfg-v63 .ec-cfg-link { display: inline-flex; color: var(--cfg-accent); align-items: center; border: 0; padding: 0; font-size: 12px; font-weight: 660; background: transparent; cursor: pointer; text-decoration: none; }
+.ec-cfg-v63 .ec-cfg-link:hover { color: var(--cfg-accent-strong); text-decoration: underline; }
+.ec-cfg-v63 .ec-cfg-link-danger { color: #be4450; }
+.ec-cfg-v63 .ec-cfg-link-danger:hover { color: #992b35; }
+.ec-cfg-v63 .ec-cfg-note .ec-cfg-link { margin-top: 8px; }
+.ec-cfg-v63 .ec-cfg-delete-card > .ec-cfg-card-heading { margin: 11px 0 6px; }
+.ec-cfg-v63 .ec-cfg-delete-card > p { margin: 0; font-size: 12px; color: var(--cfg-soft); }
+.ec-cfg-v63 .ec-cfg-delete-actual { margin-top: 12px; }
+/* Reaproveita o formulário de exclusão existente (e seu modal). */
+.ec-cfg-v63 .ec-cfg-delete-actual .ec-settings-danger-card {
+  display: flex; align-items: center; gap: 12px; justify-content: flex-start;
+  padding: 0 !important; border: 0 !important; box-shadow: none !important;
+  background: transparent !important; flex-wrap: wrap;
+}
+.ec-cfg-v63 .ec-cfg-delete-actual .ec-settings-danger-card > div:first-child { display: none; }
+.ec-cfg-v63 .ec-cfg-delete-actual .ec-settings-danger-button {
+  border: 0; background: transparent; color: #b9444f; font-size: 12px; padding: 5px 0;
+  font-weight: 650; cursor: pointer;
+}
+.ec-cfg-v63 .ec-cfg-foot { font-size: 11px; color: #8295a7; padding-top: 1px; margin-bottom: 12px; }
+
+/* Segurança */
+.ec-cfg-v63 .ec-cfg-password-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.ec-cfg-v63 .ec-cfg-two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.ec-cfg-v63 .ec-cfg-security-mini { min-height: 171px; margin-bottom: 20px; }
+.ec-cfg-v63 .ec-cfg-security-mini .ec-cfg-card-heading { margin-top: 12px; margin-bottom: 8px; }
+.ec-cfg-v63 .ec-cfg-security-mini p { margin: 0 0 12px; color: var(--cfg-soft); font-size: 12px; line-height: 1.6; }
+.ec-cfg-v63 .ec-cfg-recovery-live { font-size: 12px; }
+.ec-cfg-v63 .ec-cfg-passkeys-card { padding: 22px 23px 16px; }
+.ec-cfg-v63 .ec-cfg-table-scroller { overflow-x: auto; max-width: 100%; }
+.ec-cfg-v63 .ec-cfg-passkeys-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 12px; }
+.ec-cfg-v63 .ec-cfg-passkeys-table thead { background: var(--cfg-page); }
+.ec-cfg-v63 .ec-cfg-passkeys-table th { padding: 13px 14px; font-weight: 530; color: var(--cfg-soft); white-space: nowrap; }
+.ec-cfg-v63 .ec-cfg-passkeys-table td { padding: 14px; border-bottom: 1px solid var(--cfg-border); color: var(--cfg-text); white-space: nowrap; }
+.ec-cfg-v63 .ec-cfg-passkeys-table tbody tr:last-child td { border-bottom: 0; }
+.ec-cfg-v63 .ec-cfg-empty { color: var(--cfg-soft) !important; }
+.ec-cfg-v63 .ec-cfg-passkeys-card > .ec-cfg-small-helper { margin: 7px 3px 1px; }
+.ec-cfg-v63 .ec-cfg-passkey-registration { margin-top: 8px; }
+.ec-cfg-v63 .ec-cfg-confirm-modal { display: flex; flex-direction: column; gap: 15px; color: var(--cfg-text); }
+.ec-cfg-v63 .ec-cfg-confirm-modal h3 { font-size: 18px; font-weight: 750; }
+.ec-cfg-v63 .ec-cfg-confirm-modal p { font-size: 13px; color: var(--cfg-soft); }
+.ec-cfg-v63 .ec-cfg-modal-buttons { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
+
+/* Aparência */
+.ec-cfg-v63 .ec-cfg-theme-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; border: 0; padding: 0; margin: 0 0 23px; }
+.ec-cfg-v63 .ec-cfg-theme-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
+  border: 1px solid var(--cfg-border); border-radius: 12px; padding: 23px 24px;
+  min-height: 181px; background: var(--cfg-card); cursor: pointer; position: relative;
+  box-shadow: var(--cfg-shadow); transition: border-color .16s, box-shadow .16s;
+}
+.ec-cfg-v63 .ec-cfg-theme-card:hover { border-color: #8dc8c0; }
+.ec-cfg-v63 .ec-cfg-theme-card.is-selected { border-color: #43b7a8; box-shadow: 0 0 0 1px #43b7a8 inset; }
+.ec-cfg-v63 .ec-cfg-theme-card strong { font-size: 15px; font-weight: 750; }
+.ec-cfg-v63 .ec-cfg-theme-card > span:not(.ec-cfg-pill):not(.ec-cfg-link) { color: var(--cfg-soft); font-size: 12px; line-height: 1.6; }
+.ec-cfg-v63 .ec-cfg-theme-card .ec-cfg-link { margin-top: auto; }
+.ec-cfg-v63 .ec-cfg-theme-card .ec-cfg-pill { min-height: 22px; font-size: 10px; }
+.ec-cfg-v63 .ec-cfg-theme-input { position: absolute; opacity: 0; width: 1px; height: 1px; overflow: hidden; }
+.ec-cfg-v63 .ec-cfg-theme-card:focus-within { outline: 3px solid rgba(0,140,123,.25); outline-offset: 2px; }
+.ec-cfg-v63 .ec-cfg-theme-control .ec-cfg-card-heading { margin-bottom: 13px; }
+.ec-cfg-v63 .ec-cfg-theme-control label.ec-cfg-field { margin-bottom: 8px; }
+.ec-cfg-v63 .ec-cfg-theme-control .ec-cfg-small-helper { margin: 9px 0 0; }
+.ec-cfg-v63 .ec-cfg-theme-select { display: block; cursor: pointer; }
+.ec-cfg-v63 .ec-cfg-appearance .ec-cfg-note { margin-top: 14px; }
+
+/* Tema escuro: fluxo do Flux permanece a fonte de verdade; CSS acompanha a classe .dark */
+.dark body.ec-app-body, .dark body.ec-app-body .ec-main { background: #101d2c !important; }
+.dark body.ec-app-body .ec-topbar { background: #15283b !important; border-color: #29425a !important; }
+.dark body.ec-app-body .ec-topbar .ec-topbar-title { color: #eaf4fb !important; }
+.dark .ec-cfg-v63 {
+  --cfg-page: #172a3d;
+  --cfg-card: #1d3146;
+  --cfg-text: #e8f2fa;
+  --cfg-soft: #a8bfd0;
+  --cfg-border: #34495e;
+  --cfg-input: #1d3146;
+  --cfg-accent: #51c6b4;
+  --cfg-accent-strong: #72decd;
+  --cfg-accent-pale: #204942;
+  --cfg-blue-pale: #213c60;
+  --cfg-shadow: none;
+}
+.dark .ec-cfg-v63 .ec-cfg-pill.is-muted { background: #32475b; color: #b9cad8; }
+.dark .ec-cfg-v63 .ec-cfg-note.is-success { background: #1c4439; color: #9ee8d0; }
+.dark .ec-cfg-v63 .ec-cfg-note.is-warning { background: #4d3b24; color: #ffe1a1; }
+.dark .ec-cfg-v63 .ec-cfg-note.is-neutral { background: #263a5a; color: #b5d0ff; }
+.dark .ec-cfg-v63 .ec-cfg-btn-primary { color: #062f2d; background: #51c6b4; border-color: #51c6b4; }
+.dark .ec-cfg-v63 .ec-cfg-btn-primary:hover { background: #77decb; }
+.dark .ec-cfg-v63 .ec-cfg-btn-danger { background: #b43d50; color: white; }
+.dark .ec-cfg-v63 .ec-cfg-btn-outline { color: #e8f2fa; }
+.dark .ec-cfg-v63 .ec-cfg-foot { color: #91a9bc; }
+
+@media (max-width: 980px) {
+  .ec-cfg-v63 { width: min(100% - 36px, 1220px); padding-top: 28px; }
+  .ec-cfg-v63 .ec-cfg-theme-grid { gap: 10px; }
+  .ec-cfg-v63 .ec-cfg-theme-card { padding: 17px; }
+}
+@media (max-width: 720px) {
+  .ec-cfg-v63 .ec-cfg-fields, .ec-cfg-v63 .ec-cfg-two-col, .ec-cfg-v63 .ec-cfg-theme-grid { grid-template-columns: 1fr; }
+  .ec-cfg-v63 .ec-cfg-card { padding: 18px; }
+  .ec-cfg-v63 .ec-cfg-account-overview { min-height: 118px; }
+  .ec-cfg-v63 .ec-cfg-theme-card { min-height: 140px; }
+  .ec-cfg-v63 .ec-cfg-hero-actions [type=submit] { display: none; }
+  .ec-cfg-v63 .ec-cfg-mobile-save { display: block; }
+  .ec-cfg-v63 .ec-cfg-mobile-save .ec-cfg-btn { width: 100%; }
+  .ec-cfg-v63 .ec-cfg-tabs { margin-bottom: 20px; }
+  .ec-cfg-v63 .ec-cfg-tab { padding: 0 12px; }
+  .ec-cfg-v63 .ec-cfg-hero > p { line-height: 1.6; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ec-cfg-v63 *, .ec-cfg-v63 *::before, .ec-cfg-v63 *::after { transition: none !important; }
+}

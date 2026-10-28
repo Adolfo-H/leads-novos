@@ -257,7 +257,9 @@ new class extends Component
             <span class="eccl-eyebrow">EMPRESAS</span>
             <h1>Sua base de empresas</h1>
             <p>Uma linha por empresa, com matriz e filiais no mesmo dossiê.</p>
-            <a class="eccl-button eccl-primary ec-e01-primary" href="{{ route('companies.create') }}" wire:navigate>Nova empresa</a>
+            @if (auth()->user()?->isCommercialManager())
+                <a class="eccl-button eccl-primary ec-e01-primary" href="{{ route('companies.create') }}" wire:navigate>Nova empresa</a>
+            @endif
         </div>
     </header>
 
@@ -407,7 +409,11 @@ new class extends Component
                                 @if ($hasFilters)
                                     <button type="button" class="eccl-button eccl-secondary" wire:click="clearFilters">Limpar filtros</button>
                                 @else
-                                    <a class="eccl-button eccl-secondary" href="{{ route('companies.create') }}" wire:navigate>Cadastrar empresa</a>
+                                    @if (auth()->user()?->isCommercialManager())
+                                        <a class="eccl-button eccl-secondary" href="{{ route('companies.create') }}" wire:navigate>Cadastrar empresa</a>
+                                    @else
+                                        <span>Peça ao gestor para cadastrar novas empresas.</span>
+                                    @endif
                                 @endif
                             </td>
                         </tr>

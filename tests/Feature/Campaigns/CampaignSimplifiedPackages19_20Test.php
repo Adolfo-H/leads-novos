@@ -23,9 +23,12 @@ it('keeps SMTP and daily limits enforced for unrealistic sending plans', functio
     config()->set('campaign_mail.smtp_approved_per_tick', 5);
 
     $policy = app(CampaignSendPolicy::class);
-    expect($policy->quote(500, 1)['possible'])->toBeFalse()
-        ->and($policy->quote(500, 2)['possible'])->toBeFalse()
-        ->and($policy->quote(500, 8)['possible'])->toBeTrue();
+    // EC77_SMTP_QUOTES_TESTS: não presumir um teto fixo de 100/h após V70.
+    $daily = max(1, (int) config('campaign_mail.smtp_approved_per_day', 500));
+    expect($policy->quote(500, 1)['hourly_limit'])->toBe(500)
+        ->and($policy->quote(500, 2)['hourly_limit'])->toBe(250)
+        ->and($policy->quote(500, 8)['hourly_limit'])->toBe(63)
+        ->and($policy->quote($daily + 1, 8)['possible'])->toBeFalse();
 });
 
 it('keeps actual sending under explicit authorization', function (): void {

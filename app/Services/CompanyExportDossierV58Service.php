@@ -190,7 +190,7 @@ final class CompanyExportDossierV58Service
     }
 
     /**
-     * @param Collection<int, CompanyExportEvidence> $evidences
+     * @param  Collection<int, CompanyExportEvidence>  $evidences
      * @return array<string, int|string|bool>
      */
     private function dimension(Collection $evidences, string $key, ?CompanyExportIntelligence $intelligence): array
@@ -308,7 +308,7 @@ final class CompanyExportDossierV58Service
     }
 
     /**
-     * @param list<string> $terms
+     * @param  list<string>  $terms
      */
     private function containsAny(string $text, array $terms): bool
     {
@@ -323,7 +323,7 @@ final class CompanyExportDossierV58Service
     }
 
     /**
-     * @param array<string, list<string>> $dictionary
+     * @param  array<string, list<string>>  $dictionary
      * @return list<string>
      */
     private function extractTerms(string $normalizedText, array $dictionary): array

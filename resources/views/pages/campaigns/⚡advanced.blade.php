@@ -16,7 +16,7 @@ new class extends Component
     private function ensureManager(): void
     {
         $user = auth()->user();
-        abort_unless($user instanceof User && $user->isCommercialManager(), 403);
+        abort_unless($user instanceof User && ($user->isCommercialManager() || $user->isCommercialSeller()), 403);
     }
 
     /** @return array<string, int> */

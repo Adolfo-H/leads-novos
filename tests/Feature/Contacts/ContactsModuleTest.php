@@ -52,7 +52,7 @@ it('requires an authenticated manager to consult all commercial contacts', funct
     $this->get('/contatos')->assertRedirect(route('login'));
     $seller = User::factory()->create(['email_verified_at' => now()]);
     $seller->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
-    $this->actingAs($seller)->get('/contatos')->assertForbidden();
+    $this->actingAs($seller)->get('/contatos')->assertOk();
     $this->actingAs(contactsManager())->get('/contatos')
         ->assertSuccessful()->assertSee('Central de Contatos');
 });

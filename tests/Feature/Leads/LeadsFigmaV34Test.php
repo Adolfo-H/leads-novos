@@ -42,7 +42,7 @@ it('keeps manager distribution preview and an explicit in-page confirmation', fu
         ->assertSee('Gestão Comercial')
         ->assertSee('Distribuição automática')
         ->assertSee('Confirmar distribuição?')
-        ->assertSee('Acessos comerciais')
+        ->assertSee('Gestores e vendedores')
         ->assertSee('distributionSellerIds', false);
 });
 

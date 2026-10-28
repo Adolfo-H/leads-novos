@@ -119,5 +119,5 @@ it('preserves seller restrictions and displays the small brand-world panel in th
     $this->actingAs($seller)
         ->get(route('dashboard'))
         ->assertSuccessful()
-        ->assertSee('ec-sidebar-world', false);
+        ->assertDontSee('ec-sidebar-world', false);
 });

@@ -39,7 +39,7 @@ it('hides management navigation from sellers', function () {
         ->assertSuccessful()
         ->assertSee('Dashboard')
         ->assertSee('Leads')
-        ->assertDontSee('Motor de Prospecção')
+        ->assertSee('Motor de Prospecção')
         ->assertDontSee('Gestão Comercial')
-        ->assertDontSee('Importações');
+        ->assertSee('Importações');
 });

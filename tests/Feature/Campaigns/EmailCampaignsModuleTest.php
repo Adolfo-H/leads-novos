@@ -45,10 +45,13 @@ function emailCampaignConfig(): void
     config()->set('campaign_mail.live_enabled', false);
 }
 
-it('shows dark campaigns workspace only to authenticated commercial managers', function (): void {
+it('allows authenticated sellers and managers to open the campaigns workspace', function (): void {
     emailCampaignConfig();
     $this->get(route('campaigns.index'))->assertRedirect();
-    $this->actingAs(emailCampaignSeller())->get(route('campaigns.index'))->assertForbidden();
+    // V69: a página de campanhas também atende vendedores.
+    $this->actingAs(emailCampaignSeller())->get(route('campaigns.index'))
+        ->assertOk()
+        ->assertSee('Campanhas de E-mail');
 
     $response = $this->actingAs(emailCampaignManager())->get(route('campaigns.index'));
     $response->assertOk()->assertSee('Campanhas de E-mail')

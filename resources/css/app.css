@@ -42,6 +42,7 @@
 @import './commercial-management-figma-v62.css';
 @import './commercial-management-figma-v624.css';
 @import './leads-figma-v34.css';
+@import './campaigns-replies-v77.css';
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
@@ -18088,6 +18089,7 @@ body:not(.dark)
 @import './dashboard-map-v30.css';
 @import './dashboard-base-v32.css';
 @import './dashboard-advanced-v33.css';
+@import './campaigns-replies-optout-v77.css';
 
 /* EC_LEADS_V35_BEGIN */
 /* PACOTE 35 · ExportControl Prospector · Leads + Gestão Comercial

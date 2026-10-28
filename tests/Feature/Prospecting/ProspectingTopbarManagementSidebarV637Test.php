@@ -16,6 +16,6 @@ it('uses the shared white topbar for the prospecting motor and preserves setting
         ->toContain('body.ec-app-body:has(.ecgm62) .ec-sidebar .ec-sidebar-world-v7');
 
     expect((string) $sidebar)
-        ->toContain("@unless (request()->routeIs('prospecting.*', 'leads.management'))")
+        ->not->toContain('ec-sidebar-world-v7')
         ->toContain('Configurações');
 });

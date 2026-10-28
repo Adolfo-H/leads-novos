@@ -11,6 +11,7 @@ function v71CampaignManager(): User
 {
     $user = User::factory()->create(['email_verified_at' => now()]);
     $user->forceFill(['commercial_role' => User::ROLE_MANAGER])->save();
+
     return $user;
 }
 

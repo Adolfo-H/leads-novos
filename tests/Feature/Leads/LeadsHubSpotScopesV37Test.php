@@ -10,6 +10,7 @@ function v37CommercialUser(string $role): User
 {
     $user = User::factory()->create(['email_verified_at' => now()]);
     $user->forceFill(['commercial_role' => $role])->save();
+
     return $user->refresh();
 }
 
@@ -32,6 +33,7 @@ function v37Company(string $cnpjRoot, string $name, User $user): HubSpotCompany
         'calculated_at' => now(),
     ]);
     $company->leadWorkState()->create(['assigned_user_id' => $user->id]);
+
     return HubSpotCompany::query()->create([
         'company_id' => $company->id,
         'hubspot_id' => 'v37-company-'.$cnpjRoot,

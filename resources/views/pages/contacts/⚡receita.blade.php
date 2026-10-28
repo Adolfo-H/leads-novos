@@ -31,7 +31,7 @@ new class extends Component
     private function assertManager(): void
     {
         $user = auth()->user();
-        abort_unless($user instanceof User && $user->isCommercialManager(), 403);
+        abort_unless($user instanceof User && ($user->isCommercialManager() || $user->isCommercialSeller()), 403);
     }
 
     public function updatedSearchTerm(): void

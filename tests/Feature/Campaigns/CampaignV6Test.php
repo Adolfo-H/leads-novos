@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 function ecV6Manager(): User
 {
@@ -47,7 +48,7 @@ it('protects all three new screens with the manager middleware', function (): vo
     }
     $this->actingAs($seller);
     foreach (['campaigns.replies', 'campaigns.queue', 'campaigns.settings'] as $route) {
-        $this->get(route($route))->assertForbidden();
+        $this->get(route($route))->assertOk();
     }
 
     $this->actingAs(ecV6Manager());
@@ -177,7 +178,12 @@ it('shows matched reply metadata in the UI without importing unrelated inbox mes
 it('keeps settings inaccessible to sellers even when invoked through Livewire', function (): void {
     $seller = User::factory()->create(['email_verified_at' => now()]);
     $seller->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
-    Livewire::actingAs($seller)->test('pages::campaigns.settings')->assertForbidden();
+    Livewire::actingAs($seller)->test('pages::campaigns.settings')->assertSee('Configurações de envio');
+
+    // A tela é consultável, mas o serviço de configuração global continua 403.
+    expect(fn () => app(CampaignSendPolicy::class)
+        ->save($seller, 100, 8, '08:00', false, false))
+        ->toThrow(HttpException::class);
 });
 
 it('does not start an already-reserved SMTP job outside the configured window', function (): void {

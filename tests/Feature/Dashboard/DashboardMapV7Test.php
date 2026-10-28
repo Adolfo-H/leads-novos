@@ -55,7 +55,7 @@ it('shows real state totals and percentages, including states outside the top fi
 
 it('shows only one decorative sidebar world, without previous duplicated cards', function (): void {
     $source = file_get_contents(resource_path('views/layouts/app/sidebar.blade.php'));
-    expect(substr_count($source, 'class="ec-sidebar-world-v7"'))->toBe(1)
+    expect(substr_count($source, 'class="ec-sidebar-world-v7"'))->toBe(0)
         ->and($source)->not->toContain('class="ec-sidebar-world"')
         ->not->toContain('class="ec-sidebar-world-card"');
 
@@ -63,7 +63,7 @@ it('shows only one decorative sidebar world, without previous duplicated cards',
     $manager->forceFill(['commercial_role' => User::ROLE_MANAGER])->save();
     $this->actingAs($manager)->get(route('dashboard'))
         ->assertSuccessful()
-        ->assertSee('sidebar-world-v7.webp');
+        ->assertDontSee('sidebar-world-v7.webp');
 });
 
 it('does not expose detailed state map to sellers', function (): void {

@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 uses(RefreshDatabase::class);
 
-function v52LeadCompany(string $root, string $name, string $status, ?\DateTimeInterface $activity = null): Company
+function v52LeadCompany(string $root, string $name, string $status, ?DateTimeInterface $activity = null): Company
 {
     $company = Company::query()->create([
         'cnpj_root' => $root,
@@ -139,20 +139,20 @@ function v52Workbook(StreamedResponse $response): Spreadsheet
     $pending = [$response->getCallback()];
     while ($pending !== []) {
         $callback = array_pop($pending);
-        if (! $callback instanceof \Closure) {
+        if (! $callback instanceof Closure) {
             continue;
         }
-        foreach ((new \ReflectionFunction($callback))->getStaticVariables() as $value) {
+        foreach ((new ReflectionFunction($callback))->getStaticVariables() as $value) {
             if ($value instanceof Spreadsheet) {
                 return $value;
             }
-            if ($value instanceof \Closure) {
+            if ($value instanceof Closure) {
                 $pending[] = $value;
             }
         }
     }
 
-    throw new \RuntimeException('Planilha não localizada no stream do Excel.');
+    throw new RuntimeException('Planilha não localizada no stream do Excel.');
 }
 
 it('exports Conhecido e Cliente na coluna I sem alterar a estrutura V51 de 21 colunas', function (): void {

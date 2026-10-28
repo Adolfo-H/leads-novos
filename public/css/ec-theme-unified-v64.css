@@ -1,0 +1,406 @@
+/*
+ * PROSPECTOR EXPORTCONTROL — TEMA UNIFICADO V64
+ * Publicado depois de Vite e do CSS de Configurações V63.
+ * Estado único: html.dark, gerenciado pelo Flux ($flux.appearance).
+ * Claro: html sem .dark | Escuro: html.dark | Sistema: Flux segue o SO.
+ * Não cria segundo seletor, não salva cookies, não altera regras de negócio.
+ */
+
+/* 1. Cores compartilhadas: a sidebar institucional é navy nos dois temas. */
+html:not(.dark) {
+  color-scheme: light;
+  --ec-bg:#f3f6f8; --ec-bg-deep:#e8eef2;
+  --ec-sidebar:#061d32; --ec-sidebar-deep:#061d32; --ec-topbar:#fff;
+  --ec-surface:#fff; --ec-surface-soft:#f7fafb; --ec-surface-hover:#eaf6f2;
+  --ec-border:#dbe5eb; --ec-border-soft:rgba(27,66,89,.12);
+  --ec-primary:#078b7e; --ec-primary-strong:#056f65; --ec-primary-soft:#e5f5f0;
+  --ec-text:#15354d; --ec-text-soft:#506c81; --ec-text-muted:#728a9c;
+  --ec-success:#078c73; --ec-warning:#ad751c; --ec-danger:#bf4657;
+  --v64-page:#f3f6f8; --v64-panel:#fff; --v64-panel-soft:#f7fafb;
+  --v64-ink:#15354d; --v64-muted:#647d90; --v64-line:#dbe5eb;
+  --v64-input:#fff; --v64-teal:#05877a; --v64-mint:#e5f5f0;
+}
+html.dark {
+  color-scheme: dark;
+  --ec-bg:#0e1d2c; --ec-bg-deep:#0b1929;
+  --ec-sidebar:#061d32; --ec-sidebar-deep:#04182b; --ec-topbar:#162c40;
+  --ec-surface:#1a2e42; --ec-surface-soft:#22394c; --ec-surface-hover:#29485a;
+  --ec-border:#324c60; --ec-border-soft:rgba(155,197,215,.22);
+  --ec-primary:#58d4c1; --ec-primary-strong:#73e0cf; --ec-primary-soft:#18453f;
+  --ec-text:#e9f3fa; --ec-text-soft:#bdd1df; --ec-text-muted:#97b1c3;
+  --ec-success:#59d7a9; --ec-warning:#f1be64; --ec-danger:#ff8f98;
+  --v64-page:#0e1d2c; --v64-panel:#1a2e42; --v64-panel-soft:#213a4f;
+  --v64-ink:#e9f3fa; --v64-muted:#a3bece; --v64-line:#344f63;
+  --v64-input:#172d41; --v64-teal:#59d4c2; --v64-mint:#1e4843;
+}
+
+/* Reaplica as cores de página mesmo onde estilos antigos continham navy fixo. */
+html:not(.dark) body.ec-app-body,
+html.dark body.ec-app-body,
+html:not(.dark) body.ec-app-body .ec-main.ec-main,
+html.dark body.ec-app-body .ec-main.ec-main {
+  background:var(--v64-page)!important;
+  background-image:none!important;
+  color:var(--v64-ink)!important;
+}
+html:not(.dark) body.ec-app-body .ec-content,
+html.dark body.ec-app-body .ec-content {background:var(--v64-page)!important;}
+
+/* A barra lateral não muda para branco ao escolher Claro ou Sistema claro. */
+html body.ec-app-body .ec-sidebar.ec-sidebar,
+html body.ec-app-body.ec-dashboard-mode .ec-sidebar.ec-sidebar,
+html body.ec-app-body .ec-sidebar [data-flux-sidebar] {
+  color-scheme:dark!important;
+  background:#061d32!important;
+  background-image:linear-gradient(180deg,#061d32,#04192c)!important;
+  color:#d6e5ee!important;
+  border-right:1px solid #15354a!important;
+}
+html body.ec-app-body .ec-sidebar .ec-sidebar-header,
+html body.ec-app-body .ec-sidebar .ec-sidebar-footer {border-color:rgba(168,210,225,.13)!important;}
+html body.ec-app-body .ec-sidebar :is(.ec-brand-name,.ec-brand-text) {color:#f2f8fb!important;}
+html body.ec-app-body .ec-sidebar :is(.ec-brand-product,.ec-logo-mark) {color:#41d6c8!important;}
+html body.ec-app-body .ec-sidebar .ec-sidebar-group [data-flux-sidebar-group-heading] {
+  color:#9eb6c8!important;opacity:1!important;
+}
+html body.ec-app-body .ec-sidebar .ec-nav-item.ec-nav-item {color:#c9dce8!important;background:transparent!important;}
+html body.ec-app-body .ec-sidebar .ec-nav-item.ec-nav-item:hover {color:#f1fffc!important;background:#10344a!important;}
+html body.ec-app-body .ec-sidebar .ec-nav-item.ec-nav-item:is([data-current],[aria-current="page"]) {
+  color:#4de0d1!important;background:#11413f!important;
+  box-shadow:none!important;
+}
+html body.ec-app-body .ec-sidebar .ec-nav-item.ec-nav-item:is([data-current],[aria-current="page"])::before {display:none!important;}
+/* A ilustração e o slogan antigos não pertencem à remodelagem. */
+html body.ec-app-body .ec-sidebar-world-v7 {display:none!important;}
+
+/* 2. Topbar e busca global: segue o mesmo tema em qualquer rota. */
+html:not(.dark) body.ec-app-body .ec-topbar.ec-topbar.ec-topbar {
+  background:#fff!important;background-image:none!important;
+  color:#183a50!important;border-bottom:1px solid #dce5e9!important;box-shadow:none!important;
+}
+html.dark body.ec-app-body .ec-topbar.ec-topbar.ec-topbar {
+  background:#162c40!important;background-image:none!important;
+  color:#eaf3f9!important;border-bottom:1px solid #344e61!important;box-shadow:none!important;
+}
+html body.ec-app-body .ec-topbar .ec-topbar-title,
+html body.ec-app-body .ec-topbar .ec-topbar-brand {color:var(--v64-ink)!important;-webkit-text-fill-color:var(--v64-ink)!important;}
+html body.ec-app-body .ec-topbar .ec-topbar-eyebrow {color:var(--v64-teal)!important;}
+html body.ec-app-body:has(.ec-cfg-v63) .ec-topbar-eyebrow {display:none!important;}
+html body.ec-app-body .ec-topbar .ec-global-search.ec-global-search {
+  background:var(--v64-panel-soft)!important;background-image:none!important;
+  color:var(--v64-ink)!important;border:1px solid var(--v64-line)!important;box-shadow:none!important;
+}
+html body.ec-app-body .ec-topbar .ec-global-search.ec-global-search :is(input,input[type="search"]) {
+  color:var(--v64-ink)!important;-webkit-text-fill-color:var(--v64-ink)!important;
+  background:transparent!important;color-scheme:inherit!important;
+}
+html body.ec-app-body .ec-topbar .ec-global-search input::placeholder {
+  color:var(--v64-muted)!important;-webkit-text-fill-color:var(--v64-muted)!important;opacity:1!important;
+}
+html body.ec-app-body .ec-topbar .ec-global-search :is(svg,kbd) {color:var(--v64-muted)!important;stroke:var(--v64-muted)!important;}
+html body.ec-app-body .ec-topbar .ec-global-search kbd {background:var(--v64-panel)!important;border-color:var(--v64-line)!important;}
+html body.ec-app-body .ec-topbar .ec-topbar-context {color:var(--v64-ink)!important;}
+
+/* Menu do usuário V592: no escuro não pode permanecer um cartão branco. */
+html body.ec-app-body .ec-topbar .e592-account-trigger,
+html body.ec-app-body .ec-topbar .e592-account-name,
+html body.ec-app-body .ec-topbar .e592-account-trigger:active {
+  color:var(--v64-ink)!important;-webkit-text-fill-color:var(--v64-ink)!important;
+}
+html body.ec-app-body .ec-topbar .e592-account-trigger>svg {color:var(--v64-muted)!important;}
+html body.ec-app-body .ec-topbar .e592-account-trigger:is(:hover,:focus-visible) {
+  background:var(--v64-mint)!important;border-color:var(--v64-line)!important;
+}
+html.dark body.ec-app-body .ec-topbar .e592-account-avatar {
+  color:#88ebdc!important;background:#1e524c!important;border-color:#3e776d!important;
+}
+html.dark body.ec-app-body .ec-topbar .e592-account-panel.ec-topbar-account-menu {
+  background:var(--v64-panel)!important;background-image:none!important;
+  color:var(--v64-ink)!important;border:1px solid var(--v64-line)!important;
+  color-scheme:dark!important;box-shadow:0 20px 42px rgba(0,0,0,.30)!important;
+}
+html.dark body.ec-app-body .ec-topbar .e592-account-header.ec-profile-menu-header {background:var(--v64-panel-soft)!important;color:var(--v64-ink)!important;}
+html.dark body.ec-app-body .ec-topbar .e592-account-identity :is(strong,.ec-profile-menu-name) {color:var(--v64-ink)!important;}
+html.dark body.ec-app-body .ec-topbar .e592-account-identity :is(small,.ec-profile-menu-email) {color:var(--v64-muted)!important;}
+html.dark body.ec-app-body .ec-topbar .e592-account-divider {background:var(--v64-line)!important;}
+html.dark body.ec-app-body .ec-topbar .e592-account-panel .e592-account-item.ec-profile-menu-item {color:var(--v64-ink)!important;}
+html.dark body.ec-app-body .ec-topbar .e592-account-panel .e592-account-item.ec-profile-menu-item:is(:hover,:focus-visible) {
+  background:var(--v64-mint)!important;color:#8ae9da!important;
+}
+html.dark body.ec-app-body .ec-topbar .e592-account-panel .e592-account-item>svg {color:var(--v64-muted)!important;}
+html.dark body.ec-app-body .ec-topbar .e592-account-panel .e592-account-signout:is(:hover,:focus-visible) {
+  color:#ffb1b1!important;background:#533444!important;
+}
+
+/* 3. Configurações V63: elimina contrastes quebrados nos dois modos. */
+html:not(.dark) body.ec-app-body .ec-cfg-v63 {color:var(--v64-ink)!important;}
+html.dark body.ec-app-body .ec-cfg-v63 {
+  color:var(--v64-ink)!important;
+  --cfg-page:var(--v64-page);--cfg-card:var(--v64-panel);
+  --cfg-text:var(--v64-ink);--cfg-soft:var(--v64-muted);
+  --cfg-border:var(--v64-line);--cfg-input:var(--v64-input);
+  --cfg-accent:var(--v64-teal);--cfg-accent-strong:#8ae9da;
+  --cfg-accent-pale:var(--v64-mint);
+}
+html.dark body.ec-app-body .ec-cfg-v63 :is(.ec-cfg-card,.ec-cfg-theme-card) {
+  background:var(--v64-panel)!important;color:var(--v64-ink)!important;
+  border-color:var(--v64-line)!important;
+}
+html.dark body.ec-app-body .ec-cfg-v63 :is(.ec-cfg-field>input,.ec-cfg-theme-select) {
+  background:var(--v64-input)!important;color:var(--v64-ink)!important;
+  border-color:var(--v64-line)!important;color-scheme:dark!important;
+}
+html.dark body.ec-app-body .ec-cfg-v63 .ec-cfg-theme-card.is-selected {border-color:#59d4c2!important;box-shadow:inset 0 0 0 1px #59d4c2!important;}
+html.dark body.ec-app-body .ec-cfg-v63 .ec-cfg-btn:not(.ec-cfg-btn-primary):not(.ec-cfg-btn-danger) {
+  background:var(--v64-panel-soft)!important;color:var(--v64-ink)!important;border-color:var(--v64-line)!important;
+}
+html.dark body.ec-app-body .ec-cfg-v63 .ec-cfg-pill.is-muted {background:#31475a!important;color:#b9cad8!important;}
+html.dark body.ec-app-body .ec-cfg-v63 .ec-cfg-note.is-success {background:#1c443a!important;color:#9ee8d0!important;}
+html.dark body.ec-app-body .ec-cfg-v63 .ec-cfg-note.is-warning {background:#503e26!important;color:#ffe1a1!important;}
+html.dark body.ec-app-body .ec-cfg-v63 .ec-cfg-note.is-neutral {background:#233b55!important;color:#b8d5fa!important;}
+
+/* 4. Páginas com tokens próprios do Figma: acompanhar o tema do Flux. */
+html.dark body.ec-app-body:has(.ef29-activated) {
+  --ef29-background:var(--v64-page)!important;--ef29-panel:var(--v64-panel)!important;
+  --ef29-border:var(--v64-line)!important;--ef29-text:var(--v64-ink)!important;
+  --ef29-muted:var(--v64-muted)!important;--ef29-green:#59d4c2!important;
+  --ef29-green-quiet:var(--v64-mint)!important;
+}
+html.dark body.ec-app-body .ec-overview.ef29-activated {
+  --eo-text:var(--v64-ink)!important;--eo-muted:var(--v64-muted)!important;
+  --eo-bg:var(--v64-panel)!important;--eo-bg-soft:var(--v64-panel-soft)!important;
+  --eo-line:var(--v64-line)!important;--eo-teal:#59d4c2!important;
+  color:var(--v64-ink)!important;
+}
+html.dark body.ec-app-body .leads-rf.lf36-leads,
+html.dark body.ec-app-body .ecgm-page.ecgm-v2 {
+  --lf34-ink:var(--v64-ink)!important;--lf34-ink-deep:var(--v64-ink)!important;
+  --lf34-muted:var(--v64-muted)!important;--lf34-faint:var(--v64-muted)!important;
+  --lf34-canvas:var(--v64-page)!important;--lf34-card:var(--v64-panel)!important;
+  --lf34-soft:var(--v64-panel-soft)!important;--lf34-border:var(--v64-line)!important;
+  --lf34-line:var(--v64-line)!important;--lf34-teal:#59d4c2!important;
+  --lf36-bg:var(--v64-page)!important;--lf36-ink:var(--v64-ink)!important;
+  --lv13-bg:var(--v64-page)!important;--lv13-panel:var(--v64-panel)!important;
+  --lv13-fg:var(--v64-ink)!important;--lv13-muted:var(--v64-muted)!important;
+  --lv13-border:var(--v64-line)!important;
+}
+html.dark body.ec-app-body .eccl-page.ec-e01-page,
+html.dark body.ec-app-body .ecnc-page,
+html.dark body.ec-app-body .ec-form-page {
+  --eccl-bg:var(--v64-page);--eccl-panel:var(--v64-panel);
+  --eccl-ink:var(--v64-ink);--eccl-muted:var(--v64-muted);
+  --eccl-border:var(--v64-line);
+  color:var(--v64-ink)!important;
+}
+html.dark body.ec-app-body .prv63-page {
+  --p63-ink:var(--v64-ink)!important;--p63-body:var(--v64-muted)!important;
+  --p63-muted:var(--v64-muted)!important;--p63-line:var(--v64-line)!important;
+  --p63-surface:var(--v64-panel)!important;--p63-canvas:var(--v64-page)!important;
+  --p63-teal:#59d4c2!important;--p63-teal-light:var(--v64-mint)!important;
+}
+html.dark body.ec-app-body .ecim65-page {
+  --im65-ink:var(--v64-ink)!important;--im65-text:var(--v64-muted)!important;
+  --im65-muted:var(--v64-muted)!important;--im65-line:var(--v64-line)!important;
+  --im65-teal:#59d4c2!important;
+}
+html.dark body.ec-app-body .ecc66-page {
+  --c66-ink:var(--v64-ink)!important;--c66-muted:var(--v64-muted)!important;
+  --c66-line:var(--v64-line)!important;--c66-teal:#59d4c2!important;
+  --c66-mint:var(--v64-mint)!important;--ecc3-ink:var(--v64-ink)!important;
+  --ecc3-muted:var(--v64-muted)!important;--ecc3-line:var(--v64-line)!important;
+}
+
+/* 5. Cartões e superfícies. O seletor tem escopo nos módulos do Prospector. */
+html.dark body.ec-app-body .ef29-dashboard :is(
+  .ef29-kpi,.ef29-card,.ef29-focus,.ef29-map-geographic-panel,
+  .ef29-more-card,.ef29-state-card,.ef29-button:not(.ef29-button--main),.ef29-map-link:not(.ef29-map-link--inline)
+),
+html.dark body.ec-app-body .leads-rf.lf36-leads :is(
+  .rf-filters,.rf-list-panel,.rf-list-toolbar,.rf-stage-strip,.rf-dashboard-drilldown,
+  .lf37-global-stage,.lf361-pipeline-access,.lf361-pipeline-summary,
+  .lf361-crm-secondary .rf-crm-only-panel,.lv14-hubspot-summary,.rf-crm-only-panel,
+  .rf-stage-card,.rf-filter-main,.rf-filter-secondary,.rf-empty-state,.rf-leads-summary
+),
+html.dark body.ec-app-body .ecgm-page.ecgm-v2 :is(
+  .ecgm-panel,.ecgm-metric,.ecgm-card,.ecgm62-load-card,.ecgm62-role-card,
+  .ecgm-totals,.ecgm-v2-card,.ecgm-management-table,.ecgm62-role-field
+),
+html.dark body.ec-app-body .eccl-page.ec-e01-page :is(
+  .ec-e01-stat,.ec-e01-filter-card,.ec-e01-results,.eccl-toolbar,
+  .eccl-v26-results-panel,.eccl-results-head,.eccl-table,.ec-e01-table,
+  .ec-e01-explain
+),
+html.dark body.ec-app-body .ecnc-page :is(.ecnc-card,.ecnc-summary),
+html.dark body.ec-app-body .ec-form-page :is(.ec-panel,form>section),
+html.dark body.ec-app-body .prv63-page :is(
+  .prv63-card,.prv63-picker,.prv63-picker-body,.prv63-button:not(.prv63-button-primary),
+  .prv63-table,.prv63-form-card,.prv63-results-card,.prv63-report-panel
+),
+html.dark body.ec-app-body .ecim65-page :is(
+  .im65-card,.im65-panel,.im65-results,.im65-tab:not(.is-active),
+  .im65-button:not(.im65-button-primary),.im65-summary-card,.im65-history-card
+),
+html.dark body.ec-app-body .ecc66-page :is(
+  .c66-metric,.c66-refine,.ecc3-filters,.ecc3-table-panel,.ecc3-center,
+  .ecc3-filter-search,.ecc3-list-header,.ecc3-filters-foot,.ecc3-table,
+  .ecc3-inspector,.ecc3-inspector-card,.ecc3-popup,.ecc3-modal,
+  .ecc3-button:not(.ecc3-button-primary)
+),
+html.dark body.ec-app-body .ec22-page :is(
+  .ec22-card,.ecm2-shell,.ecm2-card,.ecm6-card,.ecm7-card,.ec21-inbox,
+  .ec21-message-sheet,.ecm6-panel,.ecm7-panel,.ec22-panel,
+  .ec22-settings-form,.ec22-settings-summary
+) {
+  background:var(--v64-panel)!important;
+  background-image:none!important;
+  color:var(--v64-ink)!important;
+  border-color:var(--v64-line)!important;
+  box-shadow:none!important;
+}
+
+/* Painéis e linhas alternadas: manter hierarquia legível em Escuro. */
+html.dark body.ec-app-body .ef29-dashboard :is(.ef29-uf,.ef29-bar-track,.ef29-extra-stages summary),
+html.dark body.ec-app-body .leads-rf.lf36-leads :is(
+  .lv13-list-head,.lv13-lead-line,.rf-crm-only-row,.lf36-crm-toolbar,.rf-pagination,
+  .rf-filter-row,.lf37-global-heading,.lf361-pipeline-access>.rf-stage-strip
+),
+html.dark body.ec-app-body .ecgm-page.ecgm-v2 :is(
+  .ecgm-management-table tbody tr,.ecgm-management-table thead,.ecgm-totals,.ecgm-note
+),
+html.dark body.ec-app-body .eccl-page.ec-e01-page :is(
+  .ec-e01-table thead,.ec-e01-table tbody tr,.ec-e01-results-head,.eccl-pagination
+),
+html.dark body.ec-app-body .prv63-page :is(
+  .prv63-picker-trigger,.prv63-picker.is-open>.prv63-picker-trigger,
+  .prv63-table thead,.prv63-table tbody tr
+),
+html.dark body.ec-app-body .ecim65-page :is(
+  .im65-table thead,.im65-table tbody tr,.im65-toolbar,.im65-table-row
+),
+html.dark body.ec-app-body .ecc66-page :is(
+  .ecc3-list-header,.ecc3-table thead,.ecc3-table tbody tr,.ecc3-filters-foot
+),
+html.dark body.ec-app-body .ec22-page :is(.ec22-table thead,.ec22-table tbody tr,.ecm6-table thead) {
+  background:var(--v64-panel-soft)!important;
+  background-image:none!important;
+  color:var(--v64-ink)!important;
+  border-color:var(--v64-line)!important;
+}
+html.dark body.ec-app-body .ef29-dashboard :is(.ef29-bar-track,.ef29-uf) {border-color:var(--v64-line)!important;}
+html.dark body.ec-app-body .ef29-dashboard .ef29-bar-track {background:#345166!important;}
+
+/* Tipografia e descrições: evita texto navy sobre fundo navy. */
+html.dark body.ec-app-body .ef29-dashboard :is(
+  h1,h2,.ef29-kpi-value,.ef29-focus strong,.ef29-map-geographic-header strong,
+  .ef29-bar-count,.ef29-card-title strong,.ef29-dashboard-value
+),
+html.dark body.ec-app-body .leads-rf.lf36-leads :is(
+  h1,h2,h3,.rf-title,.rf-list-title,.lv13-lead-line strong,.lf37-global-total strong,
+  .lf37-global-stage>strong,.lf361-pipeline-summary>span:first-child
+),
+html.dark body.ec-app-body .ecgm-page.ecgm-v2 :is(
+  h1,h2,h3,.ecgm-v2-title,.ecgm-metric strong,.ecgm-role-row strong
+),
+html.dark body.ec-app-body .eccl-page.ec-e01-page :is(
+  h1,h2,h3,.ec-e01-stat strong,.eccl-company-name,.ec-e01-results-head h2,
+  .ec-e01-table td,.ec-e01-table th
+),
+html.dark body.ec-app-body .ecnc-page :is(h1,h2,h3,.ecnc-card h2),
+html.dark body.ec-app-body .ec-form-page :is(h1,h2,h3,label),
+html.dark body.ec-app-body .prv63-page :is(
+  h1,h2,h3,.prv63-page-header h1,.prv63-card-heading h2,.prv63-check-row strong
+),
+html.dark body.ec-app-body .ecim65-page :is(h1,h2,h3,.im65-card h2),
+html.dark body.ec-app-body .ecc66-page :is(
+  h1,h2,h3,h4,.ecc3-heading h1,.c66-metric strong,.ecc3-list-title strong
+),
+html.dark body.ec-app-body .ec22-page :is(h1,h2,h3,h4,.ec22-card-head h2) {
+  color:var(--v64-ink)!important;
+  -webkit-text-fill-color:var(--v64-ink)!important;
+  opacity:1!important;
+}
+html.dark body.ec-app-body .ef29-dashboard :is(.ef29-intro p,.ef29-focus span,.ef29-kpi-title,.ef29-kpi-caption,.ef29-intro-meta,.ef29-map-footnote,.ef29-card-title>span,.ef29-map-geographic-header span),
+html.dark body.ec-app-body .leads-rf.lf36-leads :is(.rf-subtitle,.rf-pagination-info,.lv13-list-head,.lf37-global-footer,.lf37-global-stage>span),
+html.dark body.ec-app-body .ecgm-page.ecgm-v2 :is(.ecgm-header p,.ecgm-metric span,.ecgm-note,.ecgm-totals),
+html.dark body.ec-app-body .eccl-page.ec-e01-page :is(.eccl-header p,.ec-e01-stat span,.eccl-field label,.ec-e01-origin,.eccl-results-meta),
+html.dark body.ec-app-body .prv63-page :is(p,small,.prv63-kicker,.prv63-picker-trigger),
+html.dark body.ec-app-body .ecim65-page :is(p,small,.im65-eyebrow,.im65-muted),
+html.dark body.ec-app-body .ecc66-page :is(.ecc3-heading p,.c66-metric small,.c66-metric span,.ecc3-breadcrumb),
+html.dark body.ec-app-body .ec22-page :is(.ec22-card-head p,.ecm7-subtitle,.ec22-muted) {
+  color:var(--v64-muted)!important;
+  -webkit-text-fill-color:var(--v64-muted)!important;
+}
+
+/* Botões secundários; primários, estados e status NÃO são uniformizados. */
+html.dark body.ec-app-body .ef29-dashboard .ef29-button:not(.ef29-button--main),
+html.dark body.ec-app-body .prv63-page .prv63-button:not(.prv63-button-primary):not(.prv63-button-quiet),
+html.dark body.ec-app-body .ecim65-page .im65-button:not(.im65-button-primary),
+html.dark body.ec-app-body .ecc66-page .ecc3-button:not(.ecc3-button-primary),
+html.dark body.ec-app-body .ec22-page :is(.ec22-button-secondary,.ecm6-button-secondary) {
+  background:var(--v64-panel-soft)!important;
+  color:var(--v64-ink)!important;
+  border-color:var(--v64-line)!important;
+}
+html.dark body.ec-app-body .ec22-page :is(.ec22-button-primary,.ecm6-button-primary) {
+  background:#0a897f!important;color:white!important;border-color:#0a897f!important;
+}
+
+/* Formulários em cada workspace, respeitando o componente nativo Flux. */
+html.dark body.ec-app-body .ec-main :is(
+  .prv63-page,.ecim65-page,.eccl-page,.ecnc-page,.ecgm-page,
+  .leads-rf,.ecc66-page,.eccr-page,.ec22-page,.ec-form-page
+) :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select) {
+  background:var(--v64-input)!important;
+  background-image:none!important;
+  color:var(--v64-ink)!important;
+  -webkit-text-fill-color:var(--v64-ink)!important;
+  border-color:var(--v64-line)!important;
+  color-scheme:dark!important;
+}
+html.dark body.ec-app-body .ec-main :is(
+  .prv63-page,.ecim65-page,.eccl-page,.ecnc-page,.ecgm-page,
+  .leads-rf,.ecc66-page,.eccr-page,.ec22-page,.ec-form-page
+) :is(input,textarea)::placeholder {
+  color:var(--v64-muted)!important;-webkit-text-fill-color:var(--v64-muted)!important;
+}
+html.dark body.ec-app-body .ec-main :is(input,textarea,select):focus-visible {outline-color:#59d4c2!important;}
+html.dark body.ec-app-body .ec-main :is(input[type="checkbox"],input[type="radio"]) {accent-color:#48cdbb!important;}
+
+/* Receita: já existia num tema escuro; normalizar a experiência nas duas opções. */
+html.dark body.ec-app-body .eccr-page {color:#e9f3fa!important;background:var(--v64-page)!important;}
+html.dark body.ec-app-body .eccr-page :is(.eccr-filters,.eccr-summary>div,.eccr-results,.eccr-inspector,.eccr-card,.eccr-entry,.eccr-intro) {
+  background:var(--v64-panel)!important;color:var(--v64-ink)!important;border-color:var(--v64-line)!important;
+}
+html:not(.dark) body.ec-app-body .eccr-page {background:var(--v64-page)!important;color:var(--v64-ink)!important;--eccr-line:var(--v64-line);--eccr-muted:var(--v64-muted);--eccr-cyan:#078b7e;}
+html:not(.dark) body.ec-app-body .eccr-page :is(.eccr-filters,.eccr-summary>div,.eccr-results,.eccr-inspector,.eccr-card,.eccr-entry,.eccr-intro) {
+  background:var(--v64-panel)!important;color:var(--v64-ink)!important;border-color:var(--v64-line)!important;
+}
+html:not(.dark) body.ec-app-body .eccr-page :is(h1,h2,h3,strong,.eccr-entry-title strong,.eccr-inspector-title h2,.eccr-card h3) {color:var(--v64-ink)!important;}
+html:not(.dark) body.ec-app-body .eccr-page :is(p,small,.eccr-entry-meta,.eccr-company) {color:var(--v64-muted)!important;}
+html:not(.dark) body.ec-app-body .eccr-page :is(.eccr-back,.eccr-entry-channels) {color:#087c70!important;}
+
+/* Modais do Flux inseridos por portal fora da view original. */
+html.dark :is([data-flux-modal],[data-flux-dialog],dialog[open]) {
+  color-scheme:dark;
+}
+html.dark body.ec-app-body :is(.ec-settings-delete-modal,.ec-settings-recovery-codes,.ec-settings-security-content) {
+  color:var(--v64-ink)!important;
+}
+
+/* Login e páginas públicas: o tema deve ser coerente também fora do Dashboard. */
+html.dark body.ec-auth-body {background:#0e1d2c!important;color:#e9f3fa!important;}
+html.dark body.ec-auth-body :is(.ec-auth-card-login,.ec-auth-login-page) {background:#172b3f!important;color:#e9f3fa!important;}
+html.dark body.ec-auth-body :is(input,select,textarea) {background:#142c40!important;color:#e9f3fa!important;border-color:#344f63!important;}
+
+@media (prefers-reduced-motion:reduce) {
+  html body.ec-app-body :is(.ec-sidebar,.ec-topbar,.ec-cfg-v63) * {transition:none!important;}
+}
+
+/* Acabamento final V64: vence os textos navy fixos das topbars específicas. */
+html.dark body.ec-app-body .ec-topbar.ec-topbar :is(
+  .ec-topbar-title.ec-topbar-title,.ec-topbar-context.ec-topbar-context,
+  .e592-account-name.e592-account-name,.ec-topbar-profile-name.ec-topbar-profile-name
+) {color:var(--v64-ink)!important;-webkit-text-fill-color:var(--v64-ink)!important;}
+html.dark body.ec-app-body .ec-topbar.ec-topbar :is(.ec-topbar-eyebrow,.ec-topbar-profile-chevron) {
+  color:var(--v64-muted)!important;-webkit-text-fill-color:var(--v64-muted)!important;
+}

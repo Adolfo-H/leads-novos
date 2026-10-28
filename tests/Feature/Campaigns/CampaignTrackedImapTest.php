@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 function trackedCampaignSetup(): array
 {
@@ -136,12 +137,17 @@ it('recognizes a tracked response by Message-ID and sender, without changing com
     expect(EmailCampaignReply::query()->count())->toBe(0);
 });
 
-it('shows the tracked test control only through the manager campaigns workspace', function (): void {
+it('permits seller navigation but restricts tracked SMTP testing to managers', function (): void {
     [$manager, $campaign] = trackedCampaignSetup();
     $seller = User::factory()->create(['email_verified_at' => now()]);
     $seller->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
 
-    $this->actingAs($seller)->get(route('campaigns.index'))->assertForbidden();
+    $this->actingAs($seller)->get(route('campaigns.index'))->assertOk();
+    // A página é compartilhada, mas o teste SMTP rastreado exige gestor.
+    Mail::fake();
+    expect(fn () => app(CampaignTrackedTest::class)->send($seller, $campaign))
+        ->toThrow(HttpException::class);
+    Mail::assertNothingSent();
 
     Livewire::actingAs($manager)
         ->test('pages::campaigns.index')

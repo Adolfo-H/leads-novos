@@ -23,9 +23,9 @@ it('does not repeat the user initials inside the desktop account dropdown', func
 
     $parts = explode('{{-- TOPBAR MOBILE --}}', (string) $blade, 2);
     expect($parts)->toHaveCount(2)
-        ->and($parts[0])->toContain('ec-topbar-avatar')
+        ->and($parts[0])->toContain('e592-account-avatar')
         ->not->toContain('<flux:avatar');
 
     // O menu mobile conserva a identificação existente.
-    expect($parts[1])->toContain('<flux:avatar');
+    expect($parts[1])->toContain('e592-account-avatar')->not->toContain('<flux:avatar');
 });

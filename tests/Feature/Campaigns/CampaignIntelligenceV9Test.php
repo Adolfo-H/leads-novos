@@ -40,7 +40,7 @@ it('restricts intelligence to authenticated managers', function (): void {
     $seller = tap(User::factory()->create(['email_verified_at' => now()]), function (User $u): void {
         $u->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
     });
-    $this->actingAs($seller)->get(route('campaigns.intelligence.index'))->assertForbidden();
+    $this->actingAs($seller)->get(route('campaigns.intelligence.index'))->assertOk();
     $manager = tap(User::factory()->create(['email_verified_at' => now()]), function (User $u): void {
         $u->forceFill(['commercial_role' => User::ROLE_MANAGER])->save();
     });

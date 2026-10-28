@@ -77,7 +77,7 @@ it('does not direct sellers to manager-only companies and contacts searches', fu
 
     $response->assertOk()
         ->assertSee('data-ec-global-search="desktop"', false)
-        ->assertSee('action="'.route('leads.index').'"', false);
+        ->assertSee('action="'.route('companies.index').'"', false);
 
     // O Dashboard pode registrar o listener no HTML do Livewire mesmo para vendedores.
     // Por isso, conferimos apenas o formulario de busca global do cabecalho.
@@ -91,7 +91,7 @@ it('does not direct sellers to manager-only companies and contacts searches', fu
     expect($matched)->toBe(1);
 
     expect($form[0] ?? '')
-        ->toContain('action="'.route('leads.index').'"')
+        ->toContain('action="'.route('companies.index').'"')
         ->not->toContain('dashboard-global-search')
         ->not->toContain('x-on:submit.prevent');
 });

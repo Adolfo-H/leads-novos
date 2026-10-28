@@ -98,7 +98,7 @@
             </flux:sidebar.group>
 
             {{-- RECURSOS EXCLUSIVOS DA GESTAO --}}
-            @if (auth()->user()?->isCommercialManager())
+            @if (auth()->user()?->isCommercialManager() || auth()->user()?->isCommercialSeller())
 
                 <flux:sidebar.group
                     heading="Prospecção"
@@ -148,7 +148,7 @@
 
 
             {{-- CENTRAL DE CONTATOS EXPORTCONTROL --}}
-            @if (auth()->user()?->isCommercialManager())
+            @if (auth()->user()?->isCommercialManager() || auth()->user()?->isCommercialSeller())
                 <flux:sidebar.group heading="Relacionamento" class="ec-sidebar-group grid">
                     <flux:sidebar.item
                         icon="user-group"
@@ -189,17 +189,6 @@
 
 
 
-
-        {{-- EC_PROSPECTING_SHELL_V636_WORLD --}}
-        @unless (request()->routeIs('prospecting.*', 'leads.management'))
-        <div class="ec-sidebar-world-v7" aria-label="Inteligência ExportControl">
-            <img src="{{ asset('images/dashboard/sidebar-world-v7.webp') }}"
-                 alt="Globo e conexões internacionais" loading="lazy">
-            <div class="ec-sidebar-world-v7__caption">
-                <p>Inteligência que conecta<br>seu negócio ao mundo.</p>
-            </div>
-        @endunless
-        </div>
 
         <div class="ec-sidebar-footer">
 
@@ -256,7 +245,7 @@
 
         <div class="ec-topbar-context">
 
-            @unless (request()->routeIs('leads.index', 'leads.management', 'companies.show', 'prospecting.*'))
+            @unless (request()->routeIs('leads.index', 'leads.management', 'companies.show', 'prospecting.*', 'access.requests.*'))
                 <span class="ec-topbar-eyebrow">
                     ExportControl
                 </span>

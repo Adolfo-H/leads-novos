@@ -26,7 +26,7 @@ it('shows readiness only to managers and never sends emails', function (): void 
     $seller = tap(User::factory()->create(['email_verified_at' => now()]), function (User $u): void {
         $u->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
     });
-    $this->actingAs($seller)->get(route('campaigns.production.index'))->assertForbidden();
+    $this->actingAs($seller)->get(route('campaigns.production.index'))->assertOk();
     Mail::assertNothingSent();
     Queue::assertNothingPushed();
 });

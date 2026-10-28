@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureCommercialCompanyAccess;
 use App\Http\Middleware\EnsureCommercialManager;
+use App\Http\Middleware\EnsureCommercialWorkspace;
 use App\Http\Middleware\VerifyHubSpotWebhookSignature;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'commercial.manager' => EnsureCommercialManager::class,
+            'commercial.workspace' => EnsureCommercialWorkspace::class,
 
             'commercial.company-access' => EnsureCommercialCompanyAccess::class,
 

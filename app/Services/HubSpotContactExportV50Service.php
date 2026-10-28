@@ -124,7 +124,7 @@ final class HubSpotContactExportV50Service
     }
 
     /**
-     * @param list<HubSpotContact> $contacts
+     * @param  list<HubSpotContact>  $contacts
      * @return array{names:string,details:string,emails:string,phones:string,namedPhones:string,namedEmails:string}
      */
     private function summarize(array $contacts): array

@@ -10,34 +10,14 @@ final class CompanyPolicy
     /**
      * Gestores enxergam qualquer empresa.
      *
-     * Vendedores enxergam somente empresas
-     * da própria carteira.
+     * Vendedores também visualizam todas as empresas
+     * e estabelecimentos da base compartilhada.
      */
-    public function view(
-        User $user,
-        Company $company,
-    ): bool {
-        if (
-            $user
-                ->isCommercialManager()
-        ) {
-            return true;
-        }
-
-        if (
-            ! $user
-                ->isCommercialSeller()
-        ) {
-            return false;
-        }
-
-        return $company
-            ->leadWorkState()
-            ->where(
-                'assigned_user_id',
-                $user->id
-            )
-            ->exists();
+    // EC_COMMERCIAL_WORKSPACE_V62_VIEW_ALL: leitura de todos os cadastros
+    // da Receita e dos dossiês para usuários comerciais autenticados.
+    public function view(User $user, Company $company): bool
+    {
+        return $user->isCommercialManager() || $user->isCommercialSeller();
     }
 
     /**
@@ -63,7 +43,7 @@ final class CompanyPolicy
         User $user,
         Company $company,
     ): bool {
-        return $this->view(
+        return $this->canWorkOnAssignedCompany(
             $user,
             $company,
         );
@@ -80,7 +60,7 @@ final class CompanyPolicy
         User $user,
         Company $company,
     ): bool {
-        return $this->view(
+        return $this->canWorkOnAssignedCompany(
             $user,
             $company,
         );
@@ -98,5 +78,20 @@ final class CompanyPolicy
     ): bool {
         return $user
             ->isCommercialManager();
+    }
+
+    /**
+     * A leitura é global; ações externas ainda exigem carteira ou gestor.
+     */
+    private function canWorkOnAssignedCompany(User $user, Company $company): bool
+    {
+        if ($user->isCommercialManager()) {
+            return true;
+        }
+
+        return $user->isCommercialSeller()
+            && $company->leadWorkState()
+                ->where('assigned_user_id', $user->id)
+                ->exists();
     }
 }

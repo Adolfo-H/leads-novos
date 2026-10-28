@@ -2,15 +2,17 @@
 
 use App\Models\Company;
 use App\Models\CompanyExportEvidence;
-use App\Models\CompanyExportIntelligence;
 use App\Models\User;
 use App\Services\CompanyExportDossierV58Service;
+use App\Services\ExportResearchQueryPlanner;
+use App\Services\Providers\TavilyExportResearchProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 
 uses(RefreshDatabase::class);
 
 /**
- * @param list<CompanyExportEvidence> $evidences
+ * @param  list<CompanyExportEvidence>  $evidences
  */
 function v58CompanyWithEvidence(array $evidences): Company
 {
@@ -128,8 +130,8 @@ it('preserves the publication date from Tavily when the result actually supplies
         'corporate_name' => 'AGRO EXPORTADORA TESTE S.A.',
     ]);
 
-    \Illuminate\Support\Facades\Http::fake([
-        'https://api.tavily.com/search' => \Illuminate\Support\Facades\Http::response([
+    Http::fake([
+        'https://api.tavily.com/search' => Http::response([
             'results' => [[
                 'title' => 'Exportação de produtos',
                 'url' => 'https://empresa.test/exportacoes',
@@ -140,8 +142,8 @@ it('preserves the publication date from Tavily when the result actually supplies
         ]),
     ]);
 
-    $findings = app(\App\Services\Providers\TavilyExportResearchProvider::class)
-        ->research($company, app(\App\Services\ExportResearchQueryPlanner::class)->queries($company));
+    $findings = app(TavilyExportResearchProvider::class)
+        ->research($company, app(ExportResearchQueryPlanner::class)->queries($company));
 
     expect($findings)->not->toBeEmpty()
         ->and($findings[0]['metadata']['source_published_at'] ?? null)->toBe('2026-10-20');

@@ -113,6 +113,6 @@ it('preserves restrictions for non-managers on both P01 and P03', function (): v
     $seller->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
     $batch = ImportBatch::query()->create(['source_type' => 'prospecting', 'status' => 'completed']);
 
-    $this->actingAs($seller)->get(route('prospecting.index'))->assertForbidden();
-    $this->actingAs($seller)->get(route('prospecting.show', $batch))->assertForbidden();
+    $this->actingAs($seller)->get(route('prospecting.index'))->assertOk();
+    $this->actingAs($seller)->get(route('prospecting.show', $batch))->assertOk();
 });

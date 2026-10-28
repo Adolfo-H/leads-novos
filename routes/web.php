@@ -29,7 +29,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'pages::imports.index'
     )
         ->middleware(
-            'commercial.manager'
+            'commercial.workspace'
         )
         ->name('imports.index');
 
@@ -37,7 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Central de Contatos: apenas gestores autenticados.
-Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function () {
+Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function () {
     Route::livewire('/contatos', 'pages::contacts.index')
         ->name('contacts.index');
     /* CONTACTS_RECEITA_V4_ROUTE */
@@ -46,7 +46,7 @@ Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function ()
 
 /* EC_EMAIL_CAMPAIGNS_V1_ROUTES */
 // Os dados comerciais e o envio são exclusivos de gestores autorizados.
-Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function () {
+Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function () {
     Route::livewire('/campanhas', 'pages::campaigns.index')->name('campaigns.index');
     // CAMPANHAS_V6 — paginas independentes, todas restritas aos gestores.
     Route::livewire('/campanhas/respostas', 'pages::campaigns.replies')->name('campaigns.replies');
@@ -104,7 +104,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'pages::prospecting.index'
     )
         ->middleware(
-            'commercial.manager'
+            'commercial.workspace'
         )
         ->name('prospecting.index');
 
@@ -113,7 +113,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'pages::prospecting.show'
     )
         ->middleware(
-            'commercial.manager'
+            'commercial.workspace'
         )
         ->name('prospecting.show');
 
@@ -136,7 +136,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'pages::companies.index'
     )
         ->middleware(
-            'commercial.manager'
+            'commercial.workspace'
         )
         ->name('companies.index');
 
@@ -178,13 +178,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 /* EC_CAMPAIGN_RELEASE_V8: apenas gestores */
-Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function () {
+Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function () {
     Route::get('/campanhas/homologacao', [CampaignProductionReadinessController::class, 'index'])->name('campaigns.production.index');
     Route::post('/campanhas/homologacao', [CampaignProductionReadinessController::class, 'save'])->name('campaigns.production.save');
 });
 
 /* EC_CAMPAIGN_INTELLIGENCE_V9 — apenas gestores */
-Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function () {
+Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function () {
     Route::get('/campanhas/inteligencia', [CampaignIntelligenceController::class, 'index'])->name('campaigns.intelligence.index');
     Route::post('/campanhas/inteligencia/segmentos', [CampaignIntelligenceController::class, 'saveSegment'])->name('campaigns.intelligence.segments.save');
     Route::post('/campanhas/inteligencia/rascunhos', [CampaignIntelligenceController::class, 'draft'])->name('campaigns.intelligence.draft');

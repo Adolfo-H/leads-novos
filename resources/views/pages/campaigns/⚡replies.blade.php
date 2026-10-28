@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\EmailCampaignReply;
+use App\Models\EmailCampaignSuppression;
+use App\Services\Campaigns\CampaignImapHealth;
 use App\Models\EmailCampaignTestMessage;
 use App\Models\User;
 use App\Services\Campaigns\CampaignReplyReader;
@@ -25,16 +27,17 @@ new class extends Component
     private function ensureManager(): void
     {
         $user = auth()->user();
-        abort_unless($user instanceof User && $user->isCommercialManager(), 403);
+        abort_unless($user instanceof User && ($user->isCommercialManager() || $user->isCommercialSeller()), 403);
     }
 
     public function chooseKind(string $kind): void
     {
         $this->ensureManager();
-        abort_unless(in_array($kind, ['commercial', 'pilot'], true), 422);
+        abort_unless(in_array($kind, ['commercial', 'pilot', 'suppressed'], true), 422);
         $this->kind = $kind;
         $this->selectedId = null;
         $this->resetPage('replyPage');
+        $this->resetPage('unsubscribedPage');
         unset($this->selected, $this->conversations);
     }
 
@@ -43,8 +46,46 @@ new class extends Component
         $this->ensureManager();
         $this->search = mb_substr(trim($this->search), 0, 100);
         $this->resetPage('replyPage');
+        $this->resetPage('unsubscribedPage');
         $this->selectedId = null;
         unset($this->selected, $this->conversations);
+    }
+
+    /** @return LengthAwarePaginator<int, EmailCampaignSuppression> */
+    #[Computed]
+    public function unsubscribed(): LengthAwarePaginator
+    {
+        $this->ensureManager();
+        $term = mb_substr(trim($this->search), 0, 100);
+        $escaped = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term);
+
+        return EmailCampaignSuppression::query()
+            ->where('reason', 'unsubscribe')
+            ->when($term !== '', static fn ($q) => $q->where('normalized_email', 'like', '%'.$escaped.'%'))
+            ->orderByDesc('id')
+            ->paginate(20, ['*'], 'unsubscribedPage');
+    }
+
+    public function changeUnsubscribedPage(int $page): void
+    {
+        $this->ensureManager();
+        $this->setPage(max(1, min(100000, $page)), 'unsubscribedPage');
+        unset($this->unsubscribed);
+    }
+
+    /** @return array<string, mixed> */
+    #[Computed]
+    public function imapStatus(): array
+    {
+        $this->ensureManager();
+
+        return app(CampaignImapHealth::class)->snapshot();
+    }
+
+    public function refreshImapStatus(): void
+    {
+        $this->ensureManager();
+        unset($this->imapStatus);
     }
 
     #[Computed]
@@ -117,6 +158,7 @@ new class extends Component
 <div class="ecm6-page ecm7-page ec21-page ec22-page ec21-replies ec22-replies ec69-replies" data-ec69-replies="M07-V69" data-ec21-screen="replies" data-ec22-screen="replies" wire:poll.90s>
     <header class="ec21-module-header"><div><span class="ec22-kicker">CAMPANHAS / RESPOSTAS</span><h1>Caixa de respostas</h1><p>Somente conversas relacionadas às suas campanhas.</p></div><span class="ec21-status">Respostas registradas</span></header>
     @include('campaigns.module-nav')
+    @include('campaigns.replies-health-v77')
     <section class="ec69-reply-filter-card" aria-label="Encontre uma conversa">
         <h2>Encontre uma conversa</h2>
         <div class="ec69-reply-filter-grid">
@@ -131,10 +173,15 @@ new class extends Component
                     <button type="button" wire:click="chooseKind('commercial')" class="{{ $kind === 'commercial' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'commercial' ? 'true' : 'false' }}">Comerciais</button>
                     <button type="button" wire:click="chooseKind('pilot')" class="{{ $kind === 'pilot' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'pilot' ? 'true' : 'false' }}">Respostas de teste</button>
                 </div>
+                <button type="button" wire:click="chooseKind('suppressed')" class="{{ $kind === 'suppressed' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'suppressed' ? 'true' : 'false' }}">Descadastrados</button>
                 <small>Somente respostas vinculadas a campanhas</small>
             </div>
         </div>
     </section>
+    {{-- EC77_REPLIES: filtros de respostas e opt-out no mesmo módulo, sem remover os dados históricos. --}}
+    @if ($kind === 'suppressed')
+        @include('campaigns.unsubscribed-v77')
+    @else
     <div class="ec21-inbox">
         <section class="ec21-panel ec21-inbox-list" aria-label="Conversas recebidas">
             <div class="ec21-panel-heading"><div><h3>Respostas recebidas</h3><p>{{ number_format($this->conversations->total(), 0, ',', '.') }} resultado(s)</p></div><span class="ec21-counter">{{ $this->conversations->total() }}</span></div>
@@ -184,4 +231,5 @@ new class extends Component
             @endif
         </section>
     </div>
+    @endif
 </div>

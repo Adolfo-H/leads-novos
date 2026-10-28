@@ -41,6 +41,7 @@ final class ReconcileHubSpotCommercialV40 extends Command
         $max = (int) $this->option('max');
         if (! in_array($types, ['all', 'deals', 'tasks'], true) || $max < 1 || $max > 5000) {
             $this->error('Parâmetros inválidos. --types=all|deals|tasks e --max entre 1 e 5000.');
+
             return self::FAILURE;
         }
 
@@ -54,12 +55,14 @@ final class ReconcileHubSpotCommercialV40 extends Command
             }
         } catch (Throwable) {
             $this->error('Data inválida. Informe --since=2026-10-16.');
+
             return self::FAILURE;
         }
 
         $api = rtrim((string) config('services.hubspot.base_url', ''), '/');
         if (! str_starts_with($api, 'https://')) {
             $this->error('HubSpot BASE URL não é HTTPS. Nenhum dado alterado.');
+
             return self::FAILURE;
         }
 
@@ -96,14 +99,15 @@ final class ReconcileHubSpotCommercialV40 extends Command
                     ]]],
                     ['filters' => [
                         ['propertyName' => 'hs_timestamp', 'operator' => 'LT',
-                         'value' => (string) (today()->addDay()->getTimestamp() * 1000)],
+                            'value' => (string) (today()->addDay()->getTimestamp() * 1000)],
                         ['propertyName' => 'hs_task_status', 'operator' => 'NEQ',
-                         'value' => 'COMPLETED'],
+                            'value' => 'COMPLETED'],
                     ]],
                 ], $max)
                 : [];
         } catch (Throwable $e) {
             $this->error('Consulta de prévia à API falhou: '.get_class($e).'. Nenhuma escrita local iniciada.');
+
             return self::FAILURE;
         }
 
@@ -127,6 +131,7 @@ final class ReconcileHubSpotCommercialV40 extends Command
 
         if (! $apply) {
             $this->comment('Nenhum registro alterado. Confira os números e acrescente --apply explicitamente.');
+
             return self::SUCCESS;
         }
 
@@ -167,6 +172,7 @@ final class ReconcileHubSpotCommercialV40 extends Command
 
         $this->line('Objetos conciliados localmente: '.$updated.' | falhas: '.$failed);
         $this->line('Etapas sincronizadas no catálogo: '.count($stages));
+
         return $failed === 0 ? self::SUCCESS : self::FAILURE;
     }
 
@@ -205,11 +211,12 @@ final class ReconcileHubSpotCommercialV40 extends Command
                 ];
             }
         }
+
         return $stages;
     }
 
     /**
-     * @param list<array<string,mixed>> $groups
+     * @param  list<array<string,mixed>>  $groups
      * @return list<array{id:string,properties:array<string,mixed>}>
      */
     private function search(PendingRequest $client, string $api, string $object, array $groups, int $max): array
@@ -256,6 +263,7 @@ final class ReconcileHubSpotCommercialV40 extends Command
                 throw new RuntimeException('Busca remota excedeu 60 páginas; interrompida por segurança.');
             }
         } while ($after !== null && $after !== '');
+
         return array_values($results);
     }
 
@@ -274,7 +282,7 @@ final class ReconcileHubSpotCommercialV40 extends Command
                     ->where('stage_label', $item['stage_label'])
                     ->first();
             }
-            $stage ??= new HubSpotPipelineStage();
+            $stage ??= new HubSpotPipelineStage;
             $stage->forceFill($item)->save();
         });
     }

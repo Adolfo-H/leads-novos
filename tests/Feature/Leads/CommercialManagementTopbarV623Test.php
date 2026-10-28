@@ -25,6 +25,6 @@ it('preserves the global search Enter hint outside the management route', functi
     $search = file_get_contents(resource_path('views/components/global-company-search.blade.php'));
 
     expect($sidebar)->toContain("'leads.index', 'leads.management', 'companies.show'")
-        ->and($search)->toContain("@unless (request()->routeIs('leads.management'))")
+        ->and($search)->toContain("@unless (request()->routeIs('leads.management', 'prospecting.*'))")
         ->toContain('<kbd aria-hidden="true">Enter</kbd>');
 });

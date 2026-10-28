@@ -15,7 +15,7 @@ final class CampaignProductionReadinessController extends Controller
 {
     public function index(CampaignProductionReadiness $service): View
     {
-        $this->manager();
+        $this->workspace();
 
         return view('campaigns.production-readiness', ['report' => $service->snapshot()]);
     }
@@ -54,6 +54,15 @@ final class CampaignProductionReadinessController extends Controller
 
         return redirect()->route('campaigns.production.index')
             ->with('campaign_release_saved', 'Registro de homologação atualizado. Nenhum envio foi habilitado.');
+    }
+
+    /** Leitura da área de campanhas para gestor e vendedor. */
+    private function workspace(): User
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof User && ($user->isCommercialManager() || $user->isCommercialSeller()), 403);
+
+        return $user;
     }
 
     private function manager(): User

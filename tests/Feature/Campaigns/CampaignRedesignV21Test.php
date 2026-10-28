@@ -62,8 +62,21 @@ it('keeps the real policy while a user selects a desired sending time', function
 
     $policy = app(CampaignSendPolicy::class);
 
-    expect($policy->quote(500, 2)['possible'])->toBeFalse()
-        ->and($policy->quote(500, 8)['possible'])->toBeTrue();
+    // EC77_SMTP_QUOTES_TESTS: a capacidade agora depende da cota SMTP autorizada.
+    $short = $policy->quote(500, 2);
+    $long = $policy->quote(500, 8);
+    expect($short['hourly_limit'])->toBe(250)
+        ->and($long['hourly_limit'])->toBe(63)
+        ->and($short['possible'])->toBe(
+            (int) config('campaign_mail.smtp_approved_per_day', 500) >= 500
+            && $short['hourly_limit'] <= (int) config('campaign_mail.smtp_approved_per_hour', 100)
+            && $short['per_tick_limit'] <= (int) config('campaign_mail.smtp_approved_per_tick', 5)
+        )
+        ->and($long['possible'])->toBe(
+            (int) config('campaign_mail.smtp_approved_per_day', 500) >= 500
+            && $long['hourly_limit'] <= (int) config('campaign_mail.smtp_approved_per_hour', 100)
+            && $long['per_tick_limit'] <= (int) config('campaign_mail.smtp_approved_per_tick', 5)
+        );
 
     $view = file_get_contents(resource_path('views/pages/campaigns/⚡index.blade.php'));
     expect($view)->not->toBeFalse()

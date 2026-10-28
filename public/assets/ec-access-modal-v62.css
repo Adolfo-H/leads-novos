@@ -1,0 +1,84 @@
+/* ExportControl Prospector · V62 — confirmação administrativa acessível.
+ * Escopo restrito ao <dialog> de Solicitações de acesso.
+ */
+.ec-access-v62-modal {
+    width: min(94vw, 490px);
+    max-height: min(90dvh, 720px);
+    overflow-y: auto;
+    position: fixed;
+    margin: auto;
+    padding: 0;
+    color: #0a2844;
+    background: #fff;
+    border: 1px solid #d7e6e9;
+    border-radius: 19px;
+    box-shadow: 0 28px 80px rgba(2, 30, 52, .26);
+    z-index: 99999;
+    font-family: inherit;
+}
+.ec-access-v62-modal::backdrop {
+    background: rgba(3, 20, 34, .62);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+.ec-access-v62-modal__content { padding: 33px 32px 28px; position: relative; }
+.ec-access-v62-modal__close {
+    position: absolute; right: 19px; top: 17px;
+    width: 32px; height: 32px; border-radius: 9px;
+    background: #f3f6f8; color: #657990; font-size: 22px;
+    display: grid; place-items: center; line-height: 1; cursor: pointer;
+    border: 1px solid #ebeff2;
+}
+.ec-access-v62-modal__close:hover { background: #e9eef1; color: #0a2844; }
+.ec-access-v62-modal__icon {
+    width: 50px; height: 50px; border-radius: 15px;
+    display: grid; place-items: center; margin-bottom: 18px;
+    background: #e2f5f0; color: #008877; font-size: 25px; font-weight: 800;
+}
+.ec-access-v62-modal.is-rejection .ec-access-v62-modal__icon { background: #fff1f1; color: #dc4150; }
+.ec-access-v62-modal h2 {
+    color: #0b2843 !important;
+    font-weight: 750; font-size: clamp(20px, 2vw, 24px);
+    letter-spacing: -.03em; margin: 0 30px 10px 0; line-height: 1.25;
+}
+.ec-access-v62-modal p {
+    color: #5c7186 !important; font-size: 14px; line-height: 1.65;
+    margin: 0 0 22px;
+}
+.ec-access-v62-modal__reason {
+    display: flex; flex-direction: column; gap: 9px;
+    color: #173851; font-size: 13px; font-weight: 650;
+    margin-bottom: 23px;
+}
+.ec-access-v62-modal__reason[hidden] { display: none !important; }
+.ec-access-v62-modal__reason small { font-weight: 400; color: #7b8ba1; }
+.ec-access-v62-modal__reason textarea {
+    width: 100%; min-height: 86px; resize: vertical;
+    border: 1px solid #d9e5eb; border-radius: 10px;
+    padding: 12px 13px; color: #173851 !important;
+    background: #f8fbfc !important; font: inherit; font-weight: 400;
+    outline: none;
+}
+.ec-access-v62-modal__reason textarea:focus { border-color: #079382; box-shadow: 0 0 0 3px rgba(0, 153, 134, .11); }
+.ec-access-v62-modal__actions {
+    display: flex; justify-content: flex-end; align-items: center;
+    gap: 10px; padding-top: 5px;
+}
+.ec-access-v62-modal__actions button {
+    min-height: 42px; border-radius: 10px; padding: 0 19px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.ec-access-v62-modal__cancel { color: #35516b !important; background: #fff !important; border: 1px solid #d7e2e8; }
+.ec-access-v62-modal__cancel:hover { background: #f3f7f8 !important; }
+.ec-access-v62-modal__confirm { color: white !important; background: #007e73 !important; border: 1px solid #007e73 !important; }
+.ec-access-v62-modal__confirm:hover { background: #00685e !important; }
+.ec-access-v62-modal.is-rejection .ec-access-v62-modal__confirm { background: #cf3646 !important; border-color: #cf3646 !important; }
+.ec-access-v62-modal.is-rejection .ec-access-v62-modal__confirm:hover { background: #ac2635 !important; }
+.ec-access-v62-modal__confirm:disabled { opacity: .6; cursor: wait; }
+.ec-access-v62-modal button:focus-visible { outline: 3px solid rgba(5, 139, 128, .36); outline-offset: 2px; }
+@media (max-width: 560px) {
+    .ec-access-v62-modal__content { padding: 27px 21px 21px; }
+    .ec-access-v62-modal__actions { flex-direction: column-reverse; }
+    .ec-access-v62-modal__actions button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .ec-access-v62-modal::backdrop { backdrop-filter: none; } }

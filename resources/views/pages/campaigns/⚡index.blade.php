@@ -90,7 +90,7 @@ new class extends Component
     private function assertManager(): User
     {
         $user = auth()->user();
-        abort_unless($user instanceof User && $user->isCommercialManager(), 403);
+        abort_unless($user instanceof User && ($user->isCommercialManager() || $user->isCommercialSeller()), 403);
 
         return $user;
     }
@@ -559,7 +559,19 @@ new class extends Component
     public function toggleAudiencePage(): void
     {
         $this->assertManager();
-        $pageKeys = array_map(static fn (object $p): string => (string) $p->source_key, $this->audience->items());
+        // EC77_CAMPAIGN_SELECTION: seleção em lote não inclui endereços bloqueados.
+        $people = $this->audience->items();
+        $emails = array_values(array_unique(array_map(
+            static fn (object $p): string => mb_strtolower(trim((string) $p->email)), $people,
+        )));
+        $blocked = $emails === [] ? [] : \App\Models\EmailCampaignSuppression::query()
+            ->whereIn('normalized_email', $emails)->pluck('normalized_email')->all();
+        $pageKeys = array_values(array_map(
+            static fn (object $p): string => (string) $p->source_key,
+            array_filter($people, static fn (object $p): bool => ! in_array(
+                mb_strtolower(trim((string) $p->email)), $blocked, true,
+            )),
+        ));
         $selected = array_values(array_intersect($this->audienceKeys, $pageKeys));
         if (count($selected) === count($pageKeys)) {
             $this->audienceKeys = array_values(array_diff($this->audienceKeys, $pageKeys));
@@ -576,7 +588,12 @@ new class extends Component
                 $this->audienceSearch, $this->audienceOrigin,
                 max(1, min(1000, (int) config('campaign_mail.max_recipients', 100))),
             );
-            $combined = array_values(array_unique(array_merge($this->audienceKeys, $keys)));
+            $eligible = array_values(array_map(
+                static fn (array $row): string => $row['source_key'],
+                array_filter(app(CampaignAudience::class)->resolve($keys),
+                    static fn (array $row): bool => ! $row['suppressed']),
+            ));
+            $combined = array_values(array_unique(array_merge($this->audienceKeys, $eligible)));
             if (count($combined) > (int) config('campaign_mail.max_recipients', 100)) {
                 throw new InvalidArgumentException('O total selecionado ultrapassou o limite.');
             }
@@ -909,13 +926,25 @@ new class extends Component
                                 </div>
                                 <div class="ec22-recipient-tools"><button type="button" wire:click="toggleAudiencePage">Selecionar página</button><button type="button" wire:click="addAllFiltered">Adicionar resultados filtrados</button><button type="button" wire:click="$set('audienceKeys', [])" @disabled($audienceKeys === [])>Limpar seleção</button></div>
                                 <div class="ec22-table-scroll"><table class="ec22-contact-table"><thead><tr><th scope="col">✓</th><th scope="col">Contato / e-mail</th><th scope="col">Empresa</th><th scope="col">Origem</th></tr></thead><tbody>
+                                @php
+                                    $ec77OnPage = array_map(
+                                        static fn (object $row): string => mb_strtolower(trim((string) $row->email)),
+                                        $this->audience->items(),
+                                    );
+                                    $ec77BlockedEmails = $ec77OnPage === [] ? [] : \App\Models\EmailCampaignSuppression::query()
+                                        ->whereIn('normalized_email', $ec77OnPage)
+                                        ->pluck('reason', 'normalized_email')->all();
+                                @endphp
                                 @forelse ($this->audience as $person)
                                     @php
                                         $ec22PersonName = trim((string) $person->person_name);
                                         $ec22Email = (string) $person->email;
                                         $ec22Picked = in_array((string) $person->source_key, $audienceKeys, true);
+                                        $ec77BlockReason = $ec77BlockedEmails[mb_strtolower(trim($ec22Email))] ?? null;
+                                        $ec77OptedOut = $ec77BlockReason === 'unsubscribe';
                                     @endphp
-                                    <tr class="{{ $ec22Picked ? 'is-picked' : '' }}" wire:key="ec22-contact-{{ $person->source_key }}"><td><input type="checkbox" wire:model.live="audienceKeys" value="{{ $person->source_key }}" aria-label="Selecionar {{ $ec22Email }}"></td><td><div class="ec22-person-cell"><span class="ec22-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($ec22PersonName ?: $ec22Email, 0, 1)) }}</span><span><strong>{{ $ec22PersonName ?: $ec22Email }}</strong>@if($ec22PersonName)<small>{{ $ec22Email }}</small>@else<small>Nome não informado</small>@endif</span></div></td><td>{{ trim((string) $person->company_name) ?: 'Não informada' }}</td><td><span class="ec22-origin">{{ match ($person->origin) { 'hubspot' => 'HubSpot', 'receita' => 'Receita Federal', default => 'Manual' } }}</span></td></tr>
+                                    <tr class="{{ $ec22Picked ? 'is-picked' : '' }} {{ $ec77OptedOut ? 'ec77-unsubscribed-row' : '' }}" wire:key="ec22-contact-{{ $person->source_key }}"><td><input type="checkbox" wire:model.live="audienceKeys" value="{{ $person->source_key }}" aria-label="Selecionar {{ $ec22Email }}" @disabled($ec77BlockReason !== null)></td><td><div class="ec22-person-cell"><span class="ec22-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr($ec22PersonName ?: $ec22Email, 0, 1)) }}</span><span><strong>{{ $ec22PersonName ?: $ec22Email }}</strong>@if($ec22PersonName)<small>{{ $ec22Email }}</small>@else<small>Nome não informado</small>@endif
+                                            @if ($ec77OptedOut)<small class="ec77-block-reason">Descadastrado · envio impedido</small>@elseif ($ec77BlockReason !== null)<small class="ec77-block-reason">Endereço bloqueado para campanhas</small>@endif</span></div></td><td>{{ trim((string) $person->company_name) ?: 'Não informada' }}</td><td><span class="ec22-origin">{{ match ($person->origin) { 'hubspot' => 'HubSpot', 'receita' => 'Receita Federal', default => 'Manual' } }}</span></td></tr>
                                 @empty
                                     <tr><td colspan="4" class="ec22-table-empty">Nenhum contato com e-mail encontrado.</td></tr>
                                 @endforelse
@@ -1207,7 +1236,9 @@ new class extends Component
                 </div>
             </section>
                         {{-- EC_CAMPAIGN_QUEUE_LAB_V2 --}}
-            <livewire:campaign-queue-lab />
+            @if (auth()->user()?->isCommercialManager())
+                <livewire:campaign-queue-lab />
+            @endif
             <section class="ecm2-context-card ecm2-context-help"><strong>Segurança do envio</strong><p>Limites por hora e dia, aprovação explícita e descadastro. Aceitação SMTP não comprova entrega ou leitura.</p></section>
                 </div>
             </details>

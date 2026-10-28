@@ -44,9 +44,9 @@ it('exports a contact name immediately before its associated phone and email inf
         ->and($people['namedEmails'])->toContain('Letícia Silva: leticia@exemplo.test', 'Márcio Oliveira: marcio@exemplo.test')
         ->and(substr_count($people['names'], 'Letícia Silva'))->toBe(1)
         ->and($service->withAssociatedContacts('4499999999', $people['namedPhones']))
-            ->toContain('Empresa: 4499999999', 'Letícia Silva:')
+        ->toContain('Empresa: 4499999999', 'Letícia Silva:')
         ->and($service->withAssociatedContacts('', $people['namedEmails']))
-            ->toBe($people['namedEmails']);
+        ->toBe($people['namedEmails']);
 });
 
 it('never invents names or changes fiscal phone and email if HubSpot has no associated contacts', function (): void {

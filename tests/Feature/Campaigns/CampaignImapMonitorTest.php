@@ -113,14 +113,17 @@ it('recognizes the same tracked reply once without raising commercial reply metr
     expect(app(CampaignImapHealth::class)->snapshot()['tracked_replies'])->toBe(1);
 });
 
-it('shows monitoring only inside the existing manager-only campaigns page', function (): void {
+it('permits seller access to campaigns without rendering the manager-only queue lab', function (): void {
     imapMonitorConfig();
     $manager = User::factory()->create(['email_verified_at' => now()]);
     $manager->forceFill(['commercial_role' => User::ROLE_MANAGER])->save();
     $seller = User::factory()->create(['email_verified_at' => now()]);
     $seller->forceFill(['commercial_role' => User::ROLE_SELLER])->save();
 
-    $this->actingAs($seller)->get(route('campaigns.index'))->assertForbidden();
+    // V69: vendedor navega, mas não monta o simulador administrativo.
+    $this->actingAs($seller)->get(route('campaigns.index'))
+        ->assertOk()
+        ->assertDontSee('data-ec-queue-lab', false);
     $this->actingAs($manager)->get(route('campaigns.index'))
         ->assertOk()
         ->assertSee('Última sincronização IMAP');

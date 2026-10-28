@@ -87,6 +87,7 @@ function v48Workbook(StreamedResponse $response): Spreadsheet
     }
     try {
         file_put_contents($file, $content);
+
         return (new Xlsx)->load($file);
     } finally {
         @unlink($file);

@@ -32,7 +32,7 @@ new class extends Component
     private function ensureManager(): void
     {
         $user = auth()->user();
-        abort_unless($user instanceof User && $user->isCommercialManager(), 403);
+        abort_unless($user instanceof User && ($user->isCommercialManager() || $user->isCommercialSeller()), 403);
     }
 
     #[Computed]
@@ -54,6 +54,7 @@ new class extends Component
     public function saveSettings(CampaignSendPolicy $policy): void
     {
         $this->ensureManager();
+        abort_unless(auth()->user()?->isCommercialManager(), 403);
         $this->validate([
             'volume' => ['required', 'integer', 'min:1', 'max:'.max(1, (int) config('campaign_mail.smtp_approved_per_day', 500))],
             'duration' => ['required', 'integer', 'min:1', 'max:24'],
@@ -93,7 +94,7 @@ new class extends Component
                     @error('capacityConfirmed')<div class="ec22-error" role="alert">{{ $message }}</div>@enderror
                     @error('policy')<div class="ec22-error" role="alert">{{ $message }}</div>@enderror
                 </div>
-                <button type="submit" class="ec22-button ec22-button-primary" wire:loading.attr="disabled" wire:target="saveSettings">{{ $activate ? 'Salvar política autorizada' : 'Salvar planejamento' }}</button>
+                <button type="submit" class="ec22-button ec22-button-primary" @disabled(auth()->user()?->isCommercialSeller()) title="Alteração de limites exclusiva do gestor" wire:loading.attr="disabled" wire:target="saveSettings">{{ $activate ? 'Salvar política autorizada' : 'Salvar planejamento' }}</button>
                 <span wire:loading wire:target="saveSettings">Salvando...</span>
             </form>
         </section>

@@ -1,0 +1,47 @@
+/* V77 ExportControl — legibilidade SMTP, descadastro e saúde IMAP. Escopo Campanhas. */
+body.ec-app-body .ecm2 .ecm2-pill.is-delivery-sent,
+body.ec-app-body .ecm2 .ecm2-pill[class*="is-delivery-sent"],
+body.ec-app-body .ecm2 .ec76-detail .ecm2-pill.is-delivery-sent {
+  color:#087c69!important;-webkit-text-fill-color:#087c69!important;
+  background:#e4f6ef!important;border:1px solid #b1e5d2!important;
+  box-shadow:none!important;padding:5px 10px!important;border-radius:999px!important;
+  font-weight:750!important;line-height:1.3!important;
+}
+body.ec-app-body .ecm2 .ecm2-pill.is-delivery-suppressed,
+body.ec-app-body .ecm2 .ec76-detail .ecm2-pill.is-delivery-suppressed {
+  color:#a36319!important;-webkit-text-fill-color:#a36319!important;
+  background:#fff3dd!important;border:1px solid #f0d6a6!important;
+  box-shadow:none!important;padding:5px 10px!important;border-radius:999px!important;
+}
+body.ec-app-body .ecm2 .ecm2-pill.is-delivery-uncertain {
+  color:#995c12!important;-webkit-text-fill-color:#995c12!important;
+  background:#fff3df!important;border-color:#e8d2ad!important;
+}
+body.ec-app-body .ec77-block-reason,
+body.ec-app-body .ec77-unsubscribe-note{display:block;color:#a26725!important;-webkit-text-fill-color:#a26725!important;font-size:11px;line-height:1.4;margin-top:5px;}
+body.ec-app-body .ec22-contact-table .ec77-unsubscribed-row{background:#fffaf1!important;}
+body.ec-app-body .ec22-contact-table .ec77-unsubscribed-row input:disabled{opacity:.65;cursor:not-allowed;}
+body.ec-app-body .ec73-recipients .ec73-recipient-status.is-blocked{background:#fff1df!important;border:1px solid #f4d1a0!important;color:#98601e!important;-webkit-text-fill-color:#98601e!important;}
+body.ec-app-body .ec77-reply-health,
+body.ec-app-body .ec77-unsubscribed-view{background:#fff!important;border:1px solid #d7e5eb!important;border-radius:12px;color:#173a50!important;padding:18px 20px;margin:0 0 14px;box-shadow:none!important;}
+body.ec-app-body .ec77-reply-health{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+body.ec-app-body .ec77-reply-health-title{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+body.ec-app-body .ec77-reply-health-title strong,
+body.ec-app-body .ec77-unsubscribed-view h2 {color:#173a50!important;-webkit-text-fill-color:#173a50!important;font-size:15px;font-weight:800;}
+body.ec-app-body .ec77-reply-health-title span{border-radius:999px;padding:5px 9px;border:1px solid #d2e8e4;background:#eef9f6;color:#087c70!important;-webkit-text-fill-color:#087c70!important;font-size:11px;font-weight:750;}
+body.ec-app-body .ec77-reply-health-title span[data-state="disabled"],body.ec-app-body .ec77-reply-health-title span[data-state="not_configured"],body.ec-app-body .ec77-reply-health-title span[data-state="stale"]{background:#fff3de;border-color:#efd8af;color:#976222!important;-webkit-text-fill-color:#976222!important;}
+body.ec-app-body .ec77-reply-health small,body.ec-app-body .ec77-reply-health p,body.ec-app-body .ec77-unsubscribed-view p{display:block;color:#627f91!important;-webkit-text-fill-color:#627f91!important;line-height:1.5;font-size:12px;margin:5px 0 0;}
+body.ec-app-body .ec77-reply-health-actions{display:flex;gap:8px;align-items:center;}
+body.ec-app-body .ec77-refresh,body.ec-app-body .ec77-unsubscribed-view .ec77-page-actions button{background:white!important;border:1px solid #d1e2e8!important;color:#24556a!important;-webkit-text-fill-color:#24556a!important;border-radius:8px;padding:9px 13px;font-size:12px;font-weight:720;cursor:pointer;}
+body.ec-app-body .ec69-replies .ec69-reply-categories button{background:#fff!important;border:1px solid #dce6eb!important;color:#416177!important;-webkit-text-fill-color:#416177!important;}
+body.ec-app-body .ec69-replies .ec69-reply-categories button.is-active{background:#e5f6f0!important;border-color:#a3d6cb!important;color:#007e73!important;-webkit-text-fill-color:#007e73!important;}
+body.ec-app-body .ec77-unsubscribed-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px;flex-wrap:wrap;}
+body.ec-app-body .ec77-unsubscribed-total{background:#e7f6f1;color:#078476!important;-webkit-text-fill-color:#078476!important;padding:7px 12px;border-radius:999px;font-size:12px;font-weight:800;}
+body.ec-app-body .ec77-unsubscribed-table-scroll{width:100%;overflow-x:auto;}
+body.ec-app-body .ec77-unsubscribed-table{border-collapse:collapse;width:100%;min-width:520px;}
+body.ec-app-body .ec77-unsubscribed-table th{background:#f1f5f7!important;color:#5e7c90!important;-webkit-text-fill-color:#5e7c90!important;font-size:12px;text-align:left;padding:13px 16px;}
+body.ec-app-body .ec77-unsubscribed-table td{border-bottom:1px solid #e0eaf0;color:#19465d!important;-webkit-text-fill-color:#19465d!important;font-size:13px;padding:15px 16px;overflow-wrap:anywhere;}
+body.ec-app-body .ec77-unsubscribed-table td .ec77-unsub-pill{color:#a06522!important;-webkit-text-fill-color:#a06522!important;background:#fff1dc!important;border:1px solid #efdbb4!important;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:730;}
+body.ec-app-body .ec77-page-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px;flex-wrap:wrap;}
+body.ec-app-body .ec77-page-actions button:disabled{opacity:.45;cursor:default;}
+@media(max-width:720px){body.ec-app-body .ec77-reply-health,body.ec-app-body .ec77-unsubscribed-view{padding:14px 12px;}body.ec-app-body .ec77-reply-health{align-items:flex-start;}}

@@ -5,10 +5,10 @@ use App\Models\HubSpotDeal;
 use App\Models\HubSpotPipelineStage;
 use App\Models\User;
 use App\Services\LeadExportService;
+use Livewire\Livewire;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use Livewire\Livewire;
 
 function v45Company(string $cnpjRoot, string $name, string $priority = 'high'): Company
 {
@@ -27,6 +27,7 @@ function v45Company(string $cnpjRoot, string $name, string $priority = 'high'): 
         'metadata' => [],
         'calculated_at' => now(),
     ]);
+
     return $company;
 }
 
@@ -34,6 +35,7 @@ function v45Manager(): User
 {
     $user = User::factory()->create(['email_verified_at' => now()]);
     $user->forceFill(['commercial_role' => User::ROLE_MANAGER])->save();
+
     return $user;
 }
 
@@ -53,6 +55,7 @@ function v45XlsxSheet(StreamedResponse $response): Spreadsheet
     }
     try {
         file_put_contents($temp, $bytes);
+
         return (new Xlsx)->load($temp);
     } finally {
         @unlink($temp);

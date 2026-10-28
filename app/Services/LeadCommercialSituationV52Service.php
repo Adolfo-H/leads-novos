@@ -23,7 +23,7 @@ final class LeadCommercialSituationV52Service
      * Somente oportunidades futuras e convertidas recebem substituições.
      * As demais situações comerciais não são modificadas.
      *
-     * @param Collection<int, Company> $companies
+     * @param  Collection<int, Company>  $companies
      * @return array<int, 'client'|'known'|'reprospecting'>
      */
     public function forCompanies(Collection $companies): array
@@ -76,7 +76,7 @@ final class LeadCommercialSituationV52Service
     }
 
     /**
-     * @param list<int> $ids
+     * @param  list<int>  $ids
      * @return array<int, true>
      */
     private function matchingIds(

@@ -8,23 +8,11 @@ it('keeps the company dossier page split by top level tabs', function () {
             )
         );
 
-    expect(
-        $show
-    )->toContain(
-        "'partials.company-dossier.commercial'"
-    );
-
-    expect(
-        $show
-    )->toContain(
-        "'partials.company-dossier.company'"
-    );
-
-    expect(
-        $show
-    )->toContain(
-        "'partials.company-dossier.cnaes'"
-    );
+    expect($show)->toContain("'partials.company-dossier.figma-v53'");
+    $figma = file_get_contents(resource_path('views/partials/company-dossier/figma-v53.blade.php'));
+    expect($figma)->toContain("'partials.company-dossier.figma-crm-v53'")
+        ->toContain("'partials.company-dossier.figma-group-v53'")
+        ->toContain("'partials.company-dossier.figma-cnaes-v53'");
 });
 
 it('keeps the commercial tab in its dedicated partial', function () {

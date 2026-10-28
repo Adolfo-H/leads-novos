@@ -61,8 +61,8 @@ it('renders profile data with the original profile controls', function () {
     $this->actingAs($user)
         ->get(route('profile.edit'))
         ->assertSuccessful()
-        ->assertSee('ecui-settings', false)
-        ->assertSee('Dados do perfil')
+        ->assertSee('ec-cfg-v63', false)
+        ->assertSee('Informações pessoais')
         ->assertSee($user->name)
         ->assertSee('updateProfileInformation', false)
         ->assertDontSee('ec-settings-hero-visual', false);

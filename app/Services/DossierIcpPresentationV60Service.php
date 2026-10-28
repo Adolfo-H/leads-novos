@@ -9,7 +9,7 @@ namespace App\Services;
 final class DossierIcpPresentationV60Service
 {
     /**
-     * @param array<string, mixed> $factors
+     * @param  array<string, mixed>  $factors
      * @return list<array{key: string, label: string, reason: string, points: int, max: int, pct: float}>
      */
     public function rows(array $factors): array
