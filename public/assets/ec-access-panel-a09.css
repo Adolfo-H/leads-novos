@@ -1,0 +1,749 @@
+/* A09 - CSS unico de Solicitacoes de acesso: V60 + V61 + V62, ordem preservada. */
+/*
+ * ExportControl Prospector — Solicitações de acesso / V60.1
+ * Escopo estritamente local: não modifica sidebar, topbar, Dashboard ou Flux global.
+ * Referência: o dashboard claro atual e a prévia aprovada.
+ */
+.ec-access-v60 {
+    --access-ink: #09243b;
+    --access-muted: #617a94;
+    --access-border: #d9e4eb;
+    --access-green: #087d73;
+    --access-green-deep: #00665d;
+    --access-green-light: #e1f4f0;
+    min-height: calc(100vh - 62px);
+    width: 100%;
+    background: #f5f8fa;
+    color: var(--access-ink);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.48;
+}
+.ec-access-v60, .ec-access-v60 * { box-sizing: border-box; }
+.ec-access-v60__inner {
+    max-width: 1352px;
+    margin: 0 auto;
+    padding: 49px 38px 72px;
+}
+.ec-access-v60__crumb {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-height: 28px;
+    margin-bottom: 19px;
+    font-size: 13px;
+    color: #6b819b;
+}
+.ec-access-v60__crumb a { display: inline-flex; align-items: center; color: #506a86; }
+.ec-access-v60__crumb svg { width: 16px; height: 16px; }
+.ec-access-v60__crumb strong { color: #18324e; font-weight: 650; }
+.ec-access-v60__crumb-separator { color: #a6b5c3; }
+.ec-access-v60__heading { margin-bottom: 32px; }
+.ec-access-v60__heading h1 {
+    color: #09243b;
+    margin: 0;
+    font-size: clamp(27px, 2.4vw, 36px);
+    line-height: 1.19;
+    font-weight: 760;
+    letter-spacing: -0.04em;
+}
+.ec-access-v60__heading p {
+    color: #627d97;
+    font-size: 15px;
+    margin: 13px 0 0;
+    line-height: 1.6;
+}
+.ec-access-v60__flash {
+    margin: -10px 0 20px;
+    padding: 13px 17px;
+    border-radius: 11px;
+    border: 1px solid #a7dfc6;
+    background: #e6f8ee;
+    color: #176342;
+    font-size: 13px;
+}
+.ec-access-v60__flash--error { border-color: #f4c1c5; background: #fff0f1; color: #a12b3f; }
+.ec-access-v60__flash ul { margin: 5px 0 0 17px; list-style: disc; }
+.ec-access-v60__toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 13px 18px;
+    margin: 0 0 23px;
+}
+.ec-access-v60__tabs { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.ec-access-v60__tab {
+    min-height: 45px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 15px;
+    border: 1px solid var(--access-border);
+    border-radius: 10px;
+    background: #fff;
+    color: #1b3653;
+    text-decoration: none;
+    white-space: nowrap;
+    font-size: 12.5px;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(16, 50, 71, .025);
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.ec-access-v60__tab:hover { border-color: #8cbab3; color: #075c57; }
+.ec-access-v60__tab svg { width: 18px; height: 18px; flex: 0 0 18px; color: var(--access-green); }
+.ec-access-v60__tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f8;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 100px;
+    font-weight: 700;
+    font-size: 11px;
+    color: #536e87;
+}
+.ec-access-v60__tab.is-selected {
+    background: linear-gradient(115deg, #00675e, #008f81);
+    color: #fff;
+    border-color: #007d72;
+    box-shadow: 0 2px 8px rgba(0, 107, 98, .12);
+}
+.ec-access-v60__tab.is-selected svg { color: #dcfffa; }
+.ec-access-v60__tab.is-selected .ec-access-v60__tab-count { background: #b6f0e5; color: #064f4b; }
+.ec-access-v60__search {
+    height: 45px;
+    min-width: 258px;
+    max-width: 380px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 0 7px 0 14px;
+    background: white;
+    border: 1px solid var(--access-border);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(16,50,71,.025);
+}
+.ec-access-v60__search:focus-within { border-color: #0c9484; box-shadow: 0 0 0 3px rgba(0, 152, 137, .11); }
+.ec-access-v60__search svg { width: 18px; height: 18px; flex: 0 0 18px; color: #59748e; }
+.ec-access-v60__search input {
+    appearance: none;
+    background: transparent !important;
+    border: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: var(--access-ink) !important;
+    font-size: 12px;
+    min-width: 0;
+    width: 100%;
+    padding: 0 !important;
+    height: 100%;
+}
+.ec-access-v60__search input::placeholder { color: #8195aa; }
+.ec-access-v60__search button {
+    height: 31px;
+    border: 0;
+    border-radius: 7px;
+    padding: 0 10px;
+    background: #edf7f5;
+    color: var(--access-green-deep);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+}
+.ec-access-v60__search button:hover { background: #d8f0ea; }
+.ec-access-v60__table-card {
+    border: 1px solid #e1e8ec;
+    border-radius: 15px;
+    background: white;
+    box-shadow: 0 7px 27px rgba(31, 64, 85, .035), 0 1px 3px rgba(31, 64, 85, .03);
+}
+.ec-access-v60__table-scroll { overflow-x: auto; border-radius: 15px 15px 0 0; }
+.ec-access-v60__table { width: 100%; min-width: 820px; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.ec-access-v60__table th {
+    padding: 19px 16px;
+    color: #5a7289;
+    font-size: 12px;
+    font-weight: 650;
+    text-align: left;
+    vertical-align: middle;
+    background: #f8fafc;
+    border-bottom: 1px solid #e9eef3;
+    white-space: nowrap;
+}
+.ec-access-v60__table th:first-child { padding-left: 24px; width: 54px; border-top-left-radius: 15px; }
+.ec-access-v60__table th:last-child { border-top-right-radius: 15px; }
+.ec-access-v60__table td {
+    border-bottom: 1px solid #eef2f5;
+    padding: 18px 16px;
+    vertical-align: middle;
+    color: #16324e;
+}
+.ec-access-v60__table tbody tr:last-child td { border-bottom: 0; }
+.ec-access-v60__table tbody tr:hover { background: #fbfefd; }
+.ec-access-v60__table td:first-child { padding-left: 24px; }
+.ec-access-v60__select-cell { width: 54px; }
+.ec-access-v60__select-cell input {
+    width: 17px;
+    height: 17px;
+    cursor: pointer;
+    accent-color: #078678;
+    border: 1px solid #c0d0db;
+    border-radius: 4px;
+}
+.ec-access-v60__person { display: flex; gap: 13px; align-items: center; min-width: 180px; }
+.ec-access-v60__avatar {
+    flex: 0 0 39px;
+    width: 39px;
+    height: 39px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #e0effe;
+    color: #145b94;
+    font-size: 12px;
+    font-weight: 800;
+}
+.ec-access-v60__person-text, .ec-access-v60__company, .ec-access-v60__received { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ec-access-v60__person-text strong, .ec-access-v60__company strong, .ec-access-v60__received strong { color: #09243b; font-weight: 700; font-size: 12px; }
+.ec-access-v60__email, .ec-access-v60__phone, .ec-access-v60__company span, .ec-access-v60__received span { color: #7188a1; font-size: 12px; }
+.ec-access-v60__email { overflow-wrap: anywhere; }
+.ec-access-v60__phone { display: flex; align-items: center; gap: 5px; }
+.ec-access-v60__phone svg { width: 12px; height: 12px; }
+.ec-access-v60__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+    min-height: 26px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.ec-access-v60__status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.ec-access-v60__status--pending { color: #aa751a; background: #fff3d9; }
+.ec-access-v60__status--approved { color: #158047; background: #e7f8ec; }
+.ec-access-v60__status--rejected { color: #dc2939; background: #ffe8ea; }
+.ec-access-v60__status--activated { color: #175b91; background: #e9f2ff; }
+.ec-access-v60__status--unknown { color: #526878; background: #edf2f6; }
+.ec-access-v60__sort-link { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; }
+.ec-access-v60__sort-link:hover { color: #00786d; }
+.ec-access-v60__sort-link span { font-size: 16px; }
+.ec-access-v60__actions-heading { width: 80px; }
+.ec-access-v60__actions-cell { position: relative; }
+.ec-access-v60__action-menu { position: relative; display: inline-block; }
+.ec-access-v60__action-menu summary {
+    list-style: none;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    letter-spacing: 2px;
+    padding-bottom: 8px;
+    border-radius: 9px;
+    border: 1px solid #d9e4eb;
+    background: white;
+    color: #193a54;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1;
+}
+.ec-access-v60__action-menu summary::-webkit-details-marker { display: none; }
+.ec-access-v60__action-menu[open] summary { border-color: #4eb2a3; }
+.ec-access-v60__action-popover {
+    position: absolute;
+    z-index: 20;
+    min-width: 236px;
+    max-width: min(320px, 85vw);
+    right: 0;
+    top: calc(100% + 8px);
+    padding: 10px;
+    border: 1px solid #dbe4e8;
+    border-radius: 11px;
+    background: #fff;
+    box-shadow: 0 12px 40px rgba(8, 37, 57, .15);
+}
+.ec-access-v60__action-popover form + form { margin-top: 7px; padding-top: 7px; border-top: 1px solid #eff3f5; }
+.ec-access-v60__action-popover label { display: block; margin: 8px 0 5px; color: #60788a; font-size: 11px; }
+.ec-access-v60__action-popover textarea { width: 100%; padding: 7px; font-size: 12px; border: 1px solid #cedce4; border-radius: 7px; color: #0c2944; background: #fff; }
+.ec-access-v60__action-popover button { width: 100%; text-align: left; background: none; color: #1f405b; border: 0; cursor: pointer; padding: 9px; border-radius: 7px; font-size: 12px; }
+.ec-access-v60__action-popover button:hover { background: #eff7f6; }
+.ec-access-v60__action-popover .ec-access-v60__action-approve { color: #007a62; font-weight: 700; }
+.ec-access-v60__action-popover .ec-access-v60__action-reject { color: #c23647; font-weight: 700; }
+.ec-access-v60__no-actions { display: block; padding: 9px; color: #7990a0; font-size: 12px; white-space: nowrap; }
+.ec-access-v60__table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    border-top: 1px solid #edf1f5;
+    padding: 15px 22px;
+    min-height: 69px;
+    color: #688198;
+    font-size: 12px;
+}
+.ec-access-v60__table-footer > div { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.ec-access-v60__copy { border: 0; background: #eaf6f3; color: #006f64; border-radius: 7px; padding: 7px 9px; cursor: pointer; font-size: 11px; font-weight: 650; }
+.ec-access-v60__copy[hidden] { display: none !important; }
+.ec-access-v60__pagination { display: flex; align-items: center; gap: 7px; }
+.ec-access-v60__pagination a, .ec-access-v60__pagination span {
+    min-width: 30px;
+    height: 33px;
+    padding: 0 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0e8ee;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    color: #31516e;
+    background: white;
+}
+.ec-access-v60__pagination a:hover { border-color: #108c7c; }
+.ec-access-v60__pagination .is-current { border-color: #00796d; color: white; background: linear-gradient(135deg, #006960, #079483); }
+.ec-access-v60__pagination .is-disabled { opacity: .38; }
+.ec-access-v60__notice {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 23px;
+    margin-top: 24px;
+    background: #e6f5f2;
+    border: 1px solid #dbefeb;
+    border-radius: 12px;
+    color: #456a75;
+    font-size: 12.5px;
+}
+.ec-access-v60__notice-icon { display: inline-flex; justify-content: center; align-items: center; flex: 0 0 28px; width: 28px; height: 28px; background: #048773; color: white; border-radius: 50%; font-family: Georgia, serif; font-weight: 800; font-size: 17px; }
+.ec-access-v60__notice p { margin: 0; }
+.ec-access-v60__empty { text-align: center; padding: 48px 20px; color: #647f93; }
+.ec-access-v60__empty-mark { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; margin: 0 auto 12px; border-radius: 50%; background: #e6f5f1; color: #008a72; font-size: 22px; }
+.ec-access-v60__empty strong { display: block; color: #14344d; font-size: 15px; }
+.ec-access-v60__empty p { margin: 8px 0 12px; }
+.ec-access-v60__empty a { color: #067b70; font-weight: 700; }
+@media (max-width: 1320px) {
+    .ec-access-v60__inner { padding: 40px 26px 64px; }
+    .ec-access-v60__toolbar { align-items: flex-start; }
+    .ec-access-v60__search { max-width: 335px; }
+}
+@media (max-width: 920px) {
+    .ec-access-v60__inner { padding: 27px 16px 56px; }
+    .ec-access-v60__toolbar { flex-direction: column; }
+    .ec-access-v60__tabs { gap: 8px; }
+    .ec-access-v60__tab { min-height: 40px; padding: 0 12px; }
+    .ec-access-v60__search { max-width: 100%; }
+}
+@media (max-width: 575px) {
+    .ec-access-v60__crumb { flex-wrap: wrap; gap: 8px; }
+    .ec-access-v60__heading { margin-bottom: 25px; }
+    .ec-access-v60__heading p { font-size: 13px; }
+    .ec-access-v60__tabs { overflow-x: auto; flex-wrap: nowrap; width: 100%; padding-bottom: 5px; }
+    .ec-access-v60__notice { align-items: flex-start; padding: 15px; }
+    .ec-access-v60__table-footer { padding: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ec-access-v60__tab { transition: none; }
+}
+/* Permite que o menu de ações abra por cima do cartão em telas largas. */
+@media (min-width: 980px) {
+    .ec-access-v60__table-scroll { overflow: visible; }
+}
+
+/* AJUSTES DE LAYOUT V61 - usando cores do tema global V64 */
+/*
+ * Prospector ExportControl — Solicitações de acesso, ajuste V61
+ * Correção exclusivamente visual, carregada pela partial V60.
+ * A UI do Dashboard é a referência: cabeçalho branco, canvas cinza-claro,
+ * sidebar azul-marinho intacta, sem propaganda inferior.
+ *
+ * IMPORTANTE: todas as regras são limitadas à página que contém #ec-access-v60.
+ * Outras páginas, rotas, recursos do Flux e funcionalidades não são alteradas.
+ */
+
+/* 1. Eliminar o fundo azul que aparece nas margens do painel claro. */
+html:has(#ec-access-v60),
+html:has(#ec-access-v60) body,
+body.ec-app-body:has(#ec-access-v60) {
+    background: var(--v64-page) !important;
+    background-color: var(--v64-page) !important;
+    background-image: none !important;
+}
+
+body:has(#ec-access-v60) :is(.ec-main, main[data-flux-main], [data-flux-main].ec-main) {
+    box-sizing: border-box !important;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: var(--v64-page) !important;
+    background-color: var(--v64-page) !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+}
+
+body:has(#ec-access-v60) #ec-access-v60 {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    min-height: calc(100vh - 62px);
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: var(--v64-page) !important;
+    box-shadow: none !important;
+}
+
+/* O espaço entre a sidebar e o conteúdo passa a ser o próprio respiro do layout. */
+body:has(#ec-access-v60) #ec-access-v60 .ec-access-v60__inner {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1480px;
+    margin-inline: auto;
+    padding: 41px clamp(22px, 3.2vw, 52px) 76px;
+}
+
+/* 2. Header branco, com altura e tipografia do Dashboard claro. */
+body:has(#ec-access-v60) .ec-topbar,
+body:has(#ec-access-v60) header[data-flux-header].ec-topbar {
+    min-height: 59px !important;
+    height: 59px !important;
+    background: var(--ec-topbar) !important;
+    background-color: var(--ec-topbar) !important;
+    background-image: none !important;
+    color: var(--v64-ink) !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--v64-line) !important;
+    box-shadow: none !important;
+}
+
+body:has(#ec-access-v60) .ec-topbar :is(.ec-topbar-title, .ec-topbar-context, .ec-topbar-brand) {
+    color: var(--v64-ink) !important;
+}
+body:has(#ec-access-v60) .ec-topbar .ec-topbar-eyebrow {
+    color: var(--v64-teal) !important;
+}
+body:has(#ec-access-v60) .ec-topbar :is([data-flux-profile], [data-flux-profile] span, [data-flux-profile] svg) {
+    color: var(--v64-ink) !important;
+}
+
+/* Campo/botão de busca superior em cinza-claro, nunca azul-marinho. */
+body:has(#ec-access-v60) .ec-topbar :is(.ec-access-v61-global-search, .ec-access-v61-search-input,
+    [role="search"], input[type="search"], input[placeholder*="Buscar empresas"],
+    input[placeholder*="Buscar Empresas"]) {
+    background: var(--v64-panel-soft) !important;
+    background-color: var(--v64-panel-soft) !important;
+    background-image: none !important;
+    border-color: var(--v64-line) !important;
+    color: var(--v64-muted) !important;
+    box-shadow: none !important;
+}
+
+body:has(#ec-access-v60) .ec-topbar .ec-access-v61-global-search {
+    border: 1px solid var(--v64-line) !important;
+    border-radius: 9px !important;
+    color: var(--v64-muted) !important;
+}
+body:has(#ec-access-v60) .ec-topbar .ec-access-v61-global-search:hover,
+body:has(#ec-access-v60) .ec-topbar .ec-access-v61-global-search:focus-visible {
+    background: var(--ec-surface-hover) !important;
+    border-color: var(--v64-line) !important;
+}
+body:has(#ec-access-v60) .ec-topbar .ec-access-v61-global-search :is(span, svg, kbd, small) {
+    color: var(--v64-muted) !important;
+}
+body:has(#ec-access-v60) .ec-topbar .ec-access-v61-global-search kbd {
+    border: 1px solid var(--v64-line) !important;
+    background: var(--v64-panel-soft) !important;
+    box-shadow: none !important;
+}
+body:has(#ec-access-v60) .ec-topbar :is(input[type="search"], input[placeholder*="Buscar empresas"])::placeholder {
+    color: var(--v64-muted) !important;
+}
+
+/* 3. Remover o card/ilustração e slogan do rodapé lateral sem apagar os links.
+ * O elemento correto é identificado pelo JS a partir do texto da própria página.
+ */
+body:has(#ec-access-v60) .ec-sidebar [data-ec-access-v61="promo"] {
+    display: none !important;
+}
+body:has(#ec-access-v60) .ec-sidebar :is(
+    .ec-sidebar-promo, .ec-sidebar-slogan, .ec-sidebar-tagline,
+    .ec-sidebar-world, .ec-sidebar-globe, .ec-sidebar-hero,
+    .sidebar-promo, .sidebar-slogan, .sidebar-tagline, .sidebar-globe
+) {
+    display: none !important;
+}
+
+/* A navegação e o azul-marinho da barra lateral permanecem exatamente como estão. */
+
+@media (max-width: 960px) {
+    body:has(#ec-access-v60) #ec-access-v60 .ec-access-v60__inner {
+        padding: 28px 22px 60px;
+    }
+}
+@media (max-width: 600px) {
+    body:has(#ec-access-v60) #ec-access-v60 .ec-access-v60__inner {
+        padding: 23px 15px 50px;
+    }
+    body:has(#ec-access-v60) .ec-topbar {
+        height: 56px !important;
+        min-height: 56px !important;
+    }
+}
+
+/* MODAL V62 - estilos base */
+/* ExportControl Prospector · V62 — confirmação administrativa acessível.
+ * Escopo restrito ao <dialog> de Solicitações de acesso.
+ */
+.ec-access-v62-modal {
+    width: min(94vw, 490px);
+    max-height: min(90dvh, 720px);
+    overflow-y: auto;
+    position: fixed;
+    margin: auto;
+    padding: 0;
+    color: #0a2844;
+    background: #fff;
+    border: 1px solid #d7e6e9;
+    border-radius: 19px;
+    box-shadow: 0 28px 80px rgba(2, 30, 52, .26);
+    z-index: 99999;
+    font-family: inherit;
+}
+.ec-access-v62-modal::backdrop {
+    background: rgba(3, 20, 34, .62);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+.ec-access-v62-modal__content { padding: 33px 32px 28px; position: relative; }
+.ec-access-v62-modal__close {
+    position: absolute; right: 19px; top: 17px;
+    width: 32px; height: 32px; border-radius: 9px;
+    background: #f3f6f8; color: #657990; font-size: 22px;
+    display: grid; place-items: center; line-height: 1; cursor: pointer;
+    border: 1px solid #ebeff2;
+}
+.ec-access-v62-modal__close:hover { background: #e9eef1; color: #0a2844; }
+.ec-access-v62-modal__icon {
+    width: 50px; height: 50px; border-radius: 15px;
+    display: grid; place-items: center; margin-bottom: 18px;
+    background: #e2f5f0; color: #008877; font-size: 25px; font-weight: 800;
+}
+.ec-access-v62-modal.is-rejection .ec-access-v62-modal__icon { background: #fff1f1; color: #dc4150; }
+.ec-access-v62-modal h2 {
+    color: #0b2843 !important;
+    font-weight: 750; font-size: clamp(20px, 2vw, 24px);
+    letter-spacing: -.03em; margin: 0 30px 10px 0; line-height: 1.25;
+}
+.ec-access-v62-modal p {
+    color: #5c7186 !important; font-size: 14px; line-height: 1.65;
+    margin: 0 0 22px;
+}
+.ec-access-v62-modal__reason {
+    display: flex; flex-direction: column; gap: 9px;
+    color: #173851; font-size: 13px; font-weight: 650;
+    margin-bottom: 23px;
+}
+.ec-access-v62-modal__reason[hidden] { display: none !important; }
+.ec-access-v62-modal__reason small { font-weight: 400; color: #7b8ba1; }
+.ec-access-v62-modal__reason textarea {
+    width: 100%; min-height: 86px; resize: vertical;
+    border: 1px solid #d9e5eb; border-radius: 10px;
+    padding: 12px 13px; color: #173851 !important;
+    background: #f8fbfc !important; font: inherit; font-weight: 400;
+    outline: none;
+}
+.ec-access-v62-modal__reason textarea:focus { border-color: #079382; box-shadow: 0 0 0 3px rgba(0, 153, 134, .11); }
+.ec-access-v62-modal__actions {
+    display: flex; justify-content: flex-end; align-items: center;
+    gap: 10px; padding-top: 5px;
+}
+.ec-access-v62-modal__actions button {
+    min-height: 42px; border-radius: 10px; padding: 0 19px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.ec-access-v62-modal__cancel { color: #35516b !important; background: #fff !important; border: 1px solid #d7e2e8; }
+.ec-access-v62-modal__cancel:hover { background: #f3f7f8 !important; }
+.ec-access-v62-modal__confirm { color: white !important; background: #007e73 !important; border: 1px solid #007e73 !important; }
+.ec-access-v62-modal__confirm:hover { background: #00685e !important; }
+.ec-access-v62-modal.is-rejection .ec-access-v62-modal__confirm { background: #cf3646 !important; border-color: #cf3646 !important; }
+.ec-access-v62-modal.is-rejection .ec-access-v62-modal__confirm:hover { background: #ac2635 !important; }
+.ec-access-v62-modal__confirm:disabled { opacity: .6; cursor: wait; }
+.ec-access-v62-modal button:focus-visible { outline: 3px solid rgba(5, 139, 128, .36); outline-offset: 2px; }
+@media (max-width: 560px) {
+    .ec-access-v62-modal__content { padding: 27px 21px 21px; }
+    .ec-access-v62-modal__actions { flex-direction: column-reverse; }
+    .ec-access-v62-modal__actions button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .ec-access-v62-modal::backdrop { backdrop-filter: none; } }
+
+/*
+ * A09 — Somente Solicitações de acesso.
+ * Usa as variáveis do tema unificado V64 (html.dark / $flux.appearance).
+ * Não muda sidebar, políticas, ações, rotas, nem cria outra preferência de tema.
+ */
+html.dark .ec-access-v60 {
+    --access-ink: var(--v64-ink);
+    --access-muted: var(--v64-muted);
+    --access-border: var(--v64-line);
+    --access-green: var(--v64-teal);
+    --access-green-deep: var(--v64-teal);
+    --access-green-light: var(--v64-mint);
+    color: var(--v64-ink);
+    background: var(--v64-page);
+}
+html.dark .ec-access-v60__heading h1,
+html.dark .ec-access-v60__crumb strong,
+html.dark .ec-access-v60__person-text strong,
+html.dark .ec-access-v60__company strong,
+html.dark .ec-access-v60__received strong,
+html.dark .ec-access-v60__empty strong { color: var(--v64-ink); }
+html.dark .ec-access-v60__heading p,
+html.dark .ec-access-v60__crumb,
+html.dark .ec-access-v60__crumb a,
+html.dark .ec-access-v60__crumb-separator,
+html.dark .ec-access-v60__email,
+html.dark .ec-access-v60__phone,
+html.dark .ec-access-v60__company span,
+html.dark .ec-access-v60__received span,
+html.dark .ec-access-v60__empty,
+html.dark .ec-access-v60__table-footer { color: var(--v64-muted); }
+html.dark .ec-access-v60__tab,
+html.dark .ec-access-v60__search,
+html.dark .ec-access-v60__table-card,
+html.dark .ec-access-v60__action-menu summary,
+html.dark .ec-access-v60__action-popover,
+html.dark .ec-access-v60__pagination a,
+html.dark .ec-access-v60__pagination span {
+    background: var(--v64-panel);
+    border-color: var(--v64-line);
+    color: var(--v64-ink);
+}
+html.dark .ec-access-v60__tab:hover,
+html.dark .ec-access-v60__table tbody tr:hover,
+html.dark .ec-access-v60__action-popover button:hover,
+html.dark .ec-access-v60__pagination a:hover { background: var(--ec-surface-hover); }
+html.dark .ec-access-v60__tab-count {
+    background: var(--v64-panel-soft);
+    color: var(--v64-muted);
+}
+/* A aba ativa mantém o gradiente institucional e contraste claro. */
+html.dark .ec-access-v60__tab.is-selected {
+    background: linear-gradient(115deg, #00675e, #008f81);
+    border-color: #38c8b6;
+    color: #fff;
+}
+html.dark .ec-access-v60__tab.is-selected .ec-access-v60__tab-count {
+    background: #b6f0e5;
+    color: #064f4b;
+}
+html.dark .ec-access-v60__tab.is-selected svg { color: #dcfffa; }
+html.dark .ec-access-v60__search svg { color: var(--v64-muted); }
+html.dark .ec-access-v60__search input::placeholder { color: var(--v64-muted); }
+html.dark .ec-access-v60__search button,
+html.dark .ec-access-v60__copy {
+    background: var(--v64-mint);
+    color: var(--v64-teal);
+}
+html.dark .ec-access-v60__search button:hover,
+html.dark .ec-access-v60__copy:hover { background: var(--ec-surface-hover); }
+html.dark .ec-access-v60__table th {
+    color: var(--v64-muted);
+    background: var(--v64-panel-soft);
+    border-bottom-color: var(--v64-line);
+}
+html.dark .ec-access-v60__table td {
+    color: var(--v64-ink);
+    border-bottom-color: var(--v64-line);
+}
+html.dark .ec-access-v60__table-footer { border-top-color: var(--v64-line); }
+html.dark .ec-access-v60__avatar {
+    background: #203f5b;
+    color: #c4e2ff;
+}
+html.dark .ec-access-v60__action-popover form + form { border-top-color: var(--v64-line); }
+html.dark .ec-access-v60__action-popover label,
+html.dark .ec-access-v60__no-actions { color: var(--v64-muted); }
+html.dark .ec-access-v60__action-popover button,
+html.dark .ec-access-v60__action-menu summary { color: var(--v64-ink); }
+html.dark .ec-access-v60__action-popover textarea {
+    color: var(--v64-ink);
+    background: var(--v64-input);
+    border-color: var(--v64-line);
+}
+html.dark .ec-access-v60__action-popover .ec-access-v60__action-approve { color: #72e1c8; }
+html.dark .ec-access-v60__action-popover .ec-access-v60__action-reject { color: #ff9ba6; }
+html.dark .ec-access-v60__pagination .is-current {
+    background: linear-gradient(135deg, #006960, #079483);
+    border-color: #38c8b6;
+    color: #fff;
+}
+html.dark .ec-access-v60__notice {
+    background: #193c3c;
+    border-color: #2d6660;
+    color: #c4e4df;
+}
+html.dark .ec-access-v60__flash {
+    background: #174233;
+    border-color: #2a795f;
+    color: #c5f5df;
+}
+html.dark .ec-access-v60__flash--error {
+    background: #4a2834;
+    border-color: #9b4b5e;
+    color: #ffd6de;
+}
+html.dark .ec-access-v60__empty-mark { background: var(--v64-mint); color: var(--v64-teal); }
+html.dark .ec-access-v60__empty a,
+html.dark .ec-access-v60__sort-link:hover { color: var(--v64-teal); }
+html.dark .ec-access-v60__status--pending { background: #4d3e21; color: #ffda87; }
+html.dark .ec-access-v60__status--approved { background: #204c3c; color: #b1f1c7; }
+html.dark .ec-access-v60__status--rejected { background: #512f3a; color: #ffb3bf; }
+html.dark .ec-access-v60__status--activated { background: #26435e; color: #b6d9ff; }
+html.dark .ec-access-v60__status--unknown { background: var(--v64-panel-soft); color: var(--v64-muted); }
+/* Dialog é movido para body pelo JS V62. Não depende do nó da tabela. */
+html.dark .ec-access-v62-modal {
+    color: var(--v64-ink);
+    background: var(--v64-panel);
+    border-color: var(--v64-line);
+    color-scheme: dark;
+}
+html.dark .ec-access-v62-modal h2 { color: var(--v64-ink) !important; }
+html.dark .ec-access-v62-modal p { color: var(--v64-muted) !important; }
+html.dark .ec-access-v62-modal__close {
+    color: var(--v64-muted);
+    background: var(--v64-panel-soft);
+    border-color: var(--v64-line);
+}
+html.dark .ec-access-v62-modal__close:hover { color: var(--v64-ink); background: var(--ec-surface-hover); }
+html.dark .ec-access-v62-modal__reason { color: var(--v64-ink); }
+html.dark .ec-access-v62-modal__reason small { color: var(--v64-muted); }
+html.dark .ec-access-v62-modal__reason textarea {
+    color: var(--v64-ink) !important;
+    background: var(--v64-input) !important;
+    border-color: var(--v64-line);
+}
+html.dark .ec-access-v62-modal__cancel {
+    color: var(--v64-ink) !important;
+    background: var(--v64-panel-soft) !important;
+    border-color: var(--v64-line);
+}
+html.dark .ec-access-v62-modal__cancel:hover { background: var(--ec-surface-hover) !important; }
+html.dark .ec-access-v62-modal__icon { background: var(--v64-mint); color: var(--v64-teal); }
+html.dark .ec-access-v62-modal.is-rejection .ec-access-v62-modal__icon {
+    background: #542c38;
+    color: #ffa6b4;
+}

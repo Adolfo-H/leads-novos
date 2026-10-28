@@ -21,10 +21,9 @@
     ];
 @endphp
 
-<link rel="stylesheet" href="{{ asset('assets/ec-access-requests-v60.css') }}?v=60.1">
-<link rel="stylesheet" href="{{ asset('assets/ec-access-shell-v61.css') }}?v=61.0">
+{{-- A09: uma folha de estilos para o painel, com claro/escuro do Flux. --}}
+<link rel="stylesheet" href="{{ asset('assets/ec-access-panel-a09.css') }}?v=09.0">
 <script defer src="{{ asset('assets/ec-access-shell-v61.js') }}?v=61.0"></script>
-<link rel="stylesheet" href="{{ asset('assets/ec-access-modal-v62.css') }}?v=62.0">
 <script defer src="{{ asset('assets/ec-access-modal-v62.js') }}?v=62.1"></script>
 
 <div class="ec-access-v60" id="ec-access-v60">
