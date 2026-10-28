@@ -3,6 +3,7 @@
 namespace App\Services\Contacts;
 
 use App\Models\Company;
+use App\Support\Cnpj;
 use App\Support\TextNormalizer;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -34,9 +35,22 @@ final class ContactReceitaDirectory
         $name = TextNormalizer::companyName($term);
         $digits = (string) preg_replace('/\D+/', '', $term);
         $emailSearch = str_contains($term, '@');
+
+        // Não descartar letras de um CNPJ alfanumérico ao procurar na Receita.
+        // Cnpj::normalize não altera as pesquisas numéricas de telefone.
+        $cnpjSearch = null;
+        if (! $emailSearch
+            && preg_match('/\A(?:[A-Z0-9]{8,14}|[A-Z0-9]{2}\.[A-Z0-9]{3}\.[A-Z0-9]{3}(?:\/[A-Z0-9]{4}-[0-9]{2})?)\z/i', $term) === 1
+        ) {
+            $candidate = Cnpj::normalize($term);
+            if (preg_match('/[A-Z]/', $candidate) === 1 && preg_match('/[0-9]/', $candidate) === 1) {
+                $cnpjSearch = $candidate;
+            }
+        }
+
         $companyIds = [];
 
-        if ($name !== null && mb_strlen($name) >= 2 && ! $emailSearch) {
+        if ($cnpjSearch === null && $name !== null && mb_strlen($name) >= 2 && ! $emailSearch) {
             // Normalizacao original da base: "C.Vale" vira "C VALE".
             // Busca por ID fiscal; NUNCA usa nome/domínio/Deal para vincular um HubSpot.
             $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $name);
@@ -56,7 +70,7 @@ final class ContactReceitaDirectory
             }
         }
 
-        if ($companyIds === [] && strlen($digits) < 8 && ! $emailSearch) {
+        if ($companyIds === [] && strlen($digits) < 8 && $cnpjSearch === null && ! $emailSearch) {
             return $this->emptyPage($page);
         }
 
@@ -75,11 +89,20 @@ final class ContactReceitaDirectory
                     ->orWhereRaw("NULLIF(TRIM(e.phone_1), '') IS NOT NULL")
                     ->orWhereRaw("NULLIF(TRIM(e.phone_2), '') IS NOT NULL");
             })
-            ->where(static function (Builder $q) use ($companyIds, $digits, $term, $emailSearch): void {
+            ->where(static function (Builder $q) use ($companyIds, $digits, $term, $emailSearch, $cnpjSearch): void {
                 if ($companyIds !== []) {
                     $q->whereIn('e.company_id', $companyIds);
                 }
-                if (strlen($digits) >= 8) {
+                if ($cnpjSearch !== null) {
+                    // Use raiz ou CNPJ canonizado; nunca os dígitos parciais de um CNPJ com letras.
+                    if (strlen($cnpjSearch) === 8) {
+                        $q->orWhere('c.cnpj_root', '=', $cnpjSearch);
+                    } elseif (strlen($cnpjSearch) === 14) {
+                        $q->orWhere('e.cnpj', '=', $cnpjSearch);
+                    } else {
+                        $q->orWhere('e.cnpj', 'like', $cnpjSearch.'%');
+                    }
+                } elseif (strlen($digits) >= 8) {
                     // Numeros de CNPJ/telefone podem conter pontuacao na pesquisa.
                     $q->orWhere('e.cnpj', 'like', '%'.$digits.'%')
                         ->orWhere('c.cnpj_root', 'like', '%'.$digits.'%')
