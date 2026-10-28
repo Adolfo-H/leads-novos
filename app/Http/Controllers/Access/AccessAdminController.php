@@ -7,6 +7,7 @@ use App\Mail\AccessInvitation;
 use App\Models\AccountAccessRequest;
 use App\Models\User;
 use App\Services\Access\AccessRequestNotifier;
+use App\Support\Access\AccessRequestPageData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -35,18 +36,12 @@ class AccessAdminController extends Controller
     public function index(Request $request): View
     {
         $this->authorizeAdmin($request);
-        $status = (string) $request->query('status', 'all');
-        if (! in_array($status, ['all', 'pending', 'approved', 'rejected', 'activated'], true)) {
-            $status = 'all';
-        }
-        $records = AccountAccessRequest::query()
-            ->when($status !== 'all', fn ($q) => $q->where('status', $status))
-            ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
-            ->latest()->paginate(12)->withQueryString();
-        $counts = AccountAccessRequest::query()->selectRaw('status, count(*) as total')
-            ->groupBy('status')->pluck('total', 'status');
 
-        return view('access.admin', compact('records', 'status', 'counts'));
+        // Antes o controller consultava os dados descartados pela view, que os consultava novamente.
+        // Uma única fonte prepara filtros, totais e paginação preservando as ações existentes.
+        return view('access.admin', [
+            'accessPage' => AccessRequestPageData::load(),
+        ]);
     }
 
     public function approve(Request $request, AccountAccessRequest $accessRequest): RedirectResponse

@@ -5,7 +5,8 @@
     mesmas rotas POST/PATCH/PUT já registradas pela aplicação.
 --}}
 @php
-    $accessPage = \App\Support\Access\AccessRequestPageData::load();
+    // Os dados chegam do controller autorizado. Fallback apenas para renderizações isoladas.
+    $accessPage = $accessPage ?? \App\Support\Access\AccessRequestPageData::load();
     $accessItems = $accessPage['items'];
     $accessCounts = $accessPage['counts'];
     $accessFilter = $accessPage['filter'];

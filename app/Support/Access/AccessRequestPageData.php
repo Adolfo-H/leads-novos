@@ -51,7 +51,6 @@ final class AccessRequestPageData
         $sort = request()->query('sort') === 'oldest' ? 'oldest' : 'newest';
 
         $counts = ['all' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0, 'activated' => 0];
-        $counts['all'] = AccountAccessRequest::query()->count();
 
         if ($statusColumn !== null) {
             $groups = AccountAccessRequest::query()
@@ -61,9 +60,12 @@ final class AccessRequestPageData
                 ->get();
 
             foreach ($groups as $group) {
+                $total = (int) $group->getAttribute('total');
+                // Inclui também estados legados/desconhecidos no total geral.
+                $counts['all'] += $total;
                 $bucket = self::bucketFromRaw($group->getRawOriginal('status'));
                 if (isset($counts[$bucket])) {
-                    $counts[$bucket] += (int) $group->getAttribute('total');
+                    $counts[$bucket] += $total;
                 }
             }
 
@@ -76,6 +78,9 @@ final class AccessRequestPageData
                 $counts['approved'] = max(0, $counts['approved'] - $turnedActive);
                 $counts['activated'] += $turnedActive;
             }
+        } else {
+            // Compatibilidade defensiva caso alguma instalação antiga não tenha status.
+            $counts['all'] = AccountAccessRequest::query()->count();
         }
 
         $query = AccountAccessRequest::query();
