@@ -1,0 +1,73 @@
+/*
+ * EXPORTCONTROL / A24.9 V71 — correcoes visuais apenas no tema Escuro.
+ * Atributo data-ec-appearance pode nao estar sincronizado durante wire:navigate;
+ * html.dark e o sinal efetivo. O script v71 faz a normalizacao dos componentes.
+ * Nao modificar regras, cliques, dimensoes, exibicao, formularios ou Livewire.
+ */
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads,
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 {
+  --v71-canvas: #0b0d10;
+  --v71-panel: #181b20;
+  --v71-raised: #22262c;
+  --v71-input: #20242a;
+  --v71-border: #3b4650;
+  --v71-ink: #f2f5f7;
+  --v71-muted: #bfd0da;
+  --v71-accent: #9ce9da;
+}
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads :is(
+  .rf-filters, .rf-filters-head, .rf-filter-main, .rf-filter-secondary,
+  .lv15-card, .lv14-hubspot-popup, .rf-hubspot-health,
+  .lf361-pipeline-access, .lf361-pipeline-access .rf-stage-strip,
+  .rf-list-panel, .rf-list-panel .rf-list-toolbar, .rf-list-panel .rf-list-scroll,
+  .rf-list-panel .rf-lead-row, .rf-list-panel .lv13-lead-line
+) {
+  background-color: var(--v71-panel) !important;
+  background-image: none !important;
+  border-color: var(--v71-border) !important;
+  color: var(--v71-ink) !important;
+}
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads .lv13-lead-line:is(.is-selected, :has(input[type="checkbox"]:checked)),
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads .rf-lead-row:has(input[type="checkbox"]:checked) {
+  background-color: #193a32 !important;
+  background-image: none !important;
+  border-color: #438b7a !important;
+  color: var(--v71-ink) !important;
+}
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads .rf-list-panel :is(
+  .lv13-company-name, .lv13-score strong, .lv13-owner-name, .lv13-next strong,
+  .lf36-list-title, .lf364-list-heading h2
+) { color: var(--v71-ink) !important; -webkit-text-fill-color: var(--v71-ink) !important; opacity: 1 !important; }
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads .rf-list-panel :is(
+  .lv13-company-body small, .lv13-status small, .lv13-stage small, .lv13-next small,
+  .lv13-owner small, .lf364-list-hint
+) { color: var(--v71-muted) !important; -webkit-text-fill-color: var(--v71-muted) !important; opacity: 1 !important; }
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads .rf-list-panel .lv13-lead-line :is(.lv13-status, .lv13-stage),
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads .rf-list-panel .lv13-lead-line :is(.lv13-company, .lv13-score, .lv13-next, .lv13-owner) {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads :is(.rf-input, .rf-select) {
+  color-scheme: dark !important;
+}
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads :is(input, textarea)::placeholder,
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .ecgm-page.ecgm-v2 :is(input,textarea)::placeholder {
+  color: #b8c6d0 !important;
+  -webkit-text-fill-color: #b8c6d0 !important;
+  opacity: 1 !important;
+}
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads select option,
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .ecgm-page.ecgm-v2 select option {
+  background: #20242a !important;
+  color: #f2f5f7 !important;
+}
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads input[type="checkbox"],
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .ecgm-page.ecgm-v2 input[type="checkbox"] {
+  accent-color: #4fd3b5 !important;
+  color-scheme: dark !important;
+}
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads :is(.rf-filters-clear, .lf364-filter-clear):focus-visible,
+html.dark:not([data-ec-appearance="system"]):not([data-ec-appearance="light"]) body.ec-app-body .leads-rf.lf36-leads .rf-list-panel a:focus-visible {
+  outline: 2px solid #9ce9da !important;
+  outline-offset: 2px !important;
+}

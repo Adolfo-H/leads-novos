@@ -90,7 +90,8 @@ it('renders the three appearance choices without altering account data', functio
         ->assertSee('Claro')
         ->assertSee('Escuro')
         ->assertSee('Sistema')
-        ->assertSee('x-model="$flux.appearance"', false)
+        ->assertSee('x-model="theme"', false)
+        ->assertSee('window.EcAppearanceV65.set($event.target.value)', false)
         ->assertDontSee('ec-settings-hero-visual', false);
 
     Http::assertNothingSent();

@@ -1,0 +1,223 @@
+/*
+ * Prospector ExportControl — A24.6 / V68.
+ * Correcao EXCLUSIVA dos componentes ainda claros em Leads e Gestao Comercial.
+ * Escuro = preto/grafite; Claro e Sistema nao sofrem alteracoes.
+ * Carregado APOS V64/V65/V66/V67, sem modificar qualquer fluxo Livewire.
+ */
+
+/* LEADS — filtros: container externo, faixas internas e bordas. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-filters,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-filters > .rf-filters-head,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-filters > .rf-filter-main,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-filters > .rf-filter-secondary,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-filters .lf364-filter-header,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-filters .lf36-filter-field {
+    background: #181b20 !important;
+    background-color: #181b20 !important;
+    background-image: none !important;
+    color: #f2f5f7 !important;
+    border-color: #38414a !important;
+    box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads .rf-filters :is(label,.lf364-filter-caption,.lf364-filter-header strong,.rf-filters-head span) {
+    color: #d5dfe6 !important;
+    -webkit-text-fill-color: #d5dfe6 !important;
+    opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads .rf-filters :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select) {
+    background: #20242a !important;
+    background-color: #20242a !important;
+    color: #f2f5f7 !important;
+    -webkit-text-fill-color: #f2f5f7 !important;
+    border-color: #46515b !important;
+    color-scheme: dark !important;
+    opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads .rf-filters :is(input,textarea)::placeholder {
+    color: #aebdc8 !important;
+    -webkit-text-fill-color: #aebdc8 !important;
+    opacity: 1 !important;
+}
+
+/* LEADS — "Pipeline HubSpot · Minha carteira": header, painel e TODOS os botoes.
+   O V67 nao abrangia a grade .lv18-pipeline-chips nem os botoes no DOM real. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads details.lf361-pipeline-access,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads details.lf361-pipeline-access > summary.lf361-pipeline-summary,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads details.lf361-pipeline-access section.rf-stage-strip.lv18-pipeline,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads details.lf361-pipeline-access .rf-stage-strip-heading.lv18-pipeline-heading,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads details.lf361-pipeline-access .rf-stage-strip-list.lv18-pipeline-chips,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads details.lf361-pipeline-access .lv18-pipeline-clear-container {
+    background: #181b20 !important;
+    background-color: #181b20 !important;
+    background-image: none !important;
+    color: #f2f5f7 !important;
+    border-color: #38414a !important;
+    box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads details.lf361-pipeline-access button.rf-stage-strip-chip.lv18-pipeline-chip,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads details.lf361-pipeline-access button.rf-stage-strip-chip.lv18-pipeline-chip:not(:disabled):hover {
+    background: #22262c !important;
+    background-color: #22262c !important;
+    background-image: none !important;
+    border: 1px solid #46515b !important;
+    color: #f2f5f7 !important;
+    box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads details.lf361-pipeline-access button.rf-stage-strip-chip.lv18-pipeline-chip.is-active {
+    background: #173b35 !important;
+    border-color: #48c7ae !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads details.lf361-pipeline-access :is(
+    .lv18-pipeline-heading strong,.lv18-chip-label,.lv18-chip-count,.lf37-personal-title,.rf-stage-strip-heading strong
+) {
+    color: #f2f5f7 !important;
+    -webkit-text-fill-color: #f2f5f7 !important;
+    opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads details.lf361-pipeline-access :is(
+    .rf-stage-strip-heading span,.lf37-personal-meta,.lf361-pipeline-open-label,.rf-stage-strip-empty
+) {
+    color: #c4cfd8 !important;
+    -webkit-text-fill-color: #c4cfd8 !important;
+    opacity: 1 !important;
+}
+
+/* LEADS — tabela de empresas; sem fundos brancos herdados. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-list-panel,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-list-panel > .rf-list-toolbar,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-list-panel .rf-list-scroll,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-list-panel .rf-list-head,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-list-panel .rf-lead-row,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-list-panel .lv13-lead-line,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-list-panel .rf-pagination {
+    background: #181b20 !important;
+    background-color: #181b20 !important;
+    background-image: none !important;
+    color: #f2f5f7 !important;
+    border-color: #38414a !important;
+    box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-list-panel .rf-lead-row:nth-child(even),
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-list-panel .rf-list-head {
+    background: #22262c !important;
+    background-color: #22262c !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-list-panel :is(
+    .lf36-list-title,.lv13-company-name,.lv13-company-body strong,.lv13-score strong,.lv13-owner-name,
+    .rf-list-head span,.lv13-list-head span,.rf-list-toolbar strong,.lf364-list-toolbar h2
+) {
+    color: #f2f5f7 !important;
+    -webkit-text-fill-color: #f2f5f7 !important;
+    opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads section.rf-panel.rf-list-panel :is(
+    .lf364-list-hint,.lv13-next,.lv13-score,.lv13-icp,.lv13-owner,.rf-pagination-info,.lv13-company-body small
+) {
+    color: #c4cfd8 !important;
+    -webkit-text-fill-color: #c4cfd8 !important;
+}
+
+/* GESTAO — KPIs continuam BRANCOS no V67 em alguns estados. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm-metrics.ecgm62-kpis > .ecgm-metric.ecgm62-kpi,
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm-metrics.ecgm62-kpis > a.ecgm-metric.ecgm62-kpi:is(:hover,:focus-visible) {
+    background: #181b20 !important;
+    background-color: #181b20 !important;
+    background-image: none !important;
+    border: 1px solid #38414a !important;
+    box-shadow: none !important;
+    color: #f2f5f7 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm-metrics.ecgm62-kpis > .ecgm-metric.ecgm62-kpi :is(strong,.ecgm-metric-value) {
+    color: #f2f5f7 !important;
+    -webkit-text-fill-color: #f2f5f7 !important;
+    opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm-metrics.ecgm62-kpis > .ecgm-metric.ecgm62-kpi :is(span,small) {
+    color: #c4cfd8 !important;
+    -webkit-text-fill-color: #c4cfd8 !important;
+    opacity: 1 !important;
+}
+
+/* GESTAO — titulo da fila/papeis e selects que ainda recebiam white. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+    .ecgm62-attention-summary,.ecgm62-attention-summary span,.ecgm62-attention-hint,
+    .ecgm62-card-header,.ecgm62-card-header h2,.ecgm62-card-header h3,
+    .ecgm62-card-footer,.ecgm62-attention-footer,.ecgm62-role-body,.ecgm62-role-field
+) {
+    background: #181b20 !important;
+    background-color: #181b20 !important;
+    color: #f2f5f7 !important;
+    border-color: #38414a !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-role-field select,
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-dist-config input[type="number"] {
+    background: #20242a !important;
+    background-color: #20242a !important;
+    color: #f2f5f7 !important;
+    -webkit-text-fill-color: #f2f5f7 !important;
+    border: 1px solid #46515b !important;
+    color-scheme: dark !important;
+    opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-role-field select:disabled {
+    color: #acbac5 !important;
+    -webkit-text-fill-color: #acbac5 !important;
+    opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-role-field :is(label,small),
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-attention-footer {
+    color: #c4cfd8 !important;
+    -webkit-text-fill-color: #c4cfd8 !important;
+}
+
+/* GESTAO — distribuicao: rodape final tem bloco proprio, sem faixa solta. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    color: #f2f5f7 !important;
+    gap: 12px !important;
+    box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution > .ecgm62-dist-footer {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    padding: 14px 16px !important;
+    margin: 0 !important;
+    border: 1px solid #38414a !important;
+    border-radius: 11px !important;
+    background: #181b20 !important;
+    background-color: #181b20 !important;
+    box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution > .ecgm62-dist-footer > .ecgm62-btn:not(.ecgm62-btn--primary) {
+    background: #22262c !important;
+    border: 1px solid #46515b !important;
+    color: #f2f5f7 !important;
+    -webkit-text-fill-color: #f2f5f7 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution > .ecgm62-dist-footer > .ecgm62-btn.ecgm62-btn--primary {
+    background: #078c7c !important;
+    border: 1px solid #078c7c !important;
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution > .ecgm62-dist-footer > .ecgm62-btn:disabled {
+    opacity: .62 !important;
+    cursor: not-allowed !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution > p.ecgm62-help {
+    margin: 0 !important;
+    padding: 0 4px !important;
+    color: #c4cfd8 !important;
+    -webkit-text-fill-color: #c4cfd8 !important;
+}
+
+/* Visualizacao de componentes sem mexer na semantica de foco, hover ou clique. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body :is(.leads-rf.lf36-leads,.ecgm-page.ecgm-v2.ecgm61.ecgm62) :is(a,button,input,select):focus-visible {
+    outline: 2px solid #80e8d6 !important;
+    outline-offset: 2px;
+}

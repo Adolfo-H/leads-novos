@@ -1,0 +1,25 @@
+/* A24.7 - pseudo-elementos e estados apenas no tema Escuro. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf.lf36-leads section.rf-panel.rf-filters :is(input, textarea)::placeholder {
+    color: #bbc7d1 !important;
+    -webkit-text-fill-color: #bbc7d1 !important;
+    opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf.lf36-leads details.lf361-pipeline-access .rf-stage-strip-chip.is-active {
+    outline: 1px solid #65e0cb !important;
+    outline-offset: 0;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf.lf36-leads section.rf-panel.rf-list-panel :is(.lv13-company-name, .lv13-owner-name):is(:hover, :focus-visible) {
+    color: #8de9d7 !important;
+    -webkit-text-fill-color: #8de9d7 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution .ecgm62-dist-footer {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 14px 16px !important;
+    border-radius: 11px !important;
+    border: 1px solid #38414a !important;
+    margin: 0 !important;
+}

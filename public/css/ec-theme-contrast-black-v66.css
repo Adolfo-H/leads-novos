@@ -1,0 +1,637 @@
+/*
+ * ExportControl Prospector - A24.4 / V66: contraste escuro preto/grafite.
+ * Esta folha deve carregar DEPOIS de ec-theme-unified-v64.css e
+ * ec-appearance-modes-v65.css. Nao modifica fluxo, dados nem componentes.
+ * Escopo: somente opcao 'Escuro' (data-ec-appearance="dark" + html.dark).
+ * O Claro 100% claro e o Sistema institucional do A24.3 ficam intactos.
+ */
+
+/* 1. Tokens globais: PRETO/grafite, nao navy/azul. */
+html.dark[data-ec-appearance="dark"] {
+  color-scheme: dark;
+  --ec-bg: #0b0d10;
+  --ec-bg-deep: #080a0d;
+  --ec-sidebar: #090b0d;
+  --ec-sidebar-deep: #090b0d;
+  --ec-topbar: #111418;
+  --ec-surface: #181b20;
+  --ec-surface-soft: #20242a;
+  --ec-surface-hover: #2a3037;
+  --ec-border: #3a424d;
+  --ec-border-soft: #343b44;
+  --ec-primary: #65e0cb;
+  --ec-primary-strong: #83ebd8;
+  --ec-primary-soft: #193931;
+  --ec-text: #f2f5f7;
+  --ec-text-soft: #d3dce4;
+  --ec-text-muted: #b3c0cc;
+  --v64-page: #0b0d10;
+  --v64-panel: #181b20;
+  --v64-panel-soft: #22262c;
+  --v64-ink: #f2f5f7;
+  --v64-muted: #b9c4cf;
+  --v64-line: #38414a;
+  --v64-input: #20242a;
+  --v64-teal: #65e0cb;
+  --v64-mint: #1c3831;
+  --ec-dark-page: #0b0d10;
+  --ec-dark-panel: #181b20;
+  --ec-dark-raised: #22262c;
+  --ec-dark-input: #20242a;
+  --ec-dark-ink: #f2f5f7;
+  --ec-dark-muted: #b9c4cf;
+  --ec-dark-border: #38414a;
+  --ec-dark-accent: #65e0cb;
+}
+
+/* 2. Casca do sistema, incluindo barra esquerda e cabecalho. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-main.ec-main,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-content,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-content-area,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-content-shell {
+  color: var(--ec-dark-ink) !important;
+  background: var(--ec-dark-page) !important;
+  background-image: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-sidebar.ec-sidebar,
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ec-sidebar.ec-sidebar,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-sidebar [data-flux-sidebar] {
+  background: #090b0d !important;
+  background-image: none !important;
+  color: #edf2f5 !important;
+  border-color: #343b44 !important;
+  color-scheme: dark !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-sidebar :is(.ec-sidebar-header,.ec-sidebar-footer) {
+  border-color: #343b44 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-sidebar .ec-sidebar-group [data-flux-sidebar-group-heading] {
+  color: #b5c1ca !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-sidebar .ec-nav-item.ec-nav-item {
+  background: transparent !important;
+  color: #dce4ea !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-sidebar .ec-nav-item.ec-nav-item:hover {
+  background: #212a28 !important;
+  color: #e5fff7 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-sidebar .ec-nav-item.ec-nav-item:is([data-current],[aria-current="page"]) {
+  background: #173b35 !important;
+  color: #82f0db !important;
+  box-shadow: inset 3px 0 0 #53d6bd !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-topbar.ec-topbar.ec-topbar {
+  background: #111418 !important;
+  background-image: none !important;
+  border-color: #343b44 !important;
+  color: #f2f5f7 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-topbar .ec-global-search.ec-global-search {
+  background: #20242a !important;
+  border-color: #3a424d !important;
+  color: #f2f5f7 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-topbar .ec-global-search :is(input,input[type="search"]) {
+  background: transparent !important;
+  color: #f2f5f7 !important;
+  -webkit-text-fill-color: #f2f5f7 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-topbar .ec-global-search input::placeholder {
+  color: #b9c4cf !important;
+  -webkit-text-fill-color: #b9c4cf !important;
+}
+
+/* 3. Variaveis dos modulos - componentes antigos continuam a usar os tokens. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview.ef29-activated {
+  --eo-bg: var(--ec-dark-panel) !important;
+  --eo-bg-soft: var(--ec-dark-raised) !important;
+  --eo-line: var(--ec-dark-border) !important;
+  --eo-text: var(--ec-dark-ink) !important;
+  --eo-muted: var(--ec-dark-muted) !important;
+  --ds-v5-panel: var(--ec-dark-panel) !important;
+  --ds-v5-line: var(--ec-dark-border) !important;
+  --ds-v5-bg: var(--ec-dark-page) !important;
+  --ds-v5-ink: var(--ec-dark-ink) !important;
+  --ds-v5-muted: var(--ec-dark-muted) !important;
+  color: var(--ec-dark-ink) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf.lf36-leads {
+  --lf34-ink: var(--ec-dark-ink) !important;
+  --lf34-ink-deep: var(--ec-dark-ink) !important;
+  --lf34-muted: var(--ec-dark-muted) !important;
+  --lf34-faint: #adb9c5 !important;
+  --lf34-canvas: var(--ec-dark-page) !important;
+  --lf34-card: var(--ec-dark-panel) !important;
+  --lf34-soft: var(--ec-dark-raised) !important;
+  --lf34-border: var(--ec-dark-border) !important;
+  --lf34-line: var(--ec-dark-border) !important;
+  --lf36-bg: var(--ec-dark-page) !important;
+  --lf36-ink: var(--ec-dark-ink) !important;
+  --lv13-bg: var(--ec-dark-page) !important;
+  --lv13-panel: var(--ec-dark-panel) !important;
+  --lv13-fg: var(--ec-dark-ink) !important;
+  --lv13-muted: var(--ec-dark-muted) !important;
+  --lv13-border: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2 {
+  --ecgm62-ink: var(--ec-dark-ink) !important;
+  --ecgm62-muted: var(--ec-dark-muted) !important;
+  --ecgm62-line: var(--ec-dark-border) !important;
+  --ecgm62-surface: var(--ec-dark-panel) !important;
+  --ecgm62-canvas: var(--ec-dark-page) !important;
+  --ecgm61-canvas: var(--ec-dark-page) !important;
+  --ecgm61-soft: var(--ec-dark-raised) !important;
+  --ecgm-v2-ink: var(--ec-dark-ink) !important;
+  --ecgm-v2-muted: var(--ec-dark-muted) !important;
+  --ecgm-v2-line: var(--ec-dark-border) !important;
+  color: var(--ec-dark-ink) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .prv63-page.prv63-page {
+  --p63-ink: var(--ec-dark-ink) !important;
+  --p63-body: #d3dce4 !important;
+  --p63-muted: var(--ec-dark-muted) !important;
+  --p63-line: var(--ec-dark-border) !important;
+  --p63-surface: var(--ec-dark-panel) !important;
+  --p63-canvas: var(--ec-dark-page) !important;
+  --p63-teal: var(--ec-dark-accent) !important;
+  --p63-teal-light: #1c3831 !important;
+  color: var(--ec-dark-ink) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .eccl-page.ec-e01-page {
+  --e64-ink: var(--ec-dark-ink) !important;
+  --e64-muted: var(--ec-dark-muted) !important;
+  --e64-line: var(--ec-dark-border) !important;
+  --eccl-bg: var(--ec-dark-page) !important;
+  --eccl-panel: var(--ec-dark-panel) !important;
+  --eccl-ink: var(--ec-dark-ink) !important;
+  --eccl-muted: var(--ec-dark-muted) !important;
+  --eccl-border: var(--ec-dark-border) !important;
+  color: var(--ec-dark-ink) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecim65-page {
+  --im65-ink: var(--ec-dark-ink) !important;
+  --im65-text: #d3dce4 !important;
+  --im65-muted: var(--ec-dark-muted) !important;
+  --im65-line: var(--ec-dark-border) !important;
+  --im65-surface: var(--ec-dark-panel) !important;
+  --im65-canvas: var(--ec-dark-page) !important;
+  --im65-teal: var(--ec-dark-accent) !important;
+  color: var(--ec-dark-ink) !important;
+}
+
+/* 4. Dashboard: visao estrategica + explorador da base e mapa. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview :is(
+  .ef29-kpi,.ef29-card,.ef29-focus,.ef29-more-card,.ef29-state-card,
+  .ef29-map-geographic-panel,.ef29-map-geographic-header,.ef29-map-geographic-footer,
+  .eo-panel,.eo-kpi,.eo-search-wrap,.eo-explorer,.eo-structure,
+  .ds-v5-card,.ds-v5-seller,.ds-v5-panel,.ds-v5-stat
+) {
+  background: var(--ec-dark-panel) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview :is(
+  .ef29-uf,.ef29-bar-track,.ef29-extra-stages summary,.eo-table thead,
+  .eo-table thead th,.eo-table tbody tr,.eo-table td,
+  .eo-region,.eo-structure-meter,.eo-region-meter,.eo-search,.eo-pagination,
+  .ds-v5-state,.ds-v5-state-track,.ds-v5-rank,.ds-v5-alert
+) {
+  background-color: var(--ec-dark-raised) !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview :is(
+  .ef29-kpi-value,.ef29-focus strong,.ef29-map-geographic-header strong,
+  .ef29-bar-count,.ef29-dashboard-value,.ds-v5-seller h2,
+  .eo-structure-stat strong,.eo-structure-heading h2,.eo-panel h2,
+  .eo-table th,.eo-table td,.eo-region-code,
+  .ef29-card h2,.ef29-card h3,.ds-v5-card h2
+) {
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview :is(
+  .ef29-intro p,.ef29-kpi-title,.ef29-kpi-caption,.ef29-map-footnote,
+  .ef29-map-geographic-header span,.ef29-card-title>span,
+  .eo-panel-note,.eo-table small,.eo-footnote,.eo-structure-heading p,
+  .eo-pagination,.ds-v5-footer,.ds-v5-seller p
+) {
+  color: var(--ec-dark-muted) !important;
+  -webkit-text-fill-color: var(--ec-dark-muted) !important;
+}
+/* O mapa vetorial conserva as cores estaduais; o CONTORNO nao fica branco. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview :is(.ef29-map,.ef29-map-svg-wrap,.ef29-map-geographic-map) {
+  background-color: #191e20 !important;
+  background-image: none !important;
+  border-color: var(--ec-dark-border) !important;
+}
+
+/* 5. Leads: cabecalho, filtros, etapas e tabela de empresas. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf.lf36-leads :is(
+  .rf-panel,.rf-filters,.rf-list-panel,.rf-list-toolbar,.rf-dashboard-drilldown,
+  .rf-filters-head,.rf-filter-main,.rf-filter-secondary,
+  .lf361-pipeline-access,.lf361-pipeline-summary,.lf361-crm-secondary,
+  .rf-stage-strip,.rf-stage-card,.rf-leads-summary,.rf-empty-state,
+  .lv14-hubspot-summary,.rf-crm-only-panel,.lf37-global-stage,
+  .rf-list-scroll,.rf-list-head,.lf364-list-toolbar,
+  .rf-lead-row,.lv13-lead-line,.rf-pagination
+) {
+  background-color: var(--ec-dark-panel) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf.lf36-leads :is(
+  .rf-list-head,.lv13-list-head,.rf-filter-main,.rf-filter-secondary,
+  .rf-lead-row:nth-child(even),.rf-stage-card,
+  .lf37-global-stage,.lf361-pipeline-summary,.lf361-pipeline-access
+) {
+  background-color: var(--ec-dark-raised) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf.lf36-leads :is(
+  .rf-title,.lf36-list-title,.lf36-readonly-owner,.lv13-company-name,
+  .lv13-lead-line strong,.rf-list-title,.rf-stage-card strong,
+  .lf37-global-total strong,.lf37-global-stage strong,
+  .rf-list-panel h2,.rf-dashboard-drilldown h2
+) {
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf.lf36-leads :is(
+  .rf-subtitle,.lf364-list-hint,.lf364-filter-caption,.rf-pagination-info,
+  .lv13-list-head,.lv13-next,.lv13-owner,.lv13-icp,.lv13-score,
+  .rf-leads-summary small,.lf361-pipeline-summary>span
+) {
+  color: var(--ec-dark-muted) !important;
+  -webkit-text-fill-color: var(--ec-dark-muted) !important;
+}
+/* Texto de numeros (KPIs) e filtros que ficavam brancos sobre branco. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf.lf36-leads :is(
+  .rf-panel strong,.rf-stage-strip strong,.rf-list-head strong,
+  .lv13-score strong,.lf37-global-stage strong
+) {
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+}
+
+/* 6. Gestao Comercial: KPI, carga, fila, papeis e distribuicao. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm-metric,.ecgm62-kpi,.ecgm-panel,.ecgm62-card,
+  .ecgm62-load-card,.ecgm62-role-card,.ecgm62-role-body,
+  .ecgm62-table-shell,.ecgm62-attention-details,
+  .ecgm62-attention-content,.ecgm62-confirm-dialog,
+  .ecgm62-person,.ecgm62-dist-stats>div,.ecgm62-result,
+  .ecgm62-distribution,.ecgm62-people,.ecgm62-dist-config
+) {
+  background: var(--ec-dark-panel) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+  box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm-management-table,.ecgm-management-table thead,
+  .ecgm-management-table tbody tr,.ecgm-management-table th,
+  .ecgm-management-table td,.ecgm62-table,
+  .ecgm62-attention-table,.ecgm62-attention-table thead,
+  .ecgm62-attention-table tbody tr,.ecgm62-attention-table td,
+  .ecgm62-role-field,.ecgm62-role-field select,.ecgm62-person,
+  .ecgm62-confirm-stats>div
+) {
+  background: var(--ec-dark-raised) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  h1,h2,h3,.ecgm62-card-header,.ecgm62-kpi strong,
+  .ecgm62-kpi .ecgm-metric-value,.ecgm62-load-card strong,
+  .ecgm62-card-header h2,.ecgm62-attention-summary,
+  .ecgm62-role-field label,.ecgm62-people strong,
+  .ecgm-management-table td,.ecgm-management-table th
+) {
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm62-kpi small,.ecgm62-kpi span,.ecgm62-help,
+  .ecgm62-attention-hint,.ecgm62-card-footer,
+  .ecgm62-page-footer,.ecgm62-person small,
+  .ecgm62-role-field small,.ecgm62-page-header p
+) {
+  color: var(--ec-dark-muted) !important;
+  -webkit-text-fill-color: var(--ec-dark-muted) !important;
+}
+
+/* 7. Motor de prospeccao: formularios, filtros de UF/CNAE, tabelas e rodadas. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .prv63-page.prv63-page :is(
+  .prv63-card,.prv63-config-card,.prv63-picker,.prv63-picker-body,
+  .prv63-table-card,.prv63-results-card,.prv63-runs-card,
+  .prv63-metric,.prv63-criteria,.prv63-expanded-content,
+  .prv63-modal,.prv63-candidate-detail,.prv63-note
+) {
+  background: var(--ec-dark-panel) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+  box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .prv63-page.prv63-page :is(
+  .prv63-picker-trigger,.prv63-picker-search,
+  .prv63-check-row,.prv63-table,
+  .prv63-table thead,.prv63-table tbody tr,
+  .prv63-table th,.prv63-table td,
+  .prv63-more-filters>div,.prv63-expanded-row td,
+  .prv63-modal-summary,.prv63-modal-steps
+) {
+  background: var(--ec-dark-raised) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .prv63-page.prv63-page :is(
+  h1,h2,h3,.prv63-card-heading h2,.prv63-check-row strong,
+  .prv63-metric strong,.prv63-table td,.prv63-table th,
+  .prv63-company-name,.prv63-criteria>summary
+) {
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .prv63-page.prv63-page :is(
+  .prv63-page-header p,.prv63-metric small,
+  .prv63-muted,.prv63-data-note,.prv63-page-footer,
+  .prv63-table-footer,.prv63-field-label
+) {
+  color: var(--ec-dark-muted) !important;
+  -webkit-text-fill-color: var(--ec-dark-muted) !important;
+}
+
+/* 8. Listagem de empresas: nunca usar linhas brancas + textos brancos. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .eccl-page.ec-e01-page :is(
+  .ec-e01-stat,.eccl-panel,.ec-e01-filter-card,
+  .eccl-v26-results-panel,.ec-e01-results,
+  .eccl-toolbar,.eccl-results-head,.ec-e01-results-head,
+  .ec-e01-explain,.eccl-table-scroll,.ec-e01-table-scroll
+) {
+  background: var(--ec-dark-panel) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .eccl-page.ec-e01-page :is(
+  .eccl-table,.ec-e01-table,.ec-e01-table thead,
+  .ec-e01-table tbody tr,.ec-e01-table th,.ec-e01-table td,
+  .eccl-pagination,.eccl-table thead,.eccl-table tbody tr,
+  .eccl-table th,.eccl-table td
+) {
+  background: var(--ec-dark-raised) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .eccl-page.ec-e01-page :is(
+  h1,h2,h3,.ec-e01-stat strong,.eccl-company-name,.ec-e01-results-head h2,
+  .ec-e01-table td,.ec-e01-table th,.eccl-table td,.eccl-table th
+) {
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .eccl-page.ec-e01-page :is(
+  .eccl-subtext,.eccl-results-meta,.ec-e01-origin,.ec-e01-stat span,
+  .eccl-field label,.ec-e01-pagination,.ec-e01-footer
+) {
+  color: var(--ec-dark-muted) !important;
+  -webkit-text-fill-color: var(--ec-dark-muted) !important;
+}
+
+/* 9. Importacoes: lote, formulario, alertas e historico legiveis. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecim65-page :is(
+  .im65-card,.im65-composer,.im65-history,.im65-kpi,
+  .im65-results,.im65-diagnostics,.im65-intelligence,
+  .im65-filters,.im65-notice,.im65-history-footer,
+  .im65-table-footer,.im65-batch-navigation
+) {
+  background: var(--ec-dark-panel) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecim65-page :is(
+  .im65-table,.im65-items-table,.im65-table thead,
+  .im65-items-table thead,.im65-table tbody tr,
+  .im65-items-table tbody tr,.im65-table th,
+  .im65-table td,.im65-items-table th,.im65-items-table td,
+  .im65-filters-grid,.im65-tab:not(.is-active)
+) {
+  background: var(--ec-dark-raised) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecim65-page :is(
+  h1,h2,h3,.im65-card-header h2,.im65-kpi strong,
+  .im65-history strong,.im65-table td,.im65-table th,
+  .im65-items-table td,.im65-items-table th
+) {
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecim65-page :is(
+  .im65-note,.im65-note p,.im65-muted,
+  .im65-history-footer,.im65-page-footer,
+  .im65-label,.im65-history small
+) {
+  color: var(--ec-dark-muted) !important;
+  -webkit-text-fill-color: var(--ec-dark-muted) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecim65-page .im65-note.im65-note-success,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecim65-page .im65-notice.im65-notice-success {
+  background: #163329 !important;
+  border-color: #386b57 !important;
+  color: #aff5d3 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecim65-page .im65-note.im65-note-info {
+  background: #202b31 !important;
+  border-color: var(--ec-dark-border) !important;
+  color: #d1e2e8 !important;
+}
+
+/* 10. Inputs: evitar caixas claras em paginas escuras (sem alterar checkbox). */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-main :is(
+  .leads-rf,.ecgm-page,.prv63-page,.eccl-page,.ecim65-page
+) :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea) {
+  background: var(--ec-dark-input) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+  color-scheme: dark !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-main :is(
+  .leads-rf,.ecgm-page,.prv63-page,.eccl-page,.ecim65-page
+) :is(input,textarea)::placeholder {
+  color: #b9c4cf !important;
+  -webkit-text-fill-color: #b9c4cf !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-main :is(
+  .leads-rf,.ecgm-page,.prv63-page,.eccl-page,.ecim65-page
+) :is(input,select,textarea):disabled {
+  color: #acb6bf !important;
+  -webkit-text-fill-color: #acb6bf !important;
+  background: #1a1e23 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-main :is(
+  .leads-rf,.ecgm-page,.prv63-page,.eccl-page,.ecim65-page
+) :is(input,select,textarea):focus-visible {
+  outline: 2px solid #65e0cb !important;
+  outline-offset: 1px;
+}
+
+/* 11. Preservar estados e semantica dos botoes; corrigir apenas secundarios. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-main :is(
+  .leads-rf,.ecgm-page,.prv63-page,.eccl-page,.ecim65-page
+) :is(.prv63-button-outline,.ecgm62-btn:not(.ecgm62-btn--primary),
+      .eccl-button:not(.eccl-primary),.im65-button-secondary,
+      .rf-filters-clear,.rf-page-btn) {
+  background: var(--ec-dark-raised) !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+}
+
+/* 12. Mensagens: nao escurecer por cima textos que indicam avisos. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body :is(
+  .prv63-notice-success,.rf-alert-ok,.ecgm62-message--success
+) {
+  background: #163329 !important;
+  color: #aff5d3 !important;
+  border-color: #386b57 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body :is(
+  .prv63-notice-error,.rf-alert-error,.ecgm62-message--error
+) {
+  background: #3b2226 !important;
+  color: #ffb5bb !important;
+  border-color: #8b454d !important;
+}
+
+/* 13. Dashboard D02 (explorador local), que usa EF32/EF33 e nao EF29. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base :is(
+  .ef32-kpi,.ef32-search-card,.ef32-results,.ef32-advanced,
+  .ef33-advanced,.ef33-summary,.ef32-results-head,
+  .eo-panel,.eo-structure,.eo-coverage-row,.ef32-fields
+) {
+  background: var(--ec-dark-panel) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base :is(
+  .ef32-table,.ef32-table thead,.ef32-table tbody tr,
+  .ef32-table th,.ef32-table td,.ef32-table-scroll,
+  .ef32-pagination,.ef32-tab:not(.is-active),.ef32-kpis
+) {
+  background: var(--ec-dark-raised) !important;
+  background-image: none !important;
+  color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base :is(
+  h1,h2,h3,.ef32-section-heading,.ef32-kpi strong,.ef32-name,
+  .ef32-results h2,.ef32-table td,.ef32-table th,.eo-coverage-title
+) {
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base :is(
+  .ef32-secondary,.ef32-head p,.ef32-kpi small,
+  .ef32-pagination,.eo-panel-note,.ef33-summary-subtitle,
+  .eo-coverage-detail,.ef32-field label,.ef32-table small
+) {
+  color: var(--ec-dark-muted) !important;
+  -webkit-text-fill-color: var(--ec-dark-muted) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base :is(input:not([type="checkbox"]),select,textarea) {
+  background: var(--ec-dark-input) !important;
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+  border-color: var(--ec-dark-border) !important;
+  color-scheme: dark !important;
+}
+
+/* 14. As abas e as etapas da fila possuem estruturas de resumo independentes. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf.lf36-leads :is(
+  .lf37-global-stage,.lf37-personal-stage,.lf361-pipeline-access,
+  .lf361-pipeline-summary,.lf37-global-heading,.lf37-personal-heading,
+  .lf37-global-table,.lf37-personal-table,.rf-stage-strip,
+  .rf-stage-strip>.rf-stage-card
+) {
+  background-color: var(--ec-dark-panel) !important;
+  border-color: var(--ec-dark-border) !important;
+  color: var(--ec-dark-ink) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf.lf36-leads :is(
+  .lf37-global-stage strong,.lf37-personal-stage strong,
+  .lf37-global-heading strong,.lf37-personal-heading strong
+) {
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+}
+
+/* 15. Mapa territorial V30: remove fundo branco, sem mudar os dados do SVG. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ef29-dashboard .ef30-map-canvas,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ef29-dashboard .ef30-map-art {
+  background: #191d20 !important;
+  background-image: none !important;
+  border-color: var(--ec-dark-border) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ef29-dashboard .ef29-states-table,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ef29-dashboard .ef29-states-table :is(thead,tbody,tr,th,td) {
+  background: var(--ec-dark-panel) !important;
+  background-image: none !important;
+  border-color: var(--ec-dark-border) !important;
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ef29-dashboard :is(
+  .ef30-map-heading p,.ef30-map-guidance,.ef30-map-legend,
+  .ef30-map-legend p,.ef29-states-footnote
+) {
+  color: var(--ec-dark-muted) !important;
+  -webkit-text-fill-color: var(--ec-dark-muted) !important;
+}
+
+/* 16. Ajustes de legibilidade fina: rotulos e chips em tabelas escuras. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ef29-dashboard :is(
+  .ef29-bar-label,.ef29-card-title,.ef29-states-footnote,
+  .ef29-states-table td,.ef29-states-table th
+) {
+  color: var(--ec-dark-ink) !important;
+  -webkit-text-fill-color: var(--ec-dark-ink) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf.lf36-leads :is(
+  .rf-filters label,.rf-filter-main label,.rf-filter-secondary label,
+  .rf-list-toolbar p,.rf-list-head th,.rf-list-head span
+) {
+  color: var(--ec-dark-muted) !important;
+  -webkit-text-fill-color: var(--ec-dark-muted) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .eccl-page.ec-e01-page :is(.ec-e01-status,.ec-e01-origin),
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecim65-page :is(.im65-status,.im65-tag),
+html.dark[data-ec-appearance="dark"] body.ec-app-body .prv63-page :is(.prv63-status),
+html.dark[data-ec-appearance="dark"] body.ec-app-body .leads-rf :is(.lv13-pill,.lf47-active-stage-chip) {
+  background: #204038 !important;
+  color: #a5f0db !important;
+  -webkit-text-fill-color: #a5f0db !important;
+  border-color: #386b57 !important;
+}

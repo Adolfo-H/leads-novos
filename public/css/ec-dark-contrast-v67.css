@@ -1,0 +1,377 @@
+/*
+ * Prospector ExportControl — A24.5 / V67
+ * Correcao de contraste do modo PRETO apos V66.
+ * Corrige os componentes exatos das capturas: Dashboard D02, Leads e Gestao.
+ * Nao altera navegacao, hierarquia, estado Livewire nem semantica de acoes.
+ * Somente quando usuario escolheu Escuro: html.dark[data-ec-appearance="dark"].
+ */
+
+/* 0. Fundos e cores compartilhados — valores usados tambem nas composicoes. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body {
+  --ec67-page: #0b0d10;
+  --ec67-card: #181b20;
+  --ec67-raised: #22262c;
+  --ec67-input: #20242a;
+  --ec67-line: #38414a;
+  --ec67-ink: #f2f5f7;
+  --ec67-secondary: #c4cfd8;
+  --ec67-muted: #aab9c5;
+  --ec67-accent: #80e8d6;
+  --ec67-accent-bg: #173931;
+}
+
+/* 1. Dashboard > Base Empresarial > Indicadores avancados (EF32/EF33).
+ * O container .ef32-advanced-body, ausente no V66, permanecia BRANCO.
+ */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base .ef32-advanced.ef33-advanced,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base .ef32-advanced-body,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base .ef33-summary,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base .eo-main-grid,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base .eo-panel,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base .eo-structure,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base .eo-coverage-row {
+  background: var(--ec67-card) !important;
+  background-image: none !important;
+  color: var(--ec67-ink) !important;
+  border-color: var(--ec67-line) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base .ef33-summary,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base .ef32-advanced-body {
+  border-color: var(--ec67-line) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base :is(
+  .ef33-summary strong, .eo-panel h2, .eo-coverage-title strong,
+  .eo-structure-heading h2, .eo-structure-stat strong, .eo-region-code, .eo-region strong,
+  .ef32-advanced .eo-chip, .ef32-kpi strong, .ef32-results-head h2,
+  .ef32-table :is(th,td)
+) {
+  color: var(--ec67-ink) !important;
+  -webkit-text-fill-color: var(--ec67-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base :is(
+  .ef33-summary-subtitle,.eo-panel-head p,.eo-panel-note,
+  .eo-coverage-detail,.eo-structure-heading p,.eo-regions-footer,.eo-region-pct,
+  .ef32-results-head p,.ef32-kpi small,.ef32-head p
+) {
+  color: var(--ec67-secondary) !important;
+  -webkit-text-fill-color: var(--ec67-secondary) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base :is(
+  .eo-coverage-title span, .eo-structure-stat small, .eo-chip
+) {
+  color: #a2f4e2 !important;
+  -webkit-text-fill-color: #a2f4e2 !important;
+  background: var(--ec67-accent-bg) !important;
+  border-color: #386658 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base :is(
+  .eo-coverage-list,.eo-regions,.eo-region,.eo-structure-content,
+  .eo-structure-labels,.eo-coverage-body,.eo-coverage-title,
+  .ef32-advanced-body .eo-panel-head
+) {
+  background-color: transparent !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base :is(
+  .ef32-pagination,.ef32-advanced-body .eo-structure-meter,.eo-region-meter
+) {
+  background-color: var(--ec67-raised) !important;
+  border-color: var(--ec67-line) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef32-base :is(
+  .eo-text-link,.ef32-open,.eo-region-arrow,.ef33-summary-icon
+) {
+  color: var(--ec67-accent) !important;
+  -webkit-text-fill-color: var(--ec67-accent) !important;
+}
+
+/* 2. Dashboard estratégico — acoes rapidas: nome/legenda ilegivel. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef29-dashboard :is(
+  .ef29-more-card,.ef29-more-grid,.ef29-action-panel
+) {
+  background-color: var(--ec67-card) !important;
+  border-color: var(--ec67-line) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef29-dashboard :is(
+  .ef29-more-card h3,.ef29-more-card strong,.ef29-more-card .ef29-more-title,
+  .ef29-more-card .ef29-card-title,.ef29-card-title strong,
+  .ef29-states-panel h2,.ef29-map-panel h2
+) {
+  color: var(--ec67-ink) !important;
+  -webkit-text-fill-color: var(--ec67-ink) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-overview .ef29-dashboard :is(
+  .ef29-more-card p,.ef29-more-card small,.ef29-more-card > span:not(.ef29-tag),.ef29-more-card .ef29-more-description,
+  .ef29-more-card .ef29-muted,.ef29-states-footnote
+) {
+  color: var(--ec67-secondary) !important;
+  -webkit-text-fill-color: var(--ec67-secondary) !important;
+}
+
+/* 3. Leads — 4 cards de indicadores reais (LF36-KPI estava fora do V66).
+ * Selecionado = verde discreto, demais = grafite. Sem cards brancos.
+ */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads .lf36-kpis .lf36-kpi {
+  background: var(--ec67-card) !important;
+  background-image: none !important;
+  border: 1px solid var(--ec67-line) !important;
+  color: var(--ec67-ink) !important;
+  box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads .lf36-kpis .lf36-kpi.is-accent {
+  background: #152b26 !important;
+  border-color: #46bfa9 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads .lf36-kpis .lf36-kpi strong {
+  color: var(--ec67-ink) !important;
+  -webkit-text-fill-color: var(--ec67-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads .lf36-kpis .lf36-kpi :is(span,small) {
+  color: var(--ec67-secondary) !important;
+  -webkit-text-fill-color: var(--ec67-secondary) !important;
+}
+
+/* 4. Leads — filtros, cabecalho, subgrupos e campos (antes ilhas brancas).
+ * A combinacao .ec-page-shell.leads-rf assegura prioridade sobre o V34.
+ */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(
+  .rf-panel.rf-filters,.rf-panel.rf-list-panel,.rf-filters-head,
+  .lf364-filter-header,.rf-filter-main,.rf-filter-secondary,
+  .lf36-filter-field,.rf-list-toolbar,.rf-list-head,.lv13-list-head,
+  .rf-list-scroll,.lv13-lead-line,.rf-lead-row,.rf-pagination
+) {
+  background: var(--ec67-card) !important;
+  background-image: none !important;
+  color: var(--ec67-ink) !important;
+  border-color: var(--ec67-line) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(
+  .rf-filter-main,.rf-filter-secondary,.rf-list-head,.lv13-list-head,
+  .rf-lead-row:nth-child(even),.lv13-lead-line:nth-child(even)
+) {
+  background-color: var(--ec67-raised) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(
+  .lf364-filter-header strong,.lf36-list-title,.rf-list-toolbar h2,
+  .lv13-company-name,.lv13-score strong,.lv13-owner-name,
+  .rf-list-head strong,.lf364-list-heading h2,.lf364-list-results strong
+) {
+  color: var(--ec67-ink) !important;
+  -webkit-text-fill-color: var(--ec67-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(
+  .lf364-filter-caption,.lf364-list-hint,.rf-list-head span,
+  .rf-filter-main label,.rf-filter-secondary label,
+  .lv13-company-body small,.lv13-next,.lv13-score,.lv13-icp,
+  .lv13-owner,.rf-pagination-info
+) {
+  color: var(--ec67-secondary) !important;
+  -webkit-text-fill-color: var(--ec67-secondary) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(
+  .rf-panel.rf-filters,.rf-panel.rf-list-panel
+) :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea) {
+  background: var(--ec67-input) !important;
+  background-image: none !important;
+  color: var(--ec67-ink) !important;
+  -webkit-text-fill-color: var(--ec67-ink) !important;
+  border: 1px solid var(--ec67-line) !important;
+  color-scheme: dark !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(input,textarea)::placeholder {
+  color: var(--ec67-muted) !important;
+  -webkit-text-fill-color: var(--ec67-muted) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(
+  .lv13-status,.lv13-stage,.lv13-pill,.lv13-icp,.lv13-company-avatar
+) {
+  background: #20382f !important;
+  color: #b6f4e5 !important;
+  -webkit-text-fill-color: #b6f4e5 !important;
+  border-color: #386658 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(
+  .lv13-stage--red,.lv13-status--discarded,.lv13-status--rejected
+) {
+  background: #432a2f !important;
+  color: #ffc1cb !important;
+  -webkit-text-fill-color: #ffc1cb !important;
+  border-color: #7d434f !important;
+}
+
+/* 5. Leads — faixas de etapas CRM: global e a minha carteira. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(
+  .lf36-stages.lf37-global-stages,.lf36-stage-grid,
+  .lf36-stage.lf37-global-stage,.lf361-pipeline-access,
+  .lf361-pipeline-summary,.rf-stage-strip.lv18-pipeline,
+  .rf-stage-strip-heading,.lv18-pipeline-chips,
+  .rf-stage-strip-chip.lv18-pipeline-chip
+) {
+  background: var(--ec67-card) !important;
+  background-image: none !important;
+  color: var(--ec67-ink) !important;
+  border-color: var(--ec67-line) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(
+  .lf36-stage.lf37-global-stage,.rf-stage-strip-chip.lv18-pipeline-chip
+) {
+  background-color: var(--ec67-raised) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(
+  .lf37-global-heading h2,.lf36-stage span,.lf36-stage strong,
+  .rf-stage-strip-heading strong,.lv18-chip-count,.lv18-chip-label,
+  .lf37-personal-title,.lf37-global-total strong
+) {
+  color: var(--ec67-ink) !important;
+  -webkit-text-fill-color: var(--ec67-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(
+  .lf37-global-heading p,.lf37-global-footer,.lf37-personal-meta,
+  .rf-stage-strip-heading span,.lf361-pipeline-open-label
+) {
+  color: var(--ec67-secondary) !important;
+  -webkit-text-fill-color: var(--ec67-secondary) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ec-page-shell.leads-rf.lf36-leads :is(
+  .lf36-stage.lf37-global-stage.is-active,.rf-stage-strip-chip.lv18-pipeline-chip.is-active
+) {
+  background: var(--ec67-accent-bg) !important;
+  border-color: #50c7b2 !important;
+}
+
+/* 6. Gestão Comercial — indicadores superiores + distribuicao. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm-metrics.ecgm62-kpis .ecgm-metric.ecgm62-kpi,
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-dist-stats > div {
+  background: var(--ec67-card) !important;
+  background-image: none !important;
+  border: 1px solid var(--ec67-line) !important;
+  color: var(--ec67-ink) !important;
+  box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm-metric.ecgm62-kpi strong,.ecgm62-dist-stats>div strong,
+  .ecgm-metric.ecgm62-kpi .ecgm-metric-value
+) {
+  color: var(--ec67-ink) !important;
+  -webkit-text-fill-color: var(--ec67-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm-metric.ecgm62-kpi span,.ecgm-metric.ecgm62-kpi small,
+  .ecgm62-dist-stats>div span
+) {
+  color: var(--ec67-secondary) !important;
+  -webkit-text-fill-color: var(--ec67-secondary) !important;
+}
+
+/* 7. Gestão — paineis que ficaram brancos, headers e rodapes. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm62-load-card,.ecgm62-role-card,.ecgm62-card,
+  .ecgm62-card-header,.ecgm62-card-footer,
+  .ecgm62-attention-details,.ecgm62-attention-summary,
+  .ecgm62-attention-content,.ecgm62-attention-footer,
+  .ecgm62-table-shell,.ecgm62-scroll,.ecgm62-role-body,
+  .ecgm62-distribution,.ecgm62-dist-config
+) {
+  background: var(--ec67-card) !important;
+  background-image: none !important;
+  color: var(--ec67-ink) !important;
+  border-color: var(--ec67-line) !important;
+  box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm62-card-header h2,.ecgm62-card-header h3,
+  .ecgm62-attention-summary span:first-child,
+  .ecgm62-dist-header h2,.ecgm62-attention-summary,
+  .ecgm62-role-field label,.ecgm62-person strong,
+  .ecgm62-load-card h2,.ecgm62-kpi strong
+) {
+  color: var(--ec67-ink) !important;
+  -webkit-text-fill-color: var(--ec67-ink) !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm62-card-header p,.ecgm62-attention-hint,.ecgm62-card-footer,
+  .ecgm62-dist-header p,.ecgm62-help,.ecgm62-page-footer,
+  .ecgm62-person small,.ecgm62-role-field small
+) {
+  color: var(--ec67-secondary) !important;
+  -webkit-text-fill-color: var(--ec67-secondary) !important;
+}
+
+/* 8. Gestão — tabelas: corrige primeira coluna branca e textos azuis. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm62-table,.ecgm62-table thead,.ecgm62-table tbody tr,
+  .ecgm62-table thead th,.ecgm62-table tbody td,
+  .ecgm62-attention-table,.ecgm62-attention-table tbody tr,
+  .ecgm62-attention-table td:first-child,
+  .ecgm62-attention-table th,.ecgm62-attention-table td
+) {
+  background: var(--ec67-raised) !important;
+  background-image: none !important;
+  color: var(--ec67-ink) !important;
+  border-color: var(--ec67-line) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm62-table tbody :is(a,strong),
+  .ecgm62-attention-table td:first-child :is(a,strong,span),
+  .ecgm62-table tbody tr>td:first-child
+) {
+  color: var(--ec67-ink) !important;
+  -webkit-text-fill-color: var(--ec67-ink) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm62-attention-table td:nth-child(2),.ecgm62-attention-table td:nth-child(5)
+) {
+  color: var(--ec67-secondary) !important;
+  -webkit-text-fill-color: var(--ec67-secondary) !important;
+}
+
+/* 9. Gestão — participantes, inputs e botoes. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm62-people,.ecgm62-person,.ecgm62-role-field,
+  .ecgm62-role-body,.ecgm62-dist-config,.ecgm62-result
+) {
+  background: var(--ec67-card) !important;
+  background-image: none !important;
+  border-color: var(--ec67-line) !important;
+  color: var(--ec67-ink) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm62-role-field select,.ecgm62-dist-config input,
+  .ecgm62-role-field input
+) {
+  background: var(--ec67-input) !important;
+  background-image: none !important;
+  border-color: var(--ec67-line) !important;
+  color: var(--ec67-ink) !important;
+  -webkit-text-fill-color: var(--ec67-ink) !important;
+  color-scheme: dark !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm62-btn:not(.ecgm62-btn--primary),
+  .ecgm62-link-btn,.ecgm62-role-action .ecgm62-btn
+) {
+  background: var(--ec67-raised) !important;
+  border-color: var(--ec67-line) !important;
+  color: var(--ec67-ink) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm62-link-btn,.ecgm62-attention-footer a
+) {
+  color: var(--ec67-accent) !important;
+  -webkit-text-fill-color: var(--ec67-accent) !important;
+}
+
+/* 10. Preservacao dos controles: foco visivel sem mudar estado funcional. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body :is(
+  .ef32-base,.leads-rf.lf36-leads,.ecgm-page.ecgm-v2.ecgm61.ecgm62
+) :is(input,select,textarea,button,a):focus-visible {
+  outline: 2px solid var(--ec67-accent) !important;
+  outline-offset: 2px;
+}

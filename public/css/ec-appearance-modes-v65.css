@@ -1,0 +1,146 @@
+/*
+ * A24.3 — ExportControl Prospector / modos de aparencia V65.
+ * Declarado APOS ec-theme-unified-v64.css.
+ * A escolha e registrada em html[data-ec-appearance].
+ * light = todo claro; system = institucional (sidebar navy + restante claro);
+ * dark = escuro completo. Nao altera o CSS de autenticacao.
+ */
+
+html[data-ec-appearance="light"],
+html[data-ec-appearance="system"] {
+  color-scheme: light !important;
+  --ec-bg: #fff;
+  --ec-bg-deep: #fff;
+  --ec-topbar: #fff;
+  --ec-surface: #fff;
+  --ec-surface-soft: #f7fafb;
+  --ec-surface-hover: #eaf6f2;
+  --ec-border: #dbe5eb;
+  --ec-border-soft: rgba(27,66,89,.12);
+  --ec-text: #15354d;
+  --ec-text-soft: #506c81;
+  --ec-text-muted: #728a9c;
+  --v64-page: #fff;
+  --v64-panel: #fff;
+  --v64-panel-soft: #f7fafb;
+  --v64-ink: #15354d;
+  --v64-muted: #647d90;
+  --v64-line: #dbe5eb;
+  --v64-input: #fff;
+}
+
+html[data-ec-appearance="light"] {
+  --ec-sidebar: #fff;
+  --ec-sidebar-deep: #fff;
+}
+
+html[data-ec-appearance="system"] {
+  --ec-sidebar: #061d32;
+  --ec-sidebar-deep: #04192c;
+}
+
+html[data-ec-appearance="dark"] {
+  color-scheme: dark !important;
+  --ec-sidebar: #061827;
+  --ec-sidebar-deep: #04131f;
+  --ec-bg: #0e1d2c;
+  --ec-bg-deep: #0b1929;
+  --v64-page: #0e1d2c;
+  --v64-panel: #1a2e42;
+  --v64-panel-soft: #213a4f;
+}
+
+/* Corrige a barra lateral que V64 fixava em navy, mesmo quando Claro. */
+html[data-ec-appearance="light"] body.ec-app-body .ec-sidebar.ec-sidebar,
+html[data-ec-appearance="light"] body.ec-app-body.ec-dashboard-mode .ec-sidebar.ec-sidebar,
+html[data-ec-appearance="light"] body.ec-app-body .ec-sidebar [data-flux-sidebar] {
+  background: #fff !important;
+  background-image: none !important;
+  color: #15354d !important;
+  color-scheme: light !important;
+  border-right: 1px solid #dbe5eb !important;
+}
+
+html[data-ec-appearance="light"] body.ec-app-body .ec-sidebar .ec-sidebar-header,
+html[data-ec-appearance="light"] body.ec-app-body .ec-sidebar .ec-sidebar-footer {
+  border-color: #e0e9ee !important;
+}
+
+html[data-ec-appearance="light"] body.ec-app-body .ec-sidebar :is(.ec-brand-name, .ec-brand-text) {
+  color: #15354d !important;
+  -webkit-text-fill-color: #15354d !important;
+}
+
+html[data-ec-appearance="light"] body.ec-app-body .ec-sidebar :is(.ec-brand-product, .ec-logo-mark) {
+  color: #078b7e !important;
+  -webkit-text-fill-color: #078b7e !important;
+}
+
+html[data-ec-appearance="light"] body.ec-app-body .ec-sidebar .ec-sidebar-group [data-flux-sidebar-group-heading] {
+  color: #738a9b !important;
+  opacity: 1 !important;
+}
+
+html[data-ec-appearance="light"] body.ec-app-body .ec-sidebar .ec-nav-item.ec-nav-item {
+  color: #39576d !important;
+  background: transparent !important;
+}
+
+html[data-ec-appearance="light"] body.ec-app-body .ec-sidebar .ec-nav-item.ec-nav-item:hover {
+  background: #eaf6f2 !important;
+  color: #056f65 !important;
+}
+
+html[data-ec-appearance="light"] body.ec-app-body .ec-sidebar .ec-nav-item.ec-nav-item:is([data-current], [aria-current="page"]) {
+  background: #e5f5f0 !important;
+  color: #056f65 !important;
+  box-shadow: inset 3px 0 0 #078b7e !important;
+}
+
+html[data-ec-appearance="light"] body.ec-app-body .ec-sidebar .ec-nav-item.ec-nav-item :is(svg, [data-flux-icon]) {
+  color: inherit !important;
+}
+
+/* Conserva o visual azul institucional no modo Sistema. */
+html[data-ec-appearance="system"] body.ec-app-body .ec-sidebar.ec-sidebar,
+html[data-ec-appearance="system"] body.ec-app-body.ec-dashboard-mode .ec-sidebar.ec-sidebar,
+html[data-ec-appearance="system"] body.ec-app-body .ec-sidebar [data-flux-sidebar] {
+  background: #061d32 !important;
+  background-image: linear-gradient(180deg, #061d32, #04192c) !important;
+  color-scheme: dark !important;
+  color: #d6e5ee !important;
+}
+
+/* Escuro inclusive no shell; estilos especificos das telas serao revisados depois. */
+html[data-ec-appearance="dark"] body.ec-app-body .ec-sidebar.ec-sidebar,
+html[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ec-sidebar.ec-sidebar,
+html[data-ec-appearance="dark"] body.ec-app-body .ec-sidebar [data-flux-sidebar] {
+  background: #061827 !important;
+  background-image: linear-gradient(180deg, #061827, #04131f) !important;
+  color: #dbeaf2 !important;
+  color-scheme: dark !important;
+}
+
+html[data-ec-appearance="dark"] body.ec-app-body .ec-topbar.ec-topbar.ec-topbar {
+  background: #162c40 !important;
+  color: #e9f3fa !important;
+}
+
+/* Superficies gerais do layout nos dois modos claros. */
+html:is([data-ec-appearance="light"], [data-ec-appearance="system"]) body.ec-app-body,
+html:is([data-ec-appearance="light"], [data-ec-appearance="system"]) body.ec-app-body .ec-main.ec-main,
+html:is([data-ec-appearance="light"], [data-ec-appearance="system"]) body.ec-app-body .ec-content {
+  background: #fff !important;
+  background-image: none !important;
+}
+
+html[data-ec-appearance="dark"] body.ec-app-body,
+html[data-ec-appearance="dark"] body.ec-app-body .ec-main.ec-main,
+html[data-ec-appearance="dark"] body.ec-app-body .ec-content {
+  background: var(--v64-page) !important;
+  color: var(--v64-ink) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-ec-appearance] body.ec-app-body .ec-sidebar .ec-nav-item { transition: none !important; }
+}

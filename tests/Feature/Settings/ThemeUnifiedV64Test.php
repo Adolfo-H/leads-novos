@@ -18,11 +18,19 @@ it('usa o tema global nas três configurações sem mostrar o comentário invál
     expect(substr_count((string) $head, 'data-ec-theme-unified="v64"'))->toBe(1);
 });
 
-it('usa a mesma fonte Flux para claro, escuro e sistema', function () {
+it('usa controlador V65 para tres visuais mantendo Flux e CSS V64', function () {
     $appearance = file_get_contents(base_path('resources/views/pages/settings/partials/appearance-v63.blade.php'));
     $css = file_get_contents(public_path('css/ec-theme-unified-v64.css'));
+    $js = file_get_contents(public_path('js/ec-appearance-modes-v65.js'));
+    $head = file_get_contents(base_path('resources/views/partials/head.blade.php'));
 
-    expect($appearance)->toContain('x-model="$flux.appearance"');
+    expect($appearance)->toContain('x-model="theme"');
+    expect($appearance)->toContain('window.EcAppearanceV65.set($event.target.value)');
+    expect($js)->toContain("value === 'dark' ? 'dark' : 'light'");
+    expect($js)->toContain("root.classList.toggle('dark'");
+    expect($js)->toContain('window.Flux.appearance = effective');
+    expect($js)->toContain('window.localStorage.setItem(KEY, value)');
+    expect($head)->toContain('ec-appearance-modes-v65.js');
     expect($appearance)->toContain("['light', 'Claro'");
     expect($appearance)->toContain("['dark', 'Escuro'");
     expect($appearance)->toContain("['system', 'Sistema'");

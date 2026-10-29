@@ -74,9 +74,15 @@ Route::middleware(['guest', 'throttle:8,1'])->group(function (): void {
     Route::post('/acesso/convite/{token}', [AccessInvitationController::class, 'activate'])
         ->where('token', '[a-f0-9]{64}')->name('access.invitation.activate');
 });
-Route::middleware(['auth', 'verified', 'commercial.manager', 'throttle:20,1'])->group(function (): void {
+// A24.3: visualizacao de solicitacoes nao consome quota de acoes administrativas.
+// Auth, verificacao de e-mail, perfil gestor e isApprover() permanecem ativos.
+Route::middleware(['auth', 'verified', 'commercial.manager'])->group(function (): void {
     Route::get('/acessos/solicitacoes', [AccessAdminController::class, 'index'])
         ->name('access.requests.index');
+});
+
+// As acoes de escrita continuam limitadas a 20 tentativas por minuto.
+Route::middleware(['auth', 'verified', 'commercial.manager', 'throttle:20,1'])->group(function (): void {
     Route::post('/acessos/solicitacoes/{accessRequest}/aprovar', [AccessAdminController::class, 'approve'])
         ->name('access.requests.approve');
     Route::post('/acessos/solicitacoes/{accessRequest}/recusar', [AccessAdminController::class, 'reject'])

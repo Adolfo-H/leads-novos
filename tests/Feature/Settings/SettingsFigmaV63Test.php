@@ -25,7 +25,9 @@ it('mantém as ações reais do Livewire e as áreas do Figma', function () {
     expect($security)->toContain('pages::settings.two-factor.recovery-codes');
     expect($security)->toContain('x-passkey-registration');
     expect($security)->toContain('deletePasskey');
-    expect($appearance)->toContain('x-model="$flux.appearance"');
+    expect($appearance)->toContain('x-model="theme"');
+    expect($appearance)->toContain('window.EcAppearanceV65.set($event.target.value)');
+    expect($appearance)->toContain('x-on:ec-appearance-changed.window');
     expect($appearance)->toContain("['light', 'Claro'");
     expect($appearance)->toContain("['dark', 'Escuro'");
     expect($appearance)->toContain("['system', 'Sistema'");
