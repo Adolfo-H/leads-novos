@@ -47,16 +47,34 @@ class AccessAdminController extends Controller
     public function approve(Request $request, AccountAccessRequest $accessRequest): RedirectResponse
     {
         $actor = $this->authorizeAdmin($request);
-        if ($accessRequest->status !== 'pending') {
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+
+        // Atualizacao condicional atomica: duas decisoes concorrentes nao podem
+        // aprovar ou recusar a mesma solicitacao com base em dados antigos.
+        $changed = AccountAccessRequest::query()
+            ->whereKey($accessRequest->getKey())
+            ->where('status', 'pending')
+            ->update([
+                'status' => 'approved',
+                'reviewed_by' => $actor->id,
+                'reviewed_at' => now(),
+                'invitation_token_hash' => $tokenHash,
+                'invitation_expires_at' => now()->addHours(max(1, min(168, (int) config('access_requests.invite_hours', 48)))),
+                'invitation_status' => 'pending',
+            ]);
+
+        if ($changed !== 1) {
             return back()->with('access_error', 'Esta solicitação já recebeu uma decisão.');
         }
-        $accessRequest->forceFill([
-            'status' => 'approved',
-            'reviewed_by' => $actor->id,
-            'reviewed_at' => now(),
-        ])->save();
 
-        return $this->issueInvitation($accessRequest);
+        $record = $accessRequest->fresh();
+        if (! $record instanceof AccountAccessRequest) {
+            return back()->with('access_error', 'Solicitação indisponível após a aprovação. Confira o painel.');
+        }
+
+        // SMTP fora da transacao/atualizacao atomica: nunca manter lock durante rede.
+        return $this->issueInvitation($record, $rawToken, $tokenHash);
     }
 
     /** Reenvia apenas o aviso ao aprovador; não aprova e não cria usuários. */
@@ -94,17 +112,22 @@ class AccessAdminController extends Controller
     {
         $actor = $this->authorizeAdmin($request);
         $data = $request->validate(['review_note' => ['nullable', 'string', 'max:500']]);
-        if ($accessRequest->status !== 'pending') {
+
+        $changed = AccountAccessRequest::query()
+            ->whereKey($accessRequest->getKey())
+            ->where('status', 'pending')
+            ->update([
+                'status' => 'rejected',
+                'reviewed_by' => $actor->id,
+                'reviewed_at' => now(),
+                'review_note' => trim((string) ($data['review_note'] ?? '')) ?: null,
+                'invitation_token_hash' => null,
+                'invitation_expires_at' => null,
+            ]);
+
+        if ($changed !== 1) {
             return back()->with('access_error', 'Esta solicitação já recebeu uma decisão.');
         }
-        $accessRequest->forceFill([
-            'status' => 'rejected',
-            'reviewed_by' => $actor->id,
-            'reviewed_at' => now(),
-            'review_note' => trim((string) ($data['review_note'] ?? '')) ?: null,
-            'invitation_token_hash' => null,
-            'invitation_expires_at' => null,
-        ])->save();
 
         return back()->with('access_success', 'Solicitação recusada. Nenhum usuário foi criado.');
     }
@@ -112,17 +135,25 @@ class AccessAdminController extends Controller
     public function revoke(Request $request, AccountAccessRequest $accessRequest): RedirectResponse
     {
         $actor = $this->authorizeAdmin($request);
-        if ($accessRequest->status !== 'approved') {
+
+        // A ativacao ja bloqueia a linha dentro de uma transacao. Este UPDATE
+        // disputa a mesma linha e nunca revoga uma conta que acabou de ativar.
+        $changed = AccountAccessRequest::query()
+            ->whereKey($accessRequest->getKey())
+            ->where('status', 'approved')
+            ->whereNull('activated_at')
+            ->update([
+                'status' => 'rejected',
+                'reviewed_by' => $actor->id,
+                'reviewed_at' => now(),
+                'review_note' => 'Convite revogado pelo aprovador.',
+                'invitation_token_hash' => null,
+                'invitation_expires_at' => null,
+            ]);
+
+        if ($changed !== 1) {
             return back()->with('access_error', 'Apenas convites aprovados ainda não utilizados podem ser revogados.');
         }
-        $accessRequest->forceFill([
-            'status' => 'rejected',
-            'reviewed_by' => $actor->id,
-            'reviewed_at' => now(),
-            'review_note' => 'Convite revogado pelo aprovador.',
-            'invitation_token_hash' => null,
-            'invitation_expires_at' => null,
-        ])->save();
 
         return back()->with('access_success', 'Convite revogado. O link anterior não poderá criar uma conta.');
     }
@@ -130,39 +161,78 @@ class AccessAdminController extends Controller
     public function resend(Request $request, AccountAccessRequest $accessRequest): RedirectResponse
     {
         $this->authorizeAdmin($request);
-        if ($accessRequest->status !== 'approved') {
-            return back()->with('access_error', 'Somente convites aprovados e não ativados podem ser reenviados.');
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $priorHash = $accessRequest->invitation_token_hash;
+
+        // Compare-and-swap: um reenvio antigo nao substitui o convite gerado
+        // por outro operador, nem reabre um convite revogado ou ativado.
+        $query = AccountAccessRequest::query()
+            ->whereKey($accessRequest->getKey())
+            ->where('status', 'approved')
+            ->whereNull('activated_at');
+
+        if (is_string($priorHash)) {
+            $query->where('invitation_token_hash', $priorHash);
+        } else {
+            $query->whereNull('invitation_token_hash');
         }
 
-        return $this->issueInvitation($accessRequest);
-    }
-
-    private function issueInvitation(AccountAccessRequest $record): RedirectResponse
-    {
-        // Cada reenvio invalida o link antigo. Só o hash fica no banco.
-        $rawToken = bin2hex(random_bytes(32));
-        $record->forceFill([
-            'invitation_token_hash' => hash('sha256', $rawToken),
+        $changed = $query->update([
+            'invitation_token_hash' => $tokenHash,
             'invitation_expires_at' => now()->addHours(max(1, min(168, (int) config('access_requests.invite_hours', 48)))),
             'invitation_status' => 'pending',
-        ])->save();
+        ]);
+
+        if ($changed !== 1) {
+            return back()->with('access_error', 'O convite foi alterado ou utilizado. Atualize o painel antes de reenviar.');
+        }
+
+        $record = $accessRequest->fresh();
+        if (! $record instanceof AccountAccessRequest) {
+            return back()->with('access_error', 'Solicitação indisponível após o reenvio. Confira o painel.');
+        }
+
+        return $this->issueInvitation($record, $rawToken, $tokenHash);
+    }
+
+    private function issueInvitation(
+        AccountAccessRequest $record,
+        string $rawToken,
+        string $tokenHash,
+    ): RedirectResponse {
+        // O token ja foi gravado de modo atomico antes de falar com o SMTP.
+        // Nunca atualizar o resultado de um convite que foi revogado, ativado
+        // ou substituido enquanto o servidor de e-mail respondia.
         try {
             Mail::to($record->email)->send(new AccessInvitation(
                 $record,
                 route('access.invitation.show', ['token' => $rawToken]),
             ));
-            $record->forceFill([
-                'invitation_status' => 'accepted_by_mailer',
-                'invitation_attempted_at' => now(),
-            ])->save();
+            $changed = AccountAccessRequest::query()
+                ->whereKey($record->getKey())
+                ->where('status', 'approved')
+                ->where('invitation_token_hash', $tokenHash)
+                ->update([
+                    'invitation_status' => 'accepted_by_mailer',
+                    'invitation_attempted_at' => now(),
+                ]);
+
+            if ($changed !== 1) {
+                return back()->with('access_error', 'O convite foi alterado durante o envio. Confira o status atual antes de reenviar.');
+            }
 
             return back()->with('access_success', 'Convite aprovado e aceito pelo serviço de e-mail. Confira a entrega efetiva na sua configuração SMTP.');
         } catch (Throwable $exception) {
             report($exception);
-            $record->forceFill([
-                'invitation_status' => 'failed',
-                'invitation_attempted_at' => now(),
-            ])->save();
+            AccountAccessRequest::query()
+                ->whereKey($record->getKey())
+                ->where('status', 'approved')
+                ->where('invitation_token_hash', $tokenHash)
+                ->update([
+                    'invitation_status' => 'failed',
+                    'invitation_attempted_at' => now(),
+                ]);
 
             return back()->with('access_error', 'Aprovação salva, mas o envio do convite falhou. Configure o SMTP e use Reenviar convite.');
         }
