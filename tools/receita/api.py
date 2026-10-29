@@ -61,11 +61,23 @@ def dataset_info(manifest: dict) -> dict:
     }
 
 
+def active_dataset_snapshot() -> Path:
+    """Fixa a competencia desta requisicao, mesmo que active mude depois.
+
+    O diretorio de publicacao e imutavel; o ponteiro active pode trocar
+    atomicamente durante uma leitura. Nunca retorna o caminho ao cliente.
+    """
+    try:
+        return DATA_DIR.resolve(strict=True)
+    except (OSError, RuntimeError) as exception:
+        raise ReleaseValidationError("dataset_unavailable") from exception
+
+
 @app.get("/health")
 def health() -> dict:
     try:
         manifest = validate_release(
-            DATA_DIR,
+            active_dataset_snapshot(),
             verify_samples=True,
         )
     except ReleaseValidationError as exception:
@@ -81,8 +93,9 @@ def health() -> dict:
 @app.get("/groups/{cnpj_root}")
 def get_group(cnpj_root: str) -> dict:
     try:
-        validate_release(DATA_DIR)
-        return query_group(cnpj_root, DATA_DIR)
+        release_dir = active_dataset_snapshot()
+        validate_release(release_dir)
+        return query_group(cnpj_root, release_dir)
     except ValueError as exception:
         raise HTTPException(
             status_code=422,
@@ -124,7 +137,7 @@ def get_prospects(
     result: dict | None = None
     try:
         result = query_prospects(
-            data_dir=DATA_DIR,
+            data_dir=active_dataset_snapshot(),
             states=csv_values(states),
             cnaes=csv_values(cnaes),
             limit=limit,
