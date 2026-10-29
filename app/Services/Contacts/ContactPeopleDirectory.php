@@ -64,10 +64,12 @@ final class ContactPeopleDirectory
             && $whatsapp === 'all' && $companyKey === null;
         $query = $this->query($search, $segment, $origin, $whatsapp, $companyKey, $clientPrefilter, $dealPrefilter);
 
+        // O ID numérico só é único dentro de cada origem. source_key estabiliza
+        // empates entre HubSpot, contatos manuais e canais da Receita.
         if ($order === 'name') {
-            $query->orderBy('person_name')->orderBy('person_id');
+            $query->orderBy('person_name')->orderBy('person_id')->orderBy('p.source_key');
         } else {
-            $query->orderByDesc('last_activity_at')->orderBy('person_name')->orderBy('person_id');
+            $query->orderByDesc('last_activity_at')->orderBy('person_name')->orderBy('person_id')->orderBy('p.source_key');
         }
 
         // No cenário padrão, o UNION ALL contém uma linha por registro
@@ -97,8 +99,13 @@ final class ContactPeopleDirectory
             $result = $query->paginate($perPage, ['*'], 'contactsPage', $page);
         }
         $keys = array_map(static fn (stdClass $row): string => (string) $row->source_key, $result->items());
+        // Página vazia: não consultar verificações WhatsApp sem nenhum contato.
+        if ($keys === []) {
+            return $result;
+        }
+
         $checks = ContactPhoneVerification::query()
-            ->whereIn('source_key', $keys === [] ? ['__none__'] : $keys)
+            ->whereIn('source_key', $keys)
             ->get()
             ->groupBy('source_key');
 
@@ -161,7 +168,7 @@ final class ContactPeopleDirectory
             $whatsapp, $companyKey, $page, $perPage, $order,
         ]);
         // Versão v4 ignora automaticamente os objetos antigos do cache v3.
-        $key = 'prospector:contacts:page:v6:'.hash('sha256', $fingerprint);
+        $key = 'prospector:contacts:page:v7:'.hash('sha256', $fingerprint);
 
         $payload = Cache::remember(
             $key,
@@ -280,10 +287,12 @@ final class ContactPeopleDirectory
             ->fromSub($hubspot->unionAll($manual)->unionAll($receita), 'p')
             ->select('p.source_key');
 
+        // Mesma ordenação total da consulta de detalhes para evitar perdas ou
+        // repetições quando os IDs de origens diferentes coincidirem.
         if ($order === 'name') {
-            $keyQuery->orderBy('person_name')->orderBy('person_id');
+            $keyQuery->orderBy('person_name')->orderBy('person_id')->orderBy('p.source_key');
         } else {
-            $keyQuery->orderByDesc('last_activity_at')->orderBy('person_name')->orderBy('person_id');
+            $keyQuery->orderByDesc('last_activity_at')->orderBy('person_name')->orderBy('person_id')->orderBy('p.source_key');
         }
 
         $keys = [];
