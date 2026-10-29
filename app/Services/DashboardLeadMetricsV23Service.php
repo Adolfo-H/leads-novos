@@ -27,6 +27,7 @@ final class DashboardLeadMetricsV23Service
      * @return array{
      *     summary: array{leads:int,unassigned:int,with_deal:int,overdue:int,stale90:int,largest:list<array{id:int,name:string,establishments:int,emails:int,phones:int}>},
      *     lead_ids: list<int>,
+     *     assigned_ids: list<int>,
      *     with_deal_ids: list<int>,
      *     stale_ids: list<int>
      * }
@@ -35,12 +36,14 @@ final class DashboardLeadMetricsV23Service
     {
         $ids = $this->leadCompanyIds();
 
-        $assigned = DB::table('company_lead_work_states')
+        // array_values() garante list<int> no retorno e no PHPStan,
+        // inclusive se a Collection preservar chaves em outra versao.
+        $assigned = array_values(DB::table('company_lead_work_states')
             ->whereIn('company_id', $ids)
             ->whereNotNull('assigned_user_id')
             ->pluck('company_id')
             ->map(static fn (mixed $value): int => (int) $value)
-            ->all();
+            ->all());
 
         $assignedLookup = array_fill_keys($assigned, true);
         $unassigned = count(array_filter(
@@ -62,6 +65,7 @@ final class DashboardLeadMetricsV23Service
                 'largest' => $this->largestCompanies($ids),
             ],
             'lead_ids' => $ids,
+            'assigned_ids' => $assigned,
             'with_deal_ids' => $withDealIds,
             'stale_ids' => $staleIds,
         ];

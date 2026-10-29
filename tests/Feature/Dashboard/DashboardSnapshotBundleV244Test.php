@@ -98,7 +98,7 @@ it('uses only the shared snapshot sets in the strategic dashboard template', fun
     );
 
     expect($blade)->toContain('snapshotWithCompanyIds()')
-        ->toContain("\$ds25Bundle['lead_ids']")
+        ->toContain("\$ds25Bundle['assigned_ids']")
         ->toContain("\$ds25Bundle['with_deal_ids']")
         ->toContain("\$ds25Bundle['stale_ids']")
         ->not->toContain('$ds25MetricsService->leadCompanyIds()')

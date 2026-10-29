@@ -21,12 +21,6 @@
                 ->whereNull('company_id')
                 ->whereHas('deals', fn ($query) => $query->where('is_closed', false))
                 ->count();
-            $ds25Ids = $ds25Bundle['lead_ids'];
-            $ds25MyLeads = \Illuminate\Support\Facades\DB::table('company_lead_work_states')
-                ->whereIn('company_id', $ds25Ids)
-                ->where('assigned_user_id', auth()->id())
-                ->count();
-
             // Novo = sem HubSpot/atividade, seguindo exatamente o filtro de Leads V15.
             // Usar o serviço evita indicadores diferentes entre Dashboard e Leads.
             $ds25NewQuery = \App\Models\Company::query()
@@ -42,13 +36,10 @@
 
             // Metricas derivadas dos MESMOS IDs que alimentam os atalhos do V23.
             // Sem atribuição local = sem responsável no Prospector.
-            $ds26AssignedIds = \Illuminate\Support\Facades\DB::table('company_lead_work_states')
-                ->whereNotNull('assigned_user_id')
-                ->whereIn('company_id', $ds25Ids)
-                ->pluck('company_id')->map(static fn ($id): int => (int) $id)->all();
+            // A atribuição já veio do snapshot: não consultar a mesma carteira duas vezes.
             $ds26UnassignedDealIds = array_values(array_diff(
                 $ds25Bundle['with_deal_ids'],
-                $ds26AssignedIds
+                $ds25Bundle['assigned_ids']
             ));
             $ds26UnassignedDealCount = count($ds26UnassignedDealIds);
             // Apenas prioridades altas dentro do mesmo recorte de 90 dias do dashboard.
