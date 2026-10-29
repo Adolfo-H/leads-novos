@@ -49,15 +49,9 @@ new class extends Component
             'leadActivities.user',
         ]);
 
-        app(
-            SdrScoringService::class
-        )->recalculate(
-            $this->company
-        );
-
-        $this->company->load(
-            'sdrScore'
-        );
+        // A13: leitura sem regravação desnecessária; recálculo apenas se faltar
+        // score, houver fonte alterada, versão anterior ou validade expirada.
+        app(SdrScoringService::class)->currentForDossier($this->company);
     }
 
     #[Computed]
