@@ -67,7 +67,7 @@ new class extends Component
     public function mount(): void
     {
         $keys = session()->pull('campaign_mail_selected', []);
-        if (is_array($keys) && $keys !== []) {
+        if ($this->canManageCampaigns && is_array($keys) && $keys !== []) {
             $this->audienceKeys = array_values(array_unique(array_filter($keys,
                 static fn (mixed $key): bool => is_string($key)
                     && preg_match('/^(?:(?:hubspot|manual):[0-9]+|receita:[0-9a-fA-F-]{36})$/D', $key) === 1
@@ -91,6 +91,23 @@ new class extends Component
     {
         $user = auth()->user();
         abort_unless($user instanceof User && ($user->isCommercialManager() || $user->isCommercialSeller()), 403);
+
+        return $user;
+    }
+
+    /** Operações de envio e edição permanecem exclusivas de gestores. */
+    #[Computed]
+    public function canManageCampaigns(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User && $user->isCommercialManager();
+    }
+
+    private function assertCampaignManager(): User
+    {
+        $user = $this->assertManager();
+        abort_unless($user->isCommercialManager(), 403);
 
         return $user;
     }
@@ -207,7 +224,7 @@ new class extends Component
 
     public function queuePilot(int $campaignId, CampaignPilot $pilot): void
     {
-        $user = $this->assertManager();
+        $user = $this->assertCampaignManager();
         $campaign = EmailCampaign::query()->findOrFail($campaignId);
         $total = $pilot->queue($user, $campaign);
         unset($this->pilotHistory);
@@ -314,7 +331,7 @@ new class extends Component
     /** Abre a confirmação visual, sem salvar, reservar ou enviar mensagens. */
     public function requestSendConfirmation(): void
     {
-        $this->assertManager();
+        $this->assertCampaignManager();
         if ($this->screen !== 'composer' || ! in_array($this->composerStep, ['pace', 'review'], true)) {
             $this->addError('campaign', 'Conclua a etapa de revisão antes de confirmar o envio.');
 
@@ -358,7 +375,7 @@ new class extends Component
      */
     public function confirmSendCampaign(CampaignManager $manager): void
     {
-        $this->assertManager();
+        $this->assertCampaignManager();
         abort_unless($this->sendConfirmationOpen, 422);
         $this->sendConfirmationOpen = false;
 
@@ -416,7 +433,7 @@ new class extends Component
 
     public function newCampaign(): void
     {
-        $this->assertManager();
+        $this->assertCampaignManager();
         $this->sendConfirmationOpen = false;
         $this->reviewRecipientsPage = 1;
         $this->reset(['editingCampaignId', 'selectedCampaignId', 'name', 'subject', 'body',
@@ -449,7 +466,7 @@ new class extends Component
 
     public function editDraft(int $id): void
     {
-        $this->assertManager();
+        $this->assertCampaignManager();
         $this->sendConfirmationOpen = false;
         $this->reviewRecipientsPage = 1;
         $campaign = EmailCampaign::query()->findOrFail($id);
@@ -469,7 +486,7 @@ new class extends Component
     /** Avança na preparação sem disparar nem salvar mensagens. */
     public function goToComposerStep(string $step): void
     {
-        $this->assertManager();
+        $this->assertCampaignManager();
         abort_unless(in_array($step, ['audience', 'message', 'pace', 'review'], true), 422);
         $this->resetValidation();
 
@@ -529,6 +546,7 @@ new class extends Component
 
     public function startWithTemplate(string $key): void
     {
+        $this->assertCampaignManager();
         $this->newCampaign();
         $this->applyTemplate($key);
         // Começa pela escolha de público para não esquecer destinatários.
@@ -536,6 +554,7 @@ new class extends Component
 
     public function applyTemplate(string $key): void
     {
+        $this->assertCampaignManager();
         $templates = [
             'initial' => [
                 'Apresentação ExportControl — {{empresa}}',
@@ -558,7 +577,7 @@ new class extends Component
 
     public function toggleAudiencePage(): void
     {
-        $this->assertManager();
+        $this->assertCampaignManager();
         // EC77_CAMPAIGN_SELECTION: seleção em lote não inclui endereços bloqueados.
         $people = $this->audience->items();
         $emails = array_values(array_unique(array_map(
@@ -582,7 +601,7 @@ new class extends Component
 
     public function addAllFiltered(): void
     {
-        $this->assertManager();
+        $this->assertCampaignManager();
         try {
             $keys = app(CampaignAudience::class)->allMatchingKeys(
                 $this->audienceSearch, $this->audienceOrigin,
@@ -605,7 +624,7 @@ new class extends Component
 
     public function saveDraft(CampaignManager $manager): void
     {
-        $user = $this->assertManager();
+        $user = $this->assertCampaignManager();
         $validated = $this->validate([
             'name' => ['required', 'string', 'min:3', 'max:180'],
             'subject' => ['required', 'string', 'min:3', 'max:180'],
@@ -630,7 +649,7 @@ new class extends Component
      */
     public function saveAndStart(CampaignManager $manager): void
     {
-        $this->assertManager();
+        $this->assertCampaignManager();
         if (! $this->lawfulBasisConfirmed) {
             $this->addError('lawfulBasisConfirmed', 'Confirme a base legal e os descadastros antes de enviar.');
 
@@ -656,7 +675,7 @@ new class extends Component
     // EC_CAMPAIGN_REDESIGN_V21: ações de editor, sem operações externas.
     public function removeAudienceKey(string $key): void
     {
-        $this->assertManager();
+        $this->assertCampaignManager();
         $this->audienceKeys = array_values(array_filter(
             $this->audienceKeys,
             static fn (string $selected): bool => $selected !== $key,
@@ -665,14 +684,14 @@ new class extends Component
 
     public function appendTemplateVariable(string $token): void
     {
-        $this->assertManager();
+        $this->assertCampaignManager();
         abort_unless(in_array($token, ['nome', 'primeiro_nome', 'empresa', 'cargo'], true), 422);
         $this->body .= ($this->body === '' || str_ends_with($this->body, "\n") ? '' : ' ').'{{'.$token.'}}';
     }
 
     public function sendTest(CampaignManager $manager): void
     {
-        $user = $this->assertManager();
+        $user = $this->assertCampaignManager();
         $validated = $this->validate([
             'subject' => ['required', 'string', 'min:3', 'max:180'],
             'body' => ['required', 'string', 'min:10', 'max:12000'],
@@ -691,7 +710,7 @@ new class extends Component
     // EC_TRACKED_IMAP_TEST_V1: envio somente para caixa de teste, não clientes.
     public function sendTrackedTest(int $id, CampaignTrackedTest $sender): void
     {
-        $user = $this->assertManager();
+        $user = $this->assertCampaignManager();
         $campaign = EmailCampaign::query()->findOrFail($id);
         try {
             $test = $sender->send($user, $campaign);
@@ -703,7 +722,7 @@ new class extends Component
 
     public function startCampaign(int $id, CampaignManager $manager): void
     {
-        $manager->start($this->assertManager(), EmailCampaign::query()->findOrFail($id), $this->lawfulBasisConfirmed);
+        $manager->start($this->assertCampaignManager(), EmailCampaign::query()->findOrFail($id), $this->lawfulBasisConfirmed);
         $this->lawfulBasisConfirmed = false;
         $this->openCampaign($id);
         session()->flash('campaign_success', 'Campanha autorizada. O agendador liberará os envios conforme os limites.');
@@ -712,21 +731,21 @@ new class extends Component
 
     public function pauseCampaign(int $id, CampaignManager $manager): void
     {
-        $manager->pause($this->assertManager(), EmailCampaign::query()->findOrFail($id));
+        $manager->pause($this->assertCampaignManager(), EmailCampaign::query()->findOrFail($id));
         $this->openCampaign($id);
         unset($this->overview, $this->campaigns);
     }
 
     public function resumeCampaign(int $id, CampaignManager $manager): void
     {
-        $manager->resume($this->assertManager(), EmailCampaign::query()->findOrFail($id));
+        $manager->resume($this->assertCampaignManager(), EmailCampaign::query()->findOrFail($id));
         $this->openCampaign($id);
         unset($this->overview, $this->campaigns);
     }
 
     public function cancelCampaign(int $id, CampaignManager $manager): void
     {
-        $manager->cancel($this->assertManager(), EmailCampaign::query()->findOrFail($id));
+        $manager->cancel($this->assertCampaignManager(), EmailCampaign::query()->findOrFail($id));
         $this->openCampaign($id);
         unset($this->overview, $this->campaigns);
     }
@@ -743,6 +762,7 @@ new class extends Component
         'sent' => 'Aceito SMTP', 'suppressed' => 'Bloqueado',
         'uncertain' => 'Não confirmado', 'canceled' => 'Cancelado',
     ];
+    $canManageCampaigns = $this->canManageCampaigns;
     $counts = $this->overview;
     $campaignsList = $this->campaigns;
     $mailEnabled = (bool) config('campaign_mail.enabled');
@@ -753,12 +773,12 @@ new class extends Component
     $publicHttps = parse_url($appUrl, PHP_URL_SCHEME) === 'https'
         && is_string($appHost)
         && ! in_array(mb_strtolower($appHost), ['localhost', '127.0.0.1', '0.0.0.0'], true);
-    $canStart = $liveEnabled && $publicHttps;
+    $canStart = $canManageCampaigns && $liveEnabled && $publicHttps;
     $hasAudience = count($audienceKeys) > 0;
     $hasContent = mb_strlen(trim($name)) >= 3
         && mb_strlen(trim($subject)) >= 3 && mb_strlen(trim($body)) >= 10;
     $selected = $screen === 'detail' ? $this->selectedCampaign : null;
-    $lastTrackedTest = $selected ? EmailCampaignTestMessage::query()->where('email_campaign_id', $selected->id)->latest('id')->first() : null;
+    $lastTrackedTest = $canManageCampaigns && $selected ? EmailCampaignTestMessage::query()->where('email_campaign_id', $selected->id)->latest('id')->first() : null;
     $stats = $selected ? $this->recipientStats : [];
     $sentCount = (int) ($stats['sent'] ?? 0);
     $totalCount = (int) ($selected?->recipients_count ?? 0);
@@ -775,15 +795,17 @@ new class extends Component
         <div class="ecm2-head-actions">
             <span class="ecm2-safe {{ $canStart ? 'is-live' : '' }}" aria-label="Status dos disparos comerciais">
                 <span class="ecm2-dot"></span>
-                {{ $canStart ? 'Envios reais habilitados' : 'Modo seguro · disparos bloqueados' }}
+                {{ ! $canManageCampaigns ? 'Acesso somente leitura' : ($canStart ? 'Envios reais habilitados' : 'Modo seguro · disparos bloqueados') }}
             </span>
             {{-- EC_CAMPAIGNS_UX_V62_ROOT --}}
             @if ($screen === 'detail')
                 <a href="#ecm7-context" class="ecm7-jump" aria-label="Ir para detalhes e ações da campanha">Ações e detalhes ↓</a>
             @endif
-            <button type="button" class="ecm2-btn ecm2-btn-primary" wire:click="newCampaign">
-                <span aria-hidden="true">＋</span> Nova campanha
-            </button>
+            @if ($canManageCampaigns)
+                <button type="button" class="ecm2-btn ecm2-btn-primary" wire:click="newCampaign">
+                    <span aria-hidden="true">＋</span> Nova campanha
+                </button>
+            @endif
             <a href="{{ route('campaigns.replies') }}" wire:navigate class="ec68-replies-shortcut">Ver respostas</a>
         </div>
     </header>
@@ -853,7 +875,7 @@ new class extends Component
                         <span aria-hidden="true">✉</span>
                         <strong>{{ $counts['campaigns'] === 0 ? 'Sua primeira campanha começa aqui' : 'Nenhuma campanha neste filtro' }}</strong>
                         <p>{{ $counts['campaigns'] === 0 ? 'Crie um rascunho para organizar destinatários e mensagem.' : 'Altere os filtros ou pesquise outro nome.' }}</p>
-                        @if ($counts['campaigns'] === 0)
+                        @if ($counts['campaigns'] === 0 && $canManageCampaigns)
                             <button type="button" class="ecm2-text-action" wire:click="newCampaign">Criar campanha →</button>
                         @endif
                     </div>
@@ -872,21 +894,26 @@ new class extends Component
                         <div class="ec22-home-hero-top">
                             <div>
                                 <span class="ec22-kicker">CAMPANHAS / COMEÇAR</span>
-                                <h2>Crie sua próxima campanha de e-mail</h2>
-                                <p>Crie sua campanha em poucos passos. Escolha os destinatários, escreva o texto e revise antes de enviar.</p>
+                                <h2>{{ $canManageCampaigns ? 'Crie sua próxima campanha de e-mail' : 'Acompanhe suas campanhas de e-mail' }}</h2>
+                                <p>{{ $canManageCampaigns ? 'Crie sua campanha em poucos passos. Escolha os destinatários, escreva o texto e revise antes de enviar.' : 'Consulte campanhas, destinatários e resultados. A criação e o envio são exclusivos do gestor.' }}</p>
                             </div>
                             <div class="ec22-hero-symbol" aria-hidden="true">✉ <span>➤</span></div>
                         </div>
+                        @if ($canManageCampaigns)
                         <ol class="ec22-home-steps" aria-label="Etapas da campanha">
                             <li><span>01</span><div><strong>Selecionar contatos</strong><small>Encontre destinatários na base de contatos.</small></div></li>
                             <li><span>02</span><div><strong>Escrever mensagem</strong><small>Personalize o assunto e o texto do e-mail.</small></div></li>
                             <li><span>03</span><div><strong>Ritmo e revisão</strong><small>Confira os limites, faça um teste e salve.</small></div></li>
                         </ol>
+                        @endif
                         <div class="ec22-home-cta">
-                            <button type="button" class="ec22-button ec22-button-primary" wire:click="newCampaign">＋ Começar campanha <span aria-hidden="true">→</span></button>
+                            @if ($canManageCampaigns)
+                                <button type="button" class="ec22-button ec22-button-primary" wire:click="newCampaign">＋ Começar campanha <span aria-hidden="true">→</span></button>
+                            @endif
                             <a href="{{ route('contacts.index') }}" wire:navigate>Consultar contatos →</a>
                         </div>
                     </div>
+                    @if ($canManageCampaigns)
                     <div class="ec22-home-templates">
                         <div class="ec22-section-head"><div><h3>Modelos prontos para começar</h3><p>Você pode editar a mensagem antes de salvar a campanha.</p></div></div>
                         <div class="ec22-home-template-grid">
@@ -895,9 +922,10 @@ new class extends Component
                             <button type="button" wire:click="startWithTemplate('meeting')"><span aria-hidden="true">▣</span><strong>Agendamento</strong><small>Convide para uma apresentação.</small><em>Usar modelo →</em></button>
                         </div>
                     </div>
+                    @endif
                     <div class="ec22-home-footnote">Os resultados de envio refletem registros reais do SMTP e IMAP. Não há contagem de aberturas sem rastreamento validado.</div>
                 </section>
-            @elseif ($screen === 'composer')
+            @elseif ($screen === 'composer' && $canManageCampaigns)
                 {{-- EC22: um único assistente de três telas, sem painel lateral de campanhas. --}}
                 <section class="ec22-wizard" data-ec22-section="composer" data-ec22-step="{{ $composerStep }}">
                     <header class="ec22-wizard-head">
@@ -1035,7 +1063,7 @@ new class extends Component
                 </section>
             @elseif ($screen === 'detail' && $selected)
                 <section class="ecm2-detail">
-                    <header class="ecm2-detail-header"><div><div class="ecm2-eyebrow">CAMPANHA #{{ $selected->id }} <span class="ecm2-pill is-{{ $selected->status }}">{{ $labels[$selected->status] ?? $selected->status }}</span></div><h2>{{ $selected->name }}</h2><p>{{ $selected->subject }}</p></div>@if ($selected->status === 'draft')<button type="button" class="ecm2-btn ecm2-btn-muted" wire:click="editDraft({{ $selected->id }})">✎ Editar rascunho</button>@endif</header>
+                    <header class="ecm2-detail-header"><div><div class="ecm2-eyebrow">CAMPANHA #{{ $selected->id }} <span class="ecm2-pill is-{{ $selected->status }}">{{ $labels[$selected->status] ?? $selected->status }}</span></div><h2>{{ $selected->name }}</h2><p>{{ $selected->subject }}</p></div>@if ($selected->status === 'draft' && $canManageCampaigns)<button type="button" class="ecm2-btn ecm2-btn-muted" wire:click="editDraft({{ $selected->id }})">✎ Editar rascunho</button>@endif</header>
                     <div class="ecm2-progress-section"><div><strong>Progresso de aceitação SMTP</strong><span>{{ $sentCount }} de {{ $totalCount }} destinatário(s) · {{ $progress }}%</span></div><div class="ecm2-progress"><span style="width:{{ $progress }}%"></span></div><small>Mensagens aceitas pelo servidor não significam entrega na caixa de entrada.</small></div>
                     <div class="ecm2-detail-stats">
                         <div><small>Destinatários</small><strong>{{ number_format($totalCount, 0, ',', '.') }}</strong></div>
@@ -1106,7 +1134,7 @@ new class extends Component
 
         <aside id="ecm7-context" class="ecm2-context" aria-label="Ações e informações da campanha">
             <div class="ecm7-context-heading"><strong>Detalhes e ações</strong><span>Operação e configurações desta campanha</span></div>
-            @if ($screen === 'composer')
+            @if ($screen === 'composer' && $canManageCampaigns)
                 <section class="ecm2-context-card"><header><h2>Checklist da campanha</h2><span class="ecm2-number">{{ (int) $hasAudience + (int) $hasContent }}/2</span></header>
                     <div class="ecm2-check {{ $hasAudience ? 'is-done' : '' }}"><span>{{ $hasAudience ? '✓' : '○' }}</span><div><strong>Destinatários</strong><small>{{ count($audienceKeys) }} contato(s) selecionado(s)</small></div><button type="button" wire:click="goToComposerStep('audience')" aria-label="Editar destinatários">Editar</button></div>
                     <div class="ecm2-check {{ $hasContent ? 'is-done' : '' }}"><span>{{ $hasContent ? '✓' : '○' }}</span><div><strong>Conteúdo</strong><small>{{ $hasContent ? 'Nome, assunto e mensagem informados' : 'Preencha nome, assunto e texto' }}</small></div><button type="button" wire:click="goToComposerStep('message')" aria-label="Editar mensagem">Editar</button></div>
@@ -1128,6 +1156,7 @@ new class extends Component
                     <div class="ecm2-key-value"><span>Destinatários</span><strong>{{ $totalCount }}</strong></div>
                     <div class="ecm2-key-value"><span>Aprovada em</span><strong>{{ $selected->approved_at?->format('d/m/Y H:i') ?? '—' }}</strong></div>
                 </section>
+                @if ($canManageCampaigns)
                 <section class="ecm2-context-card"><header><h2>Ações rápidas</h2></header>
                     <div class="ecm2-quick-actions">
                         @if ($selected->status === 'draft')
@@ -1159,6 +1188,9 @@ new class extends Component
                         <div class="ecm2-alert-note">Envio real bloqueado. Para ativar futuramente é necessário configurar as permissões do ambiente e URL pública HTTPS para descadastro.</div>
                     @endunless
                 </section>
+                @else
+                    <section class="ecm2-context-card"><header><h2>Acesso somente leitura</h2></header><p>Você pode consultar campanhas e resultados. A criação, o envio e as alterações são exclusivos do gestor.</p></section>
+                @endif
             @else
                 <section class="ecm2-context-card"><header><h2>Como começar</h2></header>
                     <div class="ecm2-check"><span>1</span><div><strong>Selecione seu público</strong><small>Contatos importados e manuais</small></div></div>
@@ -1174,7 +1206,7 @@ new class extends Component
                 <p>Estes indicadores mostram a configuração do sistema, não são testes de conexão em tempo real.</p>
             </section>
             {{-- EC_CAMPAIGNS_PILOT_V5 --}}
-            @if ($screen === 'detail' && $selected && $selected->status === 'draft')
+            @if ($canManageCampaigns && $screen === 'detail' && $selected && $selected->status === 'draft')
                 <section class="ecm2-context-card ecm5-pilot-card" data-ec-pilot-v5>
                     <header><h2 class="ecm5-pilot-title">✉ Piloto seguro V5</h2><span class="ecm2-number">Até 3 caixas</span></header>
                     <p class="ecm5-pilot-note">Teste a fila Redis e a identificação de respostas IMAP. Usa somente a lista autorizada, nunca os destinatários comerciais da campanha.</p>

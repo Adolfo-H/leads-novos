@@ -31,6 +31,7 @@ $ec68Pending = (int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0) 
             </div>
 
             <div class="ec76-detail-actions ec68-detail-actions" aria-label="Ações da campanha">
+            @if ($canManageCampaigns)
             @if ($selected->status === 'draft')
                 <button type="button" wire:click="editDraft({{ $selected->id }})">Editar rascunho</button>
             @elseif ($selected->status === 'running')
@@ -42,6 +43,7 @@ $ec68Pending = (int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0) 
                 <button type="button" class="ec68-danger-button" wire:click="cancelCampaign({{ $selected->id }})" wire:confirm="Cancelar esta campanha? E-mails já enviados não podem ser desfeitos.">Cancelar campanha</button>
             @endif
 
+            @endif
             <button type="button" wire:click="showOverview">Voltar às campanhas</button>
         </div>
         </div>

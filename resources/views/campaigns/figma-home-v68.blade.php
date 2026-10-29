@@ -18,14 +18,16 @@
     <div class="ec69-send-status {{ $canStart ? 'is-ready' : 'is-pending' }}" role="status">
         <span class="ec69-send-mark" aria-hidden="true">{{ $canStart ? '✓' : 'i' }}</span>
         <div class="ec69-send-copy">
-            <strong>{{ $canStart ? 'Envio disponível' : 'Falta habilitar o envio real' }}</strong>
-            <p>{{ $canStart
-                ? 'Crie uma campanha e confirme os destinatários antes de iniciar.'
-                : 'Você já pode criar campanhas e testar mensagens. Para disparar aos contatos, finalize a configuração SMTP e do descadastro.' }}</p>
+            <strong>{{ ! $canManageCampaigns ? 'Consulta habilitada' : ($canStart ? 'Envio disponível' : 'Falta habilitar o envio real') }}</strong>
+            <p>{{ ! $canManageCampaigns
+                ? 'Você pode acompanhar os resultados. A criação e o envio dependem de autorização do gestor.'
+                : ($canStart
+                    ? 'Crie uma campanha e confirme os destinatários antes de iniciar.'
+                    : 'Você já pode criar campanhas e testar mensagens. Para disparar aos contatos, finalize a configuração SMTP e do descadastro.') }}</p>
         </div>
-        @unless($canStart)
+        @if ($canManageCampaigns && ! $canStart)
             <a href="{{ route('campaigns.settings') }}" wire:navigate class="ec69-configure-link">Preparar envio →</a>
-        @endunless
+        @endif
     </div>
 
     <section class="ec68-card ec68-campaigns" aria-labelledby="ec68-list-title">
@@ -63,7 +65,7 @@
                     <tr><td colspan="6" class="ec68-empty">
                         <strong>{{ $counts['campaigns'] === 0 ? 'Nenhuma campanha criada' : 'Nenhuma campanha neste filtro' }}</strong>
                         <p>{{ $counts['campaigns'] === 0 ? 'Comece selecionando destinatários e preparando um rascunho.' : 'Tente outro nome ou situação.' }}</p>
-                        @if ($counts['campaigns'] === 0)<button type="button" class="ec68-primary" wire:click="newCampaign">Nova campanha</button>@endif
+                        @if ($counts['campaigns'] === 0 && $canManageCampaigns)<button type="button" class="ec68-primary" wire:click="newCampaign">Nova campanha</button>@endif
                     </td></tr>
                 @endforelse
                 </tbody>
@@ -79,6 +81,7 @@
         </footer>
     </section>
 
+    @if ($canManageCampaigns)
     <section class="ec68-starters" aria-labelledby="ec68-models-title">
         <header><h2 id="ec68-models-title">Comece por uma mensagem</h2><p>Modelos editáveis: escolha um para abrir o assistente de campanha.</p></header>
         <div class="ec68-starter-grid">
@@ -87,5 +90,6 @@
             <button type="button" wire:click="startWithTemplate('meeting')"><span class="ec68-model-label">Modelo de mensagem</span><strong>Agendamento</strong><small>Convide para uma reunião.</small><em>Usar modelo <span aria-hidden="true">→</span></em></button>
         </div>
     </section>
+    @endif
     <p class="ec68-footnote">ExportControl Prospector · Dados reais do SMTP e IMAP; não há métrica de abertura sem rastreamento validado.</p>
 </section>
