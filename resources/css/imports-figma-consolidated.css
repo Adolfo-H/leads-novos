@@ -182,3 +182,31 @@ body.ec-app-body:has(.ecim65-page) .ec-sidebar-world-v7 { display: none !importa
     .ecim65-page .im65-hero-actions {width:100%;}
 }
 @media(prefers-reduced-motion:reduce){.ecim65-page *{transition:none!important;animation:none!important;}}
+/*
+ * EXPORTCONTROL PROSPECTOR — IMPORTAÇÕES FIGMA V65.2
+ * Correção pontual de contraste em títulos no layout I01/I02.
+ * Aplicar depois de imports-figma-v65.css, sem sobrescrever estilos existentes.
+ * Escopo exclusivo do módulo Importações V65.
+ *
+ * O tema antigo das importações deixa h1/h2 quase brancos. Além de `color`,
+ * corrigimos -webkit-text-fill-color, que no Chromium pode conservar o
+ * preenchimento branco mesmo após alterar a propriedade `color`.
+ */
+body.ec-app-body .ecim-page.ecimv2.ecim65-page .im65-content :is(h1, h2) {
+    color: #17364b !important;
+    -webkit-text-fill-color: #17364b !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+}
+
+/* Título principal da I01 e título do lote I02: hierarquia Figma preservada. */
+body.ec-app-body .ecim-page.ecimv2.ecim65-page .im65-hero h1 {
+    color: #17364b !important;
+    -webkit-text-fill-color: #17364b !important;
+}
+
+/* Títulos dos painéis: Cole sua lista, Histórico, Busca, Registros e Inteligência. */
+body.ec-app-body .ecim-page.ecimv2.ecim65-page .im65-card h2 {
+    color: #183a50 !important;
+    -webkit-text-fill-color: #183a50 !important;
+}

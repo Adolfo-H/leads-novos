@@ -13,11 +13,11 @@ uses(RefreshDatabase::class);
 
 it('applies a strong dark text color to titles on light Importacoes Figma cards', function (): void {
     $entry = file_get_contents(resource_path('css/app.css'));
-    $fix = file_get_contents(resource_path('css/imports-figma-v652.css'));
+    $fix = file_get_contents(resource_path('css/imports-figma-consolidated.css'));
 
     expect($entry)->not->toBeFalse()
         ->and($fix)->not->toBeFalse()
-        ->and(substr_count($entry, "@import './imports-figma-v652.css';"))->toBe(1)
+        ->and(substr_count($entry, "@import './imports-figma-consolidated.css';"))->toBe(1)
         ->and($fix)->toContain('.ecim-page.ecimv2.ecim65-page')
         ->toContain('.im65-content :is(h1, h2)')
         ->toContain('.im65-hero h1')

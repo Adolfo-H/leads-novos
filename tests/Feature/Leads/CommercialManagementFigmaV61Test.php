@@ -96,5 +96,5 @@ it('retains the manager access restriction and preserves the original distributi
         ->toContain('partials.commercial-distribution-preview-v61');
 
     $css = file_get_contents(resource_path('css/app.css'));
-    expect($css)->toContain("@import './commercial-management-figma-v61.css';");
+    expect($css)->toContain("@import './commercial-management-consolidated.css';");
 });

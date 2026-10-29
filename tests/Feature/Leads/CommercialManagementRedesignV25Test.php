@@ -49,10 +49,10 @@ it('keeps the attention queue accessible without occupying the first screen', fu
 
 it('loads the commercial visual styles and respects responsive and reduced motion', function (): void {
     $appCss = file_get_contents(resource_path('css/app.css'));
-    $v2 = file_get_contents(resource_path('css/commercial-management-v2.css'));
+    $v2 = file_get_contents(resource_path('css/commercial-management-consolidated.css'));
     $icons = file_get_contents(resource_path('views/partials/commercial-management-icon.blade.php'));
 
-    expect($appCss)->toContain("@import './commercial-management-v2.css';")
+    expect($appCss)->toContain("@import './commercial-management-consolidated.css';")
         ->and($v2)->toContain('.ecgm-page.ecgm-v2')
         ->toContain('max-width: none;')
         ->toContain('@media (max-width: 1200px)')

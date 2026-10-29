@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 it('adds the E01 to E04 visual refinement without overwriting V64 and retains Settings', function (): void {
     $appCss = file_get_contents(resource_path('css/app.css'));
-    $baseCss = file_get_contents(resource_path('css/companies-figma-v64.css'));
-    $incrementalCss = file_get_contents(resource_path('css/companies-figma-v643.css'));
+    $bundleCss = file_get_contents(resource_path('css/companies-figma-consolidated.css'));
     $sidebar = file_get_contents(resource_path('views/layouts/app/sidebar.blade.php'));
 
     expect($appCss)->not->toBeFalse()
-        ->and($baseCss)->not->toBeFalse()
-        ->and($incrementalCss)->not->toBeFalse()
+        ->and($bundleCss)->not->toBeFalse()
         ->and($sidebar)->not->toBeFalse()
-        ->and(substr_count((string) $appCss, "@import './companies-figma-v643.css';"))->toBe(1)
-        ->and($baseCss)->toContain('.ec-e01-page')
-        ->and($incrementalCss)->toContain('EMPRESAS_FIGMA_V643')
+        ->and(substr_count((string) $appCss, "@import './companies-figma-consolidated.css';"))->toBe(1)
+        ->and($bundleCss)->toContain('.ec-e01-page')
+        ->toContain('EMPRESAS_FIGMA_V643')
         ->toContain('.ec-sidebar-world-v7')
         ->toContain('.ec-sidebar-footer')
         ->toContain('-webkit-text-fill-color: #17354b !important;')

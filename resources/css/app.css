@@ -35,12 +35,8 @@
 @import './dashboard-my-deals-v6.css';
 @import './dashboard-map-v7.css';
 @import './company-list-redesign-v26.css';
-@import './companies-figma-v64.css';
-@import './companies-figma-v643.css';
-@import './commercial-management-v2.css';
-@import './commercial-management-figma-v61.css';
-@import './commercial-management-figma-v62.css';
-@import './commercial-management-figma-v624.css';
+@import './companies-figma-consolidated.css';
+@import './commercial-management-consolidated.css';
 @import './leads-figma-v34.css';
 @import './campaigns-replies-v77.css';
 @source '../views';
@@ -18070,8 +18066,7 @@ body:not(.dark)
 @import './dashboard-v26.css';
 @import './dossier-company-commercial-v1.css';
 @import './imports-screen-v2.css';
-@import './imports-figma-v65.css';
-@import './imports-figma-v652.css';
+@import './imports-figma-consolidated.css';
 /* EC_SIMPLE_CAMPAIGNS_2026_V1 */
 @import './campaigns-simple-v1.css';
 /* EC_CAMPAIGN_REDESIGN_V21 */

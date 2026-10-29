@@ -91,7 +91,7 @@ it('retains distribution and role permissions while using only scoped visual CSS
         ->toContain('wire:click="updateCommercialRole')
         ->toContain('partials.commercial-distribution-preview-v61');
 
-    $styles = file_get_contents(resource_path('css/commercial-management-figma-v62.css'));
+    $styles = file_get_contents(resource_path('css/commercial-management-consolidated.css'));
     expect($styles)->not->toBeFalse();
     expect($styles)->toContain('.ecgm-page.ecgm-v2.ecgm61.ecgm62')
         ->toContain('grid-template-columns: repeat(4')
