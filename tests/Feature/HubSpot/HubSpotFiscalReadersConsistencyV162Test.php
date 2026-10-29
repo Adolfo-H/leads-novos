@@ -116,6 +116,8 @@ it('blocks inherited and propagated legacy CNPJ links in association resolution'
 
     // Quando nao ha correspondencia local, o resolvedor pode procurar no HubSpot.
     // Nunca fazemos requisicoes externas neste teste.
+    config()->set('services.hubspot.access_token', 'ci-fake-token-not-real');
+    Http::preventStrayRequests();
     Http::fake(['*' => Http::response(['results' => []], 200)]);
 
     $resolver = app(HubSpotWebhookAssociationResolver::class);
