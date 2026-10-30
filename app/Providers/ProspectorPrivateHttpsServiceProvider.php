@@ -11,6 +11,15 @@ final class ProspectorPrivateHttpsServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        // A2541_VITE_PROD_ISOLATION: em producao, nunca usar HMR de localhost.
+        // Mesmo se npm run dev recriar public/hot, @vite usa o build versionado.
+        if ($this->app->isProduction()) {
+            \Illuminate\Support\Facades\Vite::useHotFile(
+                storage_path('framework/prospector-production-hmr-disabled.hot')
+            );
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
+
         // Aqui a configuração já está carregada; NÃO usar config() em withMiddleware().
         $configured = config('prospector_private_https.trusted_proxies', []);
 
