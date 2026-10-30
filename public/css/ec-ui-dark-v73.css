@@ -1,0 +1,385 @@
+/*
+ * PROSPECTOR A24.12 / V73
+ * Ajustes localizados: Leads (aviso), Gestao (link do vendedor), Importacoes,
+ * Contatos e menu de usuario. Apenas no tema Escuro escolhido explicitamente.
+ * Nenhum display/posicionamento/acao de Livewire e sobrescrito.
+ * Carregar APOS v71 e v72, sem alterar Claro nem Sistema.
+ */
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body {
+  --ec73-panel: #181c21;
+  --ec73-raised: #222830;
+  --ec73-row: #1d232a;
+  --ec73-input: #20262d;
+  --ec73-border: #3c4853;
+  --ec73-ink: #f2f6f8;
+  --ec73-muted: #bbcad5;
+  --ec73-teal: #8be6d4;
+}
+
+/* LEADS / selo de filtro ativo: havia fundo branco com texto branco. */
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-page-shell.leads-rf.lf36-leads .rf-panel.rf-filters .lv15-selected-filter {
+  background: #193c33 !important;
+  background-image: none !important;
+  border: 1px solid #427f6f !important;
+  border-radius: 9px !important;
+  color: #e7fff8 !important;
+  -webkit-text-fill-color: #e7fff8 !important;
+  box-shadow: none !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-page-shell.leads-rf.lf36-leads .rf-panel.rf-filters .lv15-selected-filter :is(span,strong,small) {
+  color: #e7fff8 !important;
+  -webkit-text-fill-color: #e7fff8 !important;
+  background: transparent !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-page-shell.leads-rf.lf36-leads .rf-panel.rf-filters .lv15-selected-filter button {
+  background: #245448 !important;
+  color: #f5fffc !important;
+  -webkit-text-fill-color: #f5fffc !important;
+  border: 1px solid #569887 !important;
+  border-radius: 7px !important;
+  font-weight: 700 !important;
+  opacity: 1 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-page-shell.leads-rf.lf36-leads .rf-panel.rf-filters .lv15-selected-filter button:hover {
+  background: #2d6758 !important;
+}
+
+/* GESTAO / nome do responsavel: retirar a pastilha branca e preservar o link. */
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-load-card .ecgm62-table tbody tr th a.ecgm62-person-link.ecgm-v2-table-action,
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-load-card .ecgm62-table tbody tr th a.ecgm62-person-link {
+  display: inline-flex !important;
+  width: auto !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #baf8e9 !important;
+  -webkit-text-fill-color: #baf8e9 !important;
+  font-weight: 750 !important;
+  text-decoration: none !important;
+  opacity: 1 !important;
+  padding: 3px 0 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-load-card .ecgm62-table tbody tr th a.ecgm62-person-link :is(span,strong) {
+  color: inherit !important;
+  -webkit-text-fill-color: inherit !important;
+  background: transparent !important;
+  opacity: 1 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-load-card .ecgm62-table tbody tr th a.ecgm62-person-link:hover {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  text-decoration: underline !important;
+}
+
+/* IMPORTACOES / botoes de abas, avisos, progresso e detalhes de registro. */
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-tabs :is(a,button) {
+  background: transparent !important;
+  background-image: none !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  color: var(--ec73-muted) !important;
+  -webkit-text-fill-color: var(--ec73-muted) !important;
+  opacity: 1 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-tabs :is(a,button):is(.is-active,[aria-current="page"],[aria-pressed="true"]),
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-tabs :is(a,button):hover {
+  background: #1d453b !important;
+  background-image: none !important;
+  border-color: #357c6a !important;
+  color: #d9fff4 !important;
+  -webkit-text-fill-color: #d9fff4 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-notice,
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-progress,
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-note-info {
+  background: var(--ec73-panel) !important;
+  background-image: none !important;
+  border: 1px solid var(--ec73-border) !important;
+  color: var(--ec73-ink) !important;
+  -webkit-text-fill-color: var(--ec73-ink) !important;
+  box-shadow: none !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-notice-error {
+  background: #35262b !important;
+  border-color: #80505d !important;
+  color: #ffced6 !important;
+  -webkit-text-fill-color: #ffced6 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page :is(.im65-progress-head,.im65-progress-head span,.im65-progress-head strong,.im65-progress > small) {
+  color: var(--ec73-ink) !important;
+  -webkit-text-fill-color: var(--ec73-ink) !important;
+  opacity: 1 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-progress-track {
+  background: #323d43 !important;
+  border: 0 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-progress-track > span {
+  background: #4dbca9 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-alerts {
+  background: transparent !important;
+  color: var(--ec73-ink) !important;
+  border-color: var(--ec73-border) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-alerts > div {
+  background: var(--ec73-raised) !important;
+  background-image: none !important;
+  border: 1px solid var(--ec73-border) !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  color: var(--ec73-ink) !important;
+  opacity: 1 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-alerts > div :is(strong,p,span,small) {
+  background: transparent !important;
+  color: var(--ec73-muted) !important;
+  -webkit-text-fill-color: var(--ec73-muted) !important;
+  opacity: 1 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-alerts > div strong {
+  color: var(--ec73-ink) !important;
+  -webkit-text-fill-color: var(--ec73-ink) !important;
+  display: block !important;
+  margin-bottom: 4px !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-status {
+  background: #29323a !important;
+  color: #e1ebf0 !important;
+  -webkit-text-fill-color: #e1ebf0 !important;
+  border-color: #4a5963 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page :is(.im65-status-completed,.im65-status-ready) {
+  background: #1a4438 !important;
+  border-color: #3d8873 !important;
+  color: #c5ffec !important;
+  -webkit-text-fill-color: #c5ffec !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page .im65-status-failed {
+  background: #49262d !important;
+  border-color: #a45c68 !important;
+  color: #ffced6 !important;
+  -webkit-text-fill-color: #ffced6 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecim-page.ecim65-page :is(.im65-status-processing,.im65-status-queued) {
+  background: #453821 !important;
+  border-color: #9d7e47 !important;
+  color: #ffe5b1 !important;
+  -webkit-text-fill-color: #ffe5b1 !important;
+}
+
+/* CONTATOS / filtro lateral aberto e formularios dentro dele. */
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-filters {
+  background: var(--ec73-panel) !important;
+  background-image: none !important;
+  color: var(--ec73-ink) !important;
+  border-color: var(--ec73-border) !important;
+  box-shadow: 0 15px 36px rgba(0,0,0,.28) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page :is(.ecc3-filters-head,.ecc3-filter-search,.ecc3-filter-scroll,.ecc3-filter-list,.ecc3-filters-foot) {
+  background: var(--ec73-panel) !important;
+  background-image: none !important;
+  border-color: var(--ec73-border) !important;
+  color: var(--ec73-muted) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page :is(.ecc3-filters-head h2,.ecc3-filter-group summary,.ecc3-filter-list strong) {
+  color: var(--ec73-ink) !important;
+  -webkit-text-fill-color: var(--ec73-ink) !important;
+  opacity: 1 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-filter-group {
+  background: var(--ec73-raised) !important;
+  background-image: none !important;
+  border: 1px solid var(--ec73-border) !important;
+  border-radius: 9px !important;
+  margin-bottom: 10px !important;
+  overflow: hidden !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-filter-group > summary {
+  padding: 11px 12px !important;
+  background: var(--ec73-raised) !important;
+  color: var(--ec73-ink) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-filter-group .ecc3-filter-list {
+  padding: 5px 8px 10px !important;
+  background: var(--ec73-raised) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-filter-group .ecc3-filter-option {
+  background: transparent !important;
+  color: var(--ec73-muted) !important;
+  -webkit-text-fill-color: var(--ec73-muted) !important;
+  border-color: transparent !important;
+  border-radius: 7px !important;
+  opacity: 1 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-filter-group .ecc3-filter-option.is-active,
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-filter-group .ecc3-filter-option:is(:hover,:focus-visible) {
+  background: #1b473c !important;
+  color: #d7fff1 !important;
+  -webkit-text-fill-color: #d7fff1 !important;
+  border-left: 3px solid #6cdac2 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-filter-group .ecc3-filter-option strong {
+  background: transparent !important;
+  color: #cef3e9 !important;
+  -webkit-text-fill-color: #cef3e9 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-filter-group .ecc3-fake-check {
+  background: #171d21 !important;
+  color: #f2fff9 !important;
+  border-color: #6f8a93 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-filter-group .ecc3-filter-option.is-active .ecc3-fake-check {
+  background: #137b6c !important;
+  border-color: #68d4bd !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-filter-search input {
+  background: #1e252c !important;
+  color: var(--ec73-ink) !important;
+  -webkit-text-fill-color: var(--ec73-ink) !important;
+  color-scheme: dark !important;
+}
+
+/* CONTATOS / diretorio completo, cabeçalhos, linhas, seleção e dados. */
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page :is(.ecc3-table-panel,.ecc3-list-header,.ecc3-table-scroll,.ecc3-pagination) {
+  background: var(--ec73-panel) !important;
+  background-image: none !important;
+  color: var(--ec73-ink) !important;
+  border-color: var(--ec73-border) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table {
+  background: var(--ec73-panel) !important;
+  background-image: none !important;
+  border-color: var(--ec73-border) !important;
+  color: var(--ec73-ink) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table thead :is(tr,th) {
+  background: var(--ec73-raised) !important;
+  color: var(--ec73-muted) !important;
+  -webkit-text-fill-color: var(--ec73-muted) !important;
+  border-color: var(--ec73-border) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table tbody tr {
+  background: var(--ec73-panel) !important;
+  background-image: none !important;
+  border-color: var(--ec73-border) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table tbody tr:nth-child(even) {
+  background: var(--ec73-row) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table tbody tr:is(.is-selected,:has(input[type="checkbox"]:checked)) {
+  background: #1a3932 !important;
+  border-color: #3a816f !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table tbody tr > :is(td,th) {
+  background: transparent !important;
+  background-image: none !important;
+  color: var(--ec73-ink) !important;
+  -webkit-text-fill-color: var(--ec73-ink) !important;
+  border-color: var(--ec73-border) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table tbody :is(.ecc3-person-words strong,.ecc3-company-name,.ecc3-person-cell,.ecc3-deals-cell,.ecc3-clamp) {
+  color: var(--ec73-ink) !important;
+  -webkit-text-fill-color: var(--ec73-ink) !important;
+  opacity: 1 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table tbody :is(.ecc3-person-words small,.c66-company-role,.ecc3-muted,.c66-phone-status,.ecc3-date) {
+  color: var(--ec73-muted) !important;
+  -webkit-text-fill-color: var(--ec73-muted) !important;
+  opacity: 1 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table tbody :is(.ecc3-tel,.ecc3-detail-button) {
+  color: #9cf0dc !important;
+  -webkit-text-fill-color: #9cf0dc !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table tbody :is(.ecc3-source,.ecc3-tel,.ecc3-wa-yes) {
+  background: transparent !important;
+  color: #a2f3dc !important;
+  -webkit-text-fill-color: #a2f3dc !important;
+  opacity: 1 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table tbody :is(.ecc3-wa-no,.ecc3-wa-none,.ecc3-wa-unknown) {
+  color: #c4d1da !important;
+  -webkit-text-fill-color: #c4d1da !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table .ecc3-avatar {
+  background: #205145 !important;
+  background-image: none !important;
+  color: #e0fff5 !important;
+  -webkit-text-fill-color: #e0fff5 !important;
+  border-color: #4b9480 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-table .ecc3-person-cell {
+  background: transparent !important;
+  border: 0 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-list-title :is(strong,span) {
+  color: var(--ec73-ink) !important;
+  -webkit-text-fill-color: var(--ec73-ink) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page :is(.ecc3-bulk,.ecc3-more-menu) {
+  background: #19382f !important;
+  border-color: #3a826e !important;
+  color: #d7fff0 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page .ecc3-bulk :is(span,strong) {
+  color: #defbf4 !important;
+  -webkit-text-fill-color: #defbf4 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ecc-page.ecc3-page.ecc66-page :is(.ecc3-more-menu button,.ecc3-pagination button) {
+  background: var(--ec73-raised) !important;
+  color: var(--ec73-ink) !important;
+  border-color: var(--ec73-border) !important;
+}
+
+/* Menu da conta no topo: elimina a pastilha branca quando o escuro está ativo. */
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-topbar .e592-account-trigger {
+  background: var(--ec73-input) !important;
+  border: 1px solid var(--ec73-border) !important;
+  color: var(--ec73-ink) !important;
+  -webkit-text-fill-color: var(--ec73-ink) !important;
+  box-shadow: none !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-topbar .e592-account-trigger:is(:hover,:focus-visible) {
+  background: #294039 !important;
+  border-color: #56ab94 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-topbar .e592-account-trigger .e592-account-avatar,
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-topbar .e592-account-panel .e592-account-avatar {
+  background: #215b4d !important;
+  border-color: #52ab94 !important;
+  color: #e1fff5 !important;
+  -webkit-text-fill-color: #e1fff5 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-topbar .e592-account-panel.ec-topbar-account-menu {
+  background: #1a2026 !important;
+  color: var(--ec73-ink) !important;
+  border-color: var(--ec73-border) !important;
+  color-scheme: dark !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-topbar .e592-account-panel .e592-account-header {
+  background: #222b30 !important;
+  color: var(--ec73-ink) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-topbar .e592-account-panel :is(.ec-profile-menu-name,.ec-profile-menu-item,.e592-account-name) {
+  color: var(--ec73-ink) !important;
+  -webkit-text-fill-color: var(--ec73-ink) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-topbar .e592-account-panel :is(.ec-profile-menu-email,.e592-account-divider) {
+  color: var(--ec73-muted) !important;
+  -webkit-text-fill-color: var(--ec73-muted) !important;
+  border-color: var(--ec73-border) !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .ec-topbar .e592-account-panel .ec-profile-menu-item:hover {
+  background: #293b38 !important;
+}
+
+/* Contraste de teclado sem alterar a navegacao por tab. */
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body :is(.ecc66-page,.ecim65-page,.leads-rf,.ecgm-page) :is(button,a,input,select,textarea):focus-visible {
+  outline: 2px solid #8be6d4 !important;
+  outline-offset: 2px !important;
+}

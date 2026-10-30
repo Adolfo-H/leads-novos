@@ -91,7 +91,9 @@ it('retains the manager access restriction and preserves the original distributi
     expect($view)->toContain('LeadAutoDistributionService::class')
         ->toContain('CommercialRoleService $service')
         ->toContain('wire:click="autoDistribute"')
-        ->toContain('wire:click="updateCommercialRole')
+        ->toContain('x-on:click="openRoleConfirm(')
+        ->toContain('await this.$wire.updateCommercialRole(id, role)')
+        ->toContain('role="dialog"')
         ->toContain('ecgm62-attention-table')
         ->toContain('partials.commercial-distribution-preview-v61');
 

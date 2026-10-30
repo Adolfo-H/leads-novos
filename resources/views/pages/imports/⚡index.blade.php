@@ -32,6 +32,10 @@ new class extends Component
                 'string',
                 'max:1000000',
             ],
+        ], [
+            'input.required' => 'Informe pelo menos um CNPJ para iniciar a importação.',
+            'input.string' => 'A lista de CNPJs informada não é válida.',
+            'input.max' => 'A lista é muito grande. Reduza o conteúdo e tente novamente.',
         ]);
 
         $values = $service->parseText(

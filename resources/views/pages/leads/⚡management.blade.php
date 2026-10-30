@@ -535,7 +535,52 @@ new class extends Component
                 <span class="ecgm62-sr">Gestores e vendedores</span>
             </header>
             <div class="ecgm62-role-body"
-                 x-data="{ selectedUser: @js((string) ($firstUser?->id ?? '')), selectedRole: @js((string) ($firstUser?->commercial_role ?? 'seller')), roles: @js($rolesById) }">
+                 x-data="{
+                    selectedUser: @js((string) ($firstUser?->id ?? '')),
+                    selectedRole: @js((string) ($firstUser?->commercial_role ?? 'seller')),
+                    roles: @js($rolesById),
+                    roleConfirmOpen: false,
+                    roleSaving: false,
+                    rolePendingId: null,
+                    rolePendingName: '',
+                    rolePendingRole: '',
+                    rolePendingLabel: '',
+                    roleConfirmError: '',
+                    openRoleConfirm(id, name, role, label) {
+                        if (this.roleSaving) return;
+                        this.rolePendingId = Number(id);
+                        this.rolePendingName = String(name);
+                        this.rolePendingRole = String(role);
+                        this.rolePendingLabel = String(label);
+                        this.roleConfirmError = '';
+                        this.roleConfirmOpen = true;
+                        this.$nextTick(() => this.$refs.roleConfirmCancel?.focus());
+                    },
+                    async submitRoleChange() {
+                        if (!this.roleConfirmOpen || this.roleSaving || !this.rolePendingId) return;
+                        const id = this.rolePendingId;
+                        const role = this.rolePendingRole;
+                        if (this.roles[String(id)] === role) {
+                            this.roleConfirmOpen = false;
+                            return;
+                        }
+                        this.roleSaving = true;
+                        this.roleConfirmError = '';
+                        try {
+                            await this.$wire.updateCommercialRole(id, role);
+                            if (this.$wire.roleError) {
+                                this.roleConfirmError = String(this.$wire.roleError);
+                            } else {
+                                this.roles[String(id)] = role;
+                                this.roleConfirmOpen = false;
+                            }
+                        } catch (error) {
+                            this.roleConfirmError = 'Não foi possível salvar. Verifique a conexão e tente novamente.';
+                        } finally {
+                            this.roleSaving = false;
+                        }
+                    }
+                 }">
                 <div class="ecgm62-role-field">
                     <label for="ecgm62-user">Usuário</label>
                     <select id="ecgm62-user" x-model="selectedUser"
@@ -559,13 +604,39 @@ new class extends Component
                             <button type="button" class="ecgm62-btn ecgm62-btn--small"
                                     x-show="selectedUser === '{{ $commercialUser->id }}' && selectedRole === '{{ $role }}' && roles[selectedUser] !== selectedRole"
                                     x-cloak
-                                    x-bind:disabled="roles[selectedUser] === selectedRole"
-                                    wire:click="updateCommercialRole({{ $commercialUser->id }}, '{{ $role }}')"
-                                    wire:confirm="Alterar o perfil comercial de {{ $commercialUser->name }} para {{ $label }}?"
+                                    x-bind:disabled="roleSaving || roles[selectedUser] === selectedRole"
+                                    data-ec-role-user-id="{{ $commercialUser->id }}"
+                                    data-ec-role-user-name="{{ $commercialUser->name }}"
+                                    data-ec-role-role="{{ $role }}"
+                                    data-ec-role-label="{{ $label }}"
+                                    x-on:click="openRoleConfirm($el.dataset.ecRoleUserId, $el.dataset.ecRoleUserName, $el.dataset.ecRoleRole, $el.dataset.ecRoleLabel)"
                                     wire:loading.attr="disabled"
                                     wire:target="updateCommercialRole">Salvar</button>
                         @endforeach
                     @endforeach
+                </div>
+                {{-- A24.11: substitui a janela nativa do navegador, sem alterar a autorizacao PHP. --}}
+                <div class="ec-role-modal-v72" x-cloak x-show="roleConfirmOpen"
+                     x-on:keydown.escape.window="if (roleConfirmOpen && !roleSaving) roleConfirmOpen = false"
+                     x-on:click.self="if (!roleSaving) roleConfirmOpen = false">
+                    <section class="ec-role-dialog-v72" role="dialog" aria-modal="true"
+                             aria-labelledby="ec-role-title-v72" aria-describedby="ec-role-desc-v72">
+                        <h2 id="ec-role-title-v72">Confirmar alteração de papel</h2>
+                        <p id="ec-role-desc-v72">Esta ação altera as permissões comerciais do usuário. Confira antes de confirmar.</p>
+                        <div class="ec-role-dialog-target-v72">
+                            <strong x-text="rolePendingName"></strong>
+                            <span x-text="'Novo papel: ' + rolePendingLabel"></span>
+                        </div>
+                        <div class="ec-role-dialog-error-v72" x-show="roleConfirmError !== ''"
+                             x-text="roleConfirmError" role="alert"></div>
+                        <div class="ec-role-dialog-actions-v72">
+                            <button type="button" class="ec-role-button-v72" x-ref="roleConfirmCancel"
+                                    x-bind:disabled="roleSaving" x-on:click="roleConfirmOpen = false">Cancelar</button>
+                            <button type="button" class="ec-role-button-v72 ec-role-button-primary-v72"
+                                    x-bind:disabled="roleSaving" x-on:click="submitRoleChange()"
+                                    x-text="roleSaving ? 'Salvando...' : 'Confirmar alteração'">Confirmar alteração</button>
+                        </div>
+                    </section>
                 </div>
             </div>
             @if ($roleMessage !== '')

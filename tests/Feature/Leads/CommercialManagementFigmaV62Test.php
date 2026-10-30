@@ -88,7 +88,9 @@ it('retains distribution and role permissions while using only scoped visual CSS
     expect($view)->toContain('LeadAutoDistributionService::class')
         ->toContain('CommercialRoleService $service')
         ->toContain('wire:click="autoDistribute"')
-        ->toContain('wire:click="updateCommercialRole')
+        ->toContain('x-on:click="openRoleConfirm(')
+        ->toContain('await this.$wire.updateCommercialRole(id, role)')
+        ->toContain('role="dialog"')
         ->toContain('partials.commercial-distribution-preview-v61');
 
     $styles = file_get_contents(resource_path('css/commercial-management-consolidated.css'));

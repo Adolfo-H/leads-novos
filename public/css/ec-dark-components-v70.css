@@ -1,0 +1,225 @@
+/*
+ * Prospector ExportControl — A24.8 / V70
+ * Correcao EXCLUSIVA do modo Escuro, rotas Leads e Gestao Comercial.
+ * Nao depende de alteracoes de DOM: funciona com Alpine, Livewire e wire:navigate.
+ * Elimina a necessidade do pintor inline do A24.7.
+ */
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads,
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 {
+  --ec70-panel: #181b20;
+  --ec70-raised: #22262c;
+  --ec70-control: #20242a;
+  --ec70-line: #38414a;
+  --ec70-text: #f2f5f7;
+  --ec70-muted: #bdcbd6;
+  --ec70-accent: #91ead9;
+}
+
+/* LEADS — alerta de sincronizacao HubSpot e popover de diagnostico. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads :is(
+  .lv14-hubspot-summary, .lv14-hubspot-popup, .rf-hubspot-health,
+  .rf-hubspot-health-content, .rf-hubspot-health-checks, .rf-hubspot-health-main,
+  .rf-hubspot-check, .lv11-health-more
+) {
+  background: var(--ec70-panel) !important;
+  background-image: none !important;
+  border-color: var(--ec70-line) !important;
+  color: var(--ec70-text) !important;
+  -webkit-text-fill-color: var(--ec70-text) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads :is(
+  .lv14-hubspot-copy strong, .rf-hubspot-health-main strong, .rf-hubspot-check strong
+) { color: var(--ec70-text) !important; -webkit-text-fill-color: var(--ec70-text) !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads :is(
+  .lv14-hubspot-copy small, .rf-hubspot-health-main span, .rf-hubspot-check span,
+  .rf-hubspot-health-checks small, .lv11-health-more
+) { color: var(--ec70-muted) !important; -webkit-text-fill-color: var(--ec70-muted) !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .lv14-hubspot-chevron { color: var(--ec70-accent) !important; }
+
+/* LEADS — botoes de filtros, atalho de fila e tres indicadores expansíveis. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-filters-clear.lf364-filter-clear {
+  background: #18413a !important;
+  background-image: none !important;
+  border: 1px solid #438779 !important;
+  color: #ecfff9 !important;
+  -webkit-text-fill-color: #ecfff9 !important;
+  opacity: 1 !important;
+  text-decoration: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-filters-clear.lf364-filter-clear:is(:hover,:focus-visible) { background: #246155 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .lv15-summary .lv15-card-grid > button.lv15-card {
+  background: var(--ec70-panel) !important;
+  background-image: none !important;
+  border: 1px solid var(--ec70-line) !important;
+  color: var(--ec70-text) !important;
+  -webkit-text-fill-color: var(--ec70-text) !important;
+  box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .lv15-summary .lv15-card:is(:hover,.is-active) { background: #20342f !important; border-color: #367a68 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .lv15-summary .lv15-card :is(.lv15-card-label,.lv15-card-value) { color: var(--ec70-text) !important; -webkit-text-fill-color: var(--ec70-text) !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .lv15-summary .lv15-card :is(small,.lv15-card-arrow) { color: var(--ec70-muted) !important; -webkit-text-fill-color: var(--ec70-muted) !important; opacity: 1 !important; }
+
+/* LEADS — filtros inteiros, sem borda ou faixa interna branca. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads :is(
+  section.rf-panel.rf-filters, .rf-filters-head, .rf-filter-main, .rf-filter-secondary,
+  .lf364-filter-header, .lf36-filter-field, .rf-filters-head > div
+) {
+  background: var(--ec70-panel) !important;
+  background-image: none !important;
+  color: var(--ec70-text) !important;
+  border-color: var(--ec70-line) !important;
+  box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-filters :is(label,strong) { color: var(--ec70-text) !important; -webkit-text-fill-color: var(--ec70-text) !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-filters :is(.lf364-filter-caption,.rf-filters-head span) { color: var(--ec70-muted) !important; -webkit-text-fill-color: var(--ec70-muted) !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-filters :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea) {
+  background: var(--ec70-control) !important;
+  background-image: none !important;
+  color: var(--ec70-text) !important;
+  -webkit-text-fill-color: var(--ec70-text) !important;
+  border-color: #46515b !important;
+  color-scheme: dark !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-filters :is(input,textarea)::placeholder { color: #b9cbd5 !important; -webkit-text-fill-color: #b9cbd5 !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-filters select option { background: #20242a !important; color: #f2f5f7 !important; }
+
+/* LEADS — pipeline pessoal: todas as linhas e chips no escuro. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads details.lf361-pipeline-access :is(
+  .lf361-pipeline-summary,.rf-stage-strip,.lv18-pipeline-heading,
+  .rf-stage-strip-list,.lv18-pipeline-chips,.lv18-pipeline-clear-container
+),
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads details.lf361-pipeline-access {
+  background: var(--ec70-panel) !important;
+  background-image: none !important;
+  border-color: var(--ec70-line) !important;
+  color: var(--ec70-text) !important;
+  box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads details.lf361-pipeline-access button.rf-stage-strip-chip {
+  background: var(--ec70-raised) !important;
+  background-image: none !important;
+  border: 1px solid #46515b !important;
+  color: var(--ec70-text) !important;
+  -webkit-text-fill-color: var(--ec70-text) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads details.lf361-pipeline-access button.rf-stage-strip-chip:is(.is-active,:hover,:focus-visible) { background: #174039 !important; border-color: #54c5ae !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads details.lf361-pipeline-access :is(
+  .lv18-chip-label,.lv18-chip-count,.rf-stage-strip-heading strong,.lf37-personal-title
+) { color: var(--ec70-text) !important; -webkit-text-fill-color: var(--ec70-text) !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads details.lf361-pipeline-access :is(.rf-stage-strip-heading span,.lf37-personal-meta) { color: var(--ec70-muted) !important; -webkit-text-fill-color: var(--ec70-muted) !important; opacity: 1 !important; }
+
+/* LEADS — lista: evita brancos na selecao em lote e em linhas alternadas. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads :is(
+  section.rf-panel.rf-list-panel, .rf-list-toolbar, .rf-list-scroll,
+  .rf-pagination, .rf-lead-row, .lv13-lead-line, .rf-list-panel .rf-list-head
+) {
+  background: var(--ec70-panel) !important;
+  background-image: none !important;
+  border-color: var(--ec70-line) !important;
+  color: var(--ec70-text) !important;
+  box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads :is(.lv13-list-head,.rf-list-head) {
+  background: var(--ec70-raised) !important;
+  background-image: none !important;
+  color: var(--ec70-text) !important;
+  border-color: var(--ec70-line) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel .rf-lead-row:nth-of-type(even) .lv13-lead-line:not(.is-selected) { background: #1c2025 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel .lv13-lead-line.is-selected,
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel .rf-lead-row:has(.lv13-lead-line.is-selected),
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel .rf-lead-row:has(input[type="checkbox"]:checked) {
+  background: #18352e !important;
+  background-image: none !important;
+  border-color: #327e6d !important;
+  color: var(--ec70-text) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel .lv13-lead-line.is-selected :is(.lv13-company,.lv13-score,.lv13-status,.lv13-stage,.lv13-next,.lv13-owner) { background: transparent !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel :is(.lv13-company,.lv13-score,.lv13-next,.lv13-owner,.lv13-company-body,.lv13-status,.lv13-stage) { background-image: none !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel :is(
+  .lf36-list-title,.lf364-list-heading h2,.lv13-company-name,.lv13-company-body strong,
+  .lv13-score strong,.lv13-owner-name,.lv13-next strong,.lv13-list-head span,
+  .rf-list-head div,.rf-list-toolbar strong,.rf-pagination strong
+) { color: var(--ec70-text) !important; -webkit-text-fill-color: var(--ec70-text) !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel :is(
+  .lf364-list-hint,.lv13-company-body small,.lv13-score small,.lv13-status small,
+  .lv13-stage small,.lv13-next small,.lv13-owner small,.rf-pagination-info,
+  .lv13-list-head label,.rf-list-toolbar span
+) { color: var(--ec70-muted) !important; -webkit-text-fill-color: var(--ec70-muted) !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel :is(.lv13-status,.lv13-stage) { background: transparent !important; background-image: none !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel :is(.lv13-status,.lv13-stage) > .lv13-pill {
+  background: #194039 !important; background-image: none !important;
+  border-color: #388570 !important; color: #c2f5eb !important;
+  -webkit-text-fill-color: #c2f5eb !important; opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel :is(.lv13-score-track,.lv13-score-track>i) { opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel .lv13-icp { background: #28373e !important; color: #c9dfec !important; -webkit-text-fill-color: #c9dfec !important; }
+
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel :is(.lf364-selection-bar,.lf364-selection-message) {
+  background: #163d34 !important; background-image: none !important;
+  border-color: #368573 !important; color: #effff9 !important;
+  -webkit-text-fill-color: #effff9 !important; opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel .lf364-selection-bar :is(strong,span,button) { color: #effff9 !important; -webkit-text-fill-color: #effff9 !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel .lv23-actions :is(a,button) {
+  background: #212c2d !important; border: 1px solid #4a6866 !important;
+  color: #d4faf2 !important; -webkit-text-fill-color: #d4faf2 !important;
+  opacity: 1 !important; box-shadow: none !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel .lv23-actions :is(a,button):is(:hover,:focus-visible) { background: #29423e !important; border-color: #65cbb9 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel .lv23-actions :is(a,button) :is(span,svg) { color: inherit !important; -webkit-text-fill-color: inherit !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .leads-rf.lf36-leads .rf-list-panel input[type="checkbox"] { accent-color: #38bdab !important; color-scheme: dark !important; }
+
+/* GESTAO — resumo e tabelas; labels e numeros sem branco residual. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(
+  .ecgm62-card,.ecgm62-load-card,.ecgm62-attention-details,.ecgm62-attention-content,
+  .ecgm62-card-header,.ecgm62-card-footer,.ecgm62-attention-summary,.ecgm62-table-shell,
+  .ecgm62-scroll,.ecgm62-role-body,.ecgm62-role-field,.ecgm62-people,.ecgm62-person
+) { background: var(--ec70-panel) !important; background-image: none !important; border-color: var(--ec70-line) !important; color: var(--ec70-text) !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-kpis .ecgm62-kpi { background: var(--ec70-panel) !important; border-color: var(--ec70-line) !important; color: var(--ec70-text) !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(.ecgm62-kpi strong,.ecgm62-card-header h2,.ecgm62-card-header h3,.ecgm62-attention-summary > span:first-child,.ecgm62-person strong) { color: var(--ec70-text) !important; -webkit-text-fill-color: var(--ec70-text) !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(.ecgm62-kpi span,.ecgm62-kpi small,.ecgm62-card-header p,.ecgm62-attention-hint,.ecgm62-person small,.ecgm62-help) { color: var(--ec70-muted) !important; -webkit-text-fill-color: var(--ec70-muted) !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(table.ecgm62-table,table.ecgm61-table,table.ecgm-management-table) { background: var(--ec70-panel) !important; color: var(--ec70-text) !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 table.ecgm62-table :is(thead,tbody,tr,td,th) { background: var(--ec70-raised) !important; border-color: var(--ec70-line) !important; color: var(--ec70-text) !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 table.ecgm62-table a { background: transparent !important; color: #b4f0e4 !important; -webkit-text-fill-color: #b4f0e4 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(.ecgm62-role-field select,.ecgm62-dist-config input[type="number"],.ecgm62-dist-config select) {
+  background: var(--ec70-control) !important; border-color: #46515b !important;
+  color: var(--ec70-text) !important; -webkit-text-fill-color: var(--ec70-text) !important;
+  color-scheme: dark !important; opacity: 1 !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(.ecgm62-role-field label,.ecgm62-dist-config label) { color: var(--ec70-text) !important; -webkit-text-fill-color: var(--ec70-text) !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(.ecgm62-role-field small,.ecgm62-dist-config small) { color: var(--ec70-muted) !important; -webkit-text-fill-color: var(--ec70-muted) !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-table a.ecgm62-person-link { background: transparent !important; color: #b4f0e4 !important; }
+
+/* GESTAO — prévia, resultado, alerta e rodape da distribuicao automática. */
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution :is(
+  .ecgm-distribution-preview,.ecgm61-distribution-preview,.ecgm61-panel-heading,
+  .ecgm61-table-wrap,.ecgm61-preview-stats,.ecgm62-dist-footer,.ecgm61-preview-volume
+) { background: var(--ec70-panel) !important; background-image: none !important; border-color: var(--ec70-line) !important; color: var(--ec70-text) !important; box-shadow: none !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution table.ecgm61-distribution-table :is(thead,tbody,tr,td,th) {
+  background: var(--ec70-raised) !important; background-image: none !important;
+  border-color: var(--ec70-line) !important; color: var(--ec70-text) !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution :is(
+  .ecgm61-panel-heading h3,.ecgm61-preview-volume strong,.ecgm61-preview-stats strong
+) { color: var(--ec70-text) !important; -webkit-text-fill-color: var(--ec70-text) !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution :is(
+  .ecgm61-panel-heading p,.ecgm61-preview-volume span,.ecgm61-preview-volume small,
+  .ecgm61-preview-stats span,.ecgm-preview-note
+) { color: var(--ec70-muted) !important; -webkit-text-fill-color: var(--ec70-muted) !important; opacity: 1 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution .ecgm61-distribution-gain { background: #17483d !important; color: #c0fff0 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution .ecgm61-safety-note { background: #302a1c !important; color: #f6dca4 !important; border-color: #605037 !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-distribution .ecgm62-dist-footer {
+  display: flex !important; justify-content: flex-end !important;
+  align-items: center !important; flex-wrap: wrap !important;
+  gap: 10px !important; padding: 14px 16px !important;
+  background: var(--ec70-panel) !important; border: 1px solid var(--ec70-line) !important;
+  border-radius: 11px !important;
+}
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 :is(.ecgm62-dist-footer,.ecgm62-distribution) .ecgm62-btn:not(.ecgm62-btn--primary) { background: var(--ec70-raised) !important; color: var(--ec70-text) !important; border-color: var(--ec70-line) !important; }
+html.dark[data-ec-appearance="dark"] body.ec-app-body.ec-dashboard-mode .ecgm-page.ecgm-v2.ecgm61.ecgm62 .ecgm62-confirm-dialog { background: var(--ec70-panel) !important; color: var(--ec70-text) !important; border-color: var(--ec70-line) !important; }

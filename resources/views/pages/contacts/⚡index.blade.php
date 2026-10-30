@@ -722,74 +722,78 @@ new class extends Component
                        placeholder="Buscar nos filtros..." aria-label="Buscar tipos de filtro">
             </div>
             <div class="ecc3-filter-scroll">
-                <details class="ecc3-filter-group" open>
-                    <summary>Segmentos <span aria-hidden="true">⌃</span></summary>
-                    <div class="ecc3-filter-list">
-                        @foreach ($sideOptions as [$code, $label, $total])
-                            <button type="button" class="ecc3-filter-option {{ $segment === $code ? 'is-active' : '' }}"
-                                    data-filter-label="{{ mb_strtolower($label) }}"
-                                    x-show="filterKeyword.trim() === '' || $el.dataset.filterLabel.includes(filterKeyword.trim().toLocaleLowerCase('pt-BR'))"
-                                    wire:click="chooseSegment('{{ $code }}')"
-                                    aria-pressed="{{ $segment === $code ? 'true' : 'false' }}">
-                                <span class="ecc3-fake-check" aria-hidden="true">{{ $segment === $code ? '✓' : '' }}</span>
-                                <span>{{ $label }}</span><strong>{{ $fmt($total) }}</strong>
-                            </button>
-                        @endforeach
-                    </div>
-                </details>
-                <details class="ecc3-filter-group" open>
-                    <summary>Origem e cadastro <span aria-hidden="true">⌃</span></summary>
-                    <div class="ecc3-filter-list">
-                        @foreach ($originOptions as [$code, $label, $total])
-                            <button type="button" class="ecc3-filter-option {{ $segment === $code ? 'is-active' : '' }}"
-                                    data-filter-label="{{ mb_strtolower($label) }}"
-                                    x-show="filterKeyword.trim() === '' || $el.dataset.filterLabel.includes(filterKeyword.trim().toLocaleLowerCase('pt-BR'))"
-                                    wire:click="chooseSegment('{{ $code }}')"
-                                    aria-pressed="{{ $segment === $code ? 'true' : 'false' }}">
-                                <span class="ecc3-fake-check" aria-hidden="true">{{ $segment === $code ? '✓' : '' }}</span>
-                                <span>{{ $label }}</span>
-                                @if ($total !== null)<strong>{{ $fmt($total) }}</strong>@endif
-                            </button>
-                        @endforeach
-                    </div>
-                </details>
-                <details class="ecc3-filter-group" open>
-                    <summary>Situação <span aria-hidden="true">⌃</span></summary>
-                    <div class="ecc3-filter-list">
-                        @foreach ($conditions as [$code, $label])
-                            <button type="button" class="ecc3-filter-option {{ $segment === $code ? 'is-active' : '' }}"
-                                    data-filter-label="{{ mb_strtolower($label) }}"
-                                    x-show="filterKeyword.trim() === '' || $el.dataset.filterLabel.includes(filterKeyword.trim().toLocaleLowerCase('pt-BR'))"
-                                    wire:click="chooseSegment('{{ $code }}')"
-                                    aria-pressed="{{ $segment === $code ? 'true' : 'false' }}">
-                                <span class="ecc3-fake-check" aria-hidden="true">{{ $segment === $code ? '✓' : '' }}</span>
-                                <span>{{ $label }}</span>
-                            </button>
-                        @endforeach
-                    </div>
-                </details>
-                <details class="ecc3-filter-group">
-                    <summary>Confirmação de WhatsApp <span aria-hidden="true">⌄</span></summary>
-                    <div class="ecc3-filter-list">
-                        @foreach (['all' => 'Todos os estados', 'yes' => 'Confirmado', 'no' => 'Não possui', 'unknown' => 'Não verificado'] as $code => $label)
-                            <button type="button" class="ecc3-filter-option {{ $whatsappFilter === $code ? 'is-active' : '' }}"
-                                    wire:click="$set('whatsappFilter','{{ $code }}')">
-                                <span class="ecc3-fake-check" aria-hidden="true">{{ $whatsappFilter === $code ? '✓' : '' }}</span><span>{{ $label }}</span>
-                            </button>
-                        @endforeach
-                    </div>
-                </details>
-                <details class="ecc3-filter-group">
-                    <summary>Fonte de contato <span aria-hidden="true">⌄</span></summary>
-                    <div class="ecc3-filter-list">
-                        @foreach (['all' => 'Todas as origens', 'hubspot' => 'Somente HubSpot', 'manual' => 'Somente manual', 'receita' => 'Somente Receita Federal'] as $code => $label)
-                            <button type="button" class="ecc3-filter-option {{ $peopleOrigin === $code ? 'is-active' : '' }}"
-                                    wire:click="$set('peopleOrigin','{{ $code }}')">
-                                <span class="ecc3-fake-check" aria-hidden="true">{{ $peopleOrigin === $code ? '✓' : '' }}</span><span>{{ $label }}</span>
-                            </button>
-                        @endforeach
-                    </div>
-                </details>
+                <div class="ecv75-filter-column">
+    <details class="ecc3-filter-group" open>
+                        <summary>Segmentos <span aria-hidden="true">⌃</span></summary>
+                        <div class="ecc3-filter-list">
+                            @foreach ($sideOptions as [$code, $label, $total])
+                                <button type="button" class="ecc3-filter-option {{ $segment === $code ? 'is-active' : '' }}"
+                                        data-filter-label="{{ mb_strtolower($label) }}"
+                                        x-show="filterKeyword.trim() === '' || $el.dataset.filterLabel.includes(filterKeyword.trim().toLocaleLowerCase('pt-BR'))"
+                                        wire:click="chooseSegment('{{ $code }}')"
+                                        aria-pressed="{{ $segment === $code ? 'true' : 'false' }}">
+                                    <span class="ecc3-fake-check" aria-hidden="true">{{ $segment === $code ? '✓' : '' }}</span>
+                                    <span>{{ $label }}</span><strong>{{ $fmt($total) }}</strong>
+                                </button>
+                            @endforeach
+                        </div>
+                    </details>
+    <details class="ecc3-filter-group" open>
+                        <summary>Situação <span aria-hidden="true">⌃</span></summary>
+                        <div class="ecc3-filter-list">
+                            @foreach ($conditions as [$code, $label])
+                                <button type="button" class="ecc3-filter-option {{ $segment === $code ? 'is-active' : '' }}"
+                                        data-filter-label="{{ mb_strtolower($label) }}"
+                                        x-show="filterKeyword.trim() === '' || $el.dataset.filterLabel.includes(filterKeyword.trim().toLocaleLowerCase('pt-BR'))"
+                                        wire:click="chooseSegment('{{ $code }}')"
+                                        aria-pressed="{{ $segment === $code ? 'true' : 'false' }}">
+                                    <span class="ecc3-fake-check" aria-hidden="true">{{ $segment === $code ? '✓' : '' }}</span>
+                                    <span>{{ $label }}</span>
+                                </button>
+                            @endforeach
+                        </div>
+                    </details>
+    <details class="ecc3-filter-group">
+                        <summary>Fonte de contato <span aria-hidden="true">⌄</span></summary>
+                        <div class="ecc3-filter-list">
+                            @foreach (['all' => 'Todas as origens', 'hubspot' => 'Somente HubSpot', 'manual' => 'Somente manual', 'receita' => 'Somente Receita Federal'] as $code => $label)
+                                <button type="button" class="ecc3-filter-option {{ $peopleOrigin === $code ? 'is-active' : '' }}"
+                                        wire:click="$set('peopleOrigin','{{ $code }}')">
+                                    <span class="ecc3-fake-check" aria-hidden="true">{{ $peopleOrigin === $code ? '✓' : '' }}</span><span>{{ $label }}</span>
+                                </button>
+                            @endforeach
+                        </div>
+                    </details>
+                </div>
+                <div class="ecv75-filter-column">
+    <details class="ecc3-filter-group" open>
+                        <summary>Origem e cadastro <span aria-hidden="true">⌃</span></summary>
+                        <div class="ecc3-filter-list">
+                            @foreach ($originOptions as [$code, $label, $total])
+                                <button type="button" class="ecc3-filter-option {{ $segment === $code ? 'is-active' : '' }}"
+                                        data-filter-label="{{ mb_strtolower($label) }}"
+                                        x-show="filterKeyword.trim() === '' || $el.dataset.filterLabel.includes(filterKeyword.trim().toLocaleLowerCase('pt-BR'))"
+                                        wire:click="chooseSegment('{{ $code }}')"
+                                        aria-pressed="{{ $segment === $code ? 'true' : 'false' }}">
+                                    <span class="ecc3-fake-check" aria-hidden="true">{{ $segment === $code ? '✓' : '' }}</span>
+                                    <span>{{ $label }}</span>
+                                    @if ($total !== null)<strong>{{ $fmt($total) }}</strong>@endif
+                                </button>
+                            @endforeach
+                        </div>
+                    </details>
+    <details class="ecc3-filter-group">
+                        <summary>Confirmação de WhatsApp <span aria-hidden="true">⌄</span></summary>
+                        <div class="ecc3-filter-list">
+                            @foreach (['all' => 'Todos os estados', 'yes' => 'Confirmado', 'no' => 'Não possui', 'unknown' => 'Não verificado'] as $code => $label)
+                                <button type="button" class="ecc3-filter-option {{ $whatsappFilter === $code ? 'is-active' : '' }}"
+                                        wire:click="$set('whatsappFilter','{{ $code }}')">
+                                    <span class="ecc3-fake-check" aria-hidden="true">{{ $whatsappFilter === $code ? '✓' : '' }}</span><span>{{ $label }}</span>
+                                </button>
+                            @endforeach
+                        </div>
+                    </details>
+                </div>
                 <div class="ecc3-filters-foot">
                     <span>Dados locais do HubSpot e do Prospector</span>
                     <small>Os filtros respeitam as origens e os vínculos registrados na base do Prospector.</small>

@@ -44,7 +44,9 @@ it('keeps the attention queue accessible without occupying the first screen', fu
         ->toContain('ecgm-v2-table-action')
         ->toContain('partials.commercial-distribution-preview-v61')
         ->toContain('wire:click="autoDistribute"')
-        ->toContain('wire:click="updateCommercialRole');
+        ->toContain('x-on:click="openRoleConfirm(')
+        ->toContain('await this.$wire.updateCommercialRole(id, role)')
+        ->toContain('role="dialog"');
 });
 
 it('loads the commercial visual styles and respects responsive and reduced motion', function (): void {
