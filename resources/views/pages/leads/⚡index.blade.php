@@ -5391,8 +5391,11 @@ new class extends Component
                             ?->work_status
                         ?? 'new';
 
-                    $v52VisibleStatus = $v52CommercialByCompany[(int) $lead->id]
-                        ?? $currentWorkStatus;
+                    // A25.5: a fila de reprospecção apresenta a situação do filtro,
+                    // não um status legado (como "Em contato") para um lead já inativo.
+                    $v52VisibleStatus = $crmSituation === 'reprospecting'
+                        ? 'reprospecting'
+                        : ($v52CommercialByCompany[(int) $lead->id] ?? $currentWorkStatus);
 
                     $workClass =
                         match (
@@ -5612,6 +5615,11 @@ new class extends Component
                                 ->nextActionLabel(
                                     $hubSpotLead
                                 );
+
+                    // No recorte de reprospecção, a ação reflete o objetivo do filtro.
+                    if ($crmSituation === 'reprospecting') {
+                        $leadPrimaryAction = 'Retomar contato';
+                    }
                 @endphp
 
 

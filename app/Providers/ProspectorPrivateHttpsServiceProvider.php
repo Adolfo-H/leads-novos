@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 /** EC_A242_TRUSTED_PRIVATE_PROXY: configuração após o carregamento do Laravel. */
@@ -14,10 +16,10 @@ final class ProspectorPrivateHttpsServiceProvider extends ServiceProvider
         // A2541_VITE_PROD_ISOLATION: em producao, nunca usar HMR de localhost.
         // Mesmo se npm run dev recriar public/hot, @vite usa o build versionado.
         if ($this->app->isProduction()) {
-            \Illuminate\Support\Facades\Vite::useHotFile(
+            Vite::useHotFile(
                 storage_path('framework/prospector-production-hmr-disabled.hot')
             );
-            \Illuminate\Support\Facades\URL::forceScheme('https');
+            URL::forceScheme('https');
         }
 
         // Aqui a configuração já está carregada; NÃO usar config() em withMiddleware().

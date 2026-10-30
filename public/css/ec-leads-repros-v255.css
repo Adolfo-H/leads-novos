@@ -1,0 +1,31 @@
+/* ExportControl Prospector — A25.5: badge de reprospecção consistente com a paleta do CRM.
+   Somente leitura: não altera prioridade, seleção, CRM ou dados HubSpot. */
+.leads-rf.lf36-leads .lv13-pill.lv13-status--reprospecting {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: 23px !important;
+    padding: 4px 9px !important;
+    border: 1px solid #a8dacf !important;
+    border-radius: 7px !important;
+    background: #e5f6f1 !important;
+    background-image: none !important;
+    color: #087469 !important;
+    -webkit-text-fill-color: #087469 !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+    opacity: 1 !important;
+}
+.leads-rf.lf36-leads .lv13-status:has(.lv13-status--reprospecting) > small {
+    color: #617a88 !important;
+    -webkit-text-fill-color: #617a88 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .leads-rf.lf36-leads .lv13-pill.lv13-status--reprospecting {
+    background: #1c4a3e !important;
+    border-color: #5ea890 !important;
+    color: #e4fff5 !important;
+    -webkit-text-fill-color: #e4fff5 !important;
+}
+html.dark:not([data-ec-appearance="light"]):not([data-ec-appearance="system"]) body.ec-app-body .leads-rf.lf36-leads .lv13-status:has(.lv13-status--reprospecting) > small {
+    color: #b6d1cc !important;
+    -webkit-text-fill-color: #b6d1cc !important;
+}

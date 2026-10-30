@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Company;
+use App\Models\HubSpotCompany;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -56,6 +57,35 @@ final class LeadCrmSituationService
         if ($situation === 'reprospecting') {
             $this->withoutPendingTasks($this->notClient($query));
             $this->withHubSpot($query);
+
+            // A25.5: a fila de inatividade NÃO inclui recusas ou descartes.
+            // Mantenha a fila distinta de "reprospecção pronta" inalterada.
+            $query
+                ->where(static function (Builder $work): void {
+                    $work->whereNull('work.work_status')
+                        ->orWhereNotIn('work.work_status', ['refused', 'discarded']);
+                })
+                ->whereDoesntHave('hubSpotCompanies', static function (Builder $company): void {
+                    // Vínculos não confiáveis não podem desclassificar outro CNPJ.
+                    $company->whereIn(
+                        'hubspot_companies.id',
+                        HubSpotCompany::query()->trustedFiscalLink()->select('id'),
+                    )
+                        ->whereHas('commercialDeals', static function (Builder $deal): void {
+                            $deal->where(static function (Builder $stage): void {
+                                $stage->whereRaw(
+                                    "LOWER(COALESCE(hubspot_deals.stage_label, '')) LIKE ?",
+                                    ['%recus%'],
+                                )->orWhereRaw(
+                                    "LOWER(COALESCE(hubspot_deals.stage_label, '')) LIKE ?",
+                                    ['%descart%'],
+                                )->orWhereRaw(
+                                    "LOWER(COALESCE(hubspot_deals.stage_label, '')) LIKE ?",
+                                    ['%fora foco%'],
+                                );
+                            });
+                        });
+                });
 
             // Não marcar como 90 dias sem contato se não houver uma data
             // de movimentação confiável.
