@@ -9,7 +9,7 @@
     <form method="POST" action="{{ route('login.store') }}" class="ec24-form">
         @csrf
         <label for="email">E-mail</label>
-        <input id="email" name="email" type="email" placeholder="adolfo@exportcontrol.com.br" required autofocus autocomplete="username" value="{{ old('email') }}" aria-describedby="login-email-error" />
+        <input id="email" name="email" type="email" placeholder="Digite seu e-mail" required autofocus autocomplete="username" value="{{ old('email') }}" aria-describedby="login-email-error" />
         @error('email')<p class="ec24-error" id="login-email-error" role="alert">{{ $message === 'These credentials do not match our records.' ? 'E-mail ou senha incorretos. Verifique os dados e tente novamente.' : $message }}</p>@enderror
         <label for="password">Senha</label>
         <div class="ec24-password-field">
