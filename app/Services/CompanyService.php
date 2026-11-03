@@ -255,6 +255,9 @@ final class CompanyService
                 'share_capital',
                 'size_code',
                 'size_description',
+                'simples_option',
+                'mei_option',
+                'tax_source_period',
                 'federative_entity',
                 'metadata',
             ] as $field

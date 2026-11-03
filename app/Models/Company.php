@@ -24,6 +24,9 @@ class Company extends Model
         'responsible_qualification_code',
         'share_capital',
         'size_code',
+        'simples_option',
+        'mei_option',
+        'tax_source_period',
         'size_description',
         'federative_entity',
         'source',
@@ -35,6 +38,8 @@ class Company extends Model
     {
         return [
             'share_capital' => 'decimal:2',
+            'simples_option' => 'boolean',
+            'mei_option' => 'boolean',
             'source_updated_at' => 'datetime',
             'metadata' => 'array',
         ];

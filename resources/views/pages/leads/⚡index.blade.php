@@ -84,6 +84,9 @@ new class extends Component
     #[Url]
     public string $crmSituation = '';
 
+    #[Url]
+    public string $taxRegime = '';
+
     #[Url] // EC_PROSPECTOR_V40_LEADS — permite abrir vencimentos pela URL do Dashboard
     public bool $dueActionOnly = false;
 
@@ -315,6 +318,14 @@ new class extends Component
         $this->resetPage('hubspotPage');
     }
 
+    public function updatedTaxRegime(): void
+    {
+        if (! in_array($this->taxRegime, ['', 'mei', 'simples', 'nao_optante', 'desconhecido'], true)) {
+            $this->taxRegime = '';
+        }
+        $this->resetPage();
+    }
+
     public function updatedSearch(): void
     {
         $this->resetPage();
@@ -410,6 +421,7 @@ new class extends Component
             'icp',
             'crm',
             'crmSituation',
+            'taxRegime',
             'dueActionOnly',
             'queueDuePeriod',
             'state',
@@ -719,6 +731,23 @@ new class extends Component
                 $this->crmSituation !== '',
                 fn ($query) => app(\App\Services\LeadCrmSituationService::class)
                     ->apply($query, $this->crmSituation)
+            )
+            ->when(
+                $this->taxRegime !== '',
+                function ($query): void {
+                    match ($this->taxRegime) {
+                        'mei' => $query->where('companies.mei_option', true),
+                        'simples' => $query->where('companies.simples_option', true)
+                            ->where('companies.mei_option', false),
+                        'nao_optante' => $query->where('companies.simples_option', false)
+                            ->where('companies.mei_option', false),
+                        'desconhecido' => $query->where(function ($missing): void {
+                            $missing->whereNull('companies.simples_option')
+                                ->orWhereNull('companies.mei_option');
+                        }),
+                        default => $query->whereRaw('1 = 0'),
+                    };
+                }
             )
             ->when(
                 $this->dueActionOnly,
@@ -4836,6 +4865,17 @@ new class extends Component
 
 
             <div class="lf36-filter-field">
+    <label for="ec-tax-regime-filter">Regime tributário (Receita)</label>
+    <select id="ec-tax-regime-filter" class="rf-select" wire:model.live="taxRegime">
+        <option value="">Todos os regimes</option>
+        <option value="nao_optante">Não optante (Simples/MEI)</option>
+        <option value="simples">Simples Nacional</option>
+        <option value="mei">MEI / SIMEI</option>
+        <option value="desconhecido">Não informado</option>
+    </select>
+</div>
+
+            <div class="lf36-filter-field">
     <label for="lf36-filter-crmSituation">Situação CRM</label>
     <select id="lf36-filter-crmSituation" wire:model.live="crmSituation" class="rf-select lv15-crm-filter"
                     aria-label="Situação CRM">
@@ -5671,6 +5711,18 @@ new class extends Component
 
                         <div class="lv13-status">
                             <span class="lv13-pill lv13-status--{{ $v52VisibleStatus }}">{{ $this->workStatusLabel($v52VisibleStatus) }}</span>
+                            @php
+                                $taxTone = $lead->mei_option === true ? 'mei'
+                                    : ($lead->simples_option === true ? 'simples'
+                                    : ($lead->simples_option === false && $lead->mei_option === false ? 'not-opted' : 'unknown'));
+                                $taxLabel = match ($taxTone) {
+                                    'mei' => 'MEI · SIMEI',
+                                    'simples' => 'Simples Nacional',
+                                    'not-opted' => 'Não optante',
+                                    default => 'Regime não informado',
+                                };
+                            @endphp
+                            <span class="ec-tax-badge is-{{ $taxTone }}" title="Situação fiscal informada pela Receita ou API, quando disponível">{{ $taxLabel }}</span>
                             <small>{{ $leadIsOverdue ? 'Follow-up atrasado' : ($leadIsDueToday ? 'Ação hoje' : match ($v52VisibleStatus) {
                                 'known' => 'Atividade HubSpot nos últimos 30 dias',
                                 'reprospecting' => 'Sem atividade registrada há 90 dias ou mais',

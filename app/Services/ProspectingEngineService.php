@@ -108,11 +108,9 @@ final class ProspectingEngineService
                     'filters'
                 ];
 
-            if (
-                $pageResult[
-                    'items'
-                ] === []
-            ) {
+            // A27: uma página bruta pode conter somente optantes excluídos.
+            $sourceRows = $pageResult['source_row_count'];
+            if ($sourceRows === 0) {
                 break;
             }
 
@@ -193,14 +191,8 @@ final class ProspectingEngineService
                 }
             }
 
-            if (
-                count(
-                    $pageResult[
-                        'items'
-                    ]
-                )
-                < $pageSize
-            ) {
+            // O fim do cursor considera as linhas brutas, não as filtradas.
+            if ($sourceRows < $pageSize) {
                 break;
             }
         }

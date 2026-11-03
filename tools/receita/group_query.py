@@ -1,4 +1,8 @@
 from pathlib import Path
+import json
+
+from tax_registry import connect as connect_tax, statuses as tax_statuses
+from release_manifest import ReleaseValidationError
 import re
 
 import duckdb
@@ -327,8 +331,25 @@ def query_real_group(
             .fetchall()
         )
 
+        # A27: consulta fiscal opcional para cadastro/importação.
+        # Sem Simples.zip validado, manter desconhecido (não presumir N).
+        tax = {"simples_option": None, "mei_option": None}
+        tax_period = None
+        try:
+            tax_period = json.loads((data_dir / "manifest.json").read_text(encoding="utf-8"))["period"]
+            tax_connection = connect_tax(tax_period)
+            try:
+                tax = tax_statuses(tax_connection, [cnpj_root])[cnpj_root]
+            finally:
+                tax_connection.close()
+        except (ReleaseValidationError, OSError, ValueError, KeyError):
+            tax_period = None
+
         result = {
             "company": {
+                "simples_option": tax["simples_option"],
+                "mei_option": tax["mei_option"],
+                "tax_source_period": tax_period,
                 "corporate_name":
                     company[1],
 

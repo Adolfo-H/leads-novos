@@ -16,6 +16,8 @@ from prospect_query import (
     DEFAULT_PRIORITY_STATES,
     query_prospects,
 )
+from tax_registry import connect as connect_tax, statuses as tax_statuses
+
 from release_manifest import (
     ReleaseValidationError,
     validate_release,
@@ -121,6 +123,24 @@ def csv_values(value: str) -> list[str]:
         for item in value.split(",")
         if item.strip()
     ]
+
+
+@app.get("/tax-regimes")
+def get_tax_regimes(roots: str) -> dict:
+    """Consulta em lote por raiz; dados públicos fiscais da carga local RFB."""
+    values = csv_values(roots)
+    try:
+        manifest = validate_release(active_dataset_snapshot())
+        tax_connection = connect_tax(manifest["period"])
+        try:
+            profiles = tax_statuses(tax_connection, values)
+        finally:
+            tax_connection.close()
+        return {"period": manifest["period"], "statuses": profiles}
+    except ValueError as exception:
+        raise HTTPException(status_code=422, detail=str(exception)) from exception
+    except ReleaseValidationError as exception:
+        raise safe_dataset_error(exception) from exception
 
 
 @app.get("/prospects")

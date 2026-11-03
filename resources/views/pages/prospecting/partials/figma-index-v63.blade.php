@@ -96,6 +96,12 @@
     <form id="prv63-filters-form" class="prv63-form" wire:submit="search"
           x-on:submit="dirty=false; mode='preview'; candidatePage=1; selectedCandidate=0"
           x-show="mode==='config' || !$wire.searched || !!$wire.error" novalidate>
+        <div class="prv63-tax-rule" role="note">
+            <span aria-hidden="true">✓</span>
+            <div><strong>Exclusão automática: MEI e Simples Nacional</strong>
+                <p>O motor só seleciona empresas não optantes, conforme a carga oficial Simples.zip da mesma competência. Sem base fiscal validada, a busca é bloqueada.</p>
+            </div>
+        </div>
         <section class="prv63-card prv63-config-card" aria-labelledby="prv63-quantity-title">
             <h2 id="prv63-quantity-title">Dimensione a busca</h2>
             <label class="prv63-field-label" for="prv63-limit">Quantidade pretendida</label>

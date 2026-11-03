@@ -100,6 +100,9 @@ final class CnpjEnrichmentService
                         ]
                     ),
 
+                    'simples_option' => $this->taxBoolean($data['opcao_pelo_simples'] ?? null),
+                    'mei_option' => $this->taxBoolean($data['opcao_pelo_mei'] ?? null),
+
                     'source' => $source,
 
                     'source_updated_at' => now(),
@@ -790,5 +793,23 @@ final class CnpjEnrichmentService
         }
 
         return null;
+    }
+
+    /** Indicadores S/N, true/false; valores ausentes permanecem desconhecidos. */
+    private function taxBoolean(mixed $value): ?bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (! is_string($value)) {
+            return null;
+        }
+
+        return match (mb_strtoupper(trim($value))) {
+            'S', 'SIM', 'TRUE' => true,
+            'N', 'NAO', 'NÃO', 'FALSE' => false,
+            default => null,
+        };
     }
 }

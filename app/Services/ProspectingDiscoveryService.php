@@ -29,6 +29,7 @@ final class ProspectingDiscoveryService
      *         discovery_score: int|null
      *     }>,
      *     count: int,
+     *     source_row_count: int,
      *     limit: int,
      *     offset: int,
      *     dataset_version: string,
@@ -145,6 +146,9 @@ final class ProspectingDiscoveryService
         }
 
         if ($response->status() === 503) {
+            if (str_starts_with((string) $response->json('detail.code'), 'tax_registry_')) {
+                throw new RuntimeException('O arquivo Simples.zip da mesma competência ainda não foi processado. Prepare a base fiscal antes da prospecção.');
+            }
             throw new RuntimeException(
                 'A base local da Receita não está '
                 .'disponível para prospecção.'
@@ -189,6 +193,12 @@ final class ProspectingDiscoveryService
                 'O motor de prospecção não informou '
                 .'a versão da competência consultada.'
             );
+        }
+
+        // A27: a API de produção precisa comprovar que aplicou a exclusão fiscal.
+        // Uma versão antiga do serviço Receita NÃO pode fornecer candidatos.
+        if (app()->isProduction() && ($data['filters']['exclude_simples_mei'] ?? false) !== true) {
+            throw new RuntimeException('Motor Receita desatualizado: exclusão de MEI/Simples não confirmada.');
         }
 
         $rawItems =
@@ -365,6 +375,8 @@ final class ProspectingDiscoveryService
             'filters' => is_array($filters)
                     ? $filters
                     : [],
+
+            'source_row_count' => (int) ($data['source_row_count'] ?? count($items)),
         ];
     }
 

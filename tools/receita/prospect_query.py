@@ -10,6 +10,8 @@ import duckdb
 from group_query import (
     ReceitaDataFilesMissing,
 )
+from tax_registry import connect as connect_tax, statuses as tax_statuses
+
 from release_manifest import (
     ReleaseValidationError,
     validate_release,
@@ -129,6 +131,11 @@ def query_prospects(
         and expected_dataset_version != manifest["dataset_version"]
     ):
         raise ReleaseValidationError("dataset_version_changed")
+
+    # A27_EXCLUDE_SIMPL: sem o Simples.zip oficial da mesma competência,
+    # proibir qualquer nova descoberta (nunca presumir regime fiscal pelo porte).
+    tax_connection = connect_tax(manifest["period"])
+    tax_connection.close()
 
     states = normalize_states(
         states
@@ -654,6 +661,16 @@ def query_prospects(
         if profile_path is not None:
             profile_path.unlink(missing_ok=True)
 
+    # A27_EXCLUDE_SIMPL: a paginação avança sobre resultados brutos da
+    # consulta; contamos esse número para não encerrar ao filtrar uma página.
+    source_row_count = len(rows)
+    tax_connection = connect_tax(manifest["period"])
+    try:
+        tax_by_root = tax_statuses(tax_connection, [str(row[0]) for row in rows])
+    finally:
+        tax_connection.close()
+    rows = [row for row in rows if tax_by_root[str(row[0])]["regime"] == "nao_optante"]
+
     items = []
 
     for row in rows:
@@ -661,6 +678,8 @@ def query_prospects(
             {
                 "cnpj_root":
                     row[0],
+
+                "tax_regime": "nao_optante",
 
                 "cnpj":
                     row[1],
@@ -712,6 +731,8 @@ def query_prospects(
         "count":
             len(items),
 
+        "source_row_count": source_row_count,
+
         "limit":
             limit,
 
@@ -742,6 +763,9 @@ def query_prospects(
 
             "active_only":
                 True,
+
+            "exclude_simples_mei": True,
+            "tax_source_period": manifest["period"],
 
             "diversified_by":
                 [

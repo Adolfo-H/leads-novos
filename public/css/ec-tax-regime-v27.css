@@ -1,0 +1,16 @@
+/* A27: situação fiscal da Receita (MEI e Simples NÃO são deduzidos do porte). */
+.leads-rf .ec-tax-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;border:1px solid #a5bdc5;border-radius:6px;padding:3px 8px;font-size:10px;line-height:1.4;font-weight:730;white-space:normal;overflow-wrap:anywhere;background:#eef3f6;color:#284657}
+.leads-rf .ec-tax-badge.is-mei{background:#fff1e7;border-color:#e9bf9d;color:#90501b}
+.leads-rf .ec-tax-badge.is-simples{background:#f8ecff;border-color:#d4b2ed;color:#6b3899}
+.leads-rf .ec-tax-badge.is-not-opted{background:#e7f7f1;border-color:#a6d9c7;color:#12654c}
+.leads-rf .ec-tax-badge.is-unknown{background:#eef2f4;border-color:#c5d0d5;color:#586c75}
+html.dark body.ec-app-body .leads-rf .ec-tax-badge{background:#202a31!important;border-color:#62747e!important;color:#e9f0f3!important;-webkit-text-fill-color:#e9f0f3!important}
+html.dark body.ec-app-body .leads-rf .ec-tax-badge.is-mei{background:#493222!important;border-color:#aa7954!important;color:#ffe1c0!important;-webkit-text-fill-color:#ffe1c0!important}
+html.dark body.ec-app-body .leads-rf .ec-tax-badge.is-simples{background:#38273f!important;border-color:#946bab!important;color:#efd7ff!important;-webkit-text-fill-color:#efd7ff!important}
+html.dark body.ec-app-body .leads-rf .ec-tax-badge.is-not-opted{background:#1c3d33!important;border-color:#4f9d82!important;color:#ddfff2!important;-webkit-text-fill-color:#ddfff2!important}
+html.dark body.ec-app-body .leads-rf .ec-tax-badge.is-unknown{background:#292f35!important;border-color:#67717c!important;color:#cbd5dc!important;-webkit-text-fill-color:#cbd5dc!important}
+.prv63-tax-rule{display:flex;gap:10px;align-items:flex-start;background:#e7f5ef;border:1px solid #9ed5c0;color:#176146;padding:12px 15px;border-radius:10px;margin:12px 0 18px;font-size:13px;line-height:1.5}
+.prv63-tax-rule strong{display:block;font-weight:750}
+.prv63-tax-rule p{margin:3px 0 0}
+html.dark body.ec-app-body .prv63-tax-rule{background:#19352c!important;border-color:#548e78!important;color:#e8fff5!important}
+html.dark body.ec-app-body .prv63-tax-rule :is(strong,p){color:#e8fff5!important;-webkit-text-fill-color:#e8fff5!important}
