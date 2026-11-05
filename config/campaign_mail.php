@@ -24,6 +24,8 @@ return [
     'unsubscribe_base_url' => env('CAMPAIGN_UNSUBSCRIBE_BASE_URL', ''),
     // EC_CAMPAIGN_INTELLIGENCE_V9: desligados por padrão.
     'reply_send_enabled' => (bool) env('CAMPAIGN_REPLY_SEND_ENABLED', false),
+    // O gestor autoriza por campanha; esta chave habilita o executor automático.
+    'auto_followups_enabled' => (bool) env('CAMPAIGN_AUTO_FOLLOWUPS_ENABLED', false),
     'followup_drafts_enabled' => (bool) env('CAMPAIGN_SEQUENCE_DRAFTS_ENABLED', false),
     'queue' => env('CAMPAIGN_MAIL_QUEUE', 'campaigns'),
     // Piloto restrito a caixas individuais autorizadas; não libera campanhas reais.

@@ -5,20 +5,42 @@ namespace App\Services\Campaigns;
 use App\Models\EmailCampaign;
 use App\Models\EmailCampaignRecipient;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /** Prepara rascunhos de follow-up. Nunca inicia campanhas nem envia e-mails. */
 final class CampaignSequencePlanner
 {
-    public function create(User $user, EmailCampaign $source, string $name, int $days, string $subject, string $body): int
+    public function create(User $user, EmailCampaign $source, string $name, int $days, string $subject, string $body, bool $automatic = false, int $maxRounds = 1): int
     {
         abort_unless($user->isCommercialManager(), 403);
         if ($days < 1 || $days > 90 || mb_strlen(trim($subject)) < 3 || mb_strlen(trim($body)) < 10) {
             throw ValidationException::withMessages(['sequence' => 'Informe 1 a 90 dias, assunto e corpo válidos.']);
         }
+        // Compatibilidade: um rascunho pode conter histórico já enviado.
+        // A segunda rodada permanece bloqueada até a conclusão em prepare().
+        if (DB::table('email_campaign_sequences')->where('email_campaign_id', $source->id)
+            ->whereIn('status', ['planned', 'prepared'])->exists()) {
+            throw ValidationException::withMessages(['sequence' => 'Esta campanha já possui segunda rodada planejada.']);
+        }
         if (! $source->recipients()->where('status', 'sent')->exists()) {
             throw ValidationException::withMessages(['sequence' => 'A campanha de origem não possui mensagens aceitas pelo SMTP.']);
+        }
+        if ($automatic) {
+            if ($source->status !== 'completed' || $source->followup_root_campaign_id !== null) {
+                throw ValidationException::withMessages(['sequence' => 'A continuidade automática exige a campanha original já concluída.']);
+            }
+            if ($maxRounds < 1 || $maxRounds > 4) {
+                throw ValidationException::withMessages(['max_rounds' => 'Selecione entre 1 e 4 novas rodadas.']);
+            }
+            $existing = DB::table('email_campaign_sequences')
+                ->where('email_campaign_id', $source->id)
+                ->where('automatic', true)
+                ->whereIn('status', ['active', 'paused'])->exists();
+            if ($existing) {
+                throw ValidationException::withMessages(['sequence' => 'Esta campanha já possui uma continuidade automática ativa ou pausada.']);
+            }
         }
 
         return (int) DB::table('email_campaign_sequences')->insertGetId([
@@ -27,7 +49,12 @@ final class CampaignSequencePlanner
             'subject' => mb_substr(trim($subject), 0, 180),
             'body' => mb_substr(trim($body), 0, 12000),
             'delay_days' => $days,
-            'status' => 'planned',
+            'status' => $automatic ? 'active' : 'planned',
+            'automatic' => $automatic,
+            'max_rounds' => $automatic ? $maxRounds : 1,
+            'sent_rounds' => 0,
+            'last_campaign_id' => $automatic ? $source->id : null,
+            'automatic_authorized_at' => $automatic ? now('UTC') : null,
             'created_by' => $user->id,
             'created_at' => now('UTC'), 'updated_at' => now('UTC'),
         ]);
@@ -36,36 +63,49 @@ final class CampaignSequencePlanner
     public function prepare(User $user, int $sequenceId): ?int
     {
         abort_unless($user->isCommercialManager(), 403);
-        if (config('campaign_mail.live_enabled')) {
-            throw ValidationException::withMessages(['sequence' => 'Bloqueie disparos comerciais antes de preparar follow-ups.']);
-        }
 
+        // EC_CAMPAIGNS_FOLLOWUP_V294: preparar RASCUNHO não depende do gate SMTP.
+        // Nenhuma mensagem é enfileirada ou enviada aqui.
         return DB::transaction(function () use ($sequenceId): ?int {
             $plan = DB::table('email_campaign_sequences')->where('id', $sequenceId)->lockForUpdate()->first();
-            if ($plan === null || $plan->status !== 'planned') {
+            if ($plan === null || (bool) $plan->automatic || $plan->status !== 'planned') {
                 return $plan !== null && $plan->draft_campaign_id !== null ? (int) $plan->draft_campaign_id : null;
             }
             $source = EmailCampaign::query()->findOrFail((int) $plan->email_campaign_id);
+            $cutoff = now('UTC')->subDays((int) $plan->delay_days);
+            if ($source->status !== 'completed'
+                || ($source->completed_at !== null && Carbon::parse($source->completed_at)->gt($cutoff))) {
+                return null;
+            }
+            // A carência conta do ÚLTIMO envio, não do primeiro.
+            $lastSent = EmailCampaignRecipient::query()->where('email_campaign_id', $source->id)
+                ->where('status', 'sent')->max('sent_at');
+            if ($lastSent === null || Carbon::parse($lastSent)->gt($cutoff)) {
+                return null;
+            }
+
             $limit = max(1, min(500, (int) config('campaign_mail.max_recipients', 100)));
-            $ready = [];
-            $originals = EmailCampaignRecipient::query()->where('email_campaign_id', $source->id)
+            // Filtragem no SQL: sem N+1 ou recorte antes de remover contatos inelegíveis.
+            $ready = EmailCampaignRecipient::query()
+                ->where('email_campaign_id', $source->id)
                 ->where('status', 'sent')->whereNull('replied_at')
                 ->whereNull('excluded_from_sequences_at')
-                ->where('sent_at', '<=', now('UTC')->subDays((int) $plan->delay_days))
+                ->where('sent_at', '<=', $cutoff)
+                ->whereNotIn('id', DB::table('email_campaign_replies')
+                    ->whereNotNull('email_campaign_recipient_id')->select('email_campaign_recipient_id'))
+                ->whereNotIn('normalized_email', DB::table('email_campaign_replies as r')
+                    ->join('email_campaign_recipients as cr', 'cr.id', '=', 'r.email_campaign_recipient_id')
+                    ->whereNotNull('cr.normalized_email')->select('cr.normalized_email'))
+                ->whereNotIn('normalized_email', DB::table('email_campaign_bounces')->select('final_recipient'))
+                ->whereNotIn('normalized_email', DB::table('email_campaign_suppressions')->select('normalized_email'))
                 ->orderBy('id')->limit($limit + 1)->get();
-            foreach ($originals as $original) {
-                if (count($ready) >= $limit) {
-                    break;
-                }
-                $excluded = DB::table('email_campaign_replies')->where('email_campaign_recipient_id', $original->id)->exists()
-                    || DB::table('email_campaign_bounces')->where('email_campaign_recipient_id', $original->id)->exists()
-                    || DB::table('email_campaign_suppressions')->where('normalized_email', $original->normalized_email)->exists();
-                if (! $excluded) {
-                    $ready[] = $original;
-                }
+            if ($ready->isEmpty()) {
+                return null; // Nenhum destinatário elegível; plano segue aguardando.
             }
-            if ($ready === []) {
-                return null; // Sem destinatários vencidos; retentativa futura é segura.
+            if ($ready->count() > $limit) {
+                throw ValidationException::withMessages([
+                    'sequence' => 'A segunda rodada ultrapassa o limite de '.$limit.' destinatários. Divida o público antes de preparar.',
+                ]);
             }
             $draft = EmailCampaign::query()->create([
                 'name' => '[FOLLOW-UP] '.mb_substr((string) $plan->name, 0, 150),

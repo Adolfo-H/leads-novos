@@ -12,6 +12,8 @@
             src="{{ asset('images/brand/pngexportcontrol.png') }}"
             alt="ExportControl"
             class="ec-brand-image"
+            width="42"
+            height="42"
         >
     </span>
 

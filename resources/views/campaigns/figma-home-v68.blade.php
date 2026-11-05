@@ -1,4 +1,5 @@
 {{-- CAMPANHAS_FIGMA_V68_M01 — nova página inicial, integrada ao Livewire real. --}}
+{{-- Rodadas automáticas aparecem como campanhas individuais, com nome [Rodada N]. --}}
 @php
     $ec68PageSize = 8;
     $ec68Matched = $campaignsList->count();
@@ -14,6 +15,9 @@
         <article class="ec68-stat ec68-stat--accent"><span>Aceitos hoje SMTP</span><strong>{{ $ec68Fmt($counts['sent_today']) }}</strong><small>Aceitação não comprova entrega</small></article>
         <article class="ec68-stat"><span>Respostas</span><strong>{{ $ec68Fmt($counts['replies']) }}</strong><small>Respostas identificadas</small></article>
     </div>
+
+    {{-- ecfv3-home-before-status: próximos follow-ups antes do status SMTP --}}
+    @include('campaigns.followup-schedule-home-v4')
 
     <div class="ec69-send-status {{ $canStart ? 'is-ready' : 'is-pending' }}" role="status">
         <span class="ec69-send-mark" aria-hidden="true">{{ $canStart ? '✓' : 'i' }}</span>

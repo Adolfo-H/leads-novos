@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\EmailCampaign;
 use App\Models\EmailCampaignReply;
 use App\Models\User;
+use App\Services\Campaigns\CampaignAutomaticFollowups;
 use App\Services\Campaigns\CampaignHumanReplies;
 use App\Services\Campaigns\CampaignIntelligenceMetrics;
 use App\Services\Campaigns\CampaignManager;
@@ -108,11 +109,20 @@ final class CampaignIntelligenceController extends Controller
             'delay_days' => ['required', 'integer', 'min:1', 'max:90'],
             'subject' => ['required', 'string', 'min:3', 'max:180'],
             'body' => ['required', 'string', 'min:10', 'max:12000'],
+            'automatic' => ['nullable', 'boolean'],
+            'max_rounds' => ['nullable', 'integer', 'min:1', 'max:4'],
+            'confirm_auto' => ['nullable', 'accepted'],
         ]);
+        $automatic = $request->boolean('automatic');
+        if ($automatic && ! $request->boolean('confirm_auto')) {
+            throw ValidationException::withMessages(['confirm_auto' => 'Autorize expressamente as rodadas automáticas e as regras de descadastro.']);
+        }
         $source = EmailCampaign::query()->findOrFail((int) $data['email_campaign_id']);
-        $planner->create($user, $source, (string) $data['name'], (int) $data['delay_days'], (string) $data['subject'], (string) $data['body']);
+        $planner->create($user, $source, (string) $data['name'], (int) $data['delay_days'], (string) $data['subject'], (string) $data['body'], $automatic, (int) ($data['max_rounds'] ?? 1));
 
-        return redirect()->route('campaigns.intelligence.index')->with('intelligence_success', 'Follow-up planejado. Ainda não há rascunho nem envio.');
+        return redirect()->route('campaigns.index')->with('intelligence_success', $automatic
+            ? 'Continuidade automática salva. As rodadas dependem do intervalo, SMTP e IMAP ativos.'
+            : 'Follow-up planejado. Ainda não há rascunho nem envio.');
     }
 
     public function prepare(Request $request, int $sequence, CampaignSequencePlanner $planner): RedirectResponse
@@ -124,6 +134,16 @@ final class CampaignIntelligenceController extends Controller
         return redirect()->route('campaigns.intelligence.index')->with('intelligence_success', $draftId !== null
             ? 'Rascunho de follow-up nº '.$draftId.' preparado, sem enviar mensagens.'
             : 'Nenhum destinatário elegível venceu o prazo; nada foi gerado.');
+    }
+
+    public function pauseSequence(Request $request, int $sequence, CampaignAutomaticFollowups $service): RedirectResponse
+    {
+        $user = $this->manager();
+        $data = $request->validate(['pause' => ['required', 'boolean']]);
+        $service->setPaused($user, $sequence, (bool) $data['pause']);
+
+        return redirect()->route('campaigns.index')->with('intelligence_success',
+            $data['pause'] ? 'Próximas rodadas pausadas.' : 'Próximas rodadas retomadas.');
     }
 
     public function sendReply(Request $request, CampaignHumanReplies $service): RedirectResponse

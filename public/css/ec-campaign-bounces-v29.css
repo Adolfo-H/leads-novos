@@ -1,0 +1,45 @@
+/* A29 — avisos de DSN confirmados, somente leitura; escopo de Campanhas. */
+.ecm2 .ec29-bounce-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    margin: .9rem 0; padding: .95rem 1.1rem; border-radius: 12px;
+    border: 1px solid #e2bb70; background: #fff8e9; color: #564116;
+}
+.ecm2 .ec29-bounce-banner strong { display: block; font-size: .95rem; }
+.ecm2 .ec29-bounce-banner p { margin: .3rem 0 0; font-size: .83rem; line-height: 1.5; }
+.ecm2 .ec29-bounce-button {
+    border: 1px solid #b98b3d; background: #fff; color: #684812;
+    border-radius: 9px; padding: .65rem .85rem; cursor: pointer;
+    font-size: .82rem; font-weight: 700; white-space: nowrap;
+}
+.ecm2 .ec29-bounce-button:hover, .ecm2 .ec29-bounce-button:focus-visible {
+    outline: 2px solid #0a958e; outline-offset: 2px;
+}
+.ecm2 .ec29-sidebar-count { display: inline-block; color: #955c20; font-size: .75rem; font-weight: 700; margin-top: .3rem; }
+.ecm2 .ec29-recipient-bounced { display: block; margin-top: .3rem; color: #a24a22; font-size: .8rem; font-weight: 700; line-height: 1.4; }
+.ecm2 .ec29-recipient-detail { display: block; margin-top: .15rem; color: #57667a; font-size: .74rem; overflow-wrap: anywhere; }
+.ecm2 .ec29-bounce-panel { padding: 1rem 0; }
+.ecm2 .ec29-bounce-top { display: flex; align-items: end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.ecm2 .ec29-bounce-top h3 { font-size: 1.1rem; font-weight: 750; margin: 0 0 .3rem; color: #0c3046; }
+.ecm2 .ec29-bounce-top p { margin: 0; color: #526b7e; font-size: .84rem; max-width: 56rem; }
+.ecm2 .ec29-bounce-filter { display: flex; align-items: center; gap: .6rem; font-size: .82rem; font-weight: 600; color: #153d50; }
+.ecm2 .ec29-bounce-filter select { min-width: 150px; max-width: 100%; padding: .5rem .7rem; background: #fff; border: 1px solid #bfced4; border-radius: 8px; color: #173b50; }
+.ecm2 .ec29-bounce-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; margin: .75rem 0 1rem; }
+.ecm2 .ec29-bounce-metrics > div { border: 1px solid #d7e2e8; background: #f7fafb; border-radius: 10px; padding: .85rem; }
+.ecm2 .ec29-bounce-metrics small { display: block; font-size: .78rem; color: #536e80; }
+.ecm2 .ec29-bounce-metrics strong { display: block; font-size: 1.35rem; color: #0c3046; }
+.ecm2 .ec29-bounce-table td { vertical-align: top; overflow-wrap: anywhere; }
+.ecm2 .ec29-bounce-table td small { display: block; margin-top: .2rem; font-size: .77rem; color: #647688; }
+.ecm2 .ec29-bounce-reason { color: #a34e21; font-weight: 700; }
+.ecm2 .ec29-bounce-note { margin: .7rem 0; color: #62788a; font-size: .79rem; line-height: 1.5; }
+.ecm2 .ec29-bounce-imap-warning { padding: .8rem 1rem; border: 1px solid #d6c18c; background: #fff9ec; border-radius: 9px; color: #684e20; font-size: .8rem; }
+.ecm2 .ec29-bounce-pagination { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 0; }
+.ecm2 .ec29-bounce-pagination button { min-width: 2.2rem; min-height: 2.2rem; padding: .35rem .7rem; border: 1px solid #bfcdd4; border-radius: 7px; background: #fff; color: #12354a; }
+.ecm2 .ec29-bounce-pagination button:disabled { opacity: .45; cursor: not-allowed; }
+/* Prefere contraste legível também no tema escuro do Prospector. */
+.ec-app-body[data-theme="dark"] .ecm2 .ec29-bounce-banner,
+.ec-app-body.ec-theme-dark .ecm2 .ec29-bounce-banner { background: #27302d; color: #f7e4b3; border-color: #99713b; }
+@media (max-width: 800px) {
+    .ecm2 .ec29-bounce-banner { align-items: start; flex-direction: column; }
+    .ecm2 .ec29-bounce-metrics { grid-template-columns: 1fr; }
+    .ecm2 .ec29-bounce-filter { width: 100%; justify-content: space-between; }
+}

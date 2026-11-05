@@ -5,6 +5,7 @@ use App\Models\EmailCampaignBounce;
 use App\Services\Campaigns\CampaignQueueHealth;
 use App\Services\Campaigns\CampaignQueueSimulator;
 use App\Services\Campaigns\CampaignSendPolicy;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -65,6 +66,25 @@ new class extends Component
         return EmailCampaignBounce::query()->with('campaign')->orderByDesc('id')->limit(15)->get();
     }
 
+    // EC_CAMPAIGNS_FOLLOWUP_V294: devoluções não atribuídas não contam como falha de campanha.
+    #[Computed]
+    public function unmatchedSummary(): int
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof User && $user->isCommercialManager(), 403);
+        return DB::table('email_campaign_unmatched_bounces')->count();
+    }
+
+    /** @return \Illuminate\Support\Collection<int, object> */
+    #[Computed]
+    public function unmatchedBounces(): \Illuminate\Support\Collection
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof User && $user->isCommercialManager(), 403);
+        return DB::table('email_campaign_unmatched_bounces')
+            ->orderByDesc('received_at')->orderByDesc('id')->limit(40)->get();
+    }
+
     public function selectScenario(int $scenario): void
     {
         $this->ensureManager();
@@ -92,7 +112,7 @@ new class extends Component
     public function refreshQueue(): void
     {
         $this->ensureManager();
-        unset($this->health, $this->simulation, $this->effective, $this->bounceSummary, $this->recentBounces);
+        unset($this->health, $this->simulation, $this->effective, $this->bounceSummary, $this->recentBounces, $this->unmatchedSummary, $this->unmatchedBounces);
     }
 };
 ?>

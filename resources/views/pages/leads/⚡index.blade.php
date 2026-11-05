@@ -376,8 +376,16 @@ new class extends Component
     public function updatedOwner(): void
     {
         $this->dailyView = '';
-
+        // Evita etapa da carteira antiga quando o gestor troca de vendedor.
+        if ($this->personalHubSpotStage !== '' || $this->globalHubSpotStage !== '') {
+            $this->personalHubSpotStage = '';
+            $this->globalHubSpotStage = '';
+            $this->crm = '';
+        }
+        $this->selectedGlobalDealIds = [];
+        unset($this->crmStageOptions);
         $this->resetPage();
+        $this->resetPage('globalStageDealsPage');
     }
 
     public function updatedWorkStatus(): void
@@ -2276,10 +2284,25 @@ new class extends Component
      * o catálogo corrige o rótulo sem abrir acesso a outras carteiras.
      * @return list<array{label:string,count:int}>
      */
+    /** Carteira usada nos cards e no clique da etapa: gestor pode escolher qualquer vendedor. */
+    private function effectivePipelineOwnerId(): ?int
+    {
+        $mine = $this->authenticatedUserId();
+        if (! $this->isCommercialManager() || $this->owner === '' || $this->owner === 'mine') {
+            return $mine;
+        }
+        if ($this->owner === 'unassigned') {
+            return null;
+        }
+
+        return ctype_digit($this->owner) && (int) $this->owner > 0
+            ? (int) $this->owner : null;
+    }
+
     #[Computed]
     public function crmStageOptions(): array
     {
-        $userId = $this->authenticatedUserId();
+        $userId = $this->effectivePipelineOwnerId();
         if ($userId === null) {
             return [];
         }
@@ -3417,7 +3440,7 @@ new class extends Component
     private function personalHubSpotStageQuery(): \Illuminate\Database\Eloquent\Builder
     {
         $query = HubSpotDeal::query();
-        $userId = $this->authenticatedUserId();
+        $userId = $this->effectivePipelineOwnerId();
         $stage = trim($this->personalHubSpotStage);
         if ($userId === null || $stage === '') {
             return $query->whereRaw('1 = 0');
@@ -3501,11 +3524,14 @@ new class extends Component
          * Limpamos filtros anteriores para que
          * clicar numa etapa mostre sua base real.
          */
+        // Preserva a pessoa selecionada antes de limpar os demais filtros.
+        $ownerChoice = $this->owner;
         $this->clearFilters();
         $this->personalHubSpotStage = $stage;
 
-        // O clique no pipeline pessoal mantém a consulta na carteira do usuário.
-        $this->owner = 'mine';
+        $this->owner = $this->isCommercialManager()
+            && ctype_digit($ownerChoice) && (int) $ownerChoice > 0
+            ? $ownerChoice : 'mine';
         $this->crm =
             'stage:'
             .$stage;
@@ -5037,10 +5063,10 @@ new class extends Component
         @endif
 
         {{-- Faixa original preservada: evita perda de filtros e usa crmStageOptions. --}}
-        <details class="lf361-pipeline-access" aria-label="Pipeline dos negócios da minha carteira">
+        <details class="lf361-pipeline-access" aria-label="Pipeline de negócios do responsável selecionado">
             <summary class="lf361-pipeline-summary">
-                <span class="lf37-personal-title">Pipeline HubSpot · Minha carteira</span>
-                <span class="lf361-pipeline-open-label lf37-personal-meta">{{ collect($this->crmStageOptions)->sum('count') }} negócio(s) dos meus leads · Ver etapas</span>
+                <span class="lf37-personal-title">Pipeline HubSpot · {{ $this->isCommercialManager() && ctype_digit($owner) ? ($this->salesUsers->firstWhere('id', (int) $owner)?->name ?? 'Responsável selecionado') : 'Minha carteira' }}</span>
+                <span class="lf361-pipeline-open-label lf37-personal-meta">{{ collect($this->crmStageOptions)->sum('count') }} negócio(s) · Ver etapas</span>
             </summary>
             @include('partials.leads-crm-stage-strip')
         </details>

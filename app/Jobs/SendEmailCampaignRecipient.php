@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Mail\ProspectorCampaignMessage;
 use App\Models\EmailCampaign;
 use App\Models\EmailCampaignRecipient;
+use App\Services\Campaigns\CampaignAutomaticFollowupGuard;
 use App\Services\Campaigns\CampaignContent;
 use App\Services\Campaigns\CampaignDispatcher;
 use App\Services\Campaigns\CampaignSendPolicy;
@@ -91,6 +92,12 @@ class SendEmailCampaignRecipient implements ShouldQueue
             }
             // EC_CAMPAIGN_INTELLIGENCE_V9: verifica resposta/DSN/opt-out também no instante do job.
             if (app(CampaignSequenceGuard::class)->suppressIfAnswered($row)) {
+                return null;
+            }
+            // Guard adicional para toda a cadeia de rodadas automaticas.
+            // Nao substitui as correcoes existentes de SequenceGuard.
+            if (app(CampaignAutomaticFollowupGuard::class)
+                ->suppressIfIneligible($row)) {
                 return null;
             }
             if ($dispatcher->markAsSuppressedIfNecessary($row)) {

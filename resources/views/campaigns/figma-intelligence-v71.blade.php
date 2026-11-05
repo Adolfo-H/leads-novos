@@ -115,7 +115,7 @@
             </form>
         </section>
         <section class="ec71-card" id="ec71-followups">
-            <div class="ec71-card-header"><h2>Planejamento de follow-up</h2><p>Prepare um acompanhamento posterior apenas de contatos elegíveis, sem enviar na criação.</p></div>
+            <div class="ec71-card-header"><h2>Planejamento de follow-up</h2><p>Escolha a mensagem e quando cada rodada será enviada. O modo automático começa somente após a campanha original estar concluída e o prazo vencer.</p></div>
             <form action="{{ route('campaigns.intelligence.sequence') }}" method="POST" class="ec71-stacked-form">
                 @csrf
                 <label class="ec71-field" for="ec71-source"><span>Campanha original</span>
@@ -127,16 +127,20 @@
                 <label class="ec71-field" for="ec71-sequence-delay"><span>Dias desde o aceite SMTP</span><input id="ec71-sequence-delay" name="delay_days" type="number" min="1" max="90" value="5" required></label>
                 <label class="ec71-field" for="ec71-sequence-subject"><span>Assunto do follow-up</span><input id="ec71-sequence-subject" name="subject" required minlength="3" maxlength="180" placeholder="Assunto da retomada"></label>
                 <label class="ec71-field" for="ec71-sequence-body"><span>Mensagem do follow-up</span><textarea id="ec71-sequence-body" name="body" required minlength="10" maxlength="12000"></textarea></label>
+                <label class="ec71-checkbox"><input type="checkbox" name="automatic" value="1"><span>Ativar continuidade automática após a campanha inicial, quando elegível</span></label>
+                <label class="ec71-field"><span>Quantidade máxima de follow-ups</span><select name="max_rounds"><option value="1">1 (segunda rodada)</option><option value="2" selected>2 (até terceira rodada)</option><option value="3">3 (até quarta rodada)</option><option value="4">4 (até quinta rodada)</option></select></label>
+                <label class="ec71-checkbox"><input type="checkbox" name="confirm_auto" value="1"><span>Autorizo previamente as rodadas automáticas e as exclusões por resposta, bounce e descadastro (necessário se ativar automático).</span></label>
+                <p class="ec71-hint">A criação do plano não envia e-mails. O executor usa fila, IMAP recente, quotas e descadastro HTTPS; novos envios ficam bloqueados se CAMPAIGN_AUTO_FOLLOWUPS_ENABLED=false.</p>
                 <button class="ec71-btn ec71-btn-primary" type="submit" @disabled($campaigns->isEmpty())>Salvar planejamento</button>
             </form>
         </section>
     </div>
 
     <section class="ec71-card" id="ec71-followup-plans" aria-labelledby="ec71-plans-title">
-        <div class="ec71-card-header"><h2 id="ec71-plans-title">Planos de follow-up</h2><p>Rascunhos programados para revisão do responsável.</p></div>
+        <div class="ec71-card-header"><h2 id="ec71-plans-title">Planos de follow-up</h2><p>Confira os envios automáticos autorizados e os rascunhos manuais.</p></div>
         <div class="ec71-table-scroll"><table class="ec71-table"><thead><tr><th>Plano</th><th>Campanha de origem</th><th>Espera</th><th>Situação</th><th>Ação</th></tr></thead><tbody>
             @forelse ($sequences as $seq)
-                <tr><td><strong>{{ $seq->name }}</strong></td><td>#{{ $seq->email_campaign_id }}</td><td>{{ $seq->delay_days }} dias</td><td><span class="ec71-badge">{{ $seq->status }}</span>@if ($seq->draft_campaign_id) <small>#{{ $seq->draft_campaign_id }}</small> @endif</td>
+                <tr><td><strong>{{ $seq->name }}</strong></td><td>#{{ $seq->email_campaign_id }}</td><td>{{ $seq->delay_days }} dias</td><td><span class="ec71-badge">{{ $seq->status }}{{ ($seq->automatic ?? false) ? ' · automático ' . ($seq->sent_rounds ?? 0) . '/' . ($seq->max_rounds ?? 1) : '' }}</span>@if ($seq->draft_campaign_id) <small>#{{ $seq->draft_campaign_id }}</small> @endif</td>
                     <td>@if ($seq->status === 'planned')
                         <form method="POST" action="{{ route('campaigns.intelligence.prepare', ['sequence' => $seq->id]) }}" class="ec71-plan-action">@csrf
                             <label class="ec71-checkbox"><input name="confirm_draft" value="1" type="checkbox" required><span>Somente rascunho</span></label>

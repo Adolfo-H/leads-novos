@@ -297,19 +297,18 @@ new class extends Component
 
             return;
         }
-        if ($status === 'unknown') {
-            ContactPhoneVerification::query()
-                ->where('source_key', $source['source_key'])
-                ->where('phone_normalized', $digits)->delete();
-        } else {
-            ContactPhoneVerification::query()->updateOrCreate(
-                ['source_key' => $source['source_key'], 'phone_normalized' => $digits],
-                ['whatsapp_status' => $status, 'verified_by' => auth()->id(), 'verified_at' => now()],
-            );
-        }
+        // EC_WA_FORMAT_SYNC_V3: um único status auditável para Contatos e Central WhatsApp.
+        $indexField = match ($field) {
+            'phone_1' => 'phone',
+            'phone_2' => 'mobile_phone',
+            default => $field,
+        };
+        app(\App\Services\Contacts\ContactWhatsappStatusBridge::class)->change(
+            auth()->user(), (string) $source['source_key'], $digits, $indexField, $status,
+        );
         app(ContactPeopleDirectory::class)->clearCachedTotals();
         unset($this->detail, $this->contactIndex, $this->globalSummary);
-        session()->flash('contacts_success', 'Verificação de WhatsApp atualizada.');
+        session()->flash('contacts_success', 'Status de WhatsApp salvo e sincronizado com todos os contatos vinculados.');
     }
 
     // --- Layout V3: lista unificada com filtros e inspetor lateral. ---
@@ -511,19 +510,18 @@ new class extends Component
 
             return;
         }
-        if ($status === 'unknown') {
-            ContactPhoneVerification::query()
-                ->where('source_key', $source['source_key'])
-                ->where('phone_normalized', $digits)->delete();
-        } else {
-            ContactPhoneVerification::query()->updateOrCreate(
-                ['source_key' => $source['source_key'], 'phone_normalized' => $digits],
-                ['whatsapp_status' => $status, 'verified_by' => auth()->id(), 'verified_at' => now()],
-            );
-        }
+        // EC_WA_FORMAT_SYNC_V3: um único status auditável para Contatos e Central WhatsApp.
+        $indexField = match ($field) {
+            'phone_1' => 'phone',
+            'phone_2' => 'mobile_phone',
+            default => $field,
+        };
+        app(\App\Services\Contacts\ContactWhatsappStatusBridge::class)->change(
+            auth()->user(), (string) $source['source_key'], $digits, $indexField, $status,
+        );
         app(ContactPeopleDirectory::class)->clearCachedTotals();
         unset($this->contactIndex, $this->globalSummary, $this->detail);
-        session()->flash('contacts_success', 'Confirmação de WhatsApp atualizada.');
+        session()->flash('contacts_success', 'Status de WhatsApp salvo e sincronizado com todos os contatos vinculados.');
     }
 
     // EC_EMAIL_CAMPAIGNS_V1_CONTACT_ACTION
@@ -592,6 +590,18 @@ new class extends Component
     $index = $this->contactIndex;
     $totals = $this->globalSummary;
     $rows = $index->items();
+    // EC_WA_PUBLIC_SITES_V10: evidência por número dos contatos desta página (uma consulta; sem N+1).
+    $waPublicKeys = [];
+    $waVisibleKeys = array_values(array_filter(array_map(
+        static fn ($r): string => (string) ($r->source_key ?? ''), $rows,
+    )));
+    if ($waVisibleKeys !== []) {
+        $waPublicKeys = \Illuminate\Support\Facades\DB::table('whatsapp_phone_sources as s')
+            ->join('whatsapp_public_site_evidences as ev', 'ev.phone_id', '=', 's.phone_id')
+            ->whereIn('s.source_key', $waVisibleKeys)
+            ->select('s.source_key', 's.raw_digits')->distinct()->get()
+            ->mapWithKeys(static fn ($r): array => [$r->source_key.'|'.$r->raw_digits => true])->all();
+    }
     $selected = collect($rows)->first(
         fn ($p) => (string) data_get($p, 'source_key', '') === $selectedPersonKey
     ) ?? ($rows[0] ?? null);
@@ -843,6 +853,9 @@ new class extends Component
                 </div>
             </section>
 
+            {{-- EC_WA_PUBLIC_DIRECTORY_V14_CONTACTS: telefones institucionais ficam visíveis sem criar pessoas fictícias. --}}
+            @include('contacts.whatsapp-public-in-contacts-v14')
+
             <div class="ecc3-table-panel">
                 <div class="ecc3-list-header">
                     <div class="ecc3-list-title">
@@ -951,6 +964,9 @@ new class extends Component
                                         <span class="ecc3-muted">{{ $phone ?: '—' }}</span>
                                     @endif
                                     <small class="c66-phone-status">{{ match ($wa) { 'yes' => 'WhatsApp confirmado', 'no' => 'Sem WhatsApp', 'none' => 'Sem número', default => 'Não verificado' } }}</small>
+                                    @if(isset($waPublicKeys[(string) $row->source_key.'|'.ContactDirectory::digits((string) $row->phone)]) || isset($waPublicKeys[(string) $row->source_key.'|'.ContactDirectory::digits((string) $row->mobile_phone)]))
+                                        <small class="wa10-contacts-flag" style="display:inline-block;color:#008e7d;font-size:10px;font-weight:700" title="Encontrado em site empresarial; não comprova conta ativa">WhatsApp divulgado no site</small>
+                                    @endif
                                 </td>
                                 <td>
                                     <span class="ecc3-wa ecc3-wa-{{ $wa }}">

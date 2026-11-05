@@ -137,4 +137,36 @@
             </details>
         @endif
     </section>
+
+    {{-- EC_CAMPAIGNS_FOLLOWUP_V294 — relatórios NÃO vinculados: gestores, leitura somente. --}}
+    @if (auth()->user()?->isCommercialManager())
+    <section id="ec294-unmatched" class="ec294-unmatched" aria-labelledby="ec294-unmatched-title">
+        <span class="ec294-unmatched-label">ENTREGABILIDADE · REVISÃO</span>
+        <div class="ec294-unmatched-summary">
+            <div>
+                <h2 id="ec294-unmatched-title">Devoluções sem vínculo com campanhas</h2>
+                <p>Relatórios estruturados recebidos na caixa, mas sem Message-ID e destinatário que comprovem um envio pelo Prospector.</p>
+            </div>
+            <strong>{{ number_format($this->unmatchedSummary, 0, ',', '.') }}</strong>
+        </div>
+        <div class="ec294-notice">Estes registros <strong>não são atribuídos a campanhas</strong>, não bloqueiam contatos e não representam disparos do Prospector. Exibimos endereços mascarados; avisos sem DSN confiável não entram aqui.</div>
+        @if ($this->unmatchedBounces->isNotEmpty())
+            <div class="ec294-scroll">
+                <table class="ec294-table"><thead><tr><th>Destinatário mascarado</th><th>Motivo informado pelo código</th><th>DSN</th><th>Recebido em</th></tr></thead>
+                <tbody>
+                @foreach ($this->unmatchedBounces as $unlinked)
+                    <tr wire:key="ec294-unlinked-{{ $unlinked->id }}">
+                        <td>{{ $unlinked->recipient_mask ?: 'Não informado' }}</td>
+                        <td>{{ \App\Services\Campaigns\CampaignBounceReason::label((string) $unlinked->status_code) }}</td>
+                        <td><code>{{ $unlinked->status_code }}</code></td>
+                        <td>{{ $unlinked->received_at ? \Illuminate\Support\Carbon::parse($unlinked->received_at)->timezone('America/Sao_Paulo')->format('d/m/Y H:i') : '—' }}</td>
+                    </tr>
+                @endforeach
+                </tbody></table>
+            </div>
+        @else
+            <p class="ec294-muted">Nenhum DSN sem vínculo registrado. Para recuperar os avisos recentes, execute uma única vez a leitura retroativa pelo comando de IMAP.</p>
+        @endif
+    </section>
+    @endif
 </div>

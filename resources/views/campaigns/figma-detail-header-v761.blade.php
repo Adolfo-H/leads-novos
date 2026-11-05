@@ -48,6 +48,9 @@ $ec68Pending = (int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0) 
         </div>
         </div>
 
+        {{-- ecfv3-detail-before-metrics: previsão e e-mail em destaque --}}
+        @include('campaigns.followup-schedule-detail-v5')
+
         <div class="ec76-metrics" aria-label="Indicadores reais da campanha">
             <article class="ec76-metric">
                 <span>Destinatários</span>
@@ -70,6 +73,17 @@ $ec68Pending = (int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0) 
                 <small>Registradas no sistema</small>
             </article>
         </div>
+
+        {{-- EC_CAMPAIGNS_BOUNCE_VISIBILITY_V29: aviso real de DSN, sem presumir entrega. --}}
+        @if ($this->bounceSummary['total'] > 0)
+            <div class="ec29-bounce-banner" role="status" data-ec-bounce-warning>
+                <div>
+                    <strong>{{ $this->bounceSummary['total'] }} {{ $this->bounceSummary['total'] === 1 ? 'devolução' : 'devoluções' }} identificada(s)</strong>
+                    <p>Uma ou mais mensagens foram recusadas ou devolvidas após a tentativa de envio. Confira os destinatários e os códigos informados pelo servidor.</p>
+                </div>
+                <button type="button" class="ec29-bounce-button" wire:click="$set('detailTab', 'bounces')">Ver devoluções</button>
+            </div>
+        @endif
 
         <div class="ec76-progress-card" aria-label="Andamento da campanha">
             <div class="ec76-progress-heading">

@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Models\EmailCampaignBounce;
 use App\Models\EmailCampaignInboxCursor;
 use App\Services\Campaigns\CampaignInbox;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
 
 class SyncEmailCampaignReplies extends Command
@@ -67,7 +69,14 @@ class SyncEmailCampaignReplies extends Command
                 return self::FAILURE;
             }
             /** @var array{uidvalidity:string,last_uid:int,initialized:bool,messages:list<array<string,mixed>>,message_errors?:list<array{uid:int,error_type:string}>} $batch */
+            $previousBounces = EmailCampaignBounce::query()->where('mailbox', $mailbox)->count();
+            $previousUnlinked = DB::table('email_campaign_unmatched_bounces')->where('mailbox', $mailbox)->count();
             $count = $inbox->import($mailbox, $batch);
+            $newUnlinked = max(0, DB::table('email_campaign_unmatched_bounces')
+                ->where('mailbox', $mailbox)->count() - $previousUnlinked);
+            $this->info('Novos DSNs sem vínculo (para revisão): '.$newUnlinked);
+            $newBounces = max(0, EmailCampaignBounce::query()->where('mailbox', $mailbox)->count() - $previousBounces);
+            $this->info('Novas devoluções identificadas: '.$newBounces);
             $this->line('Cabeçalhos examinados: '.count($batch['messages']));
             $messageErrors = $batch['message_errors'] ?? [];
             if ($messageErrors !== []) {

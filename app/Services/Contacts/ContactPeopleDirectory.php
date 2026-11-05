@@ -690,12 +690,22 @@ final class ContactPeopleDirectory
         $search = mb_strtolower(trim(mb_substr($search, 0, 120)));
         if ($search !== '') {
             $like = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $search).'%';
-            $query->where(static function (Builder $q) use ($like): void {
+            $queryDigits = (string) preg_replace('/\D+/', '', $search); // EC_WA_V16_PHONE_SEARCH
+            $query->where(static function (Builder $q) use ($like, $queryDigits): void {
                 foreach ([
                     'p.person_name', 'p.job_title', 'p.email', 'p.phone', 'p.mobile_phone', 'p.external_id',
                     'c.corporate_name', 'hc.name', 'p.company_hint', 'c.cnpj_root',
                 ] as $column) {
                     $q->orWhereRaw('LOWER(COALESCE('.$column.', \'\')) LIKE ? ESCAPE \'!\'', [$like]);
+                }
+                // O dossiê usa E.164, mas os contatos podem guardar apenas DDD+telefone.
+                // As comparações removem separadores sem escrever no HubSpot ou na Receita.
+                if (strlen($queryDigits) >= 10 && strlen($queryDigits) <= 13) {
+                    foreach (['p.phone', 'p.mobile_phone'] as $col) {
+                        $digitsColumn = self::phoneSql($col);
+                        $q->orWhereRaw("($digitsColumn = ? OR ('55' || $digitsColumn) = ?)",
+                            [$queryDigits, $queryDigits]);
+                    }
                 }
                 // Busca por CNPJ de HubSpot só usa empresa local se o vínculo for fiscalmente seguro.
                 $q->orWhereExists(static function (Builder $fiscal) use ($like): void {

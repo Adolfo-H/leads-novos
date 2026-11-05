@@ -53,3 +53,14 @@ __pycache__/
 /.exportcontrol_backups/
 /.backup-pacote-*/
 # END PROSPECTOR_ORGANIZACAO_A03
+
+# EC_WA_UNOFFICIAL_V4: credenciais de dispositivo e dependencias locais
+/storage/app/private/whatsapp-web-session-v4/
+/integrations/whatsapp-web/node_modules/
+
+# EC_WA_DUAL_V5: sessão do segundo WhatsApp Web (credenciais privadas)
+/storage/app/private/whatsapp-web-session-v5-2/
+
+# EC_WA_CONTROL_V6: locks e PID dos dois agentes do Ubuntu
+/storage/app/private/whatsapp-web-agent-*.lock
+/storage/app/private/whatsapp-web-agente-*.pid

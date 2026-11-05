@@ -292,3 +292,28 @@ Schedule::command('campaigns:sync-replies')->everyFiveMinutes()->onOneServer()->
 
 // EC_CAMPAIGN_INTELLIGENCE_V9: gera RASCUNHOS, nunca envia; flag desativada por padrão.
 Schedule::command('campaigns:prepare-followup-drafts')->hourly()->onOneServer()->withoutOverlapping();
+
+// Rodadas futuras: cria campanhas aprovadas previamente, nunca SMTP direto.
+Schedule::command('campaigns:run-automatic-followups')
+    ->everyFiveMinutes()->onOneServer()->withoutOverlapping();
+
+/* EC_WHATSAPP_REGISTRY_V1_SCHEDULE: apenas indexação local, sem mensagens. */
+Schedule::command('contacts:sync-whatsapp-phones --apply')
+    ->dailyAt('04:15')
+    ->onOneServer()
+    ->withoutOverlapping(60);
+/* EC_WHATSAPP_REGISTRY_V1_SCHEDULE_END */
+
+/* EC_WA_UNIFIED_V7_DAILY: só cria lotes com opt-in do gestor e agentes conectados. */
+Schedule::command('contacts:wa-web:daily-plan')
+    ->everyFiveMinutes()->onOneServer()->withoutOverlapping(10);
+
+// EC_WA_PUBLIC_SITES_V10: pesquisa de links públicos; opt-in e sem qualquer WhatsApp conectado.
+Schedule::command('contacts:wa-public:daily')->weekdays()->dailyAt('07:10')
+    ->timezone('America/Sao_Paulo')->onOneServer()->withoutOverlapping();
+// EC_WA_PUBLIC_COMPANY_V11: vincular links antigos a números locais após sincronizações.
+Schedule::command('contacts:wa-public:reconcile --apply')->dailyAt('04:45')
+    ->timezone('America/Sao_Paulo')->onOneServer()->withoutOverlapping();
+// EC_WA_PUBLIC_CHANNELS_V13: vincula evidências a empresas explicitamente cadastradas.
+Schedule::command('contacts:wa-public:register-channels')->dailyAt('05:05')
+    ->timezone('America/Sao_Paulo')->onOneServer()->withoutOverlapping();

@@ -13,7 +13,15 @@
 @fonts
 
 @vite(['resources/css/app.css', 'resources/js/app.js'])
+{{-- EC_PACK_20261104: visual exclusivo de campanhas e contagem de devoluções. --}}
+@if (request()->routeIs('campaigns.*'))
+    <link rel="stylesheet" href="{{ asset('css/ec-campaign-followups-v1.css') }}?v=1.2">
+@endif
 @fluxAppearance
+{{-- EC_CAMPAIGNS_FOLLOWUP_V294: somente layout de campanhas, sem rebuild Vite. --}}
+<link rel="stylesheet" href="{{ asset('css/ec-campaign-tools-v294.css') }}?v=29.4" data-ec-campaign-tools="v294">
+{{-- EC_CAMPAIGNS_BOUNCE_VISIBILITY_V29: CSS isolado de campanha. --}}
+<link rel="stylesheet" href="{{ asset('css/ec-campaign-bounces-v29.css') }}?v=29.1" data-ec-campaign-bounces="v29">
 {{-- EC_APPEARANCE_V65_A243: controla os tres visuais sem alterar login. --}}
 <script src="/js/ec-appearance-modes-v65.js?v=65.1"></script>
 {{-- PACOTE_35_LEADS_GESTAO_CORRECAO_REAL: final scoped layer AFTER Vite, no rebuild needed. --}}
@@ -40,3 +48,18 @@
 <link rel="stylesheet" href="/css/ec-tax-regime-v27.css?v=27.1" data-ec-tax-regime="v27">
 <link rel="stylesheet" href="/css/ec-leads-repros-v255.css?v=255.1" data-ec-leads-repro="v255">
 <script defer src="/js/ec-ui-hardfix-v74.js?v=74.16" data-ec-hardfix="A24.16"></script>
+
+{{-- EC_FOLLOWUP_VISIBILITY_V3: visual de programação, sem alterar SMTP. --}}
+@if (request()->routeIs('campaigns.*'))
+    <link rel="stylesheet" href="{{ asset('css/ec-campaign-followup-visibility-v3.css') }}?v=3.0" data-ec-followup-v3="true">
+@endif
+
+{{-- EC_FOLLOWUP_VISIBILITY_V4: exclusivamente na area de campanhas. --}}
+@if (request()->routeIs('campaigns.*'))
+    <link rel="stylesheet" href="{{ asset('css/ec-campaign-followup-visibility-v4.css') }}?v=4.1" data-ec-followup-v4="true">
+@endif
+
+{{-- EC_AUTO_FOLLOWUP_V5: somente campanhas. --}}
+@if (request()->routeIs('campaigns.*'))
+<link rel="stylesheet" href="{{ asset('css/ec-campaign-followup-v5.css') }}?v=5.1" data-ec-followup-v5="true">
+@endif

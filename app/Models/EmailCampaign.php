@@ -12,6 +12,7 @@ class EmailCampaign extends Model
         'name', 'subject', 'body', 'status', 'from_address', 'from_name',
         'reply_to', 'created_by', 'approved_by', 'approved_at',
         'test_sent_at', 'started_at', 'completed_at',
+        'followup_root_campaign_id', 'followup_round',
     ];
 
     protected function casts(): array
@@ -34,6 +35,12 @@ class EmailCampaign extends Model
     public function replies(): HasMany
     {
         return $this->hasMany(EmailCampaignReply::class);
+    }
+
+    /** @return HasMany<EmailCampaignBounce, $this> */
+    public function bounces(): HasMany
+    {
+        return $this->hasMany(EmailCampaignBounce::class);
     }
 
     /** @return BelongsTo<User, $this> */

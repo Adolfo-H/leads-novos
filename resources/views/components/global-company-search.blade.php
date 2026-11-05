@@ -62,7 +62,9 @@
         placeholder="Buscar empresas, CNPJ..."
     >
 
-    @unless (request()->routeIs('leads.management', 'prospecting.*'))
-        <kbd aria-hidden="true">Enter</kbd>
+    @unless (request()->routeIs('leads.management', 'prospecting.*', 'contacts.whatsapp'))
+        @unless (request()->routeIs('leads.management', 'prospecting.*'))
+            <kbd aria-hidden="true">Enter</kbd>
+        @endunless
     @endunless
 </form>

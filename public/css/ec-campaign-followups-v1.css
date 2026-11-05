@@ -1,0 +1,41 @@
+/* Prospector — correção localizada: contagens neutras e histórico de rodadas. */
+.ecm2-tabs button span:not(.sr-only) { border-radius:7px; background:#f2f5f7; border:1px solid #d7e0e7; color:#4b6070; box-shadow:none; font-size:11px; font-weight:600; }
+.ecm2-tabs .ec-campaign-bounce-count { display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;margin-left:5px;padding:0 6px;border-radius:7px;border:1px solid #d7e0e7;background:#f2f5f7;color:#4b6070;font-size:11px;font-weight:600;line-height:1;box-shadow:none; }
+.ecm2-tabs button.is-active .ec-campaign-bounce-count {background:#e8efee;border-color:#bfd4d0;color:#185f59;}
+.ec-auto-panel { margin:20px 0 26px;padding:22px;border:1px solid #d9e4ea;border-radius:16px;background:#fff;color:#102c42;}
+.ec-auto-header {display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;}
+.ec-auto-header h3 {margin:0 0 5px;font-size:18px;font-weight:740;color:inherit;}
+.ec-auto-header p,.ec-auto-note,.ec-auto-empty,.ec-auto-step-text small,.ec-auto-plan small {margin:0;color:#677e8d;font-size:12px;line-height:1.5;}
+.ec-auto-label,.ec-auto-status,.ec-auto-current {border-radius:999px;border:1px solid #dce5e9;background:#f2f6f7;padding:5px 10px;color:#546e80;font-size:11px;font-weight:650;white-space:nowrap;}
+.ec-auto-timeline {padding:0;margin:0 0 18px;list-style:none;display:grid;gap:8px;}
+.ec-auto-timeline li {display:flex;align-items:center;gap:12px;border:1px solid #e4ebef;border-radius:12px;padding:12px;background:#fbfcfd;}
+.ec-auto-timeline li.is-selected {border-color:#8cc7be;background:#f2faf8;}
+.ec-auto-step {display:grid;place-items:center;flex:0 0 32px;height:32px;border-radius:9px;color:#176c65;background:#e0f2ed;font-weight:760;font-size:13px;}
+.ec-auto-step-text {display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;}
+.ec-auto-step-text strong {font-size:12px;overflow-wrap:anywhere;}
+.ec-auto-link {border:0;background:transparent;color:#08786d;font-size:12px;cursor:pointer;font-weight:700;padding:6px;}
+.ec-auto-link:hover {text-decoration:underline;}
+.ec-auto-plan {display:flex;flex-wrap:wrap;align-items:center;gap:12px;border-top:1px solid #e6edef;padding:12px 0;}
+.ec-auto-plan>div {display:flex;flex:1;flex-direction:column;gap:4px;min-width:140px;}
+.ec-auto-plan strong {font-size:12px;}
+.ec-auto-compose {margin-top:15px;padding:16px;border:1px solid #cce3dc;border-radius:12px;background:#f7fbf9;}
+.ec-auto-compose>summary {cursor:pointer;color:#126f64;font-weight:700;font-size:13px;}
+.ec-auto-compose form {margin-top:18px;}
+.ec-auto-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.ec-auto-fields label {display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:650;}
+.ec-auto-fields .ec-auto-full {grid-column:1/-1;}
+.ec-auto-fields input,.ec-auto-fields select,.ec-auto-fields textarea {width:100%;min-width:0;border:1px solid #cddfe1;border-radius:8px;padding:10px;background:#fff;color:#15354b;font:inherit;font-weight:450;}
+.ec-auto-consent {display:flex;align-items:flex-start;gap:9px;margin-top:16px;font-size:12px;line-height:1.5;cursor:pointer;}
+.ec-auto-consent input {margin-top:4px;}
+.ec-auto-note {margin:12px 0;}
+.ec-auto-submit {border:0;border-radius:9px;background:#087b71;color:#fff;padding:11px 17px;font-size:12px;font-weight:700;cursor:pointer;}
+.ec-auto-submit:hover {background:#04665e;}
+.ec-campaign-bounces {padding:18px 22px;color:#15354b;}
+.ec-campaign-bounces p {font-size:12px;color:#698194;}
+.ec-campaign-bounces-scroll {overflow:auto;}
+.ec-campaign-bounces table {width:100%;border-collapse:collapse;font-size:12px;text-align:left;}
+.ec-campaign-bounces th,.ec-campaign-bounces td {padding:12px 10px;border-bottom:1px solid #e4eaf0;}
+.ec-campaign-bounces th {background:#f6f9fa;color:#5f798d;}
+.ec-campaign-bounces-empty {margin-top:12px;padding:26px;border:1px dashed #d5e0e6;border-radius:10px;text-align:center;font-size:12px;color:#7b8e9d;}
+@media(max-width:720px){.ec-auto-fields{grid-template-columns:1fr}.ec-auto-timeline li{flex-wrap:wrap}.ec-auto-panel{padding:14px}}
+.dark .ec-auto-panel,.dark .ec-campaign-bounces {background:#102333;color:#dbe8ec;border-color:#314554;}.dark .ec-auto-timeline li,.dark .ec-auto-compose{background:#192f3d;border-color:#34515b;}.dark .ec-auto-fields input,.dark .ec-auto-fields select,.dark .ec-auto-fields textarea{background:#102b38;color:#edf6f8;border-color:#3a5a65;}.dark .ecm2-tabs .ec-campaign-bounce-count{background:#243d4d;color:#d2e0e7;border-color:#4a6271;}

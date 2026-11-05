@@ -2,6 +2,7 @@
 
 namespace App\Services\Campaigns;
 
+use App\Models\EmailCampaignBounce;
 use App\Models\EmailCampaignInboxCursor;
 use App\Models\EmailCampaignRecipient;
 use App\Models\EmailCampaignReply;
@@ -35,10 +36,24 @@ final class CampaignInbox
                 // EC_CAMPAIGNS_V7_DSN: antes dos filtros de auto-resposta.
                 // DSNs chegam normalmente de MAILER-DAEMON e não do cliente.
                 if ($uid > 0 && is_array($message['bounce'] ?? null)) {
-                    app(CampaignBounceProcessor::class)->record(
+                    // EC_CAMPAIGNS_FOLLOWUP_V294: vinculado primeiro; só o não correlacionado vai para revisão.
+                    $linked = app(CampaignBounceProcessor::class)->record(
                         $mailbox, $validity, $uid, $message['bounce'],
                         is_string($message['received_at'] ?? null) ? $message['received_at'] : null,
                     );
+                    $alreadyLinked = $linked || EmailCampaignBounce::query()
+                        ->where('mailbox', $mailbox)->where('uid_validity', $validity)
+                        ->where('imap_uid', $uid)->exists();
+                    if ($alreadyLinked) {
+                        DB::table('email_campaign_unmatched_bounces')
+                            ->where('mailbox', $mailbox)->where('uid_validity', $validity)
+                            ->where('imap_uid', $uid)->delete();
+                    } else {
+                        app(CampaignUnmatchedBounceRecorder::class)->record(
+                            $mailbox, $validity, $uid, $message['bounce'],
+                            is_string($message['received_at'] ?? null) ? $message['received_at'] : null,
+                        );
+                    }
 
                     // Um DSN nunca deve contar como resposta de um cliente.
                     continue;

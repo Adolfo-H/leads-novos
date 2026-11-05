@@ -25,6 +25,10 @@ final class CampaignSequenceGuard
             || $original->excluded_from_sequences_at !== null
             || DB::table('email_campaign_replies')->where('email_campaign_recipient_id', $link->original_recipient_id)->exists()
             || DB::table('email_campaign_bounces')->where('email_campaign_recipient_id', $link->original_recipient_id)->exists()
+            || DB::table('email_campaign_bounces')->where('final_recipient', $candidate->normalized_email)->exists()
+            || DB::table('email_campaign_replies as r')
+                ->join('email_campaign_recipients as cr', 'cr.id', '=', 'r.email_campaign_recipient_id')
+                ->where('cr.normalized_email', $candidate->normalized_email)->exists()
             || DB::table('email_campaign_suppressions')->where('normalized_email', $candidate->normalized_email)->exists();
         if (! $ineligible) {
             return false;

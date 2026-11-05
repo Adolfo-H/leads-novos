@@ -42,6 +42,10 @@ Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function 
         ->name('contacts.index');
     /* CONTACTS_RECEITA_V4_ROUTE */
     Route::livewire('/contatos/receita', 'pages::contacts.receita')->name('contacts.receita');
+    /* EC_WHATSAPP_REGISTRY_V1_ROUTE */
+    Route::livewire('/contatos/verificacao-whatsapp', 'pages::contacts.whatsapp')
+        ->middleware('commercial.manager')
+        ->name('contacts.whatsapp');
 });
 
 /* EC_EMAIL_CAMPAIGNS_V1_ROUTES */
@@ -196,5 +200,7 @@ Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function 
     Route::post('/campanhas/inteligencia/rascunhos', [CampaignIntelligenceController::class, 'draft'])->name('campaigns.intelligence.draft');
     Route::post('/campanhas/inteligencia/sequencias', [CampaignIntelligenceController::class, 'sequence'])->name('campaigns.intelligence.sequence');
     Route::post('/campanhas/inteligencia/sequencias/{sequence}/preparar', [CampaignIntelligenceController::class, 'prepare'])->whereNumber('sequence')->name('campaigns.intelligence.prepare');
+    Route::post('/campanhas/inteligencia/sequencias/{sequence}/pausar', [CampaignIntelligenceController::class, 'pauseSequence'])
+        ->whereNumber('sequence')->name('campaigns.intelligence.sequence.pause');
     Route::post('/campanhas/inteligencia/responder', [CampaignIntelligenceController::class, 'sendReply'])->name('campaigns.intelligence.reply');
 });

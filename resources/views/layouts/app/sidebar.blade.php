@@ -159,6 +159,18 @@
                     >
                         Contatos
                     </flux:sidebar.item>
+                    {{-- EC_WHATSAPP_REGISTRY_V1_NAV: gestores apenas --}}
+                    @if (auth()->user()?->isCommercialManager())
+                        <flux:sidebar.item
+                            icon="user-group"
+                            :href="route('contacts.whatsapp')"
+                            :current="request()->routeIs('contacts.whatsapp')"
+                            wire:navigate
+                            class="ec-nav-item"
+                        >
+                            Verificação WhatsApp
+                        </flux:sidebar.item>
+                    @endif
                     {{-- EC_EMAIL_CAMPAIGNS_V1_NAV --}}
                     <flux:sidebar.item
                         icon="envelope"
@@ -175,10 +187,11 @@
             {{-- EC_ACCESS_V24 - administrar novos acessos --}}
             @if (\App\Http\Controllers\Access\AccessAdminController::isApprover(auth()->user()))
                 <flux:sidebar.group heading="Administração" class="ec-sidebar-group grid">
+                    {{-- EC_ACCESS_SAFE_NAV: pagina com dialog/script proprio usa navegação HTTP completa. --}}
                     <flux:sidebar.item icon="user-plus"
                         :href="route('access.requests.index')"
                         :current="request()->routeIs('access.requests.*')"
-                        wire:navigate class="ec-nav-item">
+                        class="ec-nav-item">
                         Solicitações de acesso
                     </flux:sidebar.item>
                 </flux:sidebar.group>
@@ -225,6 +238,7 @@
             request()->routeIs('leads.*') => 'Leads',
             request()->routeIs('prospecting.*') => 'Motor de prospecção',
             request()->routeIs('companies.*') => 'Empresas',
+            request()->routeIs('contacts.whatsapp') => 'Verificação WhatsApp',
             request()->routeIs('contacts.*') => 'Contatos',
             request()->routeIs('campaigns.*') => 'Campanhas',
             request()->routeIs('imports.*') => 'Importações',
@@ -245,7 +259,7 @@
 
         <div class="ec-topbar-context">
 
-            @unless (request()->routeIs('leads.index', 'leads.management', 'companies.show', 'prospecting.*', 'access.requests.*'))
+            @unless (request()->routeIs('leads.index', 'leads.management', 'companies.show', 'prospecting.*', 'access.requests.*', 'contacts.whatsapp'))
                 <span class="ec-topbar-eyebrow">
                     ExportControl
                 </span>

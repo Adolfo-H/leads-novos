@@ -109,6 +109,9 @@
         </article>
     </div>
 
+    {{-- EC_WA_PUBLIC_DIRECTORY_V14_DOSSIER: telefone + evidência junto da empresa. --}}
+    @include('partials.company-dossier.whatsapp-v14')
+
     <article class="e53-panel e53-table-panel">
         <h2>CNAEs consolidados do grupo</h2>
         <div class="e53-table-wrap"><table class="e53-table"><thead><tr><th>Código / atividade</th><th>Unidades</th><th>Ativas</th><th>Principal</th><th>Localização</th></tr></thead><tbody>

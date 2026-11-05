@@ -32,6 +32,12 @@ class EmailCampaignRecipient extends Model
         return $this->belongsTo(EmailCampaign::class, 'email_campaign_id');
     }
 
+    /** @return HasMany<EmailCampaignBounce, $this> */
+    public function bounces(): HasMany
+    {
+        return $this->hasMany(EmailCampaignBounce::class, 'email_campaign_recipient_id');
+    }
+
     /** @return HasMany<EmailCampaignReply, $this> */
     public function replies(): HasMany
     {

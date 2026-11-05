@@ -1,12 +1,15 @@
 <?php
 
 use App\Models\EmailCampaign;
+use App\Models\EmailCampaignBounce;
 use App\Models\EmailCampaignRecipient;
 use App\Models\EmailCampaignReply;
 use App\Models\EmailCampaignTestMessage;
 use App\Models\User;
 use App\Services\Campaigns\CampaignAudience;
 use App\Services\Campaigns\CampaignContent;
+use App\Services\Campaigns\CampaignSequencePlanner;
+use Illuminate\Support\Facades\DB;
 use App\Services\Campaigns\CampaignImapHealth;
 use App\Services\Campaigns\CampaignManager;
 use App\Services\Campaigns\CampaignPilot;
@@ -64,6 +67,17 @@ new class extends Component
 
     public int $recipientPage = 1;
 
+    // EC_CAMPAIGNS_FOLLOWUP_V294: segunda rodada só gera rascunho.
+    public int $followUpDays = 5;
+    public string $followUpName = 'Retomada comercial';
+    public string $followUpSubject = 'Retomando nosso contato';
+    public string $followUpBody = '';
+
+    // EC_CAMPAIGNS_BOUNCE_VISIBILITY_V29 — paginação e filtro locais de relatórios IMAP.
+    public int $bouncePage = 1;
+
+    public string $bounceFilter = 'all';
+
     public function mount(): void
     {
         $keys = session()->pull('campaign_mail_selected', []);
@@ -118,6 +132,7 @@ new class extends Component
         $this->assertManager();
         $query = EmailCampaign::query()
             ->withCount('recipients')
+            ->withCount(['bounces as bounce_reports_count' => static fn ($q) => $q->whereNotNull('email_campaign_recipient_id')])
             ->withCount(['recipients as accepted_smtp_count' => static fn ($q) => $q->where('status', 'sent')])
             ->latest('id');
         $term = trim(mb_substr($this->campaignSearch, 0, 120));
@@ -141,6 +156,7 @@ new class extends Component
             'active' => EmailCampaign::query()->where('status', 'running')->count(),
             'sent' => EmailCampaignRecipient::query()->where('status', 'sent')->count(),
             'replies' => EmailCampaignRecipient::query()->whereNotNull('replied_at')->count(),
+            'bounces' => EmailCampaignBounce::query()->whereNotNull('email_campaign_recipient_id')->count(),
             'pending' => EmailCampaignRecipient::query()->whereIn('status', ['pending', 'reserved'])->count(),
             'queue' => EmailCampaignRecipient::query()
                 ->whereIn('status', ['pending', 'reserved'])
@@ -195,6 +211,7 @@ new class extends Component
 
         return EmailCampaignRecipient::query()
             ->where('email_campaign_id', $this->selectedCampaignId ?? 0)
+            ->with(['bounces' => static fn ($query) => $query->orderByDesc('id')])
             ->orderBy('id')->paginate(15, ['*'], 'recipientPage', $this->recipientPage);
     }
 
@@ -206,6 +223,109 @@ new class extends Component
         return EmailCampaignReply::query()
             ->where('email_campaign_id', $this->selectedCampaignId ?? 0)
             ->latest('received_at')->limit(30)->get();
+    }
+
+    /** @return array{total:int,invalid:int,temporary:int,permanent_other:int} */
+    #[Computed]
+    public function bounceSummary(): array
+    {
+        $this->assertManager();
+        $counts = EmailCampaignBounce::query()
+            ->where('email_campaign_id', $this->selectedCampaignId ?? 0)
+            ->whereNotNull('email_campaign_recipient_id')
+            ->select('classification')->selectRaw('COUNT(*) AS total')
+            ->groupBy('classification')->pluck('total', 'classification');
+        $result = ['invalid' => 0, 'temporary' => 0, 'permanent_other' => 0];
+        foreach ($counts as $classification => $total) {
+            if (array_key_exists((string) $classification, $result)) {
+                $result[(string) $classification] = (int) $total;
+            }
+        }
+
+        return ['total' => array_sum($result), ...$result];
+    }
+
+    /** @return LengthAwarePaginator<EmailCampaignBounce> */
+    #[Computed]
+    public function campaignBounces(): LengthAwarePaginator
+    {
+        $this->assertManager();
+        $query = EmailCampaignBounce::query()
+            ->where('email_campaign_id', $this->selectedCampaignId ?? 0)
+            ->whereNotNull('email_campaign_recipient_id');
+        if (in_array($this->bounceFilter, ['invalid', 'temporary', 'permanent_other'], true)) {
+            $query->where('classification', $this->bounceFilter);
+        }
+
+        return $query->with('recipient')->orderByDesc('id')
+            ->paginate(15, ['*'], 'bouncePage', $this->bouncePage);
+    }
+
+    public function updatedBounceFilter(): void
+    {
+        $this->assertManager();
+        $this->bouncePage = 1;
+        unset($this->campaignBounces);
+    }
+
+    public function changeBouncePage(int $page): void
+    {
+        $this->assertManager();
+        $this->bouncePage = max(1, $page);
+        unset($this->campaignBounces);
+    }
+
+    /** @return \Illuminate\Support\Collection<int, object> */
+    #[Computed]
+    public function followUpPlans(): \Illuminate\Support\Collection
+    {
+        $this->assertManager();
+        return DB::table('email_campaign_sequences')
+            ->where('email_campaign_id', $this->selectedCampaignId ?? 0)
+            ->latest('id')->limit(10)->get();
+    }
+
+    public function planFollowUp(CampaignSequencePlanner $planner): void
+    {
+        $user = $this->assertCampaignManager();
+        $source = EmailCampaign::query()->findOrFail($this->selectedCampaignId ?? 0);
+        abort_unless($source->status === 'completed', 422);
+        $values = $this->validate([
+            'followUpDays' => 'required|integer|in:5,7,8',
+            'followUpName' => 'required|string|min:3|max:150',
+            'followUpSubject' => 'required|string|min:3|max:180',
+            'followUpBody' => 'required|string|min:10|max:12000',
+        ]);
+        // O agendador pode preparar o RASCUNHO no prazo. Nenhum envio automático.
+        $planId = DB::transaction(function () use ($planner, $user, $source, $values): int {
+            $id = $planner->create($user, $source,
+                $values['followUpName'], (int) $values['followUpDays'],
+                $values['followUpSubject'], $values['followUpBody']);
+            DB::table('email_campaign_sequences')->where('id', $id)->update(['auto_prepare' => true]);
+            return $id;
+        });
+        $draftId = $planner->prepare($user, $planId);
+        unset($this->followUpPlans, $this->campaigns, $this->overview);
+        session()->flash('campaign_success', $draftId !== null
+            ? 'Segunda rodada preparada como rascunho. Revise destinatários e mensagem antes de autorizar.'
+            : 'Segunda rodada planejada. Após o prazo, o agendador criará um rascunho para aprovação.');
+    }
+
+    public function prepareFollowUp(int $planId, CampaignSequencePlanner $planner): void
+    {
+        $user = $this->assertCampaignManager();
+        $this->assertManager();
+        $plan = DB::table('email_campaign_sequences')
+            ->where('id', $planId)
+            ->where('email_campaign_id', $this->selectedCampaignId ?? 0)->first();
+        abort_unless($plan !== null, 404);
+        $draftId = $planner->prepare($user, $planId);
+        unset($this->followUpPlans, $this->campaigns, $this->overview);
+        if ($draftId !== null) {
+            session()->flash('campaign_success', 'Rascunho da segunda rodada criado. Revise e autorize manualmente o envio.');
+        } else {
+            session()->flash('campaign_success', 'Ainda não há destinatários elegíveis ou o prazo não terminou. Nenhum e-mail foi enviado.');
+        }
     }
 
     // EC_CAMPAIGNS_PILOT_V5: somente endereços explícitos, sem liberar envio comercial.
@@ -461,7 +581,9 @@ new class extends Component
         $this->screen = 'detail';
         $this->detailTab = 'overview';
         $this->recipientPage = 1;
-        unset($this->selectedCampaign, $this->recipientStats, $this->recipients, $this->replies);
+        $this->bouncePage = 1;
+        $this->bounceFilter = 'all';
+        unset($this->selectedCampaign, $this->recipientStats, $this->recipients, $this->replies, $this->bounceSummary, $this->campaignBounces, $this->followUpPlans);
     }
 
     public function editDraft(int $id): void
@@ -807,6 +929,9 @@ new class extends Component
                 </button>
             @endif
             <a href="{{ route('campaigns.replies') }}" wire:navigate class="ec68-replies-shortcut">Ver respostas</a>
+            @if ($canManageCampaigns)
+                <a href="{{ route('campaigns.queue') }}#ec294-unmatched" class="ec294-jump">DSNs sem vínculo</a>
+            @endif
         </div>
     </header>
 
@@ -826,6 +951,7 @@ new class extends Component
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-amber">◷</span><div><small>Na fila ativa</small><strong>{{ number_format($counts['queue'], 0, ',', '.') }}</strong><span>Aguardando envio real</span></div></div>
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-cyan">➤</span><div><small>Aceitos hoje</small><strong>{{ number_format($counts['sent_today'], 0, ',', '.') }}</strong><span>Pelo servidor SMTP</span></div></div>
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-green">↩</span><div><small>Respostas</small><strong>{{ number_format($counts['replies'], 0, ',', '.') }}</strong><span>Registradas pelo IMAP</span></div></div>
+        <div class="ecm2-stat"><span class="ecm2-stat-icon is-amber">!</span><div><small>Devoluções</small><strong>{{ number_format($counts['bounces'], 0, ',', '.') }}</strong><span>Relatórios comerciais correlacionados</span></div></div>
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-red">!</span><div><small>Não confirmados</small><strong>{{ number_format($counts['uncertain'], 0, ',', '.') }}</strong><span>Conferir tentativas</span></div></div>
     </section>
     </details>
@@ -864,7 +990,10 @@ new class extends Component
                         class="ecm2-campaign {{ $selectedCampaignId === $item->id && $screen === 'detail' ? 'is-current' : '' }}"
                         aria-current="{{ $selectedCampaignId === $item->id && $screen === 'detail' ? 'true' : 'false' }}">
                         <span class="ecm2-campaign-heading"><strong title="{{ $item->name }}">{{ $item->name }}</strong><span class="ecm2-pill is-{{ $item->status }}">{{ $labels[$item->status] ?? $item->status }}</span></span>
-                        <span class="ecm2-campaign-sub">{{ $itemTotal }} destinatário(s) · {{ $item->created_at?->format('d/m/Y') }}</span>
+                        <span class="ecm2-campaign-sub">@if ((int) ($item->followup_round ?? 1) > 1) Rodada {{ (int) $item->followup_round }} · @else Rodada 1 · @endif{{ $itemTotal }} destinatário(s) · {{ $item->created_at?->format('d/m/Y') }}</span>
+                        @if ((int) $item->bounce_reports_count > 0)
+                            <span class="ec29-sidebar-count" data-ec-bounce-count>⚠ {{ $item->bounce_reports_count }} devolução(ões) registrada(s)</span>
+                        @endif
                         @if ($itemTotal > 0)
                             <span class="ecm2-mini-progress"><i style="width: {{ $itemProgress }}%"></i></span>
                             <span class="ecm2-campaign-footer">{{ $itemSent }} aceito(s) SMTP <b>{{ $itemProgress }}%</b></span>
@@ -1072,8 +1201,8 @@ new class extends Component
                         <div><small>Na fila</small><strong>{{ number_format((int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0), 0, ',', '.') }}</strong></div>
                     </div>
                     <nav class="ecm2-tabs" aria-label="Conteúdo da campanha">
-                        @foreach (['overview' => 'Visão geral', 'recipients' => 'Destinatários', 'message' => 'Mensagem', 'replies' => 'Respostas'] as $tabKey => $tabLabel)
-                            <button type="button" wire:click="$set('detailTab', @js($tabKey))" class="{{ $detailTab === $tabKey ? 'is-active' : '' }}" aria-current="{{ $detailTab === $tabKey ? 'page' : 'false' }}">{{ $tabLabel }} @if ($tabKey === 'replies' && $selected->replies()->count() > 0)<span>{{ $selected->replies()->count() }}</span>@endif</button>
+                        @foreach (['overview' => 'Visão geral', 'recipients' => 'Destinatários', 'bounces' => 'Devoluções', 'message' => 'Mensagem', 'replies' => 'Respostas'] as $tabKey => $tabLabel)
+                            <button type="button" wire:click="$set('detailTab', @js($tabKey))" class="{{ $detailTab === $tabKey ? 'is-active' : '' }}" aria-current="{{ $detailTab === $tabKey ? 'page' : 'false' }}">{{ $tabLabel }} @if ($tabKey === 'replies' && $selected->replies()->count() > 0)<span>{{ $selected->replies()->count() }}</span>@elseif ($tabKey === 'bounces' && $this->bounceSummary['total'] > 0)<span>{{ $this->bounceSummary['total'] }}</span>@endif</button>
                         @endforeach
                     </nav>
                     @if ($detailTab === 'overview')
@@ -1101,15 +1230,123 @@ new class extends Component
                                 @endforeach
                             @endif
                         </div>
+                        {{-- EC_CAMPAIGNS_FOLLOWUP_V294 — segunda rodada: só planejar e revisar rascunho. --}}
+                        @if ($canManageCampaigns && $selected->status === 'completed')
+                        <section class="ec294-followup" aria-label="Planejamento da segunda rodada">
+                            <span class="ec294-unmatched-label">CONTINUIDADE COMERCIAL</span>
+                            <h3>Segunda rodada de e-mails</h3>
+                            <p>Retome com um novo texto após 5, 7 ou 8 dias do último envio. O sistema exclui quem respondeu, recebeu devolução ou pediu descadastro. <strong>A próxima rodada pode iniciar automaticamente após o prazo, desde que o SMTP e o IMAP estejam ativos e a automação liberada. Confira a previsão e a mensagem no quadro de continuidade.</strong></p>
+                            @if ($this->followUpPlans->isEmpty())
+                                <div class="ec294-followup-grid">
+                                    <div class="ec294-followup-field"><label for="ec294-followup-days">Intervalo</label>
+                                        <select id="ec294-followup-days" wire:model="followUpDays">
+                                            <option value="5">5 dias</option><option value="7">7 dias</option><option value="8">8 dias</option>
+                                        </select>
+                                    </div>
+                                    <div class="ec294-followup-field"><label for="ec294-followup-name">Nome da rodada</label>
+                                        <input id="ec294-followup-name" type="text" wire:model="followUpName" maxlength="150" required>
+                                    </div>
+                                    <div class="ec294-followup-field wide"><label for="ec294-followup-subject">Novo assunto</label>
+                                        <input id="ec294-followup-subject" type="text" wire:model="followUpSubject" maxlength="180" required>
+                                    </div>
+                                    <div class="ec294-followup-field wide"><label for="ec294-followup-body">Novo modelo de mensagem</label>
+                                        <textarea id="ec294-followup-body" wire:model="followUpBody" maxlength="12000" rows="5" placeholder="Escreva sua nova abordagem..." required></textarea>
+                                    </div>
+                                </div>
+                                @foreach (['followUpDays', 'followUpName', 'followUpSubject', 'followUpBody', 'sequence'] as $field)
+                                    @error($field)<div class="ec294-error" role="alert">{{ $message }}</div>@enderror
+                                @endforeach
+                                <div class="ec294-actions">
+                                    <button type="button" class="ec294-button" wire:click="planFollowUp" wire:loading.attr="disabled" wire:target="planFollowUp">Planejar segunda rodada</button>
+                                    <small class="ec294-small">Depois do prazo, o agendador cria um rascunho para aprovação. Não dispara e-mails.</small>
+                                </div>
+                            @else
+                                @foreach ($this->followUpPlans as $plan)
+                                    <div class="ec294-plan" wire:key="ec294-plan-{{ $plan->id }}">
+                                        <div>
+                                            <div class="ec294-plan-title">{{ $plan->name }} · {{ $plan->delay_days }} dias</div>
+                                            <div class="ec294-muted">{{ $plan->status === 'prepared' ? 'Rascunho pronto para revisão' : 'Aguardando prazo ou destinatários elegíveis' }}</div>
+                                        </div>
+                                        @if ($plan->draft_campaign_id)
+                                            <button type="button" class="ec294-button" wire:click="openCampaign({{ (int) $plan->draft_campaign_id }})">Abrir rascunho</button>
+                                        @elseif ($plan->status === 'planned')
+                                            <button type="button" class="ec294-button" wire:click="prepareFollowUp({{ (int) $plan->id }})" wire:loading.attr="disabled" wire:target="prepareFollowUp">Verificar prazo / preparar</button>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            @endif
+                        </section>
+                        @endif
                     @elseif ($detailTab === 'recipients')
                         <div class="ecm2-table-wrap"><table class="ecm2-table"><thead><tr><th>Contato / E-mail</th><th>Empresa</th><th>Situação</th><th>Data</th></tr></thead><tbody>
                             @forelse ($this->recipients as $recipient)
-                                <tr wire:key="ecm2-recipient-{{ $recipient->id }}"><td><strong>{{ $recipient->contact_name ?: 'Contato sem nome' }}</strong><small>{{ $recipient->email }}</small></td><td>{{ $recipient->company_name ?: '—' }}</td><td><span class="ecm2-pill is-delivery-{{ $recipient->status }}">{{ $delivery[$recipient->status] ?? $recipient->status }}</span>@if($recipient->replied_at) <small>↩ Respondeu</small> @endif</td><td>{{ $recipient->sent_at?->format('d/m/Y H:i') ?? '—' }}</td></tr>
+                                <tr wire:key="ecm2-recipient-{{ $recipient->id }}"><td><strong>{{ $recipient->contact_name ?: 'Contato sem nome' }}</strong><small>{{ $recipient->email }}</small></td><td>{{ $recipient->company_name ?: '—' }}</td><td>
+                                    <span class="ecm2-pill is-delivery-{{ $recipient->status }}">{{ $delivery[$recipient->status] ?? $recipient->status }}</span>
+                                    @if ($recipient->bounces->isNotEmpty())
+                                        @php $latestBounce = $recipient->bounces->first(); @endphp
+                                        <span class="ec29-recipient-bounced">↩ Devolvido · {{ \App\Services\Campaigns\CampaignBounceReason::label((string) $latestBounce->status_code) }}</span>
+                                        <small class="ec29-recipient-detail">Código {{ $latestBounce->status_code }} · {{ $latestBounce->received_at?->format('d/m/Y H:i') ?? 'Data não informada' }}</small>
+                                    @elseif ($recipient->status === 'uncertain' && $recipient->error_message)
+                                        <small class="ec29-recipient-detail">Envio não confirmado: {{ $recipient->error_message }}</small>
+                                    @endif
+                                    @if ($recipient->replied_at) <small>↩ Respondeu</small> @endif
+                                </td><td>{{ $recipient->sent_at?->format('d/m/Y H:i') ?? '—' }}</td></tr>
                             @empty
                                 <tr><td colspan="4" class="ecm2-empty-cell">Nenhum destinatário registrado.</td></tr>
                             @endforelse
                         </tbody></table></div>
                         <div class="ecm2-pagination"><span>Página {{ $this->recipients->currentPage() }} / {{ $this->recipients->lastPage() }}</span><div><button type="button" wire:click="changeRecipientPage({{ $this->recipients->currentPage() - 1 }})" @disabled($this->recipients->onFirstPage())>‹</button><button type="button" wire:click="changeRecipientPage({{ $this->recipients->currentPage() + 1 }})" @disabled(! $this->recipients->hasMorePages())>›</button></div></div>
+                    @elseif ($detailTab === 'bounces')
+                        {{-- EC_CAMPAIGNS_BOUNCE_VISIBILITY_V29 — relatórios DSN da campanha atual. --}}
+                        <div class="ec29-bounce-panel" data-ec-bounce-tab>
+                            <div class="ec29-bounce-top">
+                                <div><h3>E-mails devolvidos</h3><p>Retornos do servidor associados ao identificador do envio e ao destinatário. A aceitação inicial pelo SMTP não confirma entrega.</p></div>
+                                <label class="ec29-bounce-filter" for="ec29-bounce-filter">Tipo de retorno
+                                    <select id="ec29-bounce-filter" wire:model.live="bounceFilter">
+                                        <option value="all">Todos</option>
+                                        <option value="invalid">Endereço inválido</option>
+                                        <option value="temporary">Falha temporária</option>
+                                        <option value="permanent_other">Outras rejeições</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="ec29-bounce-metrics" aria-label="Totais de devoluções da campanha">
+                                <div><small>Endereço inválido</small><strong>{{ $this->bounceSummary['invalid'] }}</strong></div>
+                                <div><small>Falhas temporárias</small><strong>{{ $this->bounceSummary['temporary'] }}</strong></div>
+                                <div><small>Outras rejeições</small><strong>{{ $this->bounceSummary['permanent_other'] }}</strong></div>
+                            </div>
+                            @if ($this->imapHealth['state'] !== 'healthy')
+                                <p class="ec29-bounce-imap-warning" role="status">Monitoramento IMAP: {{ $this->imapHealth['label'] }}. Novas devoluções podem não aparecer até a sincronização funcionar.</p>
+                            @endif
+                            <div class="ecm2-table-wrap">
+                                <table class="ecm2-table ec29-bounce-table">
+                                    <thead><tr><th>Destinatário</th><th>Motivo do retorno</th><th>Tipo / código</th><th>Relatório do servidor</th><th>Recebido em</th></tr></thead>
+                                    <tbody>
+                                        @forelse ($this->campaignBounces as $bounce)
+                                            <tr wire:key="ec29-bounce-{{ $bounce->id }}">
+                                                <td><strong>{{ $bounce->final_recipient }}</strong><small>{{ $bounce->recipient?->contact_name ?: ($bounce->recipient?->company_name ?: 'Destinatário da campanha') }}</small></td>
+                                                <td class="ec29-bounce-reason">{{ \App\Services\Campaigns\CampaignBounceReason::label((string) $bounce->status_code) }}</td>
+                                                <td>{{ \App\Services\Campaigns\CampaignBounceReason::categoryLabel((string) $bounce->classification) }}<small>DSN {{ $bounce->status_code }}</small></td>
+                                                <td>{{ $bounce->diagnostic ?: 'Servidor não informou detalhes' }}</td>
+                                                <td>{{ $bounce->received_at?->format('d/m/Y H:i') ?? '—' }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr><td colspan="5" class="ecm2-empty-cell">Nenhuma devolução registrada neste filtro. Consulte o status do monitoramento IMAP.</td></tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
+                            </div>
+                            @if ($this->campaignBounces->lastPage() > 1)
+                                <nav class="ec29-bounce-pagination" aria-label="Páginas de devoluções">
+                                    <span>Página {{ $this->campaignBounces->currentPage() }} de {{ $this->campaignBounces->lastPage() }}</span>
+                                    <div>
+                                        <button type="button" wire:click="changeBouncePage({{ $this->campaignBounces->currentPage() - 1 }})" @disabled($this->campaignBounces->onFirstPage()) aria-label="Página anterior">‹</button>
+                                        <button type="button" wire:click="changeBouncePage({{ $this->campaignBounces->currentPage() + 1 }})" @disabled(! $this->campaignBounces->hasMorePages()) aria-label="Próxima página">›</button>
+                                    </div>
+                                </nav>
+                            @endif
+                            <p class="ec29-bounce-note">Cada linha é um relatório DSN correlacionado; o mesmo endereço pode ter mais de um retorno. Testes piloto são excluídos destes totais. Endereço inválido pode bloquear disparos futuros; caixa cheia e bloqueio por política exigem acompanhamento.</p>
+                        </div>
                     @elseif ($detailTab === 'message')
                         <div class="ecm2-message-tab"><div class="ecm2-preview-label">Mensagem salva · somente leitura</div><div class="ecm2-mail-preview"><div>De: {{ $selected->from_name }} &lt;{{ $selected->from_address }}&gt;</div><div>Assunto: <strong>{{ $selected->subject }}</strong></div><p>{{ $selected->body }}</p></div><p>As variáveis são substituídas por contato no envio. O descadastro é adicionado a cada mensagem comercial.</p></div>
                     @elseif ($detailTab === 'replies')
@@ -1121,6 +1358,7 @@ new class extends Component
                             @endforelse
                         </tbody></table></div>
                     @endif
+                    {{-- EC_AUTO_FOLLOWUP_V5: editor integrado acima, inclui configuracao e historico. --}}
                 </section>
             @else
                 <div class="ecm2-empty-workspace">
