@@ -31,6 +31,15 @@ class EmailCampaign extends Model
         return $this->hasMany(EmailCampaignRecipient::class);
     }
 
+    /** @return HasMany<EmailCampaign, $this> */
+    public function followupRounds(): HasMany
+    {
+        // Rodadas continuam registros reais para preservar SMTP, respostas e DSN.
+        // A interface as apresenta dentro da campanha original.
+        return $this->hasMany(self::class, 'followup_root_campaign_id')
+            ->orderBy('followup_round')->orderBy('id');
+    }
+
     /** @return HasMany<EmailCampaignReply, $this> */
     public function replies(): HasMany
     {

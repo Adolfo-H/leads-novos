@@ -1,0 +1,28 @@
+{
+  "package": "EC_FOLLOWUP_VISIBILITY_V3",
+  "backup_dir": "/home/adolfo/projetos/prospector-exportcontrol/.prospector-patch-backups/campaign_followup_visibility_v3_20261104_110012_778731",
+  "created": [
+    "app/Services/Campaigns/CampaignFollowupScheduleView.php",
+    "resources/views/campaigns/followup-schedule-home-v3.blade.php",
+    "resources/views/campaigns/followup-schedule-detail-v3.blade.php",
+    "public/css/ec-campaign-followup-visibility-v3.css",
+    "tests/Feature/Campaigns/CampaignFollowupVisibilityV3Test.php"
+  ],
+  "modified": [
+    "resources/views/campaigns/figma-home-v68.blade.php",
+    "resources/views/campaigns/figma-detail-header-v761.blade.php",
+    "resources/views/partials/head.blade.php",
+    "resources/views/pages/campaigns/⚡index.blade.php"
+  ],
+  "sha_installed": {
+    "resources/views/campaigns/figma-home-v68.blade.php": "645a28420e767e90140888efba2dea27cbc5b98daa8e678adcc2c9763c5b801d",
+    "resources/views/campaigns/figma-detail-header-v761.blade.php": "b3a54c33e3739c84f47b4f19bd379a5d40434313e5831f1dea7c9b632b648790",
+    "resources/views/partials/head.blade.php": "ea2bdf353d57a1521e6936262c2d6819892b772d6f6cdff83430b1165ef48c7c",
+    "resources/views/pages/campaigns/⚡index.blade.php": "ad8d820e4c2e32a25e80cad59980b1311bb87f6997d681d4f6d66011628d7105",
+    "app/Services/Campaigns/CampaignFollowupScheduleView.php": "746cdee305ae4d5f4978fe6559ceb6f0b9d79f1444cce080d151681c7994af9f",
+    "resources/views/campaigns/followup-schedule-home-v3.blade.php": "baaf1c8ca4cb39a1b8cfe9d4033eee8c0c078c482d8c3644b4b72d050f096a8c",
+    "resources/views/campaigns/followup-schedule-detail-v3.blade.php": "aff5cfbb34f1810a03a178de232c87dfc46648071f49895722366b3aad5648df",
+    "public/css/ec-campaign-followup-visibility-v3.css": "d51805ef6219369fc241a7fc0707e0fa3a8f6d6a7183685a404a302eb3967450",
+    "tests/Feature/Campaigns/CampaignFollowupVisibilityV3Test.php": "635886f42738b1ad7aec622fc8fce36bc7dc94e67fe207e61364bf27914592ef"
+  }
+}

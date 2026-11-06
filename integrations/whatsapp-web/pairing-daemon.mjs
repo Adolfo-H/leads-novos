@@ -15,12 +15,13 @@ let stop = false;
 process.on('SIGINT', () => { stop = true; });
 process.on('SIGTERM', () => { stop = true; });
 
-function callArtisan(action, session, args = []) {
+function callArtisan(action, session, args = [], input = null) {
   return new Promise((ok, fail) => {
     const child = spawn(sail, ['artisan', 'contacts:wa-web:pairing', action, `--session=${session}`, ...args], {
-      cwd: project, shell: false, stdio: ['ignore', 'pipe', 'pipe'],
+      cwd: project, shell: false, stdio: [input === null ? 'ignore' : 'pipe', 'pipe', 'pipe'],
       env: { ...process.env, TERM: 'dumb' },
     });
+    if (input !== null) child.stdin.end(input);
     let out = '';
     let err = '';
     const timeout = setTimeout(() => child.kill('SIGTERM'), 35000);
@@ -97,10 +98,19 @@ while (!stop) {
   for (const session of [1, 2]) {
     if (stop) break;
     try {
+      await callArtisan('heartbeat', session);
       const result = JSON.parse(await callArtisan('poll', session));
       if (typeof result.token !== 'string' || !/^[A-Za-z0-9]{40}$/.test(result.token)) continue;
-      await start(session, result.reset === true);
+      // Reconhece ANTES de iniciar: uma falha de processo passa a estado 'error',
+      // em vez de manter uma solicitação fantasma para sempre.
       await callArtisan('ack', session, [`--token=${result.token}`]);
+      try {
+        await start(session, result.reset === true);
+      } catch (failure) {
+        await callArtisan('error', session, [],
+          'Não foi possível iniciar o agente. Confira o log do conector Ubuntu.').catch(() => {});
+        throw failure;
+      }
     } catch (e) {
       // Docker/contêiner podem estar momentaneamente indisponíveis; mantém a solicitação pendente.
       console.error(`Conta ${session}: ${String(e.message).slice(0, 200)}`);

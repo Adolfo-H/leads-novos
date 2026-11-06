@@ -1,0 +1,97 @@
+[
+  {
+    "path": "app/Services/Contacts/WhatsappPublicSiteResearch.php",
+    "existed": true,
+    "written_sha": "dc79e51e94ed15ca9ab1243b733f1d532769eae49dad1260aadd05994467984e"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v11.blade.php",
+    "existed": true,
+    "written_sha": "fc46545709e4959e6c09b68f80ac2c8fec403a1fa281797a9661051aa51be69d"
+  },
+  {
+    "path": "routes/console.php",
+    "existed": true,
+    "written_sha": "032b7184005ab2595660385ccca6335fb7bb84f7eec908de7d7afeb5907197d8"
+  },
+  {
+    "path": "resources/views/pages/contacts/⚡whatsapp.blade.php",
+    "existed": true,
+    "written_sha": "d245ff275d35f7e83bbb2ccd75cf304d1e827abe32cb5a9c4c79c102818d31e7"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-v8-operation.blade.php",
+    "existed": true,
+    "written_sha": "bc84ab1e6c26d9f5c9944c6e2b75cdaa1c4858ba529203c5115a443e192c515b"
+  },
+  {
+    "path": "integrations/whatsapp-web/agent.mjs",
+    "existed": true,
+    "written_sha": "f6fa27f85e3eb86e42feffca7849bb3923908fcab7daa3d4207391de1ef9dc5f"
+  },
+  {
+    "path": "integrations/whatsapp-web/package.json",
+    "existed": true,
+    "written_sha": "9fb7016e826eff35f2fc8a3c8eabc67a23ca2aae1bc18dd23fd9b88996ebdd08"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPublicCompanyChannels.php",
+    "existed": false,
+    "written_sha": "086b2e683a1009cc0c1b7bbe964efc41212b09161183737d704a84eb4224cc30"
+  },
+  {
+    "path": "app/Console/Commands/SyncWhatsappPublicCompanyChannels.php",
+    "existed": false,
+    "written_sha": "1bd2b3d961c7bf2dcd61033078e6fea82161099fd133e1b6292fb993e14a4f42"
+  },
+  {
+    "path": "database/migrations/2026_11_05_190000_create_whatsapp_public_company_channels.php",
+    "existed": false,
+    "written_sha": "8992be2eb2c9798fba8fd4331dd01f20bed5510306b6593eb73242a8f7232dee"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v13-styles.blade.php",
+    "existed": false,
+    "written_sha": "cca4ce8ba5aefe7c0f6e2d861d877dece999a1e0dfec928c51dbaf30f7521073"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v13-channels.blade.php",
+    "existed": false,
+    "written_sha": "f9191fa7888bfb8c19b95173af8fc89edd0882b18e38b2bc6cabb7309ad06792"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappPublicChannelsV13Test.php",
+    "existed": false,
+    "written_sha": "854594e980213949f1ee89e31ca092ece1b61a47b2c57ba16936bde08be1abd4"
+  },
+  {
+    "path": "app/Console/Commands/WhatsappWebPairingBridge.php",
+    "existed": false,
+    "written_sha": "2d934c8c2fd07dc746a43825b7d1ed57b1f1bb2bd0b51555a1919d898ba539a0"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-pairing-v13-1.blade.php",
+    "existed": false,
+    "written_sha": "cd6a401af8a34e9f3eefd6cde45121dd8b62f7a657d4a5a64443528f17d6229a"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-pairing-v13-1-styles.blade.php",
+    "existed": false,
+    "written_sha": "632e3696e51ea7ea8482f97937d6faec0bb4263a5881998d14a7eb36e5f21d37"
+  },
+  {
+    "path": "integrations/whatsapp-web/pairing-daemon.mjs",
+    "existed": false,
+    "written_sha": "32a017b7544389109d720703fcf3793873edce175279715a2f5ae3fb70903332"
+  },
+  {
+    "path": "integrations/whatsapp-web/iniciar-conector.sh",
+    "existed": false,
+    "written_sha": "aea1e449292969bcafcc6cda691bd66ffb28ad85ad992ed0c1a8d49fdef686f6"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappPairingV13_1Test.php",
+    "existed": false,
+    "written_sha": "b7bc55514021f5314ae7776b7846ff747eab344f4f1da2d5df8ca4726962395b"
+  }
+]

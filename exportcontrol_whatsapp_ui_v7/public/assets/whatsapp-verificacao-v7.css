@@ -1,0 +1,147 @@
+/* ExportControl Prospector — Verificação WhatsApp: refinamento visual V7
+   Escopo: SOMENTE /contatos/verificacao-whatsapp. Não interfere nas ações Livewire,
+   HubSpot, Receita, WhatsApp Web ou nas marcações de confirmação existentes.
+   As classes são aplicadas pelo whatsapp-verificacao-v7.js após renderização. */
+body.ecwa-verify-page {
+  --ecwa-ink: #15344a;
+  --ecwa-muted: #658096;
+  --ecwa-teal: #078c81;
+  --ecwa-teal-dark: #08786f;
+  --ecwa-line: #dbe7e9;
+  --ecwa-bg: #f4f8f8;
+  --ecwa-panel: #fff;
+  --ecwa-soft: #edf7f4;
+  --ecwa-radius: 16px;
+}
+body.ecwa-verify-page main {scroll-margin-top: 90px;}
+body.ecwa-verify-page [data-ecwa-section] {
+  background: var(--ecwa-panel);
+  border: 1px solid var(--ecwa-line) !important;
+  border-radius: var(--ecwa-radius) !important;
+  box-shadow: 0 3px 16px rgba(18, 54, 67, .045);
+  margin-block-end: 18px !important;
+  scroll-margin-top: 22px;
+}
+body.ecwa-verify-page [data-ecwa-section="summary"] {
+  background: linear-gradient(110deg, #f0faf7 0%, #fff 74%) !important;
+  border-color: #cde4df !important;
+}
+body.ecwa-verify-page [data-ecwa-section="monitor"] {
+  background: #fff !important;
+  border-color: #d9e8eb !important;
+}
+body.ecwa-verify-page [data-ecwa-section="accounts"] {
+  border-color: #d7e8e4 !important;
+}
+body.ecwa-verify-page [data-ecwa-section="recent"],
+body.ecwa-verify-page [data-ecwa-section="filters"],
+body.ecwa-verify-page [data-ecwa-section="queue"],
+body.ecwa-verify-page [data-ecwa-section="detail"] {
+  background: #fff;
+}
+body.ecwa-verify-page [data-ecwa-section="detail"] {
+  border-color: #cfe4e3 !important;
+}
+body.ecwa-verify-page [data-ecwa-metric] {
+  min-width: 0;
+  min-height: 104px;
+  border: 1px solid #e0eaec !important;
+  border-radius: 12px !important;
+  padding: 14px 15px !important;
+  background: #fbfdfd !important;
+  box-shadow: none !important;
+  transition: border-color .18s ease, background .18s ease;
+}
+body.ecwa-verify-page [data-ecwa-metric]:hover {border-color: #a4d6cd !important; background:#f7fcfa !important;}
+body.ecwa-verify-page [data-ecwa-metric="confirmed"],
+body.ecwa-verify-page [data-ecwa-metric="found"] {
+  border-color: #b6e1d5 !important;
+  background: #f0faf5 !important;
+}
+body.ecwa-verify-page [data-ecwa-metric="pending"],
+body.ecwa-verify-page [data-ecwa-metric="remaining"] {
+  border-color: #b5dbd2 !important;
+  background: #f0faf6 !important;
+}
+body.ecwa-verify-page [data-ecwa-metric] :is(h3,h4,h5) {
+  color: var(--ecwa-muted) !important;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+body.ecwa-verify-page [data-ecwa-metric] [data-ecwa-metric-value] {
+  color: var(--ecwa-ink) !important;
+  font-size: clamp(1.45rem, 1.6vw, 1.85rem) !important;
+  letter-spacing: -.05em;
+  font-variant-numeric: tabular-nums;
+  font-weight: 760 !important;
+  line-height: 1.2 !important;
+}
+body.ecwa-verify-page [data-ecwa-metric="confirmed"] [data-ecwa-metric-value],
+body.ecwa-verify-page [data-ecwa-metric="found"] [data-ecwa-metric-value] {color:#0a917b !important;}
+body.ecwa-verify-page [data-ecwa-metric="remaining"] [data-ecwa-metric-value] {color:#008c7c !important;}
+body.ecwa-verify-page [data-ecwa-metric-row] {
+  display:grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  align-items: stretch !important;
+}
+body.ecwa-verify-page [data-ecwa-section] :is(h2,h3) { color:var(--ecwa-ink); letter-spacing:-.025em; }
+body.ecwa-verify-page [data-ecwa-section] :is(input,select,textarea) {
+  border-color: #d6e3e7;
+  border-radius: 10px;
+}
+body.ecwa-verify-page [data-ecwa-section] :is(input,select,textarea):focus {
+  outline: 2px solid rgba(0,149,134,.22) !important;
+  outline-offset: 1px;
+  border-color: #37b1a1 !important;
+}
+body.ecwa-verify-page [data-ecwa-section] button { transition: background-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+body.ecwa-verify-page [data-ecwa-section] button:focus-visible { outline: 3px solid #64c5b8 !important; outline-offset: 2px; }
+body.ecwa-verify-page [data-ecwa-section] button:not(:disabled):active {transform:translateY(1px);}
+body.ecwa-verify-page [data-ecwa-section="queue"] [data-ecwa-queue-item] {
+  border-bottom: 1px solid #e8eef1;
+  transition: background-color .15s ease;
+}
+body.ecwa-verify-page [data-ecwa-section="queue"] [data-ecwa-queue-item]:hover {background-color:#f3faf8 !important;}
+body.ecwa-verify-page [data-ecwa-section="detail"] [data-ecwa-status] {
+  border-radius: 999px !important;
+}
+body.ecwa-verify-page [data-ecwa-section="recent"] table,
+body.ecwa-verify-page [data-ecwa-section="queue"] table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+body.ecwa-verify-page [data-ecwa-section="recent"] :is(thead,th),
+body.ecwa-verify-page [data-ecwa-section="queue"] :is(thead,th) {background:#f5f9f9;}
+body.ecwa-verify-page .ecwa-toolbar {
+  position:fixed; bottom:16px; left:calc(50% + 120px); transform:translateX(-50%);
+  display:flex; flex-wrap:wrap; gap:3px; align-items:center; justify-content:center;
+  padding:7px; z-index:29; border:1px solid #d5e6e3; border-radius: 16px;
+  background:rgba(255,255,255,.95); box-shadow:0 8px 30px rgba(17,47,63,.15);
+  backdrop-filter: blur(9px); font-family:inherit;
+}
+body.ecwa-verify-page .ecwa-toolbar button {
+  background:transparent; color:#426278; border:0; border-radius:10px; cursor:pointer;
+  font-size:12px; font-weight:650; padding:9px 11px; line-height:1.1;
+}
+body.ecwa-verify-page .ecwa-toolbar button:hover,
+body.ecwa-verify-page .ecwa-toolbar button:focus-visible {background:#eaf7f3;color:#08796f;outline:none;}
+body.ecwa-verify-page .ecwa-toolbar-label {font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:#668592;font-weight:700;margin-inline:7px;}
+body.ecwa-verify-page .ecwa-sr-only {position:absolute; width:1px; height:1px; clip:rect(0,0,0,0); overflow:hidden;white-space:nowrap;}
+@media (max-width: 1260px) {
+  body.ecwa-verify-page [data-ecwa-metric-row] {grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
+}
+@media (max-width: 960px) {
+  body.ecwa-verify-page .ecwa-toolbar {left:50%;bottom:10px;max-width:calc(100vw - 20px);}
+  body.ecwa-verify-page [data-ecwa-section] {margin-block-end:12px!important;}
+}
+@media (max-width: 640px) {
+  body.ecwa-verify-page [data-ecwa-metric-row] {grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px!important;}
+  body.ecwa-verify-page [data-ecwa-metric] {min-height:94px;padding:12px!important;}
+  body.ecwa-verify-page .ecwa-toolbar {position:static; transform:none; margin:16px auto; border-radius:12px; box-shadow:none; padding:5px;}
+  body.ecwa-verify-page .ecwa-toolbar-label {display:none;}
+  body.ecwa-verify-page .ecwa-toolbar button {padding:8px;font-size:11px;}
+}
+@media (prefers-reduced-motion: reduce) {
+  body.ecwa-verify-page * {scroll-behavior:auto!important;transition:none!important;}
+}

@@ -1,0 +1,37 @@
+[
+  {
+    "path": "resources/views/pages/contacts/⚡whatsapp.blade.php",
+    "existed": true,
+    "sha": "a301630815dab7872b3727d2d307465449a620a63aff5f832d0d4a0528ad54b6"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v11.blade.php",
+    "existed": true,
+    "sha": "eb3543e3c5af6963b8cf4011f96aacf3e928973c5aec81096c770f4e876666d0"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-v8-operation.blade.php",
+    "existed": true,
+    "sha": "415fe438d4b864cb8b62e08b385e026a1006d18a584440a710bbce73413db55c"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-v12-summary.blade.php",
+    "existed": false,
+    "sha": "4f1f09ac3016db3fcf11ea10bb429d918e85430ee35a65ebd7af56ced6212222"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-v12-tabs.blade.php",
+    "existed": false,
+    "sha": "7d59673517ec5fb54d9e82130ce24fd7e9ddfdc0cecfb6d4f1fecc551f857c0e"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-v12-styles.blade.php",
+    "existed": false,
+    "sha": "c225c08df2aace78409bfe2bdf59c518400c7f7f003c44abd34cb814495688cc"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappVisualV12Test.php",
+    "existed": false,
+    "sha": "a1a4963f83dae24f19e4480511b86ad7727977c5eb64c9fed289ca669503c509"
+  }
+]

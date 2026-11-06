@@ -2,10 +2,11 @@
 
 namespace App\Services\Campaigns;
 
+use App\Jobs\QueueWorkerHeartbeat;
 use App\Models\EmailCampaign;
 use Carbon\CarbonImmutable;
-use DateTimeInterface;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -35,7 +36,7 @@ final class CampaignFollowupScheduleViewV4
     public function home(int $limit = 4): array
     {
         $plans = DB::table('email_campaign_sequences')
-            ->whereIn('status', ['active', 'paused', 'planned', 'prepared'])
+            ->whereIn('status', ['active', 'paused', 'planned', 'prepared', 'finished'])
             ->orderByDesc('id')->limit(100)->get();
 
         // Uma sequencia automatica ativa tem precedencia sobre um
@@ -82,20 +83,55 @@ final class CampaignFollowupScheduleViewV4
             && $previous->status === 'completed'
             && $previous->completed_at !== null;
 
-        // O executor real exige tanto a conclusão quanto o prazo de todos
-        // os destinatários aceitos pelo SMTP da rodada anterior.
-        $dueAt = null;
-        if ($previousCompleted) {
-            $completed = $this->asUtcDate($previous->completed_at);
-            $lastAccepted = DB::table('email_campaign_recipients')
-                ->where('email_campaign_id', $previous->id)
+        // Tela e executor usam o MESMO cálculo. Nenhuma data meramente visual.
+        $scheduledTimeValue = data_get($plan, 'send_time_local');
+        $scheduledDateValue = $sent === 0 ? data_get($plan, 'first_send_date') : null;
+        $scheduledTime = is_string($scheduledTimeValue) ? $scheduledTimeValue : null;
+        $scheduledDate = is_string($scheduledDateValue) ? $scheduledDateValue : null;
+        $dueAt = $previous !== null
+            ? app(CampaignFollowupScheduleClock::class)->dueAt($previous, $days, $scheduledTime, $scheduledDate)
+            : null;
+        $displayTz = $scheduledTime !== null ? 'America/Sao_Paulo' : $this->timezone();
+
+        // Resultado real da última rodada iniciada ou, antes dela, da campanha original.
+        $tracked = $sent > 0 ? $previous : $root;
+        $report = null;
+        $reportBounces = 0;
+        $reportReplies = 0;
+        if ($tracked !== null) {
+            $report = DB::table('email_campaign_recipients')
+                ->where('email_campaign_id', $tracked->id)
+                ->selectRaw("COUNT(*) as total, SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as accepted, SUM(CASE WHEN status = 'uncertain' THEN 1 ELSE 0 END) as uncertain, SUM(CASE WHEN status IN ('pending', 'reserved', 'sending') THEN 1 ELSE 0 END) as pending")
+                ->first();
+            $reportBounces = DB::table('email_campaign_bounces')
+                ->where('email_campaign_id', $tracked->id)
+                ->whereNotNull('email_campaign_recipient_id')->count();
+            $reportReplies = DB::table('email_campaign_replies')
+                ->where('email_campaign_id', $tracked->id)->count();
+        }
+
+        // Resultado confirmado PELOS REGISTROS LOCAIS do SMTP, nao por abertura.
+        // O plano "finished" significa que todas as rodadas foram INICIADAS;
+        // os destinatarios podem continuar processando quando isso ocorre.
+        $latestTotal = (int) data_get($report, 'total', 0);
+        $latestAccepted = (int) data_get($report, 'accepted', 0);
+        $latestPending = (int) data_get($report, 'pending', 0);
+        $latestUncertain = (int) data_get($report, 'uncertain', 0);
+        $lastRoundNumber = $sent > 0 ? $sent + 1 : 1;
+        $latestSmtpAt = null;
+        if ($tracked !== null && $latestAccepted > 0) {
+            $lastSmtpValue = DB::table('email_campaign_recipients')
+                ->where('email_campaign_id', $tracked->id)
                 ->where('status', 'sent')
                 ->max('sent_at');
-            $lastSent = $this->asUtcDate($lastAccepted);
-            if ($completed !== null) {
-                $reference = $lastSent !== null && $lastSent->greaterThan($completed)
-                    ? $lastSent : $completed;
-                $dueAt = $reference->addDays($days);
+            if ($lastSmtpValue !== null) {
+                try {
+                    $latestSmtpAt = CarbonImmutable::parse((string) $lastSmtpValue, 'UTC')
+                        ->setTimezone('America/Sao_Paulo')
+                        ->format('d/m/Y H:i');
+                } catch (\Throwable) {
+                    // Um valor invalido nao deve impedir a leitura da campanha.
+                }
             }
         }
 
@@ -113,10 +149,38 @@ final class CampaignFollowupScheduleViewV4
             ? app(CampaignUnsubscribeLink::class)->isReady()
             : false;
 
+        // Sinais reais do scheduler e do worker; planejamento sozinho nao envia.
+        $schedulerHeartbeat = Cache::get('ops:scheduler:last-heartbeat');
+        $schedulerHealthy = is_string($schedulerHeartbeat) && $schedulerHeartbeat !== ''
+            && CarbonImmutable::parse($schedulerHeartbeat)->greaterThan(CarbonImmutable::now('UTC')->subMinutes(3));
+        $campaignQueue = (string) config('campaign_mail.queue', 'campaigns');
+        $workerHeartbeat = Cache::get(QueueWorkerHeartbeat::cacheKey($campaignQueue));
+        $workerHealthy = is_string($workerHeartbeat) && $workerHeartbeat !== ''
+            && CarbonImmutable::parse($workerHeartbeat)->greaterThan(CarbonImmutable::now('UTC')->subMinutes(3));
+
         if ($remaining <= 0 || $status === 'finished') {
             $state = 'finished';
-            $stateLabel = 'Rodadas programadas iniciadas';
-            $stateReason = 'Veja os resultados individuais no histórico de campanhas.';
+            if ($sent === 0 || $tracked === null || $latestTotal === 0) {
+                $stateLabel = 'Sequencia finalizada — consulte as rodadas';
+                $stateReason = 'Nao existem novas rodadas previstas. Confira o historico.';
+            } elseif ($latestPending > 0) {
+                $stateLabel = $lastRoundNumber.'ª rodada — envio em andamento';
+                $stateReason = $latestAccepted.' de '.$latestTotal.' aceitos pelo SMTP; '
+                    .$latestPending.' ainda aguardam processamento.';
+            } elseif ($latestUncertain > 0) {
+                $stateLabel = $lastRoundNumber.'ª rodada — requer revisao';
+                $stateReason = $latestAccepted.' aceitos pelo SMTP; '
+                    .$latestUncertain.' envio(s) com resultado incerto. Nao reenvie automaticamente.';
+            } elseif ($latestAccepted === $latestTotal) {
+                $stateLabel = $lastRoundNumber.'ª rodada — aceita pelo SMTP';
+                $stateReason = 'Rodada executada: '.$latestAccepted.' de '.$latestTotal
+                    .' aceitos pelo SMTP'.($reportBounces > 0 ? ', com '.$reportBounces.' devolucao(oes) registrada(s).' : '.')
+                    .' Aceitacao SMTP nao comprova entrega na caixa de entrada.';
+            } else {
+                $stateLabel = $lastRoundNumber.'ª rodada — consultar resultados';
+                $stateReason = $latestAccepted.' de '.$latestTotal
+                    .' aceitos pelo SMTP. Confira os demais destinatarios e estados da campanha.';
+            }
         } elseif (! $automatic) {
             // Planejado manual nao equivale a uma rodada automatica agendada.
             $state = 'manual';
@@ -154,7 +218,19 @@ final class CampaignFollowupScheduleViewV4
             $state = 'blocked';
             $stateLabel = 'Descadastro HTTPS pendente';
             $stateReason = 'O sistema exige um endereço público seguro para descadastro.';
-        } elseif ($dueAt !== null && $dueAt->greaterThan(CarbonImmutable::now('UTC'))) {
+        } elseif ($dueAt === null) {
+            $state = 'blocked';
+            $stateLabel = 'Data ou horario invalidos';
+            $stateReason = 'Revise a programacao antes de iniciar um envio.';
+        } elseif (! $schedulerHealthy) {
+            $state = 'blocked';
+            $stateLabel = 'Agendador sem atividade recente';
+            $stateReason = 'O cronograma esta salvo, mas o scheduler nao registra atividade recente. Confira schedule:work ou o cron do Laravel.';
+        } elseif (! $workerHealthy) {
+            $state = 'blocked';
+            $stateLabel = 'Fila de campanhas sem worker';
+            $stateReason = 'O cronograma esta salvo, mas a fila de campanhas nao possui heartbeat recente. Verifique o worker Redis da fila de campanhas.';
+        } elseif ($dueAt->greaterThan(CarbonImmutable::now('UTC'))) {
             $state = 'scheduled';
             $stateLabel = 'Próxima rodada programada';
             $stateReason = 'O sistema aguardará o prazo configurado e as condições de envio.';
@@ -173,7 +249,7 @@ final class CampaignFollowupScheduleViewV4
                 'label' => $number.'ª rodada',
                 'stage' => $stage,
                 'date' => $stage === 'next' && $dueAt !== null
-                    ? $dueAt->setTimezone($this->timezone())->format('d/m/Y')
+                    ? $dueAt->setTimezone($displayTz)->format('d/m/Y')
                     : null,
             ];
         }
@@ -195,7 +271,23 @@ final class CampaignFollowupScheduleViewV4
             'remaining_followups' => $remaining,
             'previous_completed' => $previousCompleted,
             'due_at' => $dueAt,
-            'due_date' => $dueAt?->setTimezone($this->timezone())->format('d/m/Y'),
+            'due_date' => $dueAt?->setTimezone($displayTz)->format('d/m/Y'),
+            'due_datetime' => $dueAt?->setTimezone($displayTz)->format('d/m/Y H:i'),
+            'send_time_local' => $scheduledTime,
+            'first_send_date' => $scheduledDate,
+            'scheduler_healthy' => $schedulerHealthy,
+            'campaign_worker_healthy' => $workerHealthy,
+            'latest_campaign_id' => $tracked?->id,
+            'latest_campaign_name' => $tracked?->name,
+            'latest_campaign_status' => $tracked?->status,
+            'latest_total_count' => $latestTotal,
+            'last_round_number' => $lastRoundNumber,
+            'latest_smtp_at' => $latestSmtpAt,
+            'accepted_smtp_count' => (int) data_get($report, 'accepted', 0),
+            'uncertain_count' => (int) data_get($report, 'uncertain', 0),
+            'pending_count' => (int) data_get($report, 'pending', 0),
+            'bounces_count' => $reportBounces,
+            'replies_count' => $reportReplies,
             'eligible_count' => $eligible,
             'subject' => (string) $plan->subject,
             'body' => (string) $plan->body,
@@ -250,24 +342,30 @@ final class CampaignFollowupScheduleViewV4
                             });
                     });
             })
+            // Mesmas exclusoes globais aplicadas na criacao da rodada.
+            ->whereNotExists(static function (Builder $q): void {
+                $q->selectRaw('1')
+                    ->from('email_campaign_recipients as any_history')
+                    ->whereColumn('any_history.normalized_email', 'original.normalized_email')
+                    ->where(static function (Builder $blocked): void {
+                        $blocked->whereNotNull('any_history.replied_at')
+                            ->orWhere('any_history.status', 'uncertain')
+                            ->orWhereExists(static function (Builder $reply): void {
+                                $reply->selectRaw('1')->from('email_campaign_replies as any_reply')
+                                    ->whereColumn('any_reply.email_campaign_recipient_id', 'any_history.id');
+                            })
+                            ->orWhereExists(static function (Builder $bounce): void {
+                                $bounce->selectRaw('1')->from('email_campaign_bounces as any_bounce')
+                                    ->whereColumn('any_bounce.email_campaign_recipient_id', 'any_history.id');
+                            });
+                    });
+            })
+            ->whereNotExists(static function (Builder $q): void {
+                $q->selectRaw('1')->from('email_campaign_bounces as any_bounce_email')
+                    ->whereColumn('any_bounce_email.final_recipient', 'original.normalized_email');
+            })
             ->distinct()
             ->count('original.normalized_email');
-    }
-
-    private function asUtcDate(mixed $value): ?CarbonImmutable
-    {
-        if ($value instanceof DateTimeInterface) {
-            return CarbonImmutable::instance($value)->setTimezone('UTC');
-        }
-        if (! is_string($value) || trim($value) === '') {
-            return null;
-        }
-
-        try {
-            return CarbonImmutable::parse($value, 'UTC');
-        } catch (\Throwable) {
-            return null;
-        }
     }
 
     private function timezone(): string

@@ -15,20 +15,27 @@ use Illuminate\Validation\ValidationException;
 final class CampaignFollowupSettingsV5
 {
     /**
-     * @param  array{name:string,delay_days:int|string,max_rounds:int|string,subject:string,body:string}  $fields
+     * @param  array{name:string,delay_days:int|string,max_rounds:int|string,subject:string,body:string,send_time_local?:string|null,first_send_date?:string|null}  $fields
      */
     public function save(User $actor, int $campaignId, array $fields, ?int $preferredPlanId = null): int
     {
         abort_unless($actor->isCommercialManager(), 403);
 
-        /** @var array{name:string,delay_days:int,max_rounds:int,subject:string,body:string} $valid */
+        /** @var array{name:string,delay_days:int,max_rounds:int,subject:string,body:string,send_time_local?:string|null,first_send_date?:string|null} $valid */
         $valid = Validator::make($fields, [
             'name' => ['required', 'string', 'min:3', 'max:150'],
             'delay_days' => ['required', 'integer', 'min:1', 'max:90'],
             'max_rounds' => ['required', 'integer', 'min:1', 'max:4'],
             'subject' => ['required', 'string', 'min:3', 'max:180'],
             'body' => ['required', 'string', 'min:10', 'max:12000'],
+            'send_time_local' => ['nullable', 'date_format:H:i'],
+            'first_send_date' => ['nullable', 'date_format:Y-m-d'],
         ])->validate();
+        if (! empty($valid['first_send_date']) && empty($valid['send_time_local'])) {
+            throw ValidationException::withMessages([
+                'first_send_date' => 'Para escolher uma data, informe também o horário local.',
+            ]);
+        }
 
         return DB::transaction(function () use ($actor, $campaignId, $valid, $preferredPlanId): int {
             // Ordem global de locks igual ao despachante; nunca manter lock durante SMTP.
@@ -68,6 +75,9 @@ final class CampaignFollowupSettingsV5
                 'subject' => trim($valid['subject']),
                 'body' => trim($valid['body']),
                 'delay_days' => (int) $valid['delay_days'],
+                // Null preserva contratos históricos com contagem exata em horas.
+                'send_time_local' => ($valid['send_time_local'] ?? null) ?: null,
+                'first_send_date' => ($valid['first_send_date'] ?? null) ?: null,
                 'max_rounds' => (int) $valid['max_rounds'],
                 'updated_at' => now('UTC'),
             ];

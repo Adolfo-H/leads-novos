@@ -1,0 +1,97 @@
+[
+  {
+    "path": "resources/views/pages/contacts/⚡index.blade.php",
+    "existed": true,
+    "installed_sha256": "18253c0d7f28b05660bdeb9cae3fdef71e51c6b483a84953f438042ae2ed9b11"
+  },
+  {
+    "path": "resources/views/partials/company-dossier/figma-group-v53.blade.php",
+    "existed": true,
+    "installed_sha256": "7e4916688c6fa433bdc0f436ee30289551519b57112c7461c49548566d2b098d"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPhoneRegistry.php",
+    "existed": true,
+    "installed_sha256": "b1774693e734c3c8537eb47c7d4c140ce2fbffc21ea3afaab3a39e58cc23f014"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPublicCompanyChannels.php",
+    "existed": true,
+    "installed_sha256": "ce92401b390610c57406fb352fc03eab8fc062425e85b240db31d349cdebab1c"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v13-channels.blade.php",
+    "existed": true,
+    "installed_sha256": "a165fd67910a5b6c456ca1f2447e75a1f2e08f97825ee5246f9d38e96b2c807c"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPublicSiteResearch.php",
+    "existed": true,
+    "installed_sha256": "11fb9ae7a51a681cfdca77f9f51e539b63b2079aa103a76eaec32b0be5e33859"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-v8-operation.blade.php",
+    "existed": true,
+    "installed_sha256": "9c2db6d496cdfed8547c70cc2638a69fe3a646b4e9b4de46b9dd28d71d62f59f"
+  },
+  {
+    "path": "resources/views/pages/contacts/⚡whatsapp.blade.php",
+    "existed": true,
+    "installed_sha256": "39ec141899076f5dd56e1f58783e3a87f8e98f7cf406547e6506b897123784e5"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappCompanyPublicV11Test.php",
+    "existed": true,
+    "installed_sha256": "c506f6228a5ee413b58cd690898a8c8cde9347a5e7e486ed4daefddd7961b528"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPublicPhoneIndexerV14.php",
+    "existed": false,
+    "installed_sha256": "5569859f94e8800e44bf9b2a7142e63cfe9f97dc0d24d06daf2b53097a12ee66"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPublicContactsV14.php",
+    "existed": false,
+    "installed_sha256": "d19901d0afe69057b580796e1aee882bc96ecf639eb0f2022a90f9da8a7e13a4"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappExternalCompanyDiscoveryV14.php",
+    "existed": false,
+    "installed_sha256": "2107108c9046e36acb6c5985afd120027d987a7a262fb5a7dc37c60cf2db0761"
+  },
+  {
+    "path": "app/Jobs/ResearchWhatsappExternalCompanyV14.php",
+    "existed": false,
+    "installed_sha256": "4a89625ddc007a7fa51b34158daea210cc5c9c2cbec2f4d46d346a1045dd6a99"
+  },
+  {
+    "path": "config/whatsapp_public_search.php",
+    "existed": false,
+    "installed_sha256": "88bbf35c44f4f94fed932ce444ba1abb279e214ed18de0636e4365b46edc83a5"
+  },
+  {
+    "path": "database/migrations/2026_11_05_210000_create_whatsapp_external_company_findings_v14.php",
+    "existed": false,
+    "installed_sha256": "fff7f8198b0ffdac416c2361c0c94ae886fef8b8a84c50a38f88913fb6ffb133"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-in-contacts-v14.blade.php",
+    "existed": false,
+    "installed_sha256": "4f1354da3ffe49411e15beff4f6a8f8be4c8813dbc30c74fb359f3e9b302efd2"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-external-discovery-v14.blade.php",
+    "existed": false,
+    "installed_sha256": "572ab095057a3fcd01ab8ef1d3e2c6872da8be9481c5bfe156178395bc231186"
+  },
+  {
+    "path": "resources/views/partials/company-dossier/whatsapp-v14.blade.php",
+    "existed": false,
+    "installed_sha256": "9461b955e35300dcc296ca60e9bf391395f9d0a24135ead6032a34322ce43e82"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappPublicDirectoryV14Test.php",
+    "existed": false,
+    "installed_sha256": "388becc38f28ba920e17c2fc2aab34445fe6a1a4b90a6bb411baef0909400a8e"
+  }
+]

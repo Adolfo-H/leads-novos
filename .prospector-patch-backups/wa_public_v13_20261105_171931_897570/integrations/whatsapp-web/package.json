@@ -1,0 +1,17 @@
+{
+  "name": "prospector-whatsapp-web-probe",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Consulta experimental e opt-in, somente leitura de presença no WhatsApp Web; sem envio de mensagens.",
+  "engines": {"node": ">=20"},
+  "scripts": {
+    "pilot": "node probe.mjs --limit=5",
+    "preview": "node probe.mjs --limit=5 --dry-run"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "7.0.0-rc14",
+    "pino": "9.14.0",
+    "qrcode-terminal": "0.12.0"
+  }
+}

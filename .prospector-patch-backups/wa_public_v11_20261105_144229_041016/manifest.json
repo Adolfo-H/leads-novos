@@ -1,0 +1,47 @@
+[
+  {
+    "path": "app/Services/Contacts/WhatsappPublicSiteResearch.php",
+    "existed": true,
+    "written_sha": "0765e30a6e448b79122c3e7060ac14d859991f833e0a9b9fbf272892c42c8f0a"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPhoneRegistry.php",
+    "existed": true,
+    "written_sha": "aa97bd049dc6070f34e4ce5b7e9bfe6c4cbd5339b641546628a6fd1975202629"
+  },
+  {
+    "path": "resources/views/pages/contacts/⚡whatsapp.blade.php",
+    "existed": true,
+    "written_sha": "beeef05c2c8fcadc248b855ce14e9056329c4ed671a8a413f1c2c835a510579b"
+  },
+  {
+    "path": "routes/console.php",
+    "existed": true,
+    "written_sha": "e1b5048cac21643c3804679501e339fd3cf746faa696b856a2245cb9d085908a"
+  },
+  {
+    "path": "database/migrations/2026_11_05_170000_add_whatsapp_public_global_match.php",
+    "existed": false,
+    "written_sha": "92e541d809ade0d89ccede60a713a28535fd420678df6e7caae5b926091d0995"
+  },
+  {
+    "path": "app/Console/Commands/ReconcileWhatsappPublicContacts.php",
+    "existed": false,
+    "written_sha": "f6e2e0ccb54c25c7db738982277e946b1b5deb02ed14f519f615c169416faf4b"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v11.blade.php",
+    "existed": false,
+    "written_sha": "29f0ecc6136ba1a1875f3e4311d7379966b6a09ef635ecc4a37b5c15caa44a51"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v11-styles.blade.php",
+    "existed": false,
+    "written_sha": "c74d909f7a84bb959d976136696db6179d4888158a512c188de08737bf2cd1f3"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappCompanyPublicV11Test.php",
+    "existed": false,
+    "written_sha": "2d291b9d2f0cee6c7370b14131f76384bf4e94d0d5fff324bb642beaaf70c806"
+  }
+]

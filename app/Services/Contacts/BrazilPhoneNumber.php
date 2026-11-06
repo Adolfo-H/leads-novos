@@ -89,6 +89,27 @@ final class BrazilPhoneNumber
     }
 
     /**
+     * CANDIDATO (não confirmação): incluir o 9 em número móvel antigo com DDD válido.
+     * Não infere DDD ou identidade do titular. Não altera origem nem confirma WhatsApp.
+     */
+    public static function legacyMobileCandidate(?string $input): ?string
+    {
+        $digits = (string) preg_replace('/\D+/', '', (string) $input);
+        if (str_starts_with($digits, '55') && strlen($digits) === 12) {
+            $digits = substr($digits, 2);
+        }
+        if (strlen($digits) !== 10 || ! in_array((int) substr($digits, 0, 2), self::DDDS, true)
+            || preg_match('/^[6-9][0-9]{7}$/D', substr($digits, 2)) !== 1) {
+            return null;
+        }
+        $candidate = '55'.substr($digits, 0, 2).'9'.substr($digits, 2);
+        $inspected = self::inspect($candidate);
+
+        return $inspected !== null && $inspected['kind'] === 'mobile'
+            && $inspected['e164'] === $candidate ? $candidate : null;
+    }
+
+    /**
      * Dica visual para um número de revisão; nunca altera nem verifica o telefone.
      *
      * @return array{title:string,message:string,candidate:?string}|null

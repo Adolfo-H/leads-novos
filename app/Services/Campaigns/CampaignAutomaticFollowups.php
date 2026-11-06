@@ -110,16 +110,19 @@ final class CampaignAutomaticFollowups
 
                 return false;
             }
-            if ($previous->status !== 'completed' || $previous->completed_at === null
-                || CarbonImmutable::parse($previous->completed_at)->greaterThan(now('UTC')->subDays((int) $plan->delay_days))) {
-                return false;
-            }
-
-            // A rodada inicia apenas depois de TODOS os envios SMTP confirmados
-            // da anterior completarem o intervalo configurado.
-            $deadline = now('UTC')->subDays((int) $plan->delay_days);
-            if (EmailCampaignRecipient::query()->where('email_campaign_id', $previous->id)
-                ->where('status', 'sent')->where('sent_at', '>', $deadline)->exists()) {
+            // O plano legado mantém N x 24h; um horário configurado usa DIAS DE
+            // CALENDÁRIO em São Paulo (ex.: terça 17h42 + 3 dias = sexta 08h).
+            // O bloqueio por respostas/DSN/descadastro continua após este gate.
+            $scheduledTime = data_get($plan, 'send_time_local');
+            $scheduledDate = (int) $plan->sent_rounds === 0
+                ? data_get($plan, 'first_send_date') : null;
+            $dueAt = app(CampaignFollowupScheduleClock::class)->dueAt(
+                $previous,
+                (int) $plan->delay_days,
+                is_string($scheduledTime) ? $scheduledTime : null,
+                is_string($scheduledDate) ? $scheduledDate : null,
+            );
+            if ($dueAt === null || $dueAt->greaterThan(CarbonImmutable::now('UTC'))) {
                 return false;
             }
 
@@ -158,6 +161,27 @@ final class CampaignAutomaticFollowups
             $blockedEmails = EmailCampaignSuppression::query()
                 ->whereIn('normalized_email', $emails)
                 ->pluck('normalized_email')->flip();
+
+            // Respostas, devolucoes ou SMTP incerto em OUTRAS campanhas
+            // tambem bloqueiam uma retomada para o mesmo endereco.
+            $globalBlockedEmails = EmailCampaignRecipient::query()
+                ->whereIn('normalized_email', $emails)
+                ->where(static function ($query): void {
+                    $query->whereNotNull('replied_at')
+                        ->orWhere('status', 'uncertain')
+                        ->orWhereHas('replies')
+                        ->orWhereHas('bounces');
+                })
+                ->pluck('normalized_email');
+            foreach ($globalBlockedEmails as $blockedEmail) {
+                $blockedEmails->put((string) $blockedEmail, 1);
+            }
+            $globalBounceEmails = EmailCampaignBounce::query()
+                ->whereIn('final_recipient', $emails)
+                ->pluck('final_recipient');
+            foreach ($globalBounceEmails as $blockedEmail) {
+                $blockedEmails->put((string) $blockedEmail, 1);
+            }
 
             foreach ($history as $row) {
                 if ($row->replied_at !== null || $row->excluded_from_sequences_at !== null

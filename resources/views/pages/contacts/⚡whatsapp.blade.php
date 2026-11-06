@@ -53,6 +53,10 @@ new class extends Component
 
     public string $note = '';
 
+    public string $inlineCorrectedPhone = '';
+
+    public string $inlineCorrectionNote = '';
+
     public function mount(): void
     {
         $publicSettings = app(\App\Services\Contacts\WhatsappPublicSiteResearch::class)->settings();
@@ -86,11 +90,19 @@ new class extends Component
             'token' => \Illuminate\Support\Str::random(40),
             'reset' => $reset,
             'actor_id' => auth()->id(),
-        ], now()->addMinutes(10));
+            'requested_at' => now('UTC')->toIso8601String(),
+        ], now()->addSeconds(125));
         \Illuminate\Support\Facades\Cache::forget($base.'qr:'.$session);
-        \Illuminate\Support\Facades\Cache::forget($base.'state:'.$session);
+        \Illuminate\Support\Facades\Cache::put($base.'state:'.$session, [
+            'state' => 'requested', 'at' => now('UTC')->toIso8601String(),
+        ], now()->addMinutes(3));
+        $beat = \Illuminate\Support\Facades\Cache::get($base.'connector:heartbeat');
+        $alive = is_string($beat) && strtotime($beat) !== false
+            && strtotime($beat) > time() - 60;
         unset($this->webAgents);
-        session()->flash('wa_pair_notice', 'Conexão solicitada para WhatsApp '.$session.'. O QR aparecerá aqui se for necessário.');
+        session()->flash('wa_pair_notice', $alive
+            ? 'Solicitação registrada. Veja o QR ou o estado da conexão na coluna direita.'
+            : 'Conector Ubuntu offline: inicie integrations/whatsapp-web/iniciar-conector.sh. A solicitação expira em dois minutos.');
     }
 
     public function boot(): void
@@ -118,6 +130,8 @@ new class extends Component
         $this->page = 1;
         $this->selectedId = null;
         $this->note = '';
+        $this->inlineCorrectedPhone = '';
+        $this->inlineCorrectionNote = '';
         unset($this->items, $this->selectedNumber, $this->associations, $this->history);
     }
 
@@ -145,14 +159,23 @@ new class extends Component
         $this->page = max(1, min($page, $this->items->lastPage()));
         $this->selectedId = null;
         $this->note = '';
+        $this->inlineCorrectedPhone = '';
+        $this->inlineCorrectionNote = '';
         unset($this->items, $this->selectedNumber, $this->associations, $this->history);
     }
 
     public function selectNumber(int $id): void
     {
-        abort_unless(collect($this->items->items())->contains(static fn (object $r): bool => (int) $r->id === $id), 404);
+        $row = collect($this->items->items())
+            ->first(static fn (object $r): bool => (int) $r->id === $id);
+        abort_unless($row !== null, 404);
         $this->selectedId = $id;
         $this->note = '';
+        $this->inlineCorrectionNote = '';
+        $suggested = $row->kind === 'review'
+            ? BrazilPhoneNumber::legacyMobileCandidate((string) $row->digits) : null;
+        $this->inlineCorrectedPhone = $suggested !== null
+            ? BrazilPhoneNumber::display($suggested, (string) $row->digits) : '';
         $this->resetValidation();
         unset($this->selectedNumber, $this->associations, $this->history);
     }
@@ -172,6 +195,41 @@ new class extends Component
             'no' => 'Resultado da conferência salvo e atualizado nos contatos vinculados.',
             default => 'Confirmação removida; número voltou a não verificado.',
         });
+    }
+
+    // EC_WA_INLINE_REVIEW_V20: corrigir sem sair do diretório e sem consultar WhatsApp.
+    public function saveInlinePhoneCorrection(): void
+    {
+        $selected = $this->selectedNumber;
+        abort_unless($selected !== null && $selected->kind === 'review', 404);
+        $actor = auth()->user();
+        abort_unless($actor instanceof User && $actor->isCommercialManager(), 403);
+
+        $moved = app(\App\Services\Contacts\WhatsappInlinePhoneCorrectionV20::class)
+            ->correct($actor, (int) $selected->id, $this->inlineCorrectedPhone, $this->inlineCorrectionNote);
+        $this->selectedId = null;
+        $this->inlineCorrectedPhone = '';
+        $this->inlineCorrectionNote = '';
+        unset($this->items, $this->selectedNumber, $this->summary, $this->associations, $this->history);
+        session()->flash('wa_registry_success',
+            'Formato corrigido no índice local; '.$moved.' vínculo(s) atualizado(s). Original preservado. WhatsApp continua não verificado.');
+    }
+
+    public function markInlinePhoneInvalid(): void
+    {
+        $selected = $this->selectedNumber;
+        abort_unless($selected !== null && $selected->kind === 'review', 404);
+        $actor = auth()->user();
+        abort_unless($actor instanceof User && $actor->isCommercialManager(), 403);
+
+        app(\App\Services\Contacts\WhatsappInlinePhoneCorrectionV20::class)
+            ->invalid($actor, (int) $selected->id, $this->inlineCorrectionNote);
+        $this->selectedId = null;
+        $this->inlineCorrectedPhone = '';
+        $this->inlineCorrectionNote = '';
+        unset($this->items, $this->selectedNumber, $this->summary, $this->associations, $this->history);
+        session()->flash('wa_registry_success',
+            'Formato marcado como inválido. Registro original preservado e removido das revisões pendentes.');
     }
 
     #[Computed]
@@ -649,6 +707,8 @@ new class extends Component
                             @endif
                         </div>
                     @endif
+                    {{-- EC_WA_INLINE_REVIEW_V20 --}}
+                    @include('contacts.whatsapp-inline-review-v20')
                 @else
                     <div class="wpr-action-panel">
                         <h3>Conferir no aplicativo</h3>

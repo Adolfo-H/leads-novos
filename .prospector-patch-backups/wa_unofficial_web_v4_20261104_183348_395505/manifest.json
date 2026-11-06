@@ -1,0 +1,62 @@
+[
+  {
+    "path": "resources/views/pages/contacts/⚡whatsapp.blade.php",
+    "existed": true,
+    "installed_sha256": "e44f925dbddce743590481b39f977c1d02142705302a29bf95c313cdd697f987"
+  },
+  {
+    "path": "resources/views/layouts/app/sidebar.blade.php",
+    "existed": true,
+    "installed_sha256": "ae8a0f31d34b220b8d1d783b3801def6c1027303ceb88a43ad6a964fe27fe502"
+  },
+  {
+    "path": ".gitignore",
+    "existed": true,
+    "installed_sha256": "e81f2c8cec895432e833f4fdd117f0037b1c18391b52bcc56e3f136aad47e6d2"
+  },
+  {
+    "path": "app/Console/Commands/WhatsAppWebProbeCandidates.php",
+    "existed": false,
+    "installed_sha256": "5a0d5d6817b2972e9721a88ef12410a1dc6ca310d5daf4142174532b95c3a280"
+  },
+  {
+    "path": "app/Console/Commands/WhatsAppWebProbeRecord.php",
+    "existed": false,
+    "installed_sha256": "a61888ad1ecd718b99ff4f8f56477d9b1559a11327e9162061a032135d0281f7"
+  },
+  {
+    "path": "database/migrations/2026_11_04_210000_create_whatsapp_web_probe_results.php",
+    "existed": false,
+    "installed_sha256": "280c2f93a93a84f42277d7d3d93420f0c137707be869b14e22fcf26f5e500e45"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-web-v4-styles.blade.php",
+    "existed": false,
+    "installed_sha256": "ef1e29e208647c9f80f595680a1c5b2d25fa1c51213891118ee92cf45697c5b8"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-web-v4-summary.blade.php",
+    "existed": false,
+    "installed_sha256": "c5e316a4d37591e8a2d01edd4d7afa43265b3746e50da522a739191861f80f8e"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-web-v4-selected.blade.php",
+    "existed": false,
+    "installed_sha256": "5679eeb3217b33063ac419985374009058250bd1f20e082cc740d36dfa50d1d7"
+  },
+  {
+    "path": "integrations/whatsapp-web/package.json",
+    "existed": false,
+    "installed_sha256": "dd24302ed9540dcf066f1eddd4788702799b83ecb09fd8434eab994e6b507eb6"
+  },
+  {
+    "path": "integrations/whatsapp-web/probe.mjs",
+    "existed": false,
+    "installed_sha256": "c2503d8fec25f685925919c3a21b77c700507cfdeff6a292f1dfa9b05d6f69bd"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappWebProbeV4Test.php",
+    "existed": false,
+    "installed_sha256": "595ea0263d7b6f472f86e0ce027e6fbc74eb521680a2642438a5002b91483c96"
+  }
+]

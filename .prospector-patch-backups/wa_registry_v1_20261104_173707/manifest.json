@@ -1,0 +1,57 @@
+[
+  {
+    "path": "app/Services/Contacts/BrazilPhoneNumber.php",
+    "existed": false,
+    "installed_sha256": "f0e7a5344ee96847e13b9dd022aa1cbbb04aa9dba2ee5a182175bbf92db9fd15"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPhoneRegistry.php",
+    "existed": false,
+    "installed_sha256": "f66218c17cab1be40b3bcb6dde94a0735d82a6b7567293ad4674bdef1c2250f9"
+  },
+  {
+    "path": "app/Console/Commands/SyncWhatsappPhoneRegistry.php",
+    "existed": false,
+    "installed_sha256": "f9a072f6b1904aa297ae2b03ce8f532f74ea266ad3a90c67068263c555765773"
+  },
+  {
+    "path": "database/migrations/2026_11_04_190000_create_whatsapp_phone_registry.php",
+    "existed": false,
+    "installed_sha256": "5f2d98bc92d89b8a463dca5cd6ab4829d147f31000430f50153315e6e15a8f7e"
+  },
+  {
+    "path": "resources/views/pages/contacts/⚡whatsapp.blade.php",
+    "existed": false,
+    "installed_sha256": "9a183143dd8b5fa133cd69941fb5d4ea284c60f0693cd09d8257b65e26b4b157"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-registry-styles.blade.php",
+    "existed": false,
+    "installed_sha256": "1bff3ecaf6a5823cc851c950ba2402030e663c6be21a41be621fa5066707c0ab"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappPhoneRegistryTest.php",
+    "existed": false,
+    "installed_sha256": "94c5d58479dd546f21547f15a585ec0e8568267c8e138a8cf7277f344ace9865"
+  },
+  {
+    "path": "tests/Unit/BrazilPhoneNumberTest.php",
+    "existed": false,
+    "installed_sha256": "c6322b600906af1b1dec49c58a895b7643bb25edc0a8b1cecc01bd1687271dcc"
+  },
+  {
+    "path": "routes/web.php",
+    "existed": true,
+    "installed_sha256": "069901355428609e14a75f75c613b4953a26845805878d8dfe70d2b75dc95161"
+  },
+  {
+    "path": "resources/views/layouts/app/sidebar.blade.php",
+    "existed": true,
+    "installed_sha256": "e382977aef7dd8f836a6bb47e99c577e380fe3b54a59515b19c41f175f7a1861"
+  },
+  {
+    "path": "routes/console.php",
+    "existed": true,
+    "installed_sha256": "ea1536f258adc75fd176ed5a685173ff5b778de2a94df8c6c89ce0674b284f38"
+  }
+]

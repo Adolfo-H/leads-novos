@@ -1,0 +1,22 @@
+[
+  {
+    "path": "integrations/whatsapp-web/probe.mjs",
+    "existed": true,
+    "installed_sha256": "ef42c2f9f4ef91cceddd8e7aaff2b4067a34fe416384f3d1b4723930d1219580"
+  },
+  {
+    "path": "app/Console/Commands/WhatsAppWebProbeCandidates.php",
+    "existed": true,
+    "installed_sha256": "cd9908b735e768fce1a50fd1e0b1d48cf3523e313bbb9bea363f3db072b8fdc9"
+  },
+  {
+    "path": ".gitignore",
+    "existed": true,
+    "installed_sha256": "a7147004a9b9ead3d0ecb0ea759f1ce9a4db15a1352cabb1ff918f48dfda071c"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappWebDualSessionsV5Test.php",
+    "existed": false,
+    "installed_sha256": "c14eaa386ed59c06081fbcc95d09582d6a39b6b67ddbfd5e4086eb097e7cbc6b"
+  }
+]

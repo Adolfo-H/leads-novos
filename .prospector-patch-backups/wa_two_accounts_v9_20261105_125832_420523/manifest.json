@@ -1,0 +1,52 @@
+[
+  {
+    "path": "app/Services/Contacts/WhatsappWebDailyCoordinator.php",
+    "existed": true,
+    "sha_installed": "b4a477ecfd1b934c4d1e247125cd2a3d063eefbbab3962f0134f8e708cac55c3"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappWebControlPanel.php",
+    "existed": true,
+    "sha_installed": "d970b34606930fdb0b6dbc98db0c9dcf58a2eda0e3dbe5c706e600ec141a9820"
+  },
+  {
+    "path": "resources/views/pages/contacts/⚡whatsapp.blade.php",
+    "existed": true,
+    "sha_installed": "24cf080ad48379e780d0c637863be2a2e28fb86e7017e025a307f8fee8312cee"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-v8-operation.blade.php",
+    "existed": true,
+    "sha_installed": "7f33916e5481dc50bfce1e80153983965cc44ad5e407ff6b4ae58b311796582d"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappUnifiedV7Test.php",
+    "existed": true,
+    "sha_installed": "9b2c0c9381504cef4c97aaffbf2df7ff611988cd31638a29919846a8fe3f42f0"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappFullDirectoryV8Test.php",
+    "existed": true,
+    "sha_installed": "40b8ace2452136b914e2e4dc57d4340c07ba8f4789581f4b595affff895e4349"
+  },
+  {
+    "path": "database/migrations/2026_11_05_130000_add_whatsapp_web_daily_end_time.php",
+    "existed": false,
+    "sha_installed": "970c10a68c1a730d0af4a2af7e2dbc60384a2e1a4493d77736b38678a5f5c370"
+  },
+  {
+    "path": "app/Console/Commands/EnableWhatsappWeb200PerDay.php",
+    "existed": false,
+    "sha_installed": "61b2cd5492dd473c54b636f4e9f443c15c7f305da3754b9b40667f91b9eed1d2"
+  },
+  {
+    "path": "tests/Feature/Contacts/Whatsapp200PerAccountV9Test.php",
+    "existed": false,
+    "sha_installed": "2347ad4a00b19cfc34d64357c9b4ad74a1d03cef1f6bf0d89c3114663c7e3cba"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-v9-styles.blade.php",
+    "existed": false,
+    "sha_installed": "289e43cbf093e9f51eb825c2b8dae0b31a2c68cd52420d7dc8eb0b9ed5ef1115"
+  }
+]

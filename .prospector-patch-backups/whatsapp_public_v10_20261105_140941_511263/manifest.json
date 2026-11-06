@@ -1,0 +1,77 @@
+[
+  {
+    "path": "resources/views/pages/contacts/⚡whatsapp.blade.php",
+    "existed": true,
+    "written_sha": "ac1e27c32010a68b2e2d239803cfd65867ccde1a410c7b58240f9e87ace8f47f"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPhoneRegistry.php",
+    "existed": true,
+    "written_sha": "3120eff06e4317583e67b348228fc7fc466b086cd6c5b8a697430a5a4fe21a9e"
+  },
+  {
+    "path": "resources/views/pages/contacts/⚡index.blade.php",
+    "existed": true,
+    "written_sha": "514fa3ac866bdf96ba15fa4cd008521e380affd513906c785d33a0c3439560e4"
+  },
+  {
+    "path": "routes/console.php",
+    "existed": true,
+    "written_sha": "937a9134c1e49d36f121b0a4eb650992b99501bd6fc9575b575f55b14901c437"
+  },
+  {
+    "path": "database/migrations/2026_11_05_150000_create_whatsapp_public_site_research.php",
+    "existed": false,
+    "written_sha": "aed0b483c5d8f7952950b78f50ec3c85a9dee044c76e55e7ca7ce51e3bcf64c0"
+  },
+  {
+    "path": "app/Services/Contacts/PublicWhatsappLinkExtractor.php",
+    "existed": false,
+    "written_sha": "f4b1e2e600f4afe3b8ecb54f4e18fdb30ee3a4c91d88bbbf3ef39533a6b06323"
+  },
+  {
+    "path": "app/Services/Contacts/PublicWhatsappWebsiteFetcher.php",
+    "existed": false,
+    "written_sha": "50560244df14cd9b8d39dc5a93efded1799c9da00feec9869578c3027c34cb2b"
+  },
+  {
+    "path": "app/Services/Contacts/SafePublicWhatsappWebsiteFetcher.php",
+    "existed": false,
+    "written_sha": "3d0649ffb4006405b3d14ae9d71f92a24192d1fdb95390663be8daa589c83b5d"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPublicSiteResearch.php",
+    "existed": false,
+    "written_sha": "c7ce509e664ea3ed6436be5fa936ec9f16132059eb67c0f0e1ce6b4ca2ee6b8e"
+  },
+  {
+    "path": "app/Jobs/ResearchWhatsappPublicCompanySite.php",
+    "existed": false,
+    "written_sha": "178afdafc98c478d2b1c6cb11ad6bdc6c560edc0d9f1f6fbe7e700aa7cbace6f"
+  },
+  {
+    "path": "app/Console/Commands/ScanWhatsappPublicCompanySites.php",
+    "existed": false,
+    "written_sha": "230c9355e6ba8a9cf6b4e19c2349b4d07ebe8a617244f0045e9c9e5cb1f62325"
+  },
+  {
+    "path": "app/Console/Commands/PlanWhatsappPublicCompanySites.php",
+    "existed": false,
+    "written_sha": "037778b6b11ffa8da64c8088d32d3c8a14af9c6d84f1718e10b4b0f2dbfcdb54"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v10.blade.php",
+    "existed": false,
+    "written_sha": "11de0fa16ce371cb4b858e5bb2bc45968adcc7e7d61d9dfbd1d401299e3de43f"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v10-styles.blade.php",
+    "existed": false,
+    "written_sha": "315ee092ba361db7e8ca913472960e2cba3f6e2c1c04fa48cb18db0de1a3e43c"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappPublicSitesV10Test.php",
+    "existed": false,
+    "written_sha": "9c44d136a5e1379fef63cb894ca0b57bd87ed56d574be01b9c74c1a1b7202a3a"
+  }
+]

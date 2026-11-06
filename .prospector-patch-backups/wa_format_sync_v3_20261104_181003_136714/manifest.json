@@ -1,0 +1,42 @@
+[
+  {
+    "path": "app/Services/Contacts/BrazilPhoneNumber.php",
+    "existed": true,
+    "sha_installed": "3436eae4e12b21754449f7271eac999a48130a2c1834bd1be3d2573950eacfd0"
+  },
+  {
+    "path": "resources/views/pages/contacts/⚡index.blade.php",
+    "existed": true,
+    "sha_installed": "36113c16a3f783adda3e6f0e2ea17fff47d00a11e8510f280140f268aea009a2"
+  },
+  {
+    "path": "resources/views/pages/contacts/⚡whatsapp.blade.php",
+    "existed": true,
+    "sha_installed": "3d52a1efa9ed3bc5bff09b61e76b887acbb5842a9f827ee3677412fe45f20240"
+  },
+  {
+    "path": "resources/views/layouts/app/sidebar.blade.php",
+    "existed": true,
+    "sha_installed": "e76797fcc0288ada0fc95a9379b238231c8ae24ee67e2da0f471d7c1bed67602"
+  },
+  {
+    "path": "app/Services/Contacts/ContactWhatsappStatusBridge.php",
+    "existed": false,
+    "sha_installed": "11c51c6e3cec85801b922aed0b398da5d7ac7d27f248db18a2b7f05145d0bfa7"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-registry-theme-v3.blade.php",
+    "existed": false,
+    "sha_installed": "e117993295a21b35928c1471ff89b074bd1a3c2c382228bbd0240be952476f60"
+  },
+  {
+    "path": "tests/Unit/WhatsappFormatV3Test.php",
+    "existed": false,
+    "sha_installed": "a1f814922b9eaa6af279bdd82f986b3f4d204a791464a3667e086ed2433fc8bb"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappCrossScreenV3Test.php",
+    "existed": false,
+    "sha_installed": "c1c9a80bcaee9e4244339c7d30cdf60f15f76c67486c75257113d7d67c9fa2d0"
+  }
+]

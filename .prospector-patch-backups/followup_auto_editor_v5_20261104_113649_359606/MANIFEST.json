@@ -1,0 +1,30 @@
+{
+  "package": "EC_FOLLOWUP_AUTO_EDITOR_V5",
+  "backup_dir": "/home/adolfo/projetos/prospector-exportcontrol/.prospector-patch-backups/followup_auto_editor_v5_20261104_113649_359606",
+  "modified": [
+    "resources/views/campaigns/figma-detail-header-v761.blade.php",
+    "resources/views/pages/campaigns/⚡index.blade.php",
+    "resources/views/partials/head.blade.php"
+  ],
+  "created": [
+    "app/Services/Campaigns/CampaignFollowupSettingsV5.php",
+    "app/Livewire/CampaignFollowupEditor.php",
+    "app/Console/Commands/ActivatePlannedCampaignFollowupV5.php",
+    "resources/views/campaigns/followup-schedule-detail-v5.blade.php",
+    "resources/views/livewire/campaign-followup-editor.blade.php",
+    "public/css/ec-campaign-followup-v5.css",
+    "tests/Feature/Campaigns/CampaignFollowupV5Test.php"
+  ],
+  "sha_installed": {
+    "resources/views/campaigns/figma-detail-header-v761.blade.php": "8c7bafcea081f6901c74b49c8213aa942e576dfa3955160c1236088da3085840",
+    "resources/views/pages/campaigns/⚡index.blade.php": "64852a4b0e9fefdfc39e9f324a70774222e712ae1f7de0f2256a7e1ae1456ffe",
+    "resources/views/partials/head.blade.php": "8f45da8f9e691ba4820d1f060cf88de5b33fe5ae56e08678a787a9e6010204b3",
+    "app/Services/Campaigns/CampaignFollowupSettingsV5.php": "e098180eb37b8d3d04099c4cabd7e979a84a807ee51fe4c9bd51b1ce206fb57a",
+    "app/Livewire/CampaignFollowupEditor.php": "707e244bdb3834e7b8676dc4b2017deea0386b6f5eafd09e796ad95da6bbc0b0",
+    "app/Console/Commands/ActivatePlannedCampaignFollowupV5.php": "83e7fdd5c69a4a448cf172d4b5b6424e7c34d75db885f24b58361b8a38a0add8",
+    "resources/views/campaigns/followup-schedule-detail-v5.blade.php": "eafec5a1b70d48aec3dd61dda3fa2177773a430be4cf81cec4f1257adfcddba4",
+    "resources/views/livewire/campaign-followup-editor.blade.php": "a9c2c7a5fcbffeab1d64501a96cc02544cbcc4e67d0c160b34102a3587e282e9",
+    "public/css/ec-campaign-followup-v5.css": "e8cc098be22ecacbef9359cc6b3d304e83ff0841c7eb7b692054c3a467fd4ae0",
+    "tests/Feature/Campaigns/CampaignFollowupV5Test.php": "c4b6b414798c9b1ee2c52293e7bec92c623eea45265750a26be4458f0d6bf4c9"
+  }
+}

@@ -1,0 +1,158 @@
+[
+  {
+    "path": "app/Services/Contacts/WhatsappExternalCompanyDiscoveryV14.php",
+    "existed": true,
+    "before": "2107108c9046e36acb6c5985afd120027d987a7a262fb5a7dc37c60cf2db0761",
+    "after": "5d9df66437f57f30911b4ee93a1587a6f72d6e5c0c7e691f3345e06e424cec67"
+  },
+  {
+    "path": "config/whatsapp_public_search.php",
+    "existed": true,
+    "before": "88bbf35c44f4f94fed932ce444ba1abb279e214ed18de0636e4365b46edc83a5",
+    "after": "ce7bae6b786d7b20a62f7c9f64c88f4df5b057fdf50923a64b38933f3c0034c1"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-external-discovery-v14.blade.php",
+    "existed": true,
+    "before": "572ab095057a3fcd01ab8ef1d3e2c6872da8be9481c5bfe156178395bc231186",
+    "after": "32bf89f684c1487421b481adcd5d4b6b50a3547ec0f028e3c11593345864f414"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-v8-operation.blade.php",
+    "existed": true,
+    "before": "9c2db6d496cdfed8547c70cc2638a69fe3a646b4e9b4de46b9dd28d71d62f59f",
+    "after": "11c28c67ec4641aa6b8e5820e46db33d1f873a87f03ad978ba34b1478d24afc9"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPhoneRegistry.php",
+    "existed": true,
+    "before": "b1774693e734c3c8537eb47c7d4c140ce2fbffc21ea3afaab3a39e58cc23f014",
+    "after": "5bb32f53af2768fb8dae3638531bffa3fda6abd9082120d09dc2e26f8155d1a7"
+  },
+  {
+    "path": "app/Console/Commands/WhatsappWebScanAgent.php",
+    "existed": true,
+    "before": "9a7f467aaafd721f24a5539c9cafc1f75214ce373ac8e3c1630e8e38fe0aa952",
+    "after": "0cd07517b8b54520bd7c8c4473c4c0c4d873c146763d7cb625f166a7310288d6"
+  },
+  {
+    "path": "app/Console/Commands/WhatsAppWebProbeCandidates.php",
+    "existed": true,
+    "before": "bf562bbcf23fb80bb92235cfa844694e827c97cd00f7d7458bc90274e512952e",
+    "after": "6526caf2548e6453041b78a5fa93aa8979139f93fe9ec5e6fdf04831865a7ebe"
+  },
+  {
+    "path": "integrations/whatsapp-web/agent.mjs",
+    "existed": true,
+    "before": "f6fa27f85e3eb86e42feffca7849bb3923908fcab7daa3d4207391de1ef9dc5f",
+    "after": "a1cc95ebccf16da65ccd96d322ba51239405e38cc4db44ece84d971ddfa0a928"
+  },
+  {
+    "path": "app/Services/Contacts/ContactPeopleDirectory.php",
+    "existed": true,
+    "before": "021ecafc781c1917dfece8f21197297af5bd256f4f94b687b6cd90a7e658ca48",
+    "after": "43c9c133f939293334c33b3d03983a5c2c71948d749cd02b920bf6ceffd09888"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPublicContactsV14.php",
+    "existed": true,
+    "before": "d19901d0afe69057b580796e1aee882bc96ecf639eb0f2022a90f9da8a7e13a4",
+    "after": "97bbda07c1b8d3ff58643f3156f5c381a863d66a88f525d1368ca331a3a20e13"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-in-contacts-v14.blade.php",
+    "existed": true,
+    "before": "4f1354da3ffe49411e15beff4f6a8f8be4c8813dbc30c74fb359f3e9b302efd2",
+    "after": "15891ea8b825a952fc268f309205fd51e29f3022346920a7ed23bb55a50510fc"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v13-channels.blade.php",
+    "existed": true,
+    "before": "a165fd67910a5b6c456ca1f2447e75a1f2e08f97825ee5246f9d38e96b2c807c",
+    "after": "63ec5ccc68aadf2f5d8218b1322554ed7c6b1aa32d3d05bb92824fa7c5a5b4a1"
+  },
+  {
+    "path": ".env.example",
+    "existed": true,
+    "before": "bf753d0bf8506124061065cf66759f7fae3db2a49e52f7fb314f8f614a7eccc1",
+    "after": "d5457e877a8b7f91427a4d6f9010823bc27a360ba7804ebd64dd8c8d305bfa0c"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappUnifiedV7Test.php",
+    "existed": true,
+    "before": "9b2c0c9381504cef4c97aaffbf2df7ff611988cd31638a29919846a8fe3f42f0",
+    "after": "d6963e7032a3fc05aaaa881a5d3da196be878a97e0cf829d7a7b8f7ee5798efa"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappFullDirectoryV8Test.php",
+    "existed": true,
+    "before": "40b8ace2452136b914e2e4dc57d4340c07ba8f4789581f4b595affff895e4349",
+    "after": "539d5c31eeaeddb93ed862fa5b800c456f4fc8e523b678b2c4b514d1dbe9a7a8"
+  },
+  {
+    "path": "tests/Feature/Contacts/Whatsapp200PerAccountV9Test.php",
+    "existed": true,
+    "before": "2347ad4a00b19cfc34d64357c9b4ad74a1d03cef1f6bf0d89c3114663c7e3cba",
+    "after": "0959524d810b97bb623f074d8d06cd9e9aafaac6f50076fea9cb4d6025aabacb"
+  },
+  {
+    "path": "database/migrations/2026_11_05_230000_whatsapp_selected_reviews_and_company_links_v16.php",
+    "existed": false,
+    "before": null,
+    "after": "df466e2a945eefff1b01f1982b87e6c8668419f35fb5dc61d809c1a0d6d4c82b"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappManualPhoneV16.php",
+    "existed": false,
+    "before": null,
+    "after": "8c77aa24fac89d1049c12132fbbb54b65687266a433d0c7e4cb513f5c80072f2"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappCompanyChannelLinkV16.php",
+    "existed": false,
+    "before": null,
+    "after": "cd1e308bda8b815a56438af1e08f5a88f4da2e108e087b83b1d0e4f1accaab87"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappTavilySearchV16.php",
+    "existed": false,
+    "before": null,
+    "after": "aafbe8671e5ece2d22f078bec3119ce3817879554a0943e876f33eb5086f2ba6"
+  },
+  {
+    "path": "app/Livewire/WhatsappManualVerificationV16.php",
+    "existed": false,
+    "before": null,
+    "after": "23ec575ecf11da0c0ceaf399076cc4fa822c29bc40a5873386e3d71d028e8b4a"
+  },
+  {
+    "path": "app/Livewire/WhatsappCompanyLinksV16.php",
+    "existed": false,
+    "before": null,
+    "after": "4978f967f9ad2f2e39cd7f67fb651a88dcb1160344fb4fed6c5adf046ff79c1e"
+  },
+  {
+    "path": "app/Console/Commands/WhatsappDisableAutomaticV16.php",
+    "existed": false,
+    "before": null,
+    "after": "718b9818880e3c269654c97e443b7c4011957d0a69e5f07842f577abdc46df1e"
+  },
+  {
+    "path": "resources/views/livewire/whatsapp-manual-verification-v16.blade.php",
+    "existed": false,
+    "before": null,
+    "after": "d87dddb55a7cd2030259fc734ffc1cda6dd00bd68146e3b27551174611907013"
+  },
+  {
+    "path": "resources/views/livewire/whatsapp-company-links-v16.blade.php",
+    "existed": false,
+    "before": null,
+    "after": "3ca7b0065f3b274055cda8e33d5e83cdc063f10b23fe46d29191c7325fa331cb"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappWorkflowV16Test.php",
+    "existed": false,
+    "before": null,
+    "after": "500d52e43998c9167e3fcfe8059b4f212ee6cc0852d33fabb50f1ef1fbe9be8a"
+  }
+]

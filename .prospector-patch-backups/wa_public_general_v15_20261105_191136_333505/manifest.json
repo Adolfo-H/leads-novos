@@ -1,0 +1,22 @@
+[
+  {
+    "relative": "resources/views/contacts/whatsapp-public-v11.blade.php",
+    "before_sha": "fc46545709e4959e6c09b68f80ac2c8fec403a1fa281797a9661051aa51be69d",
+    "after_sha": "6f5ed15f716dd6be580aab49a35b4ef62a7675a0690d044bf9a8176cb8e6fea2"
+  },
+  {
+    "relative": "tests/Feature/Contacts/WhatsappPublicSitesV10Test.php",
+    "before_sha": "4b5c34ca43a70a80befcd99f85f3a6755b0fb8c6e5d68c6db0e597de2a629b9d",
+    "after_sha": "6954de67446597995a00138cc2dc7adab88c4ab384d529ee92510f17623ceae8"
+  },
+  {
+    "relative": "tests/Feature/Contacts/WhatsappCompanyPublicV11Test.php",
+    "before_sha": "c506f6228a5ee413b58cd690898a8c8cde9347a5e7e486ed4daefddd7961b528",
+    "after_sha": "901d8587e0caa5e59f4af43bbc298222b66869a3641cd1a179b01dade8026537"
+  },
+  {
+    "relative": "tests/Feature/Contacts/WhatsappGeneralUiRemovedV15Test.php",
+    "before_sha": null,
+    "after_sha": "c795639077262417468ff2b8c323e4fe0d08ee3f9ab6eb0229f4b15013ffcf5e"
+  }
+]

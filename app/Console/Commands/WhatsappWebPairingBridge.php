@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Cache;
 final class WhatsappWebPairingBridge extends Command
 {
     protected $signature = 'contacts:wa-web:pairing
-        {action : poll|ack|publish|clear|error}
+        {action : poll|ack|publish|clear|error|heartbeat}
         {--session= : Conta 1 ou 2}
         {--token= : Token da solicitação a reconhecer}';
 
@@ -26,7 +26,7 @@ final class WhatsappWebPairingBridge extends Command
         $session = (int) $this->option('session');
         $action = (string) $this->argument('action');
         if (! in_array($session, [1, 2], true)
-            || ! in_array($action, ['poll', 'ack', 'publish', 'clear', 'error'], true)) {
+            || ! in_array($action, ['poll', 'ack', 'publish', 'clear', 'error', 'heartbeat'], true)) {
             $this->error('Ação ou conta inválida.');
 
             return self::FAILURE;
@@ -36,6 +36,14 @@ final class WhatsappWebPairingBridge extends Command
         $qrKey = self::BASE.'qr:'.$session;
         $stateKey = self::BASE.'state:'.$session;
         $current = Cache::get($requestKey);
+
+        if ($action === 'heartbeat') {
+            // O front-end não inicia processos Node; ele mostra se o daemon Ubuntu está vivo.
+            Cache::put(self::BASE.'connector:heartbeat', now('UTC')->toIso8601String(), now()->addSeconds(55));
+            $this->line('{"ok":true}');
+
+            return self::SUCCESS;
+        }
 
         if ($action === 'poll') {
             $this->line(json_encode([
@@ -91,6 +99,7 @@ final class WhatsappWebPairingBridge extends Command
         // Erros não contêm tokens de pareamento, telefones ou credenciais.
         $message = stream_get_contents(STDIN, 500);
         $message = trim((string) $message);
+        Cache::forget($qrKey);
         Cache::put($stateKey, [
             'state' => 'error',
             'message' => mb_substr($message ?: 'Não foi possível iniciar a conexão.', 0, 180),

@@ -1,0 +1,87 @@
+[
+  {
+    "path": "resources/views/pages/contacts/⚡whatsapp.blade.php",
+    "existed": true,
+    "sha_installed": "e1d7cce202c43266ecb397921d80de36f28b847ca569c62381788d2f95627ce7"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPhoneRegistry.php",
+    "existed": true,
+    "sha_installed": "74ab6e9549b9efdf9339202579c64a8cb2d19edb9b7a51ebe660997a302160be"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappWebDailyCoordinator.php",
+    "existed": true,
+    "sha_installed": "0054ffb692093e928fc2dfd0478ace1278cae4eade7b452f23c781e8dafbd69a"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappWebControlPanel.php",
+    "existed": true,
+    "sha_installed": "989d78fc0d3c7a015db0c67009158d11a301065d764f1ff3c2a527a05ff82717"
+  },
+  {
+    "path": "app/Console/Commands/WhatsAppWebProbeCandidates.php",
+    "existed": true,
+    "sha_installed": "bf562bbcf23fb80bb92235cfa844694e827c97cd00f7d7458bc90274e512952e"
+  },
+  {
+    "path": "app/Console/Commands/WhatsappWebScanAgent.php",
+    "existed": true,
+    "sha_installed": "9a7f467aaafd721f24a5539c9cafc1f75214ce373ac8e3c1630e8e38fe0aa952"
+  },
+  {
+    "path": "integrations/whatsapp-web/agent.mjs",
+    "existed": true,
+    "sha_installed": "59875c1506c83e300c024b1582cc9a0172e6d0ebb620236d1ba45500588ca7be"
+  },
+  {
+    "path": "resources/views/components/global-company-search.blade.php",
+    "existed": true,
+    "sha_installed": "a3de17f6b9c8788c5310dd46caf29ceb9a3ee8c419ee55dfb876838facf06b19"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappUnifiedV7Test.php",
+    "existed": true,
+    "sha_installed": "f6a689e97bc1bd617fe6353afecbbb9828f864d4585b335bd7c1436b2fcc410e"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappWebControlV6Test.php",
+    "existed": true,
+    "sha_installed": "c38762b06762dc4cc30c92dc4160a4fb36fc319a8e742e9b5f9454f871d1a1dd"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappVisualV2Test.php",
+    "existed": true,
+    "sha_installed": "991cbc1bfbff814b8f2d505d5c238ec1681def00a6491faede58d1d7b3bd90c5"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappWebProbeV4Test.php",
+    "existed": true,
+    "sha_installed": "dd97e832caf9b15566df4ba397f3adafdc58221426359a8fabdaaa736267ae67"
+  },
+  {
+    "path": "database/migrations/2026_11_05_120000_add_whatsapp_web_scan_scope.php",
+    "existed": false,
+    "sha_installed": "10d7bcee16652dbc6a7219ed5b1c5cf9f678448572f44a0ba5234b3bcceea1d5"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-v8-dashboard.blade.php",
+    "existed": false,
+    "sha_installed": "8585b232cbc15b15227bc5d4a87d535ce4d5b5ac6401415f361f1611bbbddf5b"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-v8-operation.blade.php",
+    "existed": false,
+    "sha_installed": "2d86c3b010901068a2c089c85db24efa329e262a0d284fe78472ab2748e7f764"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-v8-styles.blade.php",
+    "existed": false,
+    "sha_installed": "d17792eea0a09ea9374d526464d0fecf5df1cbff5808eeb3c2c83e87abf9fd12"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappFullDirectoryV8Test.php",
+    "existed": false,
+    "sha_installed": "91b1bc4c179e655544535ed325defb8c65c2ab0dbf2a031f4886ae5fe99dc64c"
+  }
+]

@@ -1,0 +1,47 @@
+[
+  {
+    "path": "app/Services/Contacts/WhatsappPublicSiteResearch.php",
+    "existed": true,
+    "written_sha": "dc79e51e94ed15ca9ab1243b733f1d532769eae49dad1260aadd05994467984e"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v11.blade.php",
+    "existed": true,
+    "written_sha": "fc46545709e4959e6c09b68f80ac2c8fec403a1fa281797a9661051aa51be69d"
+  },
+  {
+    "path": "routes/console.php",
+    "existed": true,
+    "written_sha": "032b7184005ab2595660385ccca6335fb7bb84f7eec908de7d7afeb5907197d8"
+  },
+  {
+    "path": "app/Services/Contacts/WhatsappPublicCompanyChannels.php",
+    "existed": false,
+    "written_sha": "086b2e683a1009cc0c1b7bbe964efc41212b09161183737d704a84eb4224cc30"
+  },
+  {
+    "path": "app/Console/Commands/SyncWhatsappPublicCompanyChannels.php",
+    "existed": false,
+    "written_sha": "1bd2b3d961c7bf2dcd61033078e6fea82161099fd133e1b6292fb993e14a4f42"
+  },
+  {
+    "path": "database/migrations/2026_11_05_190000_create_whatsapp_public_company_channels.php",
+    "existed": false,
+    "written_sha": "8992be2eb2c9798fba8fd4331dd01f20bed5510306b6593eb73242a8f7232dee"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v13-styles.blade.php",
+    "existed": false,
+    "written_sha": "cca4ce8ba5aefe7c0f6e2d861d877dece999a1e0dfec928c51dbaf30f7521073"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-public-v13-channels.blade.php",
+    "existed": false,
+    "written_sha": "fed4a771b02549080212ec4936e1c47a79641236b05763e6a5d8cb16918ffb63"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappPublicChannelsV13Test.php",
+    "existed": false,
+    "written_sha": "5e1a9d11c14127a78ff25e164089604e0b0ee9ffa55d832a0afc2e884002bd86"
+  }
+]

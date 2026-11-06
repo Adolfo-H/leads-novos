@@ -25,6 +25,12 @@ class CampaignFollowupEditor extends Component
 
     public int $maxRounds = 2;
 
+    // Horário opcional: deixar vazio preserva o intervalo exato dos planos antigos.
+    public string $sendTimeLocal = '';
+
+    // Data exata apenas para a primeira retomada; vazio = intervalo em dias.
+    public string $firstSendDate = '';
+
     public string $subject = '';
 
     public string $body = '';
@@ -68,6 +74,10 @@ class CampaignFollowupEditor extends Component
         $this->delayDays = $plan !== null ? (int) $plan->delay_days : 5;
         $this->maxRounds = $plan !== null && (bool) ($plan->automatic ?? false)
             ? max(1, (int) $plan->max_rounds) : 2;
+        $this->sendTimeLocal = $plan !== null
+            ? (string) (data_get($plan, 'send_time_local') ?: '') : '08:00';
+        $this->firstSendDate = $plan !== null
+            ? (string) (data_get($plan, 'first_send_date') ?: '') : '';
         $this->subject = $plan !== null ? (string) $plan->subject : 'RE: '.(string) $root->subject;
         $this->body = $plan !== null ? (string) $plan->body : '';
     }
@@ -93,6 +103,8 @@ class CampaignFollowupEditor extends Component
                 'name' => ['required', 'string', 'min:3', 'max:150'],
                 'delayDays' => ['required', 'integer', 'min:1', 'max:90'],
                 'maxRounds' => ['required', 'integer', 'min:1', 'max:4'],
+                'sendTimeLocal' => ['nullable', 'date_format:H:i'],
+                'firstSendDate' => ['nullable', 'date_format:Y-m-d'],
                 'subject' => ['required', 'string', 'min:3', 'max:180'],
                 'body' => ['required', 'string', 'min:10', 'max:12000'],
             ]);
@@ -100,11 +112,13 @@ class CampaignFollowupEditor extends Component
                 'name' => $this->name,
                 'delay_days' => $this->delayDays,
                 'max_rounds' => $this->maxRounds,
+                'send_time_local' => $this->sendTimeLocal ?: null,
+                'first_send_date' => $this->firstSendDate ?: null,
                 'subject' => $this->subject,
                 'body' => $this->body,
             ]);
             $this->saved = true;
-            $this->feedback = 'Configuração salva. O sistema enviará no prazo se todas as condições estiverem atendidas.';
+            $this->feedback = 'Programação salva. No horário configurado o agendador poderá iniciar a rodada, se SMTP, IMAP, janela e trabalhadores estiverem operacionais.';
         } catch (ValidationException $e) {
             $this->setErrorBag($e->errors());
             $this->feedback = 'Confira os campos indicados. A programação anterior foi preservada.';

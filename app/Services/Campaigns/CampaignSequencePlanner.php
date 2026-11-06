@@ -49,6 +49,8 @@ final class CampaignSequencePlanner
             'subject' => mb_substr(trim($subject), 0, 180),
             'body' => mb_substr(trim($body), 0, 12000),
             'delay_days' => $days,
+            'send_time_local' => $automatic ? '08:00' : null,
+            'first_send_date' => null,
             'status' => $automatic ? 'active' : 'planned',
             'automatic' => $automatic,
             'max_rounds' => $automatic ? $maxRounds : 1,

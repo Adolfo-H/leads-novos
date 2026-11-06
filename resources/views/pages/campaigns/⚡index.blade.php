@@ -130,17 +130,37 @@ new class extends Component
     public function campaigns(): Collection
     {
         $this->assertManager();
+
+        // Um grupo por campanha ORIGINAL. Rodadas sao carregadas em uma consulta
+        // eager loaded (sem N+1 e sem perder os registros reais de SMTP/IMAP).
         $query = EmailCampaign::query()
+            ->whereNull('followup_root_campaign_id')
+            ->with(['followupRounds' => static function ($rounds): void {
+                $rounds->withCount('recipients')
+                    ->withCount(['recipients as accepted_smtp_count' => static fn ($q) => $q->where('status', 'sent')])
+                    ->withCount(['bounces as bounce_reports_count' => static fn ($q) => $q->whereNotNull('email_campaign_recipient_id')]);
+            }])
             ->withCount('recipients')
             ->withCount(['bounces as bounce_reports_count' => static fn ($q) => $q->whereNotNull('email_campaign_recipient_id')])
             ->withCount(['recipients as accepted_smtp_count' => static fn ($q) => $q->where('status', 'sent')])
             ->latest('id');
+
         $term = trim(mb_substr($this->campaignSearch, 0, 120));
         if ($term !== '') {
-            $query->where('name', 'like', '%'.str_replace(['%', '_'], ['\\%', '\\_'], $term).'%');
+            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $term);
+            $like = '%'.$escaped.'%';
+            $query->where(static function ($q) use ($like): void {
+                $q->where('name', 'like', $like)
+                    ->orWhereHas('followupRounds', static fn ($r) => $r->where('name', 'like', $like));
+            });
         }
+
         if (in_array($this->campaignStatus, ['draft', 'running', 'paused', 'completed', 'canceled'], true)) {
-            $query->where('status', $this->campaignStatus);
+            $status = $this->campaignStatus;
+            $query->where(static function ($q) use ($status): void {
+                $q->where('status', $status)
+                    ->orWhereHas('followupRounds', static fn ($r) => $r->where('status', $status));
+            });
         }
 
         return $query->limit(40)->get();
@@ -152,7 +172,7 @@ new class extends Component
         $this->assertManager();
 
         return [
-            'campaigns' => EmailCampaign::query()->count(),
+            'campaigns' => EmailCampaign::query()->whereNull('followup_root_campaign_id')->count(),
             'active' => EmailCampaign::query()->where('status', 'running')->count(),
             'sent' => EmailCampaignRecipient::query()->where('status', 'sent')->count(),
             'replies' => EmailCampaignRecipient::query()->whereNotNull('replied_at')->count(),

@@ -1,0 +1,17 @@
+[
+  {
+    "path": "resources/views/pages/contacts/⚡whatsapp.blade.php",
+    "existed": true,
+    "sha_installed": "68009e25eb092b55cbda893094a68db1229a52fc085af3c522c3292dee5b39a9"
+  },
+  {
+    "path": "resources/views/contacts/whatsapp-registry-theme-v2.blade.php",
+    "existed": false,
+    "sha_installed": "4bf524a200c293dc677f7c7a0354611cdb8e60fed2f7ef9952d272211c3ed95e"
+  },
+  {
+    "path": "tests/Feature/Contacts/WhatsappVisualV2Test.php",
+    "existed": false,
+    "sha_installed": "c87103e4e8b883ad50cdc5242b251596bcd714460ba632a7a32c5ee3ea408f62"
+  }
+]

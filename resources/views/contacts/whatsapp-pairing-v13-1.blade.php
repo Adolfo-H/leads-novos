@@ -23,20 +23,14 @@
                             <button type="button" wire:click="requestWebPairing({{ $wa131Session }})" wire:loading.attr="disabled" wire:target="requestWebPairing" @disabled($wa131Busy) class="wa131-btn primary">Conectar / reconectar</button>
                             <button type="button" wire:click="requestWebPairing({{ $wa131Session }}, true)" wire:loading.attr="disabled" wire:target="requestWebPairing" @disabled($wa131Busy) class="wa131-btn">Gerar novo QR</button>
                         </div>
-                        @if(is_array($wa131Qr) && is_string($wa131Qr['image'] ?? null)
-                            && str_starts_with($wa131Qr['image'], 'data:image/png;base64,'))
-                            <div class="wa131-qr">
-                                <img src="{{ $wa131Qr['image'] }}" alt="QR temporário para conectar a conta WhatsApp {{ $wa131Session }}" width="256" height="256">
-                                <p>Abra <strong>WhatsApp → Aparelhos conectados → Conectar aparelho</strong> no celular {{ $wa131Session }} e escaneie este QR. Ele expira rapidamente.</p>
-                            </div>
-                        @elseif($wa131Pending)
-                            <p class="wa131-caption">Solicitação enviada. Aguardando o conector Ubuntu iniciar esta conta…</p>
-                        @elseif(is_array($wa131State) && ($wa131State['state'] ?? '') === 'starting')
-                            <p class="wa131-caption">Agente iniciando. Se a sessão ainda for válida, a conta conectará sem novo QR.</p>
-                        @elseif(is_array($wa131State) && ($wa131State['state'] ?? '') === 'error')
+                        @if(is_array($wa131State) && ($wa131State['state'] ?? '') === 'error')
                             <p class="wa131-error" role="alert">{{ $wa131State['message'] ?? 'Não foi possível conectar. Tente novamente.' }}</p>
+                        @elseif(is_array($wa131Qr) && is_string($wa131Qr['image'] ?? null))
+                            <p class="wa131-caption">QR gerado. Escaneie o código exibido na <strong>coluna direita</strong>.</p>
+                        @elseif($wa131Pending || (is_array($wa131State) && in_array($wa131State['state'] ?? '', ['requested', 'starting'], true)))
+                            <p class="wa131-caption">Preparando conexão. O estado, QR e o aviso de timeout aparecem na <strong>coluna direita</strong>.</p>
                         @else
-                            <p class="wa131-caption">Use <strong>Conectar</strong> para retomar a sessão salva. Use <strong>Gerar novo QR</strong> apenas quando a sessão tiver sido desconectada pelo aplicativo.</p>
+                            <p class="wa131-caption">Use <strong>Conectar</strong> para retomar a sessão salva. Use <strong>Gerar novo QR</strong> somente quando necessário.</p>
                         @endif
                         @if($wa131Busy)<p class="wa131-error">Existe um lote pendente. Aguarde ou interrompa o lote antes de reconectar.</p>@endif
                     @endif

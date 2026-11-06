@@ -5,6 +5,7 @@ namespace App\Services\Contacts;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -27,11 +28,23 @@ final class WhatsappPhoneRegistry
             $timestamp = now('UTC');
             $numbers = [];
             $links = [];
+            // Preferências auditáveis do índice: nunca escrevem na origem HubSpot/Receita.
+            $overrides = Schema::hasTable('whatsapp_phone_auto_corrections_v18')
+                ? DB::table('whatsapp_phone_auto_corrections_v18')
+                    ->whereNotNull('applied_at')->pluck('corrected_e164', 'original_phone_key')->all()
+                : [];
 
-            $add = static function (string $origin, string $sourceKey, string $name, ?string $company, string $field, ?string $phone) use (&$numbers, &$links, $scanId, $timestamp): void {
+            $add = static function (string $origin, string $sourceKey, string $name, ?string $company, string $field, ?string $phone) use (&$numbers, &$links, $scanId, $timestamp, $overrides): void {
                 $info = BrazilPhoneNumber::inspect($phone);
                 if ($info === null) {
                     return;
+                }
+                $rawDigits = $info['digits'];
+                if ($info['kind'] === 'review' && isset($overrides[$info['key']])) {
+                    $mapped = BrazilPhoneNumber::inspect((string) $overrides[$info['key']]);
+                    if ($mapped !== null && in_array($mapped['kind'], ['mobile', 'landline'], true)) {
+                        $info = $mapped;
+                    }
                 }
                 $key = $info['key'];
                 if (! isset($numbers[$key])) {
@@ -52,7 +65,7 @@ final class WhatsappPhoneRegistry
                     'source_key' => $sourceKey,
                     'origin' => $origin,
                     'phone_field' => $field,
-                    'raw_digits' => $info['digits'],
+                    'raw_digits' => $rawDigits, // preserva a evidência original
                     'contact_label' => mb_substr($name, 0, 180),
                     'company_label' => $company !== null ? mb_substr($company, 0, 180) : null,
                     'scan_id' => $scanId,
@@ -290,6 +303,15 @@ SQL);
 
         if (in_array($kind, ['mobile', 'landline', 'review'], true)) {
             $query->where('n.kind', $kind);
+        }
+        // EC_WA_INLINE_REVIEW_V20: revisão já decidida não continua pendente.
+        // No filtro Todos, o registro histórico permanece acessível.
+        if ($kind === 'review') {
+            $query->whereNotExists(static function ($review): void {
+                $review->selectRaw('1')->from('whatsapp_phone_format_reviews_v16 as rv')
+                    ->whereColumn('rv.original_phone_id', 'n.id')
+                    ->whereIn('rv.decision', ['invalid', 'corrected']);
+            });
         }
         if (in_array($status, ['yes', 'no', 'unknown'], true)) {
             $query->where('n.status', $status);

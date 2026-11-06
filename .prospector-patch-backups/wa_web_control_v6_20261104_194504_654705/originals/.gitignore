@@ -1,0 +1,62 @@
+/.phpunit.cache
+/node_modules
+/public/build
+/public/fonts-manifest.dev.json
+/public/hot
+/public/storage
+/storage/*.key
+/storage/pail
+/vendor
+.env
+.env.backup
+.env.production
+.phpactor.json
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/auth.json
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+/tools/receita/.venv/
+
+# Receita Federal - ambiente/dados locais
+/tools/receita/data/
+/tools/receita/fixtures/*.parquet
+
+# Python
+__pycache__/
+*.py[cod]
+# Arquivos temporários
+*.bak
+.DS_Store
+
+/testing
+
+# HubSpot App - arquivos locais/gerados
+/hubspot-app/AGENTS.md
+/hubspot-app/CLAUDE.md
+/hubspot-app/HUBSPOT_PROJECTS.md
+/hubspot-app/**/*.backup*
+/hubspot-app/**/local.json
+/hubspot-app/hsprofile.*.json
+/hubspot-app/.hubspot/
+
+# BEGIN PROSPECTOR_ORGANIZACAO_A03
+# Instaladores e backups locais: arquivados fora do projeto.
+/Prospector_*.zip
+/Prospector_*.zip:Zone.Identifier
+/.exportcontrol_backups/
+/.backup-pacote-*/
+# END PROSPECTOR_ORGANIZACAO_A03
+
+# EC_WA_UNOFFICIAL_V4: credenciais de dispositivo e dependencias locais
+/storage/app/private/whatsapp-web-session-v4/
+/integrations/whatsapp-web/node_modules/
+
+# EC_WA_DUAL_V5: sessão do segundo WhatsApp Web (credenciais privadas)
+/storage/app/private/whatsapp-web-session-v5-2/

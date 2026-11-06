@@ -64,6 +64,8 @@ async function publishPairingQr(secretQr) {
     console.log(`Conta ${session}: QR disponível na Central por tempo limitado.`);
   } catch (e) {
     console.error(`Conta ${session}: não foi possível publicar QR no painel: ${e.message}`);
+    await artisan(['contacts:wa-web:pairing', 'error', `--session=${session}`],
+      10000, 'Falha ao gerar QR. Confira o processo Node e a biblioteca qrcode.').catch(() => {});
   }
 }
 
@@ -259,6 +261,8 @@ async function main() {
 }
 main().catch(async (error) => {
   console.error('Erro do agente:', error.message);
+  await artisan(['contacts:wa-web:pairing', 'error', `--session=${session}`],
+    10000, 'A conexão não foi concluída. Confira os logs do agente e tente novamente.').catch(() => {});
   await pulse('error', error.message);
   if (heartbeat) clearInterval(heartbeat);
   try { await sock?.end(new Error('Falha do agente')); } catch { /* noop */ }

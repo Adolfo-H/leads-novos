@@ -74,6 +74,8 @@
                     <div><small>Saldo disponível</small><strong>{{ $fmt($wa7Budget['remaining']) }}</strong></div>
                 </div>
                 <p class="wa7-small-help">Por conta: {{ $wa7Budget['per_account_limit'] ?? 100 }} consultas/dia. Você decide quando consultar; nenhuma verificação é programada automaticamente. EC_WA_V16_ON_DEMAND</p>
+                {{-- QR e mensagens de erro na coluna direita; a segurança da sessão permanece no gestor. --}}
+                @include('contacts.whatsapp-pairing-qr-panel-v18')
             </div>
         </div>
         <livewire:whatsapp-manual-verification-v16 />
