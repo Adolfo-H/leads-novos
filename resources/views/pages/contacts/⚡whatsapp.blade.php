@@ -32,8 +32,19 @@ new class extends Component
 
     public int $webBatchLimit = 5;
     public int $publicBatchSites = 5;
+    // EC_WA_SIMPLE_SEARCH_V88: pesquisa pública em um clique, sem abrir snapshot do CRM.
+    // EC_WA_REVIEW_APPROVE_V89: seleção consciente, nunca confirmação automática.
+    public array $publicSelectedPhonesV89 = [];
+    public string $publicSaveTargetV89 = '';
+    public string $publicApprovalNoteV89 = '';
+    public bool $publicApprovalConfirmedV89 = false;
+
+    public string $publicQuickNameV88 = '';
+    public ?string $publicQuickSearchKeyV88 = null;
+
     public string $publicCompanyQuery = '';
     public ?int $publicCompanyId = null; // EC_WA_PUBLIC_COMPANY_V11
+    public ?string $publicBusinessKeyV85 = null; // Pesquisa comercial ampliada, sem inferir vínculos.
     public int $publicDailySites = 5;
     public bool $publicDailyEnabled = false;
 
@@ -79,6 +90,10 @@ new class extends Component
             $this->addError('wa_pair', 'Selecione a conta 1 ou 2.');
             return;
         }
+        // EC_WA_CONNECTOR_GUARD_V83: o botao da UI fica indisponivel offline.
+        // EC_WA_PAIR_COMPAT_V83_1: preservar o protocolo V13.1 para chamadas
+        // Livewire autorizadas e testes. O pedido expira sozinho; o QR so e
+        // gerado quando houver um conector Ubuntu realmente conectado.
         $busy = \Illuminate\Support\Facades\DB::table('whatsapp_web_scan_batches')
             ->where('session', $session)->whereIn('status', ['queued', 'running'])->exists();
         if ($busy) {
@@ -457,10 +472,78 @@ new class extends Component
         $this->selectedId = (int) $phone->id;
     }
 
+    // EC_WA_ALL_BUSINESSES_V85: buscas em empresas/negócios com e sem site.
+    public function selectBusinessV85(string $key): void
+    {
+        abort_unless(auth()->user()?->isCommercialManager(), 403);
+        try {
+            $business = app(\App\Services\Contacts\WhatsappBusinessDirectoryV86::class)->snapshot($key);
+        } catch (\Throwable $exception) {
+            report($exception);
+            $this->addError('public_site', 'Falha ao carregar os detalhes. A ocorrência foi registrada no log do Laravel; nenhum vínculo foi alterado.');
+
+            return;
+        }
+        abort_unless($business !== null, 404);
+        // Preservar integralmente a pesquisa pública V11 quando a Company tem site.
+        if (str_starts_with($key, 'hubspot:') && $business['site_hubspot_company_id'] !== null) {
+            $this->selectPublicCompany((int) $business['site_hubspot_company_id']);
+
+            return;
+        }
+        $this->publicCompanyId = null;
+        $this->publicBusinessKeyV85 = $key;
+        $this->publicCompanyQuery = '';
+        unset($this->publicSelectedCompany, $this->publicCompanyCandidates,
+            $this->businessSelectedV85, $this->businessCandidatesV85);
+    }
+
+    public function openBusinessNumberV85(int $phoneId): void
+    {
+        $business = $this->businessSelectedV85;
+        abort_unless($business !== null && $business['phones']->contains(
+            static fn (object $phone): bool => (int) $phone->id === $phoneId), 404);
+        $phone = $business['phones']->firstWhere('id', $phoneId);
+        $this->kind = 'all';
+        $this->status = 'all';
+        $this->origin = 'all';
+        $this->webFilter = 'all';
+        $this->publicFilter = 'all';
+        // Telefones em revisão não têm e164: buscar os dígitos originais.
+        $this->search = (string) ($phone->e164 ?: $phone->digits);
+        $this->resetList();
+        $this->selectedId = $phoneId;
+    }
+
+    #[Computed]
+    public function businessCandidatesV85(): \Illuminate\Support\Collection
+    {
+        return app(\App\Services\Contacts\WhatsappBusinessDirectoryV86::class)
+            ->search($this->publicCompanyQuery);
+    }
+
+    #[Computed]
+    public function businessSelectedV85(): ?array
+    {
+        if ($this->publicBusinessKeyV85 === null) {
+            return null;
+        }
+        try {
+            return app(\App\Services\Contacts\WhatsappBusinessDirectoryV86::class)
+                ->snapshot($this->publicBusinessKeyV85);
+        } catch (\Throwable $exception) {
+            report($exception);
+            $this->addError('public_site', 'Não foi possível carregar os detalhes desta empresa. Confira o log do Laravel.');
+
+            return null;
+        }
+    }
+
     public function selectPublicCompany(int $companyId): void
     {
         $snapshot = app(\App\Services\Contacts\WhatsappPublicSiteResearch::class)->companySnapshot($companyId);
         abort_unless($snapshot !== null, 404);
+        $this->publicBusinessKeyV85 = null;
         $this->publicCompanyId = $companyId;
         $this->publicCompanyQuery = '';
         unset($this->publicCompanyCandidates, $this->publicSelectedCompany);
@@ -468,6 +551,7 @@ new class extends Component
 
     public function clearPublicCompany(): void
     {
+        $this->publicBusinessKeyV85 = null;
         $this->publicCompanyId = null;
         $this->publicCompanyQuery = '';
         unset($this->publicCompanyCandidates, $this->publicSelectedCompany);
@@ -492,6 +576,102 @@ new class extends Component
             ->accept(auth()->user(), (int) $this->publicCompanyId, $findingId);
         unset($this->publicSelectedCompany);
         session()->flash('wa_public_success', 'Canal público adicionado à empresa; o número está disponível em Contatos.');
+    }
+
+    // EC_WA_PUBLIC_MULTI_SOURCE_V87: consulta assíncrona explícita do gestor.
+    public function startCompanyWebResearchV87(string $targetKey): void
+    {
+        abort_unless(auth()->user()?->isCommercialManager(), 403);
+        $current = $this->publicBusinessKeyV85;
+        $legacy = $this->publicCompanyId !== null
+            ? 'hubspot:'.$this->publicCompanyId : null;
+        abort_unless($targetKey === $current || $targetKey === $legacy, 404);
+        $runId = app(\App\Services\Contacts\WhatsappCompanyWebResearchV87::class)
+            ->queue(auth()->user(), $targetKey);
+        $status = (string) \Illuminate\Support\Facades\DB::table('whatsapp_company_web_runs_v87')
+            ->where('id', $runId)->value('status');
+        session()->flash('wa_public_success', $status === 'completed'
+            ? 'Pesquisa recente reutilizada. Consulte os resultados abaixo.'
+            : 'Pesquisa pública #'.$runId.' solicitada. Acompanhe o estado nesta tela.');
+    }
+
+    // EC_WA_SIMPLE_SEARCH_V88: fluxo principal não requer seleção de negócio/empresa.
+    public function selectAllPublicPhonesV89(): void
+    {
+        abort_unless(auth()->user()?->isCommercialManager(), 403);
+        $research = app(\App\Services\Contacts\WhatsappCompanyQuickResearchV88::class);
+        $run = $this->publicQuickSearchKeyV88 !== null
+            ? $research->latest($this->publicQuickSearchKeyV88) : null;
+        if ($run === null || $run->status !== 'completed'
+            || $research->keyFor(trim($this->publicQuickNameV88)) !== $this->publicQuickSearchKeyV88) {
+            $this->addError('wa89_selection', 'Pesquise a empresa novamente para selecionar os números.');
+            return;
+        }
+        $this->publicSelectedPhonesV89 = $research->findings($run)
+            ->pluck('phone_e164')->unique()->values()->all();
+    }
+
+    public function savePublicNumbersV89(): void
+    {
+        abort_unless(auth()->user()?->isCommercialManager(), 403);
+        $this->resetValidation('wa89_selection');
+        $this->resetValidation('wa89_target');
+        if (! $this->publicApprovalConfirmedV89) {
+            $this->addError('wa89_selection', 'Confira as fontes e marque a confirmação antes de vincular.');
+            return;
+        }
+        $key = $this->publicQuickSearchKeyV88;
+        $research = app(\App\Services\Contacts\WhatsappCompanyQuickResearchV88::class);
+        $run = $key !== null ? $research->latest($key) : null;
+        if ($run === null || $key === null) {
+            $this->addError('wa89_selection', 'Não há pesquisa concluída para aprovação.');
+            return;
+        }
+        try {
+            $out = app(\App\Services\Contacts\WhatsappCompanyPhoneApprovalV89::class)->approve(
+                auth()->user(), (string) $this->publicQuickNameV88, $key,
+                (int) $run->id, (string) $this->publicSaveTargetV89,
+                (array) $this->publicSelectedPhonesV89, $this->publicApprovalNoteV89
+            );
+            $this->publicSelectedPhonesV89 = [];
+            $this->publicApprovalConfirmedV89 = false;
+            session()->flash('wa89_saved', $out['created'].' vínculo(s) novo(s) criado(s); '
+                .$out['already'].' já existia(m). Números e fontes preservados no Prospector.');
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            report($exception);
+            $this->addError('wa89_selection', 'Não foi possível salvar. Nenhum vínculo parcial foi confirmado. Consulte o log.');
+        }
+    }
+
+    public function searchPublicCompanyV88(): void
+    {
+        abort_unless(auth()->user()?->isCommercialManager(), 403);
+        $this->resetValidation('wa88_name');
+        $service = app(\App\Services\Contacts\WhatsappCompanyQuickResearchV88::class);
+        try {
+            $name = trim($this->publicQuickNameV88);
+            $service->start(auth()->user(), $name);
+            $this->publicQuickSearchKeyV88 = $service->keyFor($name);
+            $this->publicSelectedPhonesV89 = [];
+            $this->publicSaveTargetV89 = '';
+            $this->publicApprovalConfirmedV89 = false;
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            report($exception);
+            $this->addError('wa88_name', 'Não foi possível concluir a solicitação. Confira a fila e os logs do Laravel.');
+        }
+    }
+
+    public function updatedPublicQuickNameV88(): void
+    {
+        $this->publicSelectedPhonesV89 = [];
+        $this->publicSaveTargetV89 = '';
+        $this->publicApprovalConfirmedV89 = false;
+        $this->publicQuickSearchKeyV88 = null;
+        $this->resetValidation('wa88_name');
     }
 
     public function startPublicCompany(): void
@@ -751,7 +931,12 @@ new class extends Component
     </section> {{-- /wa12-numbers --}}
     {{-- EC_WA_PUBLIC_COMPANY_V11: o diretório vem ANTES da pesquisa complementar. --}}
     <section id="wa12-company" class="wa12-pane wa12-pane-company" role="tabpanel" x-show="tab==='company'" x-cloak aria-label="Pesquisar WhatsApp de uma empresa">
-        @include('contacts.whatsapp-public-v11')
+        {{-- V88: fluxo principal simples; o legado continua acessível apenas para ações já existentes. --}}
+        @if($publicCompanyId !== null || $publicBusinessKeyV85 !== null || mb_strlen(trim($publicCompanyQuery)) >= 3)
+            @include('contacts.whatsapp-public-v11')
+        @else
+            @include('contacts.whatsapp-pesquisa-simples-v88')
+        @endif
     </section>
     {{-- EC_WA_FULL_DIRECTORY_V8: execução e histórico depois da lista completa. --}}
     <section id="wa12-operation" class="wa12-pane wa12-pane-operation" role="tabpanel" x-show="tab==='operation'" x-cloak aria-label="Lotes, programação e histórico">

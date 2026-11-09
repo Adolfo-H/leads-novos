@@ -5,6 +5,7 @@ use App\Http\Controllers\Access\AccessInvitationController;
 use App\Http\Controllers\Access\AccessRequestController;
 use App\Http\Controllers\CampaignIntelligenceController;
 use App\Http\Controllers\CampaignProductionReadinessController;
+use App\Http\Controllers\CampaignProspectingControllerV80;
 use App\Http\Controllers\CampaignUnsubscribeController;
 use App\Http\Controllers\HubSpotWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +57,19 @@ Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function 
     Route::livewire('/campanhas/respostas', 'pages::campaigns.replies')->name('campaigns.replies');
     Route::livewire('/campanhas/fila', 'pages::campaigns.queue')->name('campaigns.queue');
     Route::livewire('/campanhas/configuracoes', 'pages::campaigns.settings')->name('campaigns.settings');
+    /* EC_CAMPAIGN_PROSPECTING_V80_BEGIN */
+    Route::get('/campanhas/prospeccao-inteligente', [CampaignProspectingControllerV80::class, 'index'])
+        ->middleware('commercial.manager')->name('campaigns.prospecting.index');
+    Route::post('/campanhas/prospeccao-inteligente/rascunho', [CampaignProspectingControllerV80::class, 'draft'])
+        ->middleware(['commercial.manager', 'throttle:5,1'])->name('campaigns.prospecting.draft');
+    Route::get('/campanhas/prospeccao-inteligente/exportar', [CampaignProspectingControllerV80::class, 'export'])
+        ->middleware(['commercial.manager', 'throttle:5,1'])->name('campaigns.prospecting.export');
+    // EC_PROSPECTING_EXCLUDE_V83: mudanças somente na seleção individual.
+    Route::post('/campanhas/prospeccao-inteligente/excluir', [CampaignProspectingControllerV80::class, 'exclude'])
+        ->middleware(['commercial.manager', 'throttle:30,1'])->name('campaigns.prospecting.exclude');
+    Route::post('/campanhas/prospeccao-inteligente/restaurar', [CampaignProspectingControllerV80::class, 'restore'])
+        ->middleware(['commercial.manager', 'throttle:30,1'])->name('campaigns.prospecting.restore');
+    /* EC_CAMPAIGN_PROSPECTING_V80_END */
     // EC_CAMPAIGNS_UX_V22: tela exclusivamente de leitura para gestores.
     Route::livewire('/campanhas/avancado', 'pages::campaigns.advanced')->name('campaigns.advanced');
 });

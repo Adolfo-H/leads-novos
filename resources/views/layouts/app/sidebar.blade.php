@@ -259,7 +259,7 @@
 
         <div class="ec-topbar-context">
 
-            @unless (request()->routeIs('leads.index', 'leads.management', 'companies.show', 'prospecting.*', 'access.requests.*', 'contacts.whatsapp'))
+            @unless (request()->routeIs('leads.index', 'leads.management', 'companies.show', 'prospecting.*', 'access.requests.*', 'contacts.whatsapp', 'campaigns.*'))
                 <span class="ec-topbar-eyebrow">
                     ExportControl
                 </span>

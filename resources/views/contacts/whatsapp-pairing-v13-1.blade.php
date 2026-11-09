@@ -1,5 +1,10 @@
 {{-- EC_WA_PAIR_V13_1: conexão por QR disponível SOMENTE para gestor. Sem envio de mensagens. --}}
 @if(auth()->user()?->isCommercialManager())
+    @php
+        // EC_WA_CONNECTOR_GUARD_V83: mesma saúde do painel QR V18.
+        $wa131Beat = \Illuminate\Support\Facades\Cache::get('prospector:wa:pair:v13_1:connector:heartbeat');
+        $wa131ConnectorUp = is_string($wa131Beat) && strtotime($wa131Beat) !== false && strtotime($wa131Beat) > time() - 60;
+    @endphp
     <section class="wa131-pair" aria-label="Conectar ou reconectar contas WhatsApp" wire:poll.visible.15s>
         <div class="wa131-pair-head">
             <div><strong>Conexão dos WhatsApps</strong><small>Reconecte cada dispositivo aqui. O QR é temporário e visível somente ao gestor.</small></div>
@@ -20,8 +25,8 @@
                         <p class="wa131-caption">Conta conectada. Não precisa ler um novo QR.</p>
                     @else
                         <div class="wa131-pair-actions">
-                            <button type="button" wire:click="requestWebPairing({{ $wa131Session }})" wire:loading.attr="disabled" wire:target="requestWebPairing" @disabled($wa131Busy) class="wa131-btn primary">Conectar / reconectar</button>
-                            <button type="button" wire:click="requestWebPairing({{ $wa131Session }}, true)" wire:loading.attr="disabled" wire:target="requestWebPairing" @disabled($wa131Busy) class="wa131-btn">Gerar novo QR</button>
+                            <button type="button" wire:click="requestWebPairing({{ $wa131Session }})" wire:loading.attr="disabled" wire:target="requestWebPairing" @disabled($wa131Busy || ! $wa131ConnectorUp) class="wa131-btn primary">Conectar / reconectar</button>
+                            <button type="button" wire:click="requestWebPairing({{ $wa131Session }}, true)" wire:loading.attr="disabled" wire:target="requestWebPairing" @disabled($wa131Busy || ! $wa131ConnectorUp) class="wa131-btn">Gerar novo QR</button>
                         </div>
                         @if(is_array($wa131State) && ($wa131State['state'] ?? '') === 'error')
                             <p class="wa131-error" role="alert">{{ $wa131State['message'] ?? 'Não foi possível conectar. Tente novamente.' }}</p>
@@ -37,6 +42,10 @@
                 </div>
             @endforeach
         </div>
+        @unless($wa131ConnectorUp)
+            <p class="wa131-error" role="alert">O conector Ubuntu está offline. Inicie o conector antes de solicitar pareamento ou novo QR.</p>
+            <code class="wa18-command">cd ~/projetos/prospector-exportcontrol &amp;&amp; bash integrations/whatsapp-web/recuperar-conector-v83.sh</code>
+        @endunless
         @if(session('wa_pair_notice'))<p class="wa131-notice" role="status">{{ session('wa_pair_notice') }}</p>@endif
         @error('wa_pair')<p class="wa131-error" role="alert">{{ $message }}</p>@enderror
         <small class="wa131-caption">O botão solicita a conexão ao conector no Ubuntu; não inicia mensagens. Se o conector não estiver ativo, use o comando indicado no README.</small>

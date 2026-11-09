@@ -121,6 +121,19 @@ final class WhatsappPhoneRegistry
                     }
                 }, 'wpc.id', 'id');
 
+            // EC_WA_WEB_APPROVED_V89_REGISTRY: preservar fontes aprovadas na reconstrução.
+            // Nunca transforma um link público em WhatsApp confirmado.
+            if (Schema::hasTable('whatsapp_company_web_approved_v89')) {
+                DB::table('whatsapp_company_web_approved_v89')->orderBy('id')
+                    ->chunkById(350, static function ($items) use ($add): void {
+                        foreach ($items as $item) {
+                            $add('public', 'web-approved-v89:'.$item->id,
+                                'Canal público aprovado pelo gestor',
+                                (string) $item->company_label, 'phone', (string) $item->phone_e164);
+                        }
+                    });
+            }
+
             // EC_WA_V16_REGISTRY: consultas pontuais e correções confirmadas sobrevivem
             // às próximas sincronizações sem escrever sobre a fonte HubSpot/Receita.
             DB::table('whatsapp_manual_numbers_v16')->orderBy('id')->chunkById(350,

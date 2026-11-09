@@ -15,4 +15,10 @@
        @if(request()->routeIs('campaigns.settings')) aria-current="page" @endif>
         <span>Configurações gerais</span>
     </a>
+    <!-- EC_CAMPAIGN_PROSPECTING_V80 -->
+    <a href="{{ route('campaigns.prospecting.index') }}" wire:navigate
+       class="{{ request()->routeIs('campaigns.prospecting.*') ? 'is-active' : '' }}"
+       @if(request()->routeIs('campaigns.prospecting.*')) aria-current="page" @endif>
+        <span>Prospecção inteligente</span>
+    </a>
 </nav>

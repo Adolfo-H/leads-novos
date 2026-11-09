@@ -47,7 +47,11 @@
 </div>
 
 {{-- EC_WA_PUBLIC_DIRECTORY_V14_EXTERNAL: fontes ampliadas opcionais, com revisão. --}}
-@include('contacts.whatsapp-external-discovery-v14')
+{{-- EC_WA_PUBLIC_MULTI_SOURCE_V87: pesquisa antiga mantida para histórico, mas não confundir estados. --}}
+<details class="wa87-legacy-details" style="margin-top:16px;border-top:1px solid #e2ebef;padding-top:11px">
+    <summary style="font-size:12px;color:#526f7e;cursor:pointer">Pesquisa externa antiga (V14) e histórico de resultados</summary>
+    @include('contacts.whatsapp-external-discovery-v14')
+</details>
 
 {{-- EC_WA_V16_LINK_PANEL: ferramentas para cadastro por escolha explícita. --}}
 <livewire:whatsapp-company-links-v16 />

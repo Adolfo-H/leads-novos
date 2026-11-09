@@ -1,5 +1,7 @@
 {{-- EC_WA_PUBLIC_COMPANY_V11: evidência dos números já cadastrados; escolha de empresa opcional. --}}
 @include('contacts.whatsapp-public-v11-styles')
+@include('contacts.whatsapp-business-v85-styles')
+{{-- EC_WA_ALL_BUSINESSES_V85 --}}
 @php
     $wa11Summary = $this->summary;
     $wa11Public = $this->publicSiteMetrics;
@@ -19,7 +21,7 @@
     {{-- EC_WA_VISUAL_V12: métricas repetidas removidas. --}}
     <div class="wa11-primary">
         <div class="wa11-primary-top">
-            <div><strong>Pesquisar WhatsApp de uma empresa específica</strong><small>Busque uma empresa que tenha site cadastrado no HubSpot, escolha-a e veja quais números do seu banco aparecem naquele site.</small></div>
+            <div><strong>Pesquisar WhatsApp de uma empresa específica</strong><small>Pesquise qualquer empresa ou negócio do HubSpot, além das empresas do Prospector/Receita, mesmo sem site cadastrado. Ao selecionar, veja os telefones associados pelos vínculos reais.</small></div>
             <span class="wa11-status">Pesquisa em site público</span>
         </div>
         @if($wa11Company)
@@ -32,6 +34,11 @@
                 <div><small>Divulgados no próprio site</small><strong>{{ $wa11Format($wa11Company['direct_total']) }}</strong></div>
                 <div><small>WhatsApp já confirmado</small><strong>{{ $wa11Format($wa11Company['confirmed_total']) }}</strong></div>
             </div>
+            {{-- EC_WA_PUBLIC_MULTI_SOURCE_V87: coleta web por nome e domínio, sem confirmar telefones. --}}
+            @include('contacts.whatsapp-company-web-v87', [
+                'wa87TargetKey' => 'hubspot:'.(int) $wa11Company['company']->id,
+                'wa87KnownDomain' => $wa11Company['domain'],
+            ])
             <div class="wa11-search">
                 <button type="button" class="wa11-btn" wire:click="startPublicCompany" wire:loading.attr="disabled" wire:target="startPublicCompany" @disabled($wa11LastRun && in_array($wa11LastRun->status, ['queued', 'running'], true))>
                     <span wire:loading.remove wire:target="startPublicCompany">Pesquisar site desta empresa agora</span>
@@ -68,24 +75,28 @@
             {{-- EC_WA_PUBLIC_CHANNELS_V13: canal salvo com empresa e fonte, sem pessoa fictícia. --}}
             <div style="margin-top:18px"><strong style="font-size:13px">WhatsApps públicos cadastrados para esta empresa</strong></div>
             @include('contacts.whatsapp-public-v13-channels')
+        @elseif($this->businessSelectedV85)
+            @include('contacts.whatsapp-business-detail-v85')
         @else
             <div class="wa11-search">
                 <label>Buscar empresa por nome ou domínio
                     <input type="search" wire:model.live.debounce.400ms="publicCompanyQuery" placeholder="Ex.: Cooperativa, Comércio, empresa.com.br..." autocomplete="off" maxlength="100">
                 </label>
             </div>
-            @if(mb_strlen(trim($publicCompanyQuery)) >= 2)
-                <div class="wa11-options" aria-label="Empresas com domínio cadastrado">
-                    @forelse($this->publicCompanyCandidates as $candidate)
-                        <button type="button" class="wa11-company-button" wire:key="wa11-candidate-{{ $candidate->id }}" wire:click="selectPublicCompany({{ $candidate->id }})">
-                            <strong>{{ $candidate->name ?: 'Empresa HubSpot' }}</strong><small>{{ $candidate->domain }}</small>
+            @if(mb_strlen(trim($publicCompanyQuery)) >= 3)
+                <div class="wa11-options" aria-label="Empresas e negócios encontrados nas bases">
+                    @forelse($this->businessCandidatesV85 as $candidate)
+                        <button type="button" class="wa11-company-button wa85-business-option" wire:key="wa85-candidate-{{ str_replace(':', '-', $candidate->key) }}" wire:click="selectBusinessV85('{{ $candidate->key }}')">
+                            <strong>{{ $candidate->name }}</strong>
+                            <small><span class="wa85-source">{{ $candidate->source }}</span> · {{ $candidate->details }}</small>
+                            <small class="wa85-website">{{ $candidate->domain ? 'Site cadastrado: '.$candidate->domain : 'Sem site cadastrado — disponível para consultar vínculos e telefones' }}</small>
                         </button>
                     @empty
-                        <p class="wa11-empty">Nenhuma empresa com domínio público foi encontrada no HubSpot. A V11 usa os sites já cadastrados, sem deduzir URLs por nome.</p>
+                        <p class="wa11-empty">Nenhuma empresa ou negócio correspondeu à pesquisa no espelho local. Tente usar somente o nome principal (ex.: SAAGROS), o ID do negócio ou a raiz do CNPJ. Confira também se a sincronização do HubSpot terminou.</p>
                     @endforelse
                 </div>
             @else
-                <p class="wa11-note">Digite pelo menos 2 caracteres e escolha uma empresa. A pesquisa não será iniciada até você clicar no botão dela.</p>
+                <p class="wa11-note">Digite pelo menos 3 caracteres para consultar empresas e negócios de todas as fontes. Nenhuma pesquisa externa é executada apenas por digitar.</p>
             @endif
         @endif
     </div>

@@ -927,6 +927,17 @@ new class extends Component
     $progress = $totalCount > 0 ? min(100, (int) round($sentCount * 100 / $totalCount)) : 0;
 @endphp
 
+{{-- EC_CAMPAIGN_STATUS_CONTRAST_V83: corrigir badge azul-escuro ilegível da coluna Situação. --}}
+<style>
+.ecm2 .ecm2-table td .ecm2-pill[class*="is-delivery-"] { display:inline-flex;align-items:center;min-height:24px;padding:4px 9px;border-radius:7px;font-size:11px;font-weight:730;line-height:1.3;background:#eef2f6 !important;border:1px solid #d5dfe8 !important;color:#2d4d61 !important;-webkit-text-fill-color:#2d4d61 !important; }
+.ecm2 .ecm2-table td .ecm2-pill.is-delivery-pending { background:#eef2f6 !important;border-color:#d5dfe8 !important;color:#344c61 !important;-webkit-text-fill-color:#344c61 !important; }
+.ecm2 .ecm2-table td .ecm2-pill.is-delivery-reserved { background:#e7f1fc !important;border-color:#bfd7f1 !important;color:#205b88 !important;-webkit-text-fill-color:#205b88 !important; }
+.ecm2 .ecm2-table td .ecm2-pill.is-delivery-sending { background:#e4f4fa !important;border-color:#bee1ee !important;color:#165f7b !important;-webkit-text-fill-color:#165f7b !important; }
+.ecm2 .ecm2-table td .ecm2-pill.is-delivery-sent { background:#e6f7ee !important;border-color:#bde3cf !important;color:#116b4a !important;-webkit-text-fill-color:#116b4a !important; }
+.ecm2 .ecm2-table td .ecm2-pill.is-delivery-suppressed { background:#fff0ed !important;border-color:#edcac4 !important;color:#973d35 !important;-webkit-text-fill-color:#973d35 !important; }
+.ecm2 .ecm2-table td .ecm2-pill.is-delivery-uncertain { background:#fff4dd !important;border-color:#efd7ac !important;color:#85601d !important;-webkit-text-fill-color:#85601d !important; }
+.ecm2 .ecm2-table td .ecm2-pill.is-delivery-canceled { background:#f1f3f5 !important;border-color:#dce2e6 !important;color:#52616a !important;-webkit-text-fill-color:#52616a !important; }
+</style>
 <div class="ecm2 ec21-page ec22-page ec68-page ec69-page" data-ec-campaigns-simple="M01-M10-V69" data-ec-campaigns-figma="M01-M10-V68" data-ec21="EC_CAMPAIGN_REDESIGN_V21" data-ec22-screen="{{ $screen }}" @if ($screen === 'detail') wire:poll.60s @endif>
     <header class="ecm2-head">
         <div>
@@ -1246,7 +1257,7 @@ new class extends Component
                             @if ($selected->replies()->exists())
                                 <div class="ecm2-response-head"><strong>Respostas recentes</strong><button type="button" class="ecm2-text-action" wire:click="$set('detailTab', 'replies')">Ver todas →</button></div>
                                 @foreach ($this->replies->take(3) as $reply)
-                                    <div class="ecm2-recent-reply"><span aria-hidden="true">↩</span><div><strong>{{ $reply->from_email }}</strong><small>{{ $reply->subject ?: 'Sem assunto' }}</small></div><time>{{ $reply->received_at?->format('d/m/Y H:i') }}</time></div>
+                                    <div class="ecm2-recent-reply"><span aria-hidden="true">↩</span><div><strong>{{ $reply->from_email }}</strong><small>{{ $reply->subject ?: 'Sem assunto' }}</small></div><time>{{ \App\Support\CampaignLocalTime::format($reply->getRawOriginal('received_at'), '') }}</time></div>
                                 @endforeach
                             @endif
                         </div>
@@ -1298,19 +1309,19 @@ new class extends Component
                         </section>
                         @endif
                     @elseif ($detailTab === 'recipients')
-                        <div class="ecm2-table-wrap"><table class="ecm2-table"><thead><tr><th>Contato / E-mail</th><th>Empresa</th><th>Situação</th><th>Data</th></tr></thead><tbody>
+                        <div class="ecm2-table-wrap"><table class="ecm2-table"><thead><tr><th>Contato / E-mail</th><th>Empresa</th><th>Situação</th><th>Data / hora (Brasília)</th></tr></thead><tbody>
                             @forelse ($this->recipients as $recipient)
                                 <tr wire:key="ecm2-recipient-{{ $recipient->id }}"><td><strong>{{ $recipient->contact_name ?: 'Contato sem nome' }}</strong><small>{{ $recipient->email }}</small></td><td>{{ $recipient->company_name ?: '—' }}</td><td>
                                     <span class="ecm2-pill is-delivery-{{ $recipient->status }}">{{ $delivery[$recipient->status] ?? $recipient->status }}</span>
                                     @if ($recipient->bounces->isNotEmpty())
                                         @php $latestBounce = $recipient->bounces->first(); @endphp
                                         <span class="ec29-recipient-bounced">↩ Devolvido · {{ \App\Services\Campaigns\CampaignBounceReason::label((string) $latestBounce->status_code) }}</span>
-                                        <small class="ec29-recipient-detail">Código {{ $latestBounce->status_code }} · {{ $latestBounce->received_at?->format('d/m/Y H:i') ?? 'Data não informada' }}</small>
+                                        <small class="ec29-recipient-detail">Código {{ $latestBounce->status_code }} · {{ \App\Support\CampaignLocalTime::format($latestBounce->getRawOriginal('received_at'), 'Data não informada') }}</small>
                                     @elseif ($recipient->status === 'uncertain' && $recipient->error_message)
                                         <small class="ec29-recipient-detail">Envio não confirmado: {{ $recipient->error_message }}</small>
                                     @endif
                                     @if ($recipient->replied_at) <small>↩ Respondeu</small> @endif
-                                </td><td>{{ $recipient->sent_at?->format('d/m/Y H:i') ?? '—' }}</td></tr>
+                                </td><td>{{ \App\Support\CampaignLocalTime::format($recipient->getRawOriginal('sent_at')) }}</td></tr>
                             @empty
                                 <tr><td colspan="4" class="ecm2-empty-cell">Nenhum destinatário registrado.</td></tr>
                             @endforelse
@@ -1348,7 +1359,7 @@ new class extends Component
                                                 <td class="ec29-bounce-reason">{{ \App\Services\Campaigns\CampaignBounceReason::label((string) $bounce->status_code) }}</td>
                                                 <td>{{ \App\Services\Campaigns\CampaignBounceReason::categoryLabel((string) $bounce->classification) }}<small>DSN {{ $bounce->status_code }}</small></td>
                                                 <td>{{ $bounce->diagnostic ?: 'Servidor não informou detalhes' }}</td>
-                                                <td>{{ $bounce->received_at?->format('d/m/Y H:i') ?? '—' }}</td>
+                                                <td>{{ \App\Support\CampaignLocalTime::format($bounce->getRawOriginal('received_at')) }}</td>
                                             </tr>
                                         @empty
                                             <tr><td colspan="5" class="ecm2-empty-cell">Nenhuma devolução registrada neste filtro. Consulte o status do monitoramento IMAP.</td></tr>
@@ -1372,7 +1383,7 @@ new class extends Component
                     @elseif ($detailTab === 'replies')
                         <div class="ecm2-table-wrap"><table class="ecm2-table"><thead><tr><th>Remetente</th><th>Assunto recebido</th><th>Data</th></tr></thead><tbody>
                             @forelse ($this->replies as $reply)
-                                <tr wire:key="ecm2-reply-{{ $reply->id }}"><td><strong>{{ $reply->from_email }}</strong></td><td>{{ $reply->subject ?: '(sem assunto)' }}</td><td>{{ $reply->received_at?->format('d/m/Y H:i') ?? '—' }}</td></tr>
+                                <tr wire:key="ecm2-reply-{{ $reply->id }}"><td><strong>{{ $reply->from_email }}</strong></td><td>{{ $reply->subject ?: '(sem assunto)' }}</td><td>{{ \App\Support\CampaignLocalTime::format($reply->getRawOriginal('received_at')) }}</td></tr>
                             @empty
                                 <tr><td colspan="3" class="ecm2-empty-cell">Nenhuma resposta identificada pelo IMAP até agora.</td></tr>
                             @endforelse
@@ -1408,11 +1419,11 @@ new class extends Component
                 </section>
             @elseif ($screen === 'detail' && $selected)
                 <section class="ecm2-context-card"><header><h2>Detalhes da campanha</h2><span class="ecm2-pill is-{{ $selected->status }}">{{ $labels[$selected->status] ?? $selected->status }}</span></header>
-                    <div class="ecm2-key-value"><span>Criada em</span><strong>{{ $selected->created_at?->format('d/m/Y H:i') }}</strong></div>
+                    <div class="ecm2-key-value"><span>Criada em</span><strong>{{ \App\Support\CampaignLocalTime::format($selected->getRawOriginal('created_at'), '') }}</strong></div>
                     <div class="ecm2-key-value"><span>Remetente</span><strong>{{ $selected->from_address }}</strong></div>
                     <div class="ecm2-key-value"><span>Respostas para</span><strong>{{ $selected->reply_to }}</strong></div>
                     <div class="ecm2-key-value"><span>Destinatários</span><strong>{{ $totalCount }}</strong></div>
-                    <div class="ecm2-key-value"><span>Aprovada em</span><strong>{{ $selected->approved_at?->format('d/m/Y H:i') ?? '—' }}</strong></div>
+                    <div class="ecm2-key-value"><span>Aprovada em</span><strong>{{ \App\Support\CampaignLocalTime::format($selected->getRawOriginal('approved_at')) }}</strong></div>
                 </section>
                 @if ($canManageCampaigns)
                 <section class="ecm2-context-card"><header><h2>Ações rápidas</h2></header>
@@ -1426,7 +1437,7 @@ new class extends Component
                             </button>
                             <div class="ecm2-alert-note">Destino: {{ config('campaign_mail.tracked_test_to') ?: 'Configure CAMPAIGN_TRACKED_TEST_TO no .env' }}. Nunca utiliza os contatos da campanha.</div>
                             @if ($lastTrackedTest)
-                                <div class="ecm2-alert-note">Último teste: {{ $lastTrackedTest->replied_at ? 'Resposta identificada pelo IMAP' : ($lastTrackedTest->status === 'smtp_accepted' ? 'Aceito SMTP · aguardando resposta' : 'Envio não confirmado') }}. @if($lastTrackedTest->replied_at) {{ $lastTrackedTest->replied_at->format('d/m/Y H:i') }} @endif</div>
+                                <div class="ecm2-alert-note">Último teste: {{ $lastTrackedTest->replied_at ? 'Resposta identificada pelo IMAP' : ($lastTrackedTest->status === 'smtp_accepted' ? 'Aceito SMTP · aguardando resposta' : 'Envio não confirmado') }}. @if($lastTrackedTest->replied_at) {{ \App\Support\CampaignLocalTime::format($lastTrackedTest->getRawOriginal('replied_at')) }} @endif</div>
                             @endif
                         @endif
                         @if ($selected->status === 'draft')
