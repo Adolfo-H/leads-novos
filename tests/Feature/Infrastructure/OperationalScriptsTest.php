@@ -114,7 +114,9 @@ it('keeps the public gateway restricted to signed HubSpot webhooks and HMAC unsu
     expect($gateway)->toContain('if ($request_method = HEAD) { return 405; }');
     expect($gateway)->toContain('if ($request_method !~ ^(POST|HEAD)$) { return 405; }');
     expect($gateway)->toContain('proxy_intercept_errors off;');
-    expect($gateway)->toContain('proxy_pass http://laravel.test:80;');
+    expect($gateway)->toContain('resolver 127.0.0.11 valid=10s ipv6=off;');
+    expect($gateway)->toContain('set $ec_laravel_upstream laravel.test:80;');
+    expect($gateway)->toContain('proxy_pass http://$ec_laravel_upstream$request_uri;');
     // Somente este endpoint deve atravessar o gateway; nao liberar prefixos de rotas.
     expect(substr_count($gateway, 'location = /webhooks/hubspot'))->toBe(1);
     expect($gateway)->not->toContain('location /webhooks');

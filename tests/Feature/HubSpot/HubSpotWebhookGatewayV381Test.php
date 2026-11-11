@@ -10,7 +10,9 @@ it('exposes only the signed HubSpot POST endpoint through the unsubscribe gatewa
         ->toContain('location = /webhooks/hubspot')
         ->toContain('EC_HUBSPOT_GATEWAY_V381_START')
         ->toContain('if ($request_method !~ ^(POST|HEAD)$) { return 405; }')
-        ->toContain('proxy_pass http://laravel.test:80;')
+        ->toContain('resolver 127.0.0.11 valid=10s ipv6=off;')
+        ->toContain('set $ec_laravel_upstream laravel.test:80;')
+        ->toContain('proxy_pass http://$ec_laravel_upstream$request_uri;')
         ->toContain('location / { return 404; }')
         ->toContain('location ~ "^/email/descadastro/')
         ->toContain('proxy_intercept_errors off;');

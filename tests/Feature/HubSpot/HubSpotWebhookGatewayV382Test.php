@@ -10,7 +10,9 @@ it('identifies the loaded webhook route without exposing the application', funct
         ->toContain('if ($request_method = HEAD) { return 405; }')
         ->toContain('if ($request_method !~ ^(POST|HEAD)$) { return 405; }')
         ->toContain('proxy_intercept_errors off;')
-        ->toContain('proxy_pass http://laravel.test:80;')
+        ->toContain('resolver 127.0.0.11 valid=10s ipv6=off;')
+        ->toContain('set $ec_laravel_upstream laravel.test:80;')
+        ->toContain('proxy_pass http://$ec_laravel_upstream$request_uri;')
         ->toContain('location / { return 404; }')
         ->toContain('location ~ "^/email/descadastro/');
 
