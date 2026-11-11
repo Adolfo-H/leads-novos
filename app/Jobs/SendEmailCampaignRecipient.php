@@ -123,8 +123,9 @@ class SendEmailCampaignRecipient implements ShouldQueue
             }
 
             $utcNow = now('UTC');
-            $hourLimit = max(1, min(100, $policy['hour']));
-            $dayLimit = max(1, min(500, $policy['day']));
+            // EC_CAMPAIGNS_UNIFIED_V90: respeitar cota SMTP aprovada, sem teto legado de 100/h.
+            $hourLimit = max(1, min((int) config('campaign_mail.smtp_approved_per_hour', 100), $policy['hour']));
+            $dayLimit = max(1, min((int) config('campaign_mail.smtp_approved_per_day', 500), $policy['day']));
             $hourAttempts = EmailCampaignRecipient::query()
                 ->whereNotNull('attempted_at')
                 ->where('attempted_at', '>=', $utcNow->copy()->subHour())

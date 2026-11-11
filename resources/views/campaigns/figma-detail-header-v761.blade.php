@@ -49,7 +49,7 @@ $ec68Pending = (int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0) 
         </div>
 
         {{-- ecfv3-detail-before-metrics: previsão e e-mail em destaque --}}
-        @include('campaigns.followup-schedule-detail-v5')
+        {{-- EC_CAMPAIGNS_UNIFIED_V90: editor movido para baixo dos resultados. --}}
         @include('campaigns.campaign-group-history-v1')
 
         <div class="ec76-metrics" aria-label="Indicadores reais da campanha">

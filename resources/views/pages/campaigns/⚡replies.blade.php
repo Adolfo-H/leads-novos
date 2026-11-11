@@ -158,6 +158,8 @@ new class extends Component
 <div class="ecm6-page ecm7-page ec21-page ec22-page ec21-replies ec22-replies ec69-replies" data-ec69-replies="M07-V69" data-ec21-screen="replies" data-ec22-screen="replies" wire:poll.90s>
     <header class="ec21-module-header"><div><span class="ec22-kicker">CAMPANHAS / RESPOSTAS</span><h1>Caixa de respostas</h1><p>Somente conversas relacionadas às suas campanhas.</p></div><span class="ec21-status">Respostas registradas</span></header>
     @include('campaigns.module-nav')
+    {{-- EC_CAMPAIGNS_UNIFIED_V90 --}}
+    @include('campaigns.context-and-visual-v90')
     @include('campaigns.replies-health-v77')
     <section class="ec69-reply-filter-card" aria-label="Encontre uma conversa">
         <h2>Encontre uma conversa</h2>
@@ -182,6 +184,11 @@ new class extends Component
     @if ($kind === 'suppressed')
         @include('campaigns.unsubscribed-v77')
     @else
+    @php
+        $ec90ReplyCompanies = $kind === 'commercial'
+            ? app(\App\Services\Campaigns\CampaignReplyCompanyV90::class)->forReplies($this->conversations->items())
+            : [];
+    @endphp
     <div class="ec21-inbox">
         <section class="ec21-panel ec21-inbox-list" aria-label="Conversas recebidas">
             <div class="ec21-panel-heading"><div><h3>Respostas recebidas</h3><p>{{ number_format($this->conversations->total(), 0, ',', '.') }} resultado(s)</p></div><span class="ec21-counter">{{ $this->conversations->total() }}</span></div>
@@ -192,7 +199,7 @@ new class extends Component
                         $subject = $kind === 'pilot' ? (string) ($entry->reply_subject ?: 'Resposta ao teste') : (string) ($entry->subject ?: 'Sem assunto');
                         $when = $kind === 'pilot' ? $entry->replied_at : $entry->received_at;
                     @endphp
-                    <button type="button" wire:key="ec21-reply-{{ $kind }}-{{ $entry->id }}" wire:click="open({{ $entry->id }})" class="ec21-inbox-item {{ $selectedId === $entry->id ? 'is-selected' : '' }}" aria-pressed="{{ $selectedId === $entry->id ? 'true' : 'false' }}"><span class="ec21-avatar">{{ mb_strtoupper(mb_substr($sender ?: '?', 0, 1)) }}</span><span class="ec21-inbox-copy"><strong>{{ $sender }}</strong><span>{{ $subject }}</span><small>{{ $entry->campaign?->name ?? 'Campanha não informada' }}</small></span><time datetime="{{ $when?->toIso8601String() }}">{{ $when?->format('d/m H:i') }}</time></button>
+                    <button type="button" wire:key="ec21-reply-{{ $kind }}-{{ $entry->id }}" wire:click="open({{ $entry->id }})" class="ec21-inbox-item {{ $selectedId === $entry->id ? 'is-selected' : '' }}" aria-pressed="{{ $selectedId === $entry->id ? 'true' : 'false' }}"><span class="ec21-avatar">{{ mb_strtoupper(mb_substr($sender ?: '?', 0, 1)) }}</span><span class="ec21-inbox-copy"><strong>{{ $sender }}</strong><span>{{ $subject }}</span><small>Campanha: {{ $entry->campaign?->name ?: ('#'.(string) $entry->email_campaign_id.' · cadastro indisponível') }}</small>@if($kind === 'commercial')@if(isset($ec90ReplyCompanies[(int)$entry->id]))<small class="ec90-reply-company">{{ $ec90ReplyCompanies[(int)$entry->id]['label'] }}</small>@endif @endif</span><time datetime="{{ $when?->toIso8601String() }}">{{ $when?->format('d/m H:i') }}</time></button>
                 @empty
                     <div class="ec21-inbox-empty"><span aria-hidden="true">✉</span><h3>{{ $search !== '' ? 'Nenhuma conversa encontrada' : 'Nenhuma resposta nesta categoria' }}</h3><p>{{ $search !== '' ? 'Tente outro e-mail ou assunto.' : 'Quando uma pessoa responder, a conversa vinculada aparecerá aqui.' }}</p></div>
                 @endforelse
@@ -208,9 +215,22 @@ new class extends Component
                     $body = $test ? $entry->reply_body_text : $entry->body_text;
                     $subject = $test ? $entry->reply_subject : $entry->subject;
                     $when = $test ? $entry->replied_at : $entry->received_at;
+                    $ec90SelectedCompanies = $test ? [] : app(\App\Services\Campaigns\CampaignReplyCompanyV90::class)->forReplies([$entry]);
+                    $ec90Company = $ec90SelectedCompanies[(int)$entry->id] ?? null;
                 @endphp
-                <header class="ec21-reader-heading"><div><span class="ec21-eyebrow">MENSAGEM RECEBIDA</span><h3>{{ $subject ?: 'Sem assunto' }}</h3><p>Campanha vinculada: <strong>{{ $entry->campaign?->name ?? 'Não informada' }}</strong></p></div><span class="ec21-tag">{{ $test ? 'Teste piloto' : 'Comercial' }}</span></header>
+                <header class="ec21-reader-heading"><div><span class="ec21-eyebrow">MENSAGEM RECEBIDA</span><h3>{{ $subject ?: 'Sem assunto' }}</h3><p>Campanha vinculada: <strong>{{ $entry->campaign?->name ?: ('#'.(string) $entry->email_campaign_id.' · não localizada') }}</strong>@if($entry->campaign) <a href="{{ route('campaigns.index') }}" wire:navigate>Ver campanhas</a> @endif</p></div><span class="ec21-tag">{{ $test ? 'Teste piloto' : 'Comercial' }}</span></header>
                 <div class="ec21-reader-person"><span class="ec21-avatar">{{ mb_strtoupper(mb_substr($sender ?: '?', 0, 1)) }}</span><div><strong>{{ $sender }}</strong><small>Resposta de e-mail registrada no Prospector</small></div><time datetime="{{ $when?->toIso8601String() }}">{{ $when?->format('d/m/Y H:i') }}</time></div>
+                @if ($ec90Company !== null)
+                    <div class="ec90-reply-context" aria-label="Empresa do remetente">
+                        <strong>{{ $ec90Company['label'] }}</strong>
+                        <small>{{ $ec90Company['origin'] }} · vínculo de origem, sem inferir CNPJ pelo nome</small>
+                        <div class="ec90-reply-actions">
+                            @if($ec90Company['dossier_url'])<a href="{{ $ec90Company['dossier_url'] }}" target="_blank" rel="noopener noreferrer">Abrir dossiê da empresa</a>@endif
+                            @if($ec90Company['hubspot_url'])<a href="{{ $ec90Company['hubspot_url'] }}" target="_blank" rel="noopener noreferrer">Abrir empresa no HubSpot</a>@endif
+                            @if(!$ec90Company['dossier_url'] && !$ec90Company['hubspot_url'])<small>Sem vínculo confiável para abrir dossiê; confira o cadastro de origem.</small>@endif
+                        </div>
+                    </div>
+                @endif
                 @if ($body !== null)
                     @php
                         $chunks = preg_split('/(?=^\s*(?:-{4,}|De:\s|From:\s|Em\s.+escreveu:|On\s.+wrote:))/mi', (string) $body, 2);

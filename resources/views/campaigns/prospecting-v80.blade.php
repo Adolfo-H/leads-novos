@@ -150,7 +150,7 @@
                     <a class="ecpi80-button" href="{{ route('campaigns.prospecting.index') }}">Limpar filtros</a>
                 </div>
             </form>
-            <div class="ecpi80-note">Proteções ativas: clientes identificados, negócios abertos ou ganhos, tarefas em aberto, atividades recentes, e-mails trabalhados no período, campanhas em andamento e descadastros. A ausência de histórico sincronizado não garante que a empresa nunca foi contatada. A coluna Empresa prioriza vínculos reais do HubSpot; nomes livres não comprovam CNPJ. Vínculos múltiplos sem primária única ficam fora da seleção automática.</div>
+            <div class="ecpi80-note">Proteções ativas: clientes identificados, negócios abertos ou ganhos, tarefas em aberto, atividades recentes, e-mails já aceitos em qualquer campanha, campanhas em andamento e descadastros. A ausência de histórico sincronizado não garante que a empresa nunca foi contatada. A coluna Empresa prioriza vínculos reais do HubSpot; nomes livres não comprovam CNPJ. Vínculos múltiplos sem primária única ficam fora da seleção automática.</div>
         </section>
 
         @if($hasAnalysis)
@@ -269,6 +269,13 @@
                     </div>
                     <label class="ecpi80-field" style="margin-top:14px">Mensagem
                         <textarea name="body" minlength="10" maxlength="12000" placeholder="Escreva a mensagem de apresentação comercial..." required>{{ old('body') }}</textarea>
+                    </label>
+                    {{-- EC_CAMPAIGNS_UNIFIED_V90: ritmo por campanha, sem alterar cotas globais --}}
+                    <label class="ecpi80-field" style="max-width:440px;margin-top:14px">Prazo desejado para o envio desta campanha
+                        <select name="pace_hours">
+                            @foreach([1,2,4,8,12,24] as $hours)<option value="{{ $hours }}" @selected((int) old('pace_hours',1) === $hours)>{{ $hours }} {{ $hours === 1 ? 'hora (mais rápido)' : 'horas' }}</option>@endforeach
+                        </select>
+                        <small class="ecpi80-muted">O menor limite entre a cadência escolhida e a autorização SMTP sempre prevalece. Não habilita o envio automático.</small>
                     </label>
                     <label class="ecpi80-check"><input type="checkbox" name="basis_reviewed" value="1" required><span>Revisei a finalidade comercial, a base legal e a pertinência do público. Confirmo que será criado apenas um rascunho, sem envio automático.</span></label>
                     <div class="ecpi80-actions">

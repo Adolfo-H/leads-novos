@@ -29,7 +29,7 @@ new class extends Component
 
     public string $composerStep = 'audience';
 
-    public string $plannedHours = '8';
+    public string $plannedHours = '1'; // EC_CAMPAIGNS_UNIFIED_V90: ritmo mais rápido como padrão, sem exceder SMTP
 
     public string $detailTab = 'recipients';
 
@@ -778,6 +778,7 @@ new class extends Component
             'name' => $validated['name'], 'subject' => $validated['subject'], 'body' => $validated['body'],
         ], array_values($validated['audienceKeys']), $this->editingCampaignId !== null
             ? EmailCampaign::query()->findOrFail($this->editingCampaignId) : null);
+        app(\App\Services\Campaigns\CampaignPacingV90::class)->save($campaign, (int) $this->plannedHours);
         session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.');
         unset($this->overview, $this->campaigns);
         $this->openCampaign((int) $campaign->id);
@@ -787,7 +788,7 @@ new class extends Component
      * EC_SIMPLE_CAMPAIGNS_2026_V1
      * Disparo explícito: primeiro salva rascunho, depois usa a mesma
      * aprovação e todas as proteções já existentes no CampaignManager.
-     * A duração escolhida é uma simulação; a fila usa a política global.
+     * A duração escolhida grava a cadência da campanha; os limites globais continuam prioritários.
      */
     public function saveAndStart(CampaignManager $manager): void
     {
@@ -938,6 +939,7 @@ new class extends Component
 .ecm2 .ecm2-table td .ecm2-pill.is-delivery-uncertain { background:#fff4dd !important;border-color:#efd7ac !important;color:#85601d !important;-webkit-text-fill-color:#85601d !important; }
 .ecm2 .ecm2-table td .ecm2-pill.is-delivery-canceled { background:#f1f3f5 !important;border-color:#dce2e6 !important;color:#52616a !important;-webkit-text-fill-color:#52616a !important; }
 </style>
+@include('campaigns.context-and-visual-v90')
 <div class="ecm2 ec21-page ec22-page ec68-page ec69-page" data-ec-campaigns-simple="M01-M10-V69" data-ec-campaigns-figma="M01-M10-V68" data-ec21="EC_CAMPAIGN_REDESIGN_V21" data-ec22-screen="{{ $screen }}" @if ($screen === 'detail') wire:poll.60s @endif>
     <header class="ecm2-head">
         <div>
@@ -1180,7 +1182,7 @@ new class extends Component
                     @else
                         <div class="ec22-two-columns ec22-final-layout">
                             <section class="ec22-card ec22-rhythm-card">
-                                <header class="ec22-card-head"><div><h2>Em quanto tempo você quer enviar?</h2><p>Escolha um prazo desejado. A fila real seguirá a política autorizada.</p></div></header>
+                                <header class="ec22-card-head"><div><h2>Em quanto tempo você quer enviar?</h2><p>Defina o ritmo desta campanha. O motor usará o menor limite entre sua escolha e a capacidade SMTP autorizada.</p></div></header>
                                 <p class="ec22-secondary">{{ count($audienceKeys) }} destinatário(s) selecionado(s). Limite desta campanha: {{ (int) config('campaign_mail.max_recipients', 100) }}.</p>
                                 <h3 class="ec22-subheading">Duração desejada</h3>
                                 <div class="ec22-duration-grid" role="group" aria-label="Duração desejada">
@@ -1191,9 +1193,9 @@ new class extends Component
                                 @elseif (! $this->pacePreview['within_policy'])<div class="ec22-warning" role="status">O prazo escolhido ultrapassa os limites atuais. Salve como rascunho ou revise as configurações autorizadas.</div>
                                 @else<div class="ec22-success" role="status">Ritmo teórico compatível com a política atual. Filas, janelas móveis e SMTP podem prolongar o envio.</div>@endif
                             </section>
-                            <aside class="ec22-card ec22-pace-summary"><header class="ec22-card-head"><div><h2>Previsão do seu envio</h2><p>Simulação, não agendamento.</p></div></header>
+                            <aside class="ec22-card ec22-pace-summary"><header class="ec22-card-head"><div><h2>Previsão do seu envio</h2><p>Cadência salva no rascunho, respeitando o SMTP. Estimativa, não garantia de conclusão no horário.</p></div></header>
                                 <div class="ec22-metric-grid"><div><span>Necessário por hora</span><strong>{{ $this->pacePreview['required_hour'] }}</strong></div><div><span>Necessário por minuto</span><strong>{{ $this->pacePreview['required_minute'] }}</strong></div><div><span>Duração desejada</span><strong>{{ $this->pacePreview['hours'] }}h</strong></div><div><span>Contatos</span><strong>{{ count($audienceKeys) }}</strong></div></div>
-                                <div class="ec22-info-note">O início e a duração efetivos dependem do agendador e dos limites SMTP. Este prazo não fica agendado individualmente.</div>
+                                <div class="ec22-info-note">O início e a duração efetivos dependem do agendador e dos limites SMTP. A cadência é aplicada ao reservar destinatários, sem alterar a política global.</div>
                             </aside>
                         </div>
                         <section class="ec22-card ec22-review-card">
@@ -1261,53 +1263,7 @@ new class extends Component
                                 @endforeach
                             @endif
                         </div>
-                        {{-- EC_CAMPAIGNS_FOLLOWUP_V294 — segunda rodada: só planejar e revisar rascunho. --}}
-                        @if ($canManageCampaigns && $selected->status === 'completed')
-                        <section class="ec294-followup" aria-label="Planejamento da segunda rodada">
-                            <span class="ec294-unmatched-label">CONTINUIDADE COMERCIAL</span>
-                            <h3>Segunda rodada de e-mails</h3>
-                            <p>Retome com um novo texto após 5, 7 ou 8 dias do último envio. O sistema exclui quem respondeu, recebeu devolução ou pediu descadastro. <strong>A próxima rodada pode iniciar automaticamente após o prazo, desde que o SMTP e o IMAP estejam ativos e a automação liberada. Confira a previsão e a mensagem no quadro de continuidade.</strong></p>
-                            @if ($this->followUpPlans->isEmpty())
-                                <div class="ec294-followup-grid">
-                                    <div class="ec294-followup-field"><label for="ec294-followup-days">Intervalo</label>
-                                        <select id="ec294-followup-days" wire:model="followUpDays">
-                                            <option value="5">5 dias</option><option value="7">7 dias</option><option value="8">8 dias</option>
-                                        </select>
-                                    </div>
-                                    <div class="ec294-followup-field"><label for="ec294-followup-name">Nome da rodada</label>
-                                        <input id="ec294-followup-name" type="text" wire:model="followUpName" maxlength="150" required>
-                                    </div>
-                                    <div class="ec294-followup-field wide"><label for="ec294-followup-subject">Novo assunto</label>
-                                        <input id="ec294-followup-subject" type="text" wire:model="followUpSubject" maxlength="180" required>
-                                    </div>
-                                    <div class="ec294-followup-field wide"><label for="ec294-followup-body">Novo modelo de mensagem</label>
-                                        <textarea id="ec294-followup-body" wire:model="followUpBody" maxlength="12000" rows="5" placeholder="Escreva sua nova abordagem..." required></textarea>
-                                    </div>
-                                </div>
-                                @foreach (['followUpDays', 'followUpName', 'followUpSubject', 'followUpBody', 'sequence'] as $field)
-                                    @error($field)<div class="ec294-error" role="alert">{{ $message }}</div>@enderror
-                                @endforeach
-                                <div class="ec294-actions">
-                                    <button type="button" class="ec294-button" wire:click="planFollowUp" wire:loading.attr="disabled" wire:target="planFollowUp">Planejar segunda rodada</button>
-                                    <small class="ec294-small">Depois do prazo, o agendador cria um rascunho para aprovação. Não dispara e-mails.</small>
-                                </div>
-                            @else
-                                @foreach ($this->followUpPlans as $plan)
-                                    <div class="ec294-plan" wire:key="ec294-plan-{{ $plan->id }}">
-                                        <div>
-                                            <div class="ec294-plan-title">{{ $plan->name }} · {{ $plan->delay_days }} dias</div>
-                                            <div class="ec294-muted">{{ $plan->status === 'prepared' ? 'Rascunho pronto para revisão' : 'Aguardando prazo ou destinatários elegíveis' }}</div>
-                                        </div>
-                                        @if ($plan->draft_campaign_id)
-                                            <button type="button" class="ec294-button" wire:click="openCampaign({{ (int) $plan->draft_campaign_id }})">Abrir rascunho</button>
-                                        @elseif ($plan->status === 'planned')
-                                            <button type="button" class="ec294-button" wire:click="prepareFollowUp({{ (int) $plan->id }})" wire:loading.attr="disabled" wire:target="prepareFollowUp">Verificar prazo / preparar</button>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            @endif
-                        </section>
-                        @endif
+                        {{-- EC_CAMPAIGNS_FOLLOWUP_V294: editor duplicado ocultado pela EC_CAMPAIGNS_UNIFIED_V90; serviços históricos preservados. --}}
                     @elseif ($detailTab === 'recipients')
                         <div class="ecm2-table-wrap"><table class="ecm2-table"><thead><tr><th>Contato / E-mail</th><th>Empresa</th><th>Situação</th><th>Data / hora (Brasília)</th></tr></thead><tbody>
                             @forelse ($this->recipients as $recipient)
@@ -1389,8 +1345,13 @@ new class extends Component
                             @endforelse
                         </tbody></table></div>
                     @endif
-                    {{-- EC_AUTO_FOLLOWUP_V5: editor integrado acima, inclui configuracao e historico. --}}
+                    {{-- EC_CAMPAIGNS_UNIFIED_V90: única configuração de follow-up, depois dos indicadores e respostas. --}}
                 </section>
+                @if ($canManageCampaigns)
+                    <section class="ec90-followup-bottom" aria-label="Próximos e-mails da campanha">
+                        @include('campaigns.followup-schedule-detail-v5')
+                    </section>
+                @endif
             @else
                 <div class="ecm2-empty-workspace">
                     <div class="ecm2-eyebrow">CAMPANHA INDISPONÍVEL</div>

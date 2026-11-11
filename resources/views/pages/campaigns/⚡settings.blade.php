@@ -74,11 +74,14 @@ new class extends Component
 };
 ?>
 <div class="ecm6-page ecm7-page ec21-page ec22-page ec22-settings ec70-settings" data-campaigns-settings="M08-V70" data-ec21-screen="settings" data-ec22-screen="settings">
-    <header class="ec22-module-head"><div><span class="ec22-kicker">CAMPANHAS / CONFIGURAÇÕES</span><h1>Configurações de envio</h1><p>Configure os limites uma vez. Na campanha, você só escolhe o público, a mensagem e o prazo desejado.</p></div><span class="ec22-state {{ config('campaign_mail.live_enabled') ? 'is-live' : 'is-safe' }}">{{ config('campaign_mail.live_enabled') ? 'Envio comercial habilitado' : 'Envios comerciais bloqueados' }}</span></header>
+    <header class="ec22-module-head"><div><span class="ec22-kicker">CAMPANHAS / CONFIGURAÇÕES</span><h1>Configurações de envio</h1><p><strong>Limites autorizados do servidor.</strong> Escolha a velocidade desejada ao criar cada campanha. Aqui ficam apenas os limites globais aprovados pelo provedor SMTP.</p></div><span class="ec22-state {{ config('campaign_mail.live_enabled') ? 'is-live' : 'is-safe' }}">{{ config('campaign_mail.live_enabled') ? 'Envio comercial habilitado' : 'Envios comerciais bloqueados' }}</span></header>
     @include('campaigns.module-nav')
     @if (session('policy_success'))<div class="ec22-success" role="status">{{ session('policy_success') }}</div>@endif
-    <div class="ec22-settings-intro"><h2>Planejamento e limites</h2><p>Defina a capacidade de envio. Você verá a comparação com os limites em uso, sem disparar nenhuma mensagem.</p></div>
-    <div class="ec22-two-columns ec22-settings-grid">
+    <div class="ec22-settings-intro"><h2>Configuração técnica do SMTP</h2><p>O gestor pode ajustar tetos autorizados; as campanhas escolhem seu próprio ritmo dentro desses limites.</p></div>
+    {{-- EC_CAMPAIGNS_UNIFIED_V90: parâmetros do servidor fora do fluxo comercial cotidiano. --}}
+    <details class="ec90-server-advanced" style="border:1px solid #d7e7e3;border-radius:12px;padding:15px;background:white;margin-top:18px">
+        <summary style="color:#08786b;cursor:pointer;font-weight:720">Abrir configurações técnicas e simulações do servidor SMTP</summary>
+    <div class="ec22-two-columns ec22-settings-grid" style="margin-top:16px">
         <section class="ec22-card ec22-settings-form">
             <header class="ec22-card-head"><div><h2>Quanto você pretende enviar?</h2><p>As configurações efetivas são globais e exigem aprovação do SMTP.</p></div></header>
             <form wire:submit="saveSettings">
@@ -106,5 +109,6 @@ new class extends Component
             <div class="ec22-info-note">Aceitação pelo SMTP não garante entrega. Salvar configurações não inicia nenhum envio. Para ampliar a cota autorizada, utilize o assistente de limites SMTP incluído no pacote.</div>
         </aside>
     </div>
+    </details>
 
 </div>

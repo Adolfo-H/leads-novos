@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\Campaigns\CampaignManager;
+use App\Services\Campaigns\CampaignPacingV90;
 use App\Services\Campaigns\CampaignProspectingAudienceV80;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -57,6 +58,7 @@ final class CampaignProspectingControllerV80 extends Controller
             'subject' => ['required', 'string', 'min:3', 'max:180'],
             'body' => ['required', 'string', 'min:10', 'max:12000'],
             'basis_reviewed' => ['accepted'],
+            'pace_hours' => ['nullable', 'integer', 'in:1,2,4,8,12,24'], // EC_CAMPAIGNS_UNIFIED_V90
             'origin' => ['nullable', 'in:all,hubspot,manual,receita'],
             'days' => ['nullable', 'integer', 'in:30,60,90,120,180,365'],
             'mode' => ['nullable', 'in:all,new,dormant'],
@@ -85,6 +87,8 @@ final class CampaignProspectingControllerV80 extends Controller
             'subject' => (string) $data['subject'],
             'body' => (string) $data['body'],
         ], $keys);
+
+        app(CampaignPacingV90::class)->save($campaign, (int) ($data['pace_hours'] ?? 1));
 
         return redirect()->route('campaigns.index')->with(
             'intelligence_success',
