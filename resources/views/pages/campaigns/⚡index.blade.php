@@ -80,6 +80,18 @@ new class extends Component
 
     public function mount(): void
     {
+        // EC_CAMPAIGN_DIRECT_LINK_V905: a ficha abre também por URL HTTP.
+        // Somente leitura: não inicia SMTP, não cria campanha e não altera banco.
+        $campaignId = request()->query('campanha');
+        if (is_string($campaignId) && preg_match('/^[1-9][0-9]{0,11}$/D', $campaignId) === 1) {
+            $requested = EmailCampaign::query()->find((int) $campaignId);
+            if ($requested !== null) {
+                $this->selectedCampaignId = (int) $requested->getKey();
+                $this->screen = 'detail';
+                $this->detailTab = 'overview';
+                return;
+            }
+        }
         $keys = session()->pull('campaign_mail_selected', []);
         if ($this->canManageCampaigns && is_array($keys) && $keys !== []) {
             $this->audienceKeys = array_values(array_unique(array_filter($keys,

@@ -28,7 +28,7 @@
                     <strong>1ª rodada · {{ $ec81Root->name }}</strong>
                     <small>Campanha inicial · {{ $ec81Root->created_at?->format('d/m/Y') ?? 'Data não informada' }}</small>
                 </div>
-                <button type="button" wire:click="openCampaign({{ $ec81Root->id }})">Ver 1ª rodada</button>
+                <a href="{{ route('campaigns.index', ['campanha' => $ec81Root->id]) }}">Ver 1ª rodada</a>
             </div>
             @foreach ($ec81Rounds as $ec81Round)
                 <div class="ec81-group-item" wire:key="ec81-{{ $ec81Round->id }}">
@@ -37,7 +37,7 @@
                         <strong>{{ (int) $ec81Round->followup_round }}ª rodada · {{ $ec81Round->name }}</strong>
                         <small>{{ (int) $ec81Round->accepted_smtp_count }} de {{ (int) $ec81Round->recipients_count }} aceitos pelo SMTP · Status: {{ $labels[$ec81Round->status] ?? $ec81Round->status }}</small>
                     </div>
-                    <button type="button" wire:click="openCampaign({{ $ec81Round->id }})">Ver resultados</button>
+                    <a href="{{ route('campaigns.index', ['campanha' => $ec81Round->id]) }}">Ver resultados</a>
                 </div>
             @endforeach
         </div>
@@ -56,7 +56,8 @@
         [data-ec81-group-history="v1"] .ec81-copy {flex:1;min-width:0;}
         [data-ec81-group-history="v1"] strong {color:#173e51;display:block;font-size:13px;}
         [data-ec81-group-history="v1"] small {font-size:11px;color:#627985;display:block;margin-top:4px;}
-        [data-ec81-group-history="v1"] button {background:#eaf7f3;border:1px solid #cce7de;border-radius:9px;color:#057569;padding:9px 13px;cursor:pointer;font-weight:700;font-size:11px;}
+        /* EC_CAMPAIGN_DIRECT_LINK_V905 */
+        [data-ec81-group-history="v1"] :is(button,a) {text-decoration:none;display:inline-flex;align-items:center;background:#eaf7f3;border:1px solid #cce7de;border-radius:9px;color:#057569;padding:9px 13px;cursor:pointer;font-weight:700;font-size:11px;}
         [data-ec81-group-history="v1"] .ec81-disclaimer {margin-top:12px;}
         @media(max-width:680px){[data-ec81-group-history="v1"] .ec81-group-item{flex-wrap:wrap;}[data-ec81-group-history="v1"] button{margin-left:44px}}
     </style>

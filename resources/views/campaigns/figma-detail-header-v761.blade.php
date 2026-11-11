@@ -44,7 +44,8 @@ $ec68Pending = (int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0) 
             @endif
 
             @endif
-            <button type="button" wire:click="showOverview">Voltar às campanhas</button>
+            <!-- EC_CAMPAIGN_DIRECT_LINK_V905: voltar sem JavaScript -->
+                <a class="ec76-btn ec76-btn-neutral" href="{{ route('campaigns.index') }}">Voltar às campanhas</a>
         </div>
         </div>
 

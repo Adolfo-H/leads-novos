@@ -61,7 +61,13 @@ it('keeps the full original campaign actions and imported V68 styles', function 
 
     expect(substr_count((string) $css, "@import './campaigns-figma-v68.css';"))->toBe(1);
     expect((string) $style)->toContain('.ec68-home')->toContain('.ecm2-shell.is-composer');
-    expect((string) $partial)->toContain('openCampaign')->toContain('startWithTemplate');
+    // V90.5: a tabela utiliza links HTTP, sem depender de JavaScript Livewire.
+    // A acao original continua disponivel no componente para fluxos internos.
+    expect((string) $view)->toContain('public function openCampaign(int $id)');
+    expect((string) $partial)
+        ->toContain('class="ec68-open"')
+        ->toContain("route('campaigns.index', ['campanha' =>")
+        ->toContain('startWithTemplate');
     expect((string) $detailHeader)
         ->toContain('data-ec76-detail="M05-V761"')
         ->toContain('wire:click');

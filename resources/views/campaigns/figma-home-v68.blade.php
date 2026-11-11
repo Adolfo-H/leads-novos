@@ -28,7 +28,8 @@
     [data-ec80-grouped="v1"] .ec80-round-item strong, [data-ec80-grouped="v1"] .ec80-round-item small { display:block; line-height:1.5; overflow-wrap:anywhere; }
     [data-ec80-grouped="v1"] .ec80-round-item strong { font-size:12px; color:#143c50; }
     [data-ec80-grouped="v1"] .ec80-round-item small { font-size:11px; color:#627987; margin-top:3px; }
-    [data-ec80-grouped="v1"] .ec80-round-item button { flex:0 0 auto; color:#006e65; background:#e6f5f1; border:1px solid #cbe8e1; border-radius:8px; padding:8px 12px; font-size:11px; font-weight:600; cursor:pointer; }
+    /* EC_CAMPAIGN_DIRECT_LINK_V905 */
+    [data-ec80-grouped="v1"] .ec80-round-item :is(button,a) {display:inline-flex;text-decoration:none; flex:0 0 auto; color:#006e65; background:#e6f5f1; border:1px solid #cbe8e1; border-radius:8px; padding:8px 12px; font-size:11px; font-weight:600; cursor:pointer; }
     [data-ec80-grouped="v1"] .ec80-round-item--next { border-style:dashed; background:#f3faf8; }
     [data-ec80-grouped="v1"] .ec80-round-disclaimer { margin:0 14px 12px; color:#68808a; font-size:11px; }
     @media(max-width:700px){[data-ec80-grouped="v1"] .ec80-round-item{flex-wrap:wrap}[data-ec80-grouped="v1"] .ec80-round-item button{margin-left:40px}}
@@ -73,14 +74,14 @@
                     @endphp
                     <tr wire:key="ec80-main-{{ $item->id }}" data-ec80-campaign-root="{{ $item->id }}">
                         <td>
-                            <button type="button" class="ec68-link" wire:click="openCampaign({{ $item->id }})">{{ $item->name }}</button>
+                            <a class="ec68-link" href="{{ route('campaigns.index', ['campanha' => $item->id]) }}">{{ $item->name }}</a>
                             <span class="ec80-subline">{{ $ec80RoundCount }} {{ $ec80RoundCount === 1 ? 'rodada' : 'rodadas' }} · campanha #{{ $item->id }}</span>
                         </td>
                         <td><span class="ec68-status ec68-status--{{ $ec80Status }}">{{ $ec80StatusLabel }}</span></td>
                         <td>{{ $ec68Fmt($ec80Messages) }} <span class="ec80-subline">mensagens nas rodadas</span></td>
                         <td>{{ $ec68Fmt($ec80Accepted) }}/{{ $ec68Fmt($ec80Messages) }} <span class="ec80-subline">{{ number_format($ec80Rate, 1, ',', '.') }}% de aceites SMTP</span></td>
                         <td>{{ $item->created_at?->format('d/m/Y') ?? '—' }}</td>
-                        <td><button type="button" class="ec68-open" wire:click="openCampaign({{ $item->id }})" aria-label="Abrir campanha {{ $item->name }}">Ver campanha <span aria-hidden="true">›</span></button></td>
+                        <td><a class="ec68-open" href="{{ route('campaigns.index', ['campanha' => $item->id]) }}" aria-label="Abrir campanha {{ $item->name }}">Ver campanha <span aria-hidden="true">›</span></a></td>
                     </tr>
                     @if ($ec80Rounds->isNotEmpty() || $ec80Plan !== null)
                         <tr wire:key="ec80-contents-{{ $item->id }}" class="ec80-rounds-row">
@@ -94,7 +95,7 @@
                                         <div class="ec80-round-item">
                                             <span class="ec80-round-number">1</span>
                                             <div><strong>1ª rodada · abordagem inicial</strong><small>{{ (int) $item->accepted_smtp_count }} de {{ (int) $item->recipients_count }} aceitos pelo SMTP · {{ $labels[$item->status] ?? $item->status }}</small></div>
-                                            <button type="button" wire:click="openCampaign({{ $item->id }})">Ver 1ª rodada</button>
+                                            <a href="{{ route('campaigns.index', ['campanha' => $item->id]) }}">Ver 1ª rodada</a>
                                         </div>
                                         @foreach ($ec80Rounds as $ec80Round)
                                             <div class="ec80-round-item" wire:key="ec80-round-{{ $ec80Round->id }}">
@@ -102,7 +103,7 @@
                                                 <div><strong>{{ (int) $ec80Round->followup_round }}ª rodada · {{ $ec80Round->name }}</strong>
                                                     <small>{{ (int) $ec80Round->accepted_smtp_count }} de {{ (int) $ec80Round->recipients_count }} aceitos pelo SMTP · {{ $labels[$ec80Round->status] ?? $ec80Round->status }}</small>
                                                 </div>
-                                                <button type="button" wire:click="openCampaign({{ $ec80Round->id }})">Ver resultados</button>
+                                                <a href="{{ route('campaigns.index', ['campanha' => $ec80Round->id]) }}">Ver resultados</a>
                                             </div>
                                         @endforeach
                                         @if ($ec80MorePlanned)
@@ -111,7 +112,7 @@
                                                 <div><strong>Próximo retorno · {{ (string) $ec80Plan->name }}</strong>
                                                     <small>+{{ (int) $ec80Plan->delay_days }} dias · {{ $ec80Plan->send_time_local ?: 'horário a definir' }} · {{ (bool) $ec80Plan->automatic ? 'Automático' : 'Somente planejado' }}</small>
                                                 </div>
-                                                <button type="button" wire:click="openCampaign({{ $item->id }})">Ver programação</button>
+                                                <a href="{{ route('campaigns.index', ['campanha' => $item->id]) }}">Ver programação</a>
                                             </div>
                                         @endif
                                     </div>
