@@ -88,7 +88,22 @@ new class extends Component
             if ($requested !== null) {
                 $this->selectedCampaignId = (int) $requested->getKey();
                 $this->screen = 'detail';
-                $this->detailTab = 'overview';
+                // EC_CAMPAIGN_DETAIL_TABS_V909: abas GET funcionam sem JavaScript/Livewire.
+                $tab = request()->query('aba');
+                $this->detailTab = is_string($tab) && in_array($tab, ['overview', 'recipients', 'bounces', 'message', 'replies'], true)
+                    ? $tab : 'overview';
+                $filter = request()->query('filtro');
+                if (is_string($filter) && in_array($filter, ['all', 'invalid', 'temporary', 'permanent_other'], true)) {
+                    $this->bounceFilter = $filter;
+                }
+                $recipientPage = request()->query('pagina');
+                if (is_string($recipientPage) && preg_match('/^[1-9][0-9]{0,4}$/D', $recipientPage) === 1) {
+                    $this->recipientPage = min(10000, (int) $recipientPage);
+                }
+                $bouncePage = request()->query('paginaDevolucoes');
+                if (is_string($bouncePage) && preg_match('/^[1-9][0-9]{0,4}$/D', $bouncePage) === 1) {
+                    $this->bouncePage = min(10000, (int) $bouncePage);
+                }
                 return;
             }
         }
@@ -1247,7 +1262,7 @@ new class extends Component
                     </div>
                     <nav class="ecm2-tabs" aria-label="Conteúdo da campanha">
                         @foreach (['overview' => 'Visão geral', 'recipients' => 'Destinatários', 'bounces' => 'Devoluções', 'message' => 'Mensagem', 'replies' => 'Respostas'] as $tabKey => $tabLabel)
-                            <button type="button" wire:click="$set('detailTab', @js($tabKey))" class="{{ $detailTab === $tabKey ? 'is-active' : '' }}" aria-current="{{ $detailTab === $tabKey ? 'page' : 'false' }}">{{ $tabLabel }} @if ($tabKey === 'replies' && $selected->replies()->count() > 0)<span>{{ $selected->replies()->count() }}</span>@elseif ($tabKey === 'bounces' && $this->bounceSummary['total'] > 0)<span>{{ $this->bounceSummary['total'] }}</span>@endif</button>
+                            <a href="{{ route('campaigns.index', ['campanha' => $selected->id, 'aba' => $tabKey]) }}" class="{{ $detailTab === $tabKey ? 'is-active' : '' }}" @if ($detailTab === $tabKey) aria-current="page" @endif>{{ $tabLabel }} @if ($tabKey === 'replies' && $selected->replies()->count() > 0)<span>{{ $selected->replies()->count() }}</span>@elseif ($tabKey === 'bounces' && $this->bounceSummary['total'] > 0)<span>{{ $this->bounceSummary['total'] }}</span>@endif</a>
                         @endforeach
                     </nav>
                     @if ($detailTab === 'overview')
@@ -1269,7 +1284,7 @@ new class extends Component
                                 <div class="ecm2-information"><strong>Histórico preservado</strong><p>Consulte os destinatários e as respostas sem modificar os registros de envio existentes.</p></div>
                             @endif
                             @if ($selected->replies()->exists())
-                                <div class="ecm2-response-head"><strong>Respostas recentes</strong><button type="button" class="ecm2-text-action" wire:click="$set('detailTab', 'replies')">Ver todas →</button></div>
+                                <div class="ecm2-response-head"><strong>Respostas recentes</strong><a class="ecm2-text-action" href="{{ route('campaigns.index', ['campanha' => $selected->id, 'aba' => 'replies']) }}">Ver todas →</a></div>
                                 @foreach ($this->replies->take(3) as $reply)
                                     <div class="ecm2-recent-reply"><span aria-hidden="true">↩</span><div><strong>{{ $reply->from_email }}</strong><small>{{ $reply->subject ?: 'Sem assunto' }}</small></div><time>{{ \App\Support\CampaignLocalTime::format($reply->getRawOriginal('received_at'), '') }}</time></div>
                                 @endforeach
@@ -1294,20 +1309,27 @@ new class extends Component
                                 <tr><td colspan="4" class="ecm2-empty-cell">Nenhum destinatário registrado.</td></tr>
                             @endforelse
                         </tbody></table></div>
-                        <div class="ecm2-pagination"><span>Página {{ $this->recipients->currentPage() }} / {{ $this->recipients->lastPage() }}</span><div><button type="button" wire:click="changeRecipientPage({{ $this->recipients->currentPage() - 1 }})" @disabled($this->recipients->onFirstPage())>‹</button><button type="button" wire:click="changeRecipientPage({{ $this->recipients->currentPage() + 1 }})" @disabled(! $this->recipients->hasMorePages())>›</button></div></div>
+                        <nav class="ecm2-pagination" aria-label="Páginas de destinatários"><span>Página {{ $this->recipients->currentPage() }} / {{ $this->recipients->lastPage() }}</span><div>
+                            @if ($this->recipients->onFirstPage())<span aria-disabled="true">Anterior</span>@else<a href="{{ route('campaigns.index', ['campanha' => $selected->id, 'aba' => 'recipients', 'pagina' => $this->recipients->currentPage() - 1]) }}">Anterior</a>@endif
+                            @if ($this->recipients->hasMorePages())<a href="{{ route('campaigns.index', ['campanha' => $selected->id, 'aba' => 'recipients', 'pagina' => $this->recipients->currentPage() + 1]) }}">Próxima</a>@else<span aria-disabled="true">Próxima</span>@endif
+                        </div></nav>
                     @elseif ($detailTab === 'bounces')
                         {{-- EC_CAMPAIGNS_BOUNCE_VISIBILITY_V29 — relatórios DSN da campanha atual. --}}
                         <div class="ec29-bounce-panel" data-ec-bounce-tab>
                             <div class="ec29-bounce-top">
                                 <div><h3>E-mails devolvidos</h3><p>Retornos do servidor associados ao identificador do envio e ao destinatário. A aceitação inicial pelo SMTP não confirma entrega.</p></div>
-                                <label class="ec29-bounce-filter" for="ec29-bounce-filter">Tipo de retorno
-                                    <select id="ec29-bounce-filter" wire:model.live="bounceFilter">
-                                        <option value="all">Todos</option>
-                                        <option value="invalid">Endereço inválido</option>
-                                        <option value="temporary">Falha temporária</option>
-                                        <option value="permanent_other">Outras rejeições</option>
+                                <form class="ec29-bounce-filter" method="GET" action="{{ route('campaigns.index') }}">
+                                    <input type="hidden" name="campanha" value="{{ $selected->id }}">
+                                    <input type="hidden" name="aba" value="bounces">
+                                    <label for="ec29-bounce-filter">Tipo de retorno</label>
+                                    <select id="ec29-bounce-filter" name="filtro">
+                                        <option value="all" @selected($bounceFilter === 'all')>Todos</option>
+                                        <option value="invalid" @selected($bounceFilter === 'invalid')>Endereço inválido</option>
+                                        <option value="temporary" @selected($bounceFilter === 'temporary')>Falha temporária</option>
+                                        <option value="permanent_other" @selected($bounceFilter === 'permanent_other')>Outras rejeições</option>
                                     </select>
-                                </label>
+                                    <button type="submit">Filtrar</button>
+                                </form>
                             </div>
                             <div class="ec29-bounce-metrics" aria-label="Totais de devoluções da campanha">
                                 <div><small>Endereço inválido</small><strong>{{ $this->bounceSummary['invalid'] }}</strong></div>
@@ -1339,8 +1361,8 @@ new class extends Component
                                 <nav class="ec29-bounce-pagination" aria-label="Páginas de devoluções">
                                     <span>Página {{ $this->campaignBounces->currentPage() }} de {{ $this->campaignBounces->lastPage() }}</span>
                                     <div>
-                                        <button type="button" wire:click="changeBouncePage({{ $this->campaignBounces->currentPage() - 1 }})" @disabled($this->campaignBounces->onFirstPage()) aria-label="Página anterior">‹</button>
-                                        <button type="button" wire:click="changeBouncePage({{ $this->campaignBounces->currentPage() + 1 }})" @disabled(! $this->campaignBounces->hasMorePages()) aria-label="Próxima página">›</button>
+                                        @if ($this->campaignBounces->onFirstPage())<span aria-disabled="true">Anterior</span>@else<a href="{{ route('campaigns.index', ['campanha' => $selected->id, 'aba' => 'bounces', 'filtro' => $bounceFilter, 'paginaDevolucoes' => $this->campaignBounces->currentPage() - 1]) }}">Anterior</a>@endif
+                                        @if ($this->campaignBounces->hasMorePages())<a href="{{ route('campaigns.index', ['campanha' => $selected->id, 'aba' => 'bounces', 'filtro' => $bounceFilter, 'paginaDevolucoes' => $this->campaignBounces->currentPage() + 1]) }}">Próxima</a>@else<span aria-disabled="true">Próxima</span>@endif
                                     </div>
                                 </nav>
                             @endif

@@ -107,6 +107,25 @@ class CampaignFollowupEditor extends Component
                 'firstSendDate' => ['nullable', 'date_format:Y-m-d'],
                 'subject' => ['required', 'string', 'min:3', 'max:180'],
                 'body' => ['required', 'string', 'min:10', 'max:12000'],
+            ], [
+                // EC_FOLLOWUP_VALIDATION_PTBR_V909: mensagens de validação claras e em português.
+                'required' => 'O campo :attribute é obrigatório.',
+                'string' => 'O campo :attribute deve ser um texto.',
+                'integer' => 'O campo :attribute deve ser um número inteiro.',
+                'min.string' => 'O campo :attribute deve ter pelo menos :min caracteres.',
+                'max.string' => 'O campo :attribute deve ter no máximo :max caracteres.',
+                'min.numeric' => 'O campo :attribute deve ser pelo menos :min.',
+                'max.numeric' => 'O campo :attribute deve ser no máximo :max.',
+                'date_format' => 'O campo :attribute tem formato inválido.',
+                'body.required' => 'Informe a mensagem das próximas rodadas.',
+            ], [
+                'name' => 'nome do acompanhamento',
+                'delayDays' => 'intervalo entre rodadas',
+                'maxRounds' => 'quantidade de e-mails adicionais',
+                'sendTimeLocal' => 'horário de início',
+                'firstSendDate' => 'data do próximo disparo',
+                'subject' => 'assunto dos próximos e-mails',
+                'body' => 'mensagem das próximas rodadas',
             ]);
             $this->planId = $settings->save($actor, $this->campaignId, [
                 'name' => $this->name,

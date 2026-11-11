@@ -83,7 +83,7 @@ $ec68Pending = (int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0) 
                     <strong>{{ $this->bounceSummary['total'] }} {{ $this->bounceSummary['total'] === 1 ? 'devolução' : 'devoluções' }} identificada(s)</strong>
                     <p>Uma ou mais mensagens foram recusadas ou devolvidas após a tentativa de envio. Confira os destinatários e os códigos informados pelo servidor.</p>
                 </div>
-                <button type="button" class="ec29-bounce-button" wire:click="$set('detailTab', 'bounces')">Ver devoluções</button>
+                {{-- EC_CAMPAIGN_DETAIL_TABS_V909 --}}<a class="ec29-bounce-button" href="{{ route('campaigns.index', ['campanha' => $selected->id, 'aba' => 'bounces']) }}">Ver devoluções</a>
             </div>
         @endif
 

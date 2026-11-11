@@ -163,3 +163,24 @@ body.ec-app-body .ec76-detail-actions.ec68-detail-actions > button.ec68-danger-b
 body.ec-app-body .ec76-detail-actions.ec68-detail-actions > button:disabled {opacity: .5 !important;cursor:not-allowed !important;}
 /* Somente ações visuais do módulo simplificado; código antigo preservado. */
 body.ec-app-body .ec76-detail-actions.ec68-detail-actions > a[href*="/campanhas/avancado"] {display: none !important;}
+
+/* EC_CAMPAIGN_DETAIL_TABS_V909: links HTTP visíveis e com foco como os botões originais. */
+body.ec-app-body .ecm2.ec68-page[data-ec22-screen="detail"] .ecm2-shell.is-detail .ecm2-tabs a{
+    display:inline-flex!important;align-items:center!important;text-decoration:none!important;
+    border:0!important;border-radius:8px!important;background:transparent!important;
+    color:#58748a!important;-webkit-text-fill-color:#58748a!important;
+    padding:11px 16px!important;font-size:13px!important;font-weight:660!important;min-height:39px!important;
+}
+body.ec-app-body .ecm2.ec68-page[data-ec22-screen="detail"] .ecm2-shell.is-detail .ecm2-tabs a.is-active{
+    background:#e5f5ee!important;color:#007f71!important;-webkit-text-fill-color:#007f71!important;font-weight:760!important;
+}
+body.ec-app-body .ecm2.ec68-page[data-ec22-screen="detail"] .ecm2-shell.is-detail .ecm2-tabs a:hover{
+    background:#f0f8f5!important;color:#00796d!important;-webkit-text-fill-color:#00796d!important;
+}
+body.ec-app-body .ecm2.ec68-page[data-ec22-screen="detail"] .ecm2-shell.is-detail .ecm2-tabs a:focus-visible{
+    outline:2px solid #079886!important;outline-offset:2px;
+}
+.ecm2-pagination a,.ec29-bounce-pagination a{display:inline-flex;align-items:center;justify-content:center;padding:7px 12px;border-radius:7px;background:#e6f6f0;color:#08766b;text-decoration:none;font-size:12px;font-weight:700;border:1px solid #cce8e0}
+.ecm2-pagination a:hover,.ec29-bounce-pagination a:hover{background:#d7efe7}
+.ecm2-pagination [aria-disabled="true"],.ec29-bounce-pagination [aria-disabled="true"]{display:inline-flex;align-items:center;padding:7px 12px;color:#8ba2af;font-size:12px}
+.ec29-bounce-filter button[type="submit"]{padding:8px 12px;background:#087f74;color:#fff;border:0;border-radius:7px;font-weight:700;cursor:pointer}
