@@ -91,6 +91,14 @@ final class CampaignProspectingAudienceV80
             }
         }
 
+        // EC_CAMPAIGNS_UNIFIED_V90: nova prospecção nunca reutiliza e-mail aceito
+        // pelo SMTP em outra campanha, mesmo após 90/180/365 dias. Follow-up
+        // autorizado é um fluxo separado e não usa este seletor.
+        $query->whereNotExists(static function (Builder $q): void {
+            $q->selectRaw('1')->from('email_campaign_recipients as historical')
+                ->whereColumn('historical.normalized_email', 's.normalized_email')
+                ->whereIn('historical.status', ['sent', 'uncertain']);
+        });
         // Bloqueios universais: descadastro, bounce permanente e disparo recente.
         $query->whereNotExists(static function (Builder $q): void {
             $q->selectRaw('1')->from('email_campaign_suppressions as sup')

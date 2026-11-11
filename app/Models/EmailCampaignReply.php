@@ -23,7 +23,7 @@ class EmailCampaignReply extends Model
     /** @return BelongsTo<EmailCampaign, $this> */
     public function campaign(): BelongsTo
     {
-        return $this->belongsTo(EmailCampaign::class);
+        return $this->belongsTo(EmailCampaign::class, 'email_campaign_id');
     }
 
     /** @return BelongsTo<EmailCampaignRecipient, $this> */

@@ -53,6 +53,13 @@ final class CampaignDispatcher
             if ($campaign === null) {
                 return [];
             }
+            // EC_CAMPAIGNS_UNIFIED_V90: a duração escolhida na campanha limita
+            // esta reserva, mas nunca amplia os tetos globais SMTP.
+            $perCampaign = app(CampaignPacingV90::class)->limits((int) $campaign->id);
+            if ($perCampaign !== null) {
+                $hour = min($hour, $perCampaign['hour']);
+                $tick = min($tick, $perCampaign['tick']);
+            }
 
             $utcNow = now('UTC');
             $hourUsed = EmailCampaignRecipient::query()

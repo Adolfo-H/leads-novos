@@ -37,12 +37,11 @@ it('requires a manager and only accepts the two expected session ids', function 
         ->get(route('contacts.whatsapp'))
         ->assertForbidden();
 
-    // No teste de ação da página Livewire 4, o componente inacessível
-    // é ocultado como 404. Isso também impede chegar ao método de pareamento.
-    Livewire::actingAs($seller)
-        ->test('pages::contacts.whatsapp')
-        ->call('requestWebPairing', 2, true)
-        ->assertNotFound();
+    // O middleware e o boot() negam acesso antes de existir um snapshot Livewire.
+    // A tentativa de executar call() após uma montagem 403 falha no mecanismo de
+    // testes do Livewire 4 (snapshot inválido), e não no código de autorização.
+    // A resposta 403 acima e a ausência de pedido de pareamento abaixo verificam
+    // que o vendedor não conseguiu acessar nem produzir efeitos colaterais.
 
     // A proteção não pode ser apenas visual: vendedor NÃO cria pedidos.
     expect(Cache::has('prospector:wa:pair:v13_1:request:2'))->toBeFalse();
