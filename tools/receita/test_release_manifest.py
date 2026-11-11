@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -264,6 +265,35 @@ def write_real_dataset(staging: Path) -> None:
         connection.close()
 
 
+def write_tax_registry_fixture_v903(directory: Path, period: str) -> None:
+    """SQLite isolado para teste: simula a foto completa, nunca dados reais.
+
+    A rotina de producao continua exigindo a foto oficial do Simples/MEI.
+    """
+    directory.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(directory / (period + ".sqlite3"))
+    try:
+        connection.execute(
+            "CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)"
+        )
+        connection.executemany(
+            "INSERT INTO metadata (key, value) VALUES (?, ?)",
+            [
+                ("status", "ready"),
+                ("period", period),
+                # Marcador contratual sintetico (nao representa dados reais da RFB).
+                ("rows_read", "30000000"),
+            ],
+        )
+        connection.execute(
+            "CREATE TABLE blocked_roots ("
+            "root TEXT PRIMARY KEY, simples TEXT NOT NULL, mei TEXT NOT NULL)"
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+
 def measure_rows_scanned(query: str, parquet_path: Path) -> int:
     descriptor, filename = tempfile.mkstemp(
         prefix="receita-test-profile-",
@@ -358,20 +388,30 @@ class ReceitaReleaseTest(unittest.TestCase):
                 "2026-08",
             )
 
-            first = query_prospects(
-                release,
-                states=["SP"],
-                cnaes=["0012345"],
-                limit=2,
-            )
-            second = query_prospects(
-                release,
-                states=["SP"],
-                cnaes=["0012345"],
-                limit=2,
-                offset=2,
-                expected_dataset_version=first["dataset_version"],
-            )
+            # Garante que a regra fail-closed nao foi enfraquecida.
+            with patch.dict(os.environ, {"RECEITA_TAX_REGISTRY_DIR": str(root / "missing-tax-registry")}):
+                with self.assertRaises(ReleaseValidationError) as missing_tax:
+                    query_prospects(release, states=["SP"], cnaes=["0012345"], limit=2)
+            self.assertEqual(missing_tax.exception.code, "tax_registry_missing")
+
+            # A paginacao e o benchmark usam somente uma foto tributaria sintetica.
+            tax_root = root / "tax-registry-fixture"
+            write_tax_registry_fixture_v903(tax_root, "2026-08")
+            with patch.dict(os.environ, {"RECEITA_TAX_REGISTRY_DIR": str(tax_root)}):
+                first = query_prospects(
+                    release,
+                    states=["SP"],
+                    cnaes=["0012345"],
+                    limit=2,
+                )
+                second = query_prospects(
+                    release,
+                    states=["SP"],
+                    cnaes=["0012345"],
+                    limit=2,
+                    offset=2,
+                    expected_dataset_version=first["dataset_version"],
+                )
             baseline_stats_rows = measure_rows_scanned(
                 """
                 SELECT cnpj_root, COUNT(*)
