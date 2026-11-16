@@ -596,107 +596,76 @@ final class HubSpotWebhookAssociationResolver
         string $fromId,
         string $toType,
     ): array {
-        try {
-            $response =
-                $this
-                    ->client()
-                    ->get(
-                        $this->baseUrl()
-                        .'/crm/v4/objects/'
-                        .rawurlencode(
-                            $fromType
-                        )
-                        .'/'
-                        .rawurlencode(
-                            $fromId
-                        )
-                        .'/associations/'
-                        .rawurlencode(
-                            $toType
-                        ),
-                        [
-                            'limit' => 100,
-                        ]
-                    );
-        } catch (
-            ConnectionException $exception
-        ) {
-            throw new RuntimeException(
-                'Não foi possível consultar associações no HubSpot.',
-                previous: $exception,
-            );
-        }
-
-        /*
-         * Objeto removido ou associação
-         * inexistente.
-         */
-        if (
-            $response->status()
-            === 404
-        ) {
-            return [];
-        }
-
-        $this->ensureSuccess(
-            $response
-        );
-
-        $data =
-            $response->json();
-
-        if (! is_array($data)) {
-            return [];
-        }
-
-        $results =
-            $data[
-                'results'
-            ]
-            ?? [];
-
-        if (! is_array($results)) {
-            return [];
-        }
-
+        $url = $this->baseUrl().'/crm/v4/objects/'
+            .rawurlencode($fromType).'/'.rawurlencode($fromId)
+            .'/associations/'.rawurlencode($toType);
         $ids = [];
+        $after = null;
+        $seenCursors = [];
 
-        foreach (
-            $results as $result
-        ) {
-            if (! is_array($result)) {
-                continue;
+        for ($page = 0; $page < 10000; $page++) {
+            $query = ['limit' => 100];
+            if ($after !== null) {
+                $query['after'] = $after;
             }
 
-            $id =
-                $result[
-                    'toObjectId'
-                ]
-                ?? $result[
-                    'id'
-                ]
-                ?? null;
-
-            if (! is_scalar($id)) {
-                continue;
-            }
-
-            $value =
-                trim(
-                    (string) $id
+            try {
+                $response = $this->client()->get($url, $query);
+            } catch (ConnectionException $exception) {
+                throw new RuntimeException(
+                    'Não foi possível consultar associações no HubSpot.',
+                    previous: $exception,
                 );
-
-            if ($value !== '') {
-                $ids[] =
-                    $value;
             }
+
+            // Somente a primeira página ausente representa objeto removido.
+            // Uma falha posterior não pode apagar associações já conhecidas.
+            if ($response->status() === 404 && $after === null) {
+                return [];
+            }
+            $this->ensureSuccess($response);
+
+            $data = $response->json();
+            if (! is_array($data) || ! isset($data['results'])
+                || ! is_array($data['results']) || ! array_is_list($data['results'])) {
+                throw new RuntimeException('Resposta de associações do HubSpot inválida.');
+            }
+
+            foreach ($data['results'] as $result) {
+                if (! is_array($result)) {
+                    throw new RuntimeException('Associação do HubSpot sem identificador válido.');
+                }
+                $id = $result['toObjectId'] ?? $result['id'] ?? null;
+                if ((! is_string($id) && ! is_int($id)) || trim((string) $id) === '') {
+                    throw new RuntimeException('Associação do HubSpot sem identificador válido.');
+                }
+                $ids[] = trim((string) $id);
+            }
+
+            if (! array_key_exists('paging', $data)) {
+                return array_values(array_unique($ids));
+            }
+            if (! is_array($data['paging'])) {
+                throw new RuntimeException('Paginação de associações do HubSpot inválida.');
+            }
+            if (! array_key_exists('next', $data['paging'])) {
+                return array_values(array_unique($ids));
+            }
+            $next = $data['paging']['next'];
+            if (! is_array($next) || ! array_key_exists('after', $next)
+                || (! is_string($next['after']) && ! is_int($next['after']))
+                || trim((string) $next['after']) === '') {
+                throw new RuntimeException('Cursor de associações do HubSpot inválido.');
+            }
+
+            $after = (string) $next['after'];
+            if (isset($seenCursors[$after])) {
+                throw new RuntimeException('Cursor repetido ao consultar associações do HubSpot.');
+            }
+            $seenCursors[$after] = true;
         }
 
-        return array_values(
-            array_unique(
-                $ids
-            )
-        );
+        throw new RuntimeException('Limite seguro de páginas de associações excedido. Nenhum resultado parcial retornado.');
     }
 
     private function client(): PendingRequest

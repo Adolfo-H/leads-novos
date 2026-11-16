@@ -116,4 +116,4 @@ new class extends Component
     }
 };
 ?>
-@include('campaigns.fila-v70')
+@include('campaigns.queue-panel')

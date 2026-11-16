@@ -61,12 +61,10 @@ final class WhatsAppWebProbeRecord extends Command
             ]);
         });
 
-        // EC_WA_UNIFIED_V7_FOUND: positivo vira confirmação TÉCNICA e aparece em Contatos.
-        // A promoção é transacional/idempotente; nunca rebaixa 'não possui' humano.
         if ($result === 'found') {
             app(WhatsappWebConfirmationService::class)->promote((int) $id);
         }
-        $this->info('Consulta registrada. Positivos sincronizados como confirmação via Web, sem envio.');
+        $this->info('Consulta técnica registrada; qualquer indicação positiva permanece identificada como técnica.');
 
         return self::SUCCESS;
     }

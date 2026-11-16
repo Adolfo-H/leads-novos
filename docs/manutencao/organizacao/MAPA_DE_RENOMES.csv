@@ -1,0 +1,449 @@
+﻿origem,destino,grupo,status
+app/Console/Commands/ActivatePlannedCampaignFollowupV5.php,app/Console/Commands/ActivatePlannedCampaignFollowup.php,Classe PHP,proposto na copia; validar em WSL
+app/Console/Commands/AuditCampaignRepliesV71.php,app/Console/Commands/AuditCampaignReplies.php,Classe PHP,proposto na copia; validar em WSL
+app/Console/Commands/DiagnoseHubSpotDueTasksV54.php,app/Console/Commands/DiagnoseHubSpotDueTaskQueue.php,Classe PHP,proposto na copia; validar em WSL
+app/Console/Commands/ReconcileHubSpotCommercialV40.php,app/Console/Commands/ReconcileHubSpotCommercial.php,Classe PHP,proposto na copia; validar em WSL
+app/Console/Commands/RecoverCampaignRepliesV71.php,app/Console/Commands/RecoverCampaignReplyHeaders.php,Classe PHP,proposto na copia; validar em WSL
+app/Console/Commands/RecoverCampaignRepliesV77.php,app/Console/Commands/RecoverCampaignReplies.php,Classe PHP,proposto na copia; validar em WSL
+app/Console/Commands/ReviewAllWhatsappFormatsV21.php,app/Console/Commands/ReviewAllWhatsappFormats.php,Classe PHP,proposto na copia; validar em WSL
+app/Console/Commands/ReviewWhatsappPhoneFormatsV18.php,app/Console/Commands/ReviewWhatsappPhoneFormats.php,Classe PHP,proposto na copia; validar em WSL
+app/Console/Commands/SyncHubSpotOwnerTasksV55.php,app/Console/Commands/SyncHubSpotOwnerTasks.php,Classe PHP,proposto na copia; validar em WSL
+app/Console/Commands/WhatsappDisableAutomaticV16.php,app/Console/Commands/WhatsappDisableAutomatic.php,Classe PHP,proposto na copia; validar em WSL
+app/Http/Controllers/CampaignContactsSelectionV91Controller.php,app/Http/Controllers/CampaignContactsSelectionController.php,Classe PHP,proposto na copia; validar em WSL
+app/Http/Controllers/CampaignContactsTransferV92Controller.php,app/Http/Controllers/CampaignContactsTransferController.php,Classe PHP,proposto na copia; validar em WSL
+app/Http/Controllers/CampaignOperationsV94Controller.php,app/Http/Controllers/CampaignOperationsController.php,Classe PHP,proposto na copia; validar em WSL
+app/Http/Controllers/CampaignProspectingControllerV80.php,app/Http/Controllers/CampaignProspectingController.php,Classe PHP,proposto na copia; validar em WSL
+app/Http/Controllers/CampaignWizardV93Controller.php,app/Http/Controllers/CampaignWizardController.php,Classe PHP,proposto na copia; validar em WSL
+app/Http/Controllers/WhatsappVerificationV941Controller.php,app/Http/Controllers/WhatsappVerificationController.php,Classe PHP,proposto na copia; validar em WSL
+app/Http/Middleware/CampaignCanonicalWizardV94.php,app/Http/Middleware/RedirectLegacyCampaignWizard.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Campaigns/CampaignContactTransferV92.php,app/Services/Campaigns/CampaignContactTransfer.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Campaigns/CampaignContactsSelectionV91.php,app/Services/Campaigns/CampaignContactsSelection.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Campaigns/CampaignFollowupScheduleViewV4.php,app/Services/Campaigns/CampaignFollowupTimeline.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Campaigns/CampaignFollowupSettingsV5.php,app/Services/Campaigns/CampaignFollowupSettings.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Campaigns/CampaignPacingV90.php,app/Services/Campaigns/CampaignPacing.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Campaigns/CampaignProspectingAudienceV80.php,app/Services/Campaigns/CampaignProspectingAudience.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Campaigns/CampaignReplyCompanyV90.php,app/Services/Campaigns/CampaignReplyCompany.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/CompanyExportDossierV58Service.php,app/Services/CompanyExportDossierService.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappBusinessDirectoryV85.php,app/Services/Contacts/WhatsappBusinessDirectory.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappBusinessDirectoryV86.php,app/Services/Contacts/WhatsappBusinessGroupDirectory.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappCompanyChannelLinkV16.php,app/Services/Contacts/WhatsappCompanyChannelLink.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappCompanyPhoneApprovalV89.php,app/Services/Contacts/WhatsappCompanyPhoneApproval.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappCompanyQuickResearchV88.php,app/Services/Contacts/WhatsappCompanyQuickResearch.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappCompanyWebResearchV87.php,app/Services/Contacts/WhatsappCompanyWebResearch.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappExternalCompanyDiscoveryV14.php,app/Services/Contacts/WhatsappExternalCompanyDiscovery.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappFormatAutoCorrectionV18.php,app/Services/Contacts/WhatsappFormatAutoCorrection.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappFullFormatSweepV21.php,app/Services/Contacts/WhatsappFullFormatSweep.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappInlinePhoneCorrectionV20.php,app/Services/Contacts/WhatsappInlinePhoneCorrection.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappManualPhoneV16.php,app/Services/Contacts/WhatsappManualPhone.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappPublicContactsV14.php,app/Services/Contacts/WhatsappPublicContacts.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappPublicPhoneIndexerV14.php,app/Services/Contacts/WhatsappPublicPhoneIndexer.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/Contacts/WhatsappTavilySearchV16.php,app/Services/Contacts/WhatsappTavilySearch.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/DashboardHubSpotDueTasksV40Service.php,app/Services/DashboardHubSpotDueTasksService.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/DashboardLeadMetricsV23Service.php,app/Services/DashboardLeadMetricsService.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/DashboardOwnedDealsV23Service.php,app/Services/DashboardOwnedDealsService.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/DossierIcpPresentationV60Service.php,app/Services/DossierIcpPresentationService.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/HubSpotContactExportV50Service.php,app/Services/HubSpotContactExportService.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/LeadCommercialSituationV52Service.php,app/Services/LeadCommercialSituationService.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/LeadDueTaskExcelV54Service.php,app/Services/LeadDueTaskExcelService.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/LeadDueTaskQueueV54Service.php,app/Services/LeadDueTaskQueueService.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/LeadGlobalStageExcelV45Service.php,app/Services/LeadGlobalStageExcelService.php,Classe PHP,proposto na copia; validar em WSL
+app/Services/LeadUnifiedExcelV23Service.php,app/Services/LeadUnifiedExcelService.php,Classe PHP,proposto na copia; validar em WSL
+integrations/whatsapp-web/presence-classifier-v92.mjs,integrations/whatsapp-web/presence-classifier.mjs,Modulo Node,proposto na copia; validar em WSL
+integrations/whatsapp-web/tests/presence-classifier-v92.test.mjs,integrations/whatsapp-web/tests/presence-classifier.test.mjs,Modulo Node,proposto na copia; validar em WSL
+public/css/ec-appearance-modes-v65.css,public/css/ec-appearance-modes.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-campaign-bounces-v29.css,public/css/ec-campaign-bounces.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-campaign-followup-v5.css,public/css/ec-campaign-followup.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-campaign-followup-visibility-v3.css,public/css/ec-campaign-followup-forecast.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-campaign-followup-visibility-v4.css,public/css/ec-campaign-followup-timeline.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-campaign-followups-v1.css,public/css/ec-campaign-followups.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-campaign-tools-v294.css,public/css/ec-campaign-tools.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-campaign-wizard-v93.css,public/css/ec-campaign-wizard.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-dark-components-v70.css,public/css/ec-dark-components.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-dark-contrast-v67.css,public/css/ec-dark-contrast.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-dark-final-v71.css,public/css/ec-dark-final.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-dark-fixes-v68.css,public/css/ec-dark-fixes.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-dark-repair-v69.css,public/css/ec-dark-repair.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-leads-repros-v255.css,public/css/ec-leads-repros.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-settings-figma-v63.css,public/css/ec-settings-figma.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-tax-regime-v27.css,public/css/ec-tax-regime.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-theme-contrast-black-v66.css,public/css/ec-theme-contrast-black.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-theme-unified-v64.css,public/css/ec-theme-unified.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-ui-dark-v73.css,public/css/ec-ui-dark-workspaces.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-ui-dark-v74.css,public/css/ec-ui-dark-components.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/ec-ui-polish-v72.css,public/css/ec-ui-polish.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/css/leads-gestao-v35.css,public/css/leads-gestao.css,CSS/JavaScript,proposto na copia; validar em WSL
+public/js/ec-appearance-modes-v65.js,public/js/ec-appearance-modes.js,CSS/JavaScript,proposto na copia; validar em WSL
+public/js/ec-dark-final-v71.js,public/js/ec-dark-final.js,CSS/JavaScript,proposto na copia; validar em WSL
+public/js/ec-dark-repair-v69.js,public/js/ec-dark-repair.js,CSS/JavaScript,proposto na copia; validar em WSL
+public/js/ec-ui-hardfix-v74.js,public/js/ec-ui-hardfix.js,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/app-shell-v2.css,resources/css/app-shell.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/auth-v24.css,resources/css/auth.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-bounces-v7.css,resources/css/campaigns-bounces.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-core-v72.css,resources/css/campaigns-core.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-detail-v761.css,resources/css/campaigns-detail.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-figma-v67.css,resources/css/campaigns-layout-foundation.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-figma-v68.css,resources/css/campaigns-overview-layout.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-pilot-v5.css,resources/css/campaigns-pilot.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-queue-v70.css,resources/css/campaigns-queue.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-redesign-v21.css,resources/css/campaigns-redesign.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-replies-optout-v77.css,resources/css/campaigns-replies-optout.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-replies-v77.css,resources/css/campaigns-replies.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-review-v73.css,resources/css/campaigns-review.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-simple-v1.css,resources/css/campaigns-pace-controls.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-simple-v69.css,resources/css/campaigns-compact-layout.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-ux-v62.css,resources/css/campaigns-ux.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-v22.css,resources/css/campaigns-composer-layout.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-v6.css,resources/css/campaigns-navigation.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/campaigns-workspace-v2.css,resources/css/campaigns-workspace-refinements.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/company-dossier-figma-v53.css,resources/css/company-dossier-figma.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/company-list-redesign-v26.css,resources/css/company-list-redesign.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/contacts-figma-v66.css,resources/css/contacts-figma.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/contacts-receita-v4.css,resources/css/contacts-receita.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/contacts-reference-v3.css,resources/css/contacts-reference.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/contacts-ux-v2.css,resources/css/contacts-ux.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dashboard-advanced-v33.css,resources/css/dashboard-advanced.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dashboard-base-v32.css,resources/css/dashboard-base.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dashboard-commercial-v2.css,resources/css/dashboard-commercial.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dashboard-drilldown-v10.css,resources/css/dashboard-drilldown.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dashboard-figma-v29.css,resources/css/dashboard-figma.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dashboard-map-v30.css,resources/css/dashboard-geographic-map.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dashboard-map-v7.css,resources/css/dashboard-map-interactions.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dashboard-my-deals-v6.css,resources/css/dashboard-my-deals.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dashboard-strategic-v5.css,resources/css/dashboard-strategic.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dashboard-v23.css,resources/css/dashboard-profile-summary.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dashboard-v25.css,resources/css/dashboard-panels-layout.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dashboard-v26.css,resources/css/dashboard-panels-refinements.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/dossier-company-commercial-v1.css,resources/css/dossier-company-commercial.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/imports-screen-v2.css,resources/css/imports-screen.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/leads-figma-v34.css,resources/css/leads-figma.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/leads-hubspot-compact-v14.css,resources/css/leads-hubspot-compact.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/leads-redesign-v11.css,resources/css/leads-redesign.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/leads-reference-v13.css,resources/css/leads-reference.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/leads-v15.css,resources/css/leads-summary-controls.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/leads-v16.css,resources/css/leads-layout-refinements.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/leads-v18.css,resources/css/leads-pipeline-layout.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/leads-v19.css,resources/css/leads-complementary-details.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/leads-v20-1.css,resources/css/leads-commercial-context.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/leads-v20.css,resources/css/leads-compact-details.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/leads-v23.css,resources/css/leads-direct-actions.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/leads-visual-v12.css,resources/css/leads-visual.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/prospecting-figma-v63.css,resources/css/prospecting-figma.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/css/prospecting-workspace-v2.css,resources/css/prospecting-workspace-refinements.css,CSS/JavaScript,proposto na copia; validar em WSL
+resources/js/leads-return-v60.js,resources/js/leads-return.js,CSS/JavaScript,proposto na copia; validar em WSL
+resources/views/access/partials/requests-v60.blade.php,resources/views/access/partials/requests.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/campaign-group-history-v1.blade.php,resources/views/campaigns/campaign-group-history.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/context-and-visual-v90.blade.php,resources/views/campaigns/workspace-context.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/figma-detail-header-v68.blade.php,resources/views/campaigns/legacy-detail-header.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/figma-detail-header-v761.blade.php,resources/views/campaigns/detail-header.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/figma-home-v68.blade.php,resources/views/campaigns/home.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/figma-intelligence-v71.blade.php,resources/views/campaigns/intelligence-panel.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/figma-production-v71.blade.php,resources/views/campaigns/production-panel.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/figma-style-v71.blade.php,resources/views/campaigns/workspace-styles.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/fila-v70.blade.php,resources/views/campaigns/queue-panel.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/followup-schedule-detail-v3.blade.php,resources/views/campaigns/followup-forecast-detail.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/followup-schedule-detail-v4.blade.php,resources/views/campaigns/followup-timeline-detail.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/followup-schedule-detail-v5.blade.php,resources/views/campaigns/followup-settings-detail.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/followup-schedule-home-v3.blade.php,resources/views/campaigns/followup-forecast-home.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/followup-schedule-home-v4.blade.php,resources/views/campaigns/followup-timeline-home.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/prospecting-v80.blade.php,resources/views/campaigns/prospecting.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/replies-health-v77.blade.php,resources/views/campaigns/replies-health.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/review-recipients-v73.blade.php,resources/views/campaigns/review-recipients.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/send-confirmation-v73.blade.php,resources/views/campaigns/send-confirmation.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/unsubscribed-v77.blade.php,resources/views/campaigns/unsubscribed.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/campaigns/wizard-v93.blade.php,resources/views/campaigns/wizard.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-business-detail-v85.blade.php,resources/views/contacts/whatsapp-business-detail.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-business-group-v86.blade.php,resources/views/contacts/whatsapp-business-group.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-business-v85-styles.blade.php,resources/views/contacts/whatsapp-business-styles.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-company-web-v87.blade.php,resources/views/contacts/whatsapp-company-web.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-external-discovery-v14.blade.php,resources/views/contacts/whatsapp-external-discovery.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-inline-review-v20.blade.php,resources/views/contacts/whatsapp-inline-review.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-pairing-qr-panel-v18.blade.php,resources/views/contacts/whatsapp-pairing-qr-panel.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-pairing-v13-1-styles.blade.php,resources/views/contacts/whatsapp-pairing-styles.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-pairing-v13-1.blade.php,resources/views/contacts/whatsapp-pairing.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-pesquisa-simples-v88.blade.php,resources/views/contacts/whatsapp-pesquisa-simples.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-public-in-contacts-v14.blade.php,resources/views/contacts/whatsapp-public-in-contacts.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-public-v10-styles.blade.php,resources/views/contacts/whatsapp-public-research-styles.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-public-v10.blade.php,resources/views/contacts/whatsapp-public-research.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-public-v11-styles.blade.php,resources/views/contacts/whatsapp-company-research-styles.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-public-v11.blade.php,resources/views/contacts/whatsapp-company-public-research.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-public-v13-channels.blade.php,resources/views/contacts/whatsapp-public-channels.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-public-v13-styles.blade.php,resources/views/contacts/whatsapp-public-channels-styles.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-registry-theme-v2.blade.php,resources/views/contacts/whatsapp-registry-light-theme.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-registry-theme-v3.blade.php,resources/views/contacts/whatsapp-registry-theme-overrides.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-v12-styles.blade.php,resources/views/contacts/whatsapp-verification-tabs-styles.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-v12-summary.blade.php,resources/views/contacts/whatsapp-summary.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-v12-tabs.blade.php,resources/views/contacts/whatsapp-tabs.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-v7-dashboard.blade.php,resources/views/contacts/whatsapp-verification-summary-dashboard.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-v7-selected.blade.php,resources/views/contacts/whatsapp-selected.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-v7-styles.blade.php,resources/views/contacts/whatsapp-verification-workspace-styles.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-v8-dashboard.blade.php,resources/views/contacts/whatsapp-verification-operation-dashboard.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-v8-operation.blade.php,resources/views/contacts/whatsapp-operation.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-v8-styles.blade.php,resources/views/contacts/whatsapp-verification-operation-styles.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-v9-styles.blade.php,resources/views/contacts/whatsapp-verification-schedule-styles.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-web-v4-selected.blade.php,resources/views/contacts/whatsapp-web-selected.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-web-v4-styles.blade.php,resources/views/contacts/whatsapp-web-results-styles.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-web-v4-summary.blade.php,resources/views/contacts/whatsapp-web-summary.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-web-v6-controls.blade.php,resources/views/contacts/whatsapp-web-controls.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-web-v6-recent.blade.php,resources/views/contacts/whatsapp-web-recent.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/contacts/whatsapp-web-v6-styles.blade.php,resources/views/contacts/whatsapp-web-controls-styles.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/livewire/dashboard-overview/base-figma-v32.blade.php,resources/views/livewire/dashboard-overview/base-figma.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/livewire/dashboard-overview/map-interactive-v7.blade.php,resources/views/livewire/dashboard-overview/map-interactive.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/livewire/dashboard-overview/map-panel-v30.blade.php,resources/views/livewire/dashboard-overview/map-panel.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/livewire/whatsapp-company-links-v16.blade.php,resources/views/livewire/whatsapp-company-links.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/livewire/whatsapp-manual-verification-v16.blade.php,resources/views/livewire/whatsapp-manual-verification.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/pages/prospecting/partials/figma-index-v63.blade.php,resources/views/pages/prospecting/partials/figma-index.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/pages/prospecting/partials/figma-show-v63.blade.php,resources/views/pages/prospecting/partials/figma-show.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/pages/settings/partials/appearance-v63.blade.php,resources/views/pages/settings/partials/appearance.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/pages/settings/partials/profile-v63.blade.php,resources/views/pages/settings/partials/profile.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/pages/settings/partials/security-v63.blade.php,resources/views/pages/settings/partials/security.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/pages/settings/partials/tabs-v63.blade.php,resources/views/pages/settings/partials/tabs.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/commercial-attention-queue-v61.blade.php,resources/views/partials/commercial-attention-table.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/commercial-distribution-preview-v61.blade.php,resources/views/partials/commercial-distribution-dialog.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/company-dossier/figma-cnaes-v53.blade.php,resources/views/partials/company-dossier/figma-cnaes.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/company-dossier/figma-crm-v53.blade.php,resources/views/partials/company-dossier/figma-crm.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/company-dossier/figma-group-v53.blade.php,resources/views/partials/company-dossier/figma-group.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/company-dossier/figma-history-v53.blade.php,resources/views/partials/company-dossier/figma-history.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/company-dossier/figma-modals-v53.blade.php,resources/views/partials/company-dossier/figma-modals.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/company-dossier/figma-summary-v53.blade.php,resources/views/partials/company-dossier/figma-summary.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/company-dossier/figma-v53.blade.php,resources/views/partials/company-dossier/figma.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/company-dossier/hubspot-opportunity-v66.blade.php,resources/views/partials/company-dossier/hubspot-opportunity.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/company-dossier/whatsapp-v14.blade.php,resources/views/partials/company-dossier/whatsapp.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/contacts/integration-icon-v661.blade.php,resources/views/partials/contacts/integration-icon.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/imports/figma-v65.blade.php,resources/views/partials/imports/figma.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/leads-action-center-v11.blade.php,resources/views/partials/leads-actions-toolbar.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/leads-action-center-v15.blade.php,resources/views/partials/leads-summary-controls.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/leads-due-tasks-v54.blade.php,resources/views/partials/leads-due-tasks.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/leads-figma-crm-v36.blade.php,resources/views/partials/leads-figma-crm.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/leads-figma-stages-v36.blade.php,resources/views/partials/leads-figma-stages.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/leads-figma-summary-v34.blade.php,resources/views/partials/leads-summary-cards.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/leads-figma-summary-v36.blade.php,resources/views/partials/leads-summary-toolbar.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/leads-figma-tabs-v36.blade.php,resources/views/partials/leads-figma-tabs.blade.php,View Blade,proposto na copia; validar em WSL
+resources/views/partials/leads-global-stage-list-v45.blade.php,resources/views/partials/leads-global-stage-list.blade.php,View Blade,proposto na copia; validar em WSL
+tests/Feature/Access/AccessRequestsActionsA08Test.php,tests/Feature/Access/AccessRequestsActionsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Access/AccessRequestsAtomicTransitionsA16Test.php,tests/Feature/Access/AccessRequestsAtomicTransitionsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Access/AccessRequestsPackage24Test.php,tests/Feature/Access/AccessRequestsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Access/AccessRequestsSingleSourceA07Test.php,tests/Feature/Access/AccessRequestsSingleSourceTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Access/AccessThemeConsolidatedA09Test.php,tests/Feature/Access/AccessThemeConsolidatedTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Access/CommercialWorkspaceV62Test.php,tests/Feature/Access/CommercialWorkspaceTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Appearance/CompanyDossierDarkA12Test.php,tests/Feature/Appearance/CompanyDossierDarkTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Appearance/CssImportConsolidationA19Test.php,tests/Feature/Appearance/CssImportConsolidationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Appearance/LeadsFigmaVisualFixV34Test.php,tests/Feature/Appearance/LeadsFigmaVisualFixTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Appearance/LeadsGestaoFixV35Test.php,tests/Feature/Appearance/LeadsGestaoFixTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Appearance/LeadsGestaoVisualV35Test.php,tests/Feature/Appearance/LeadsGestaoVisualTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Appearance/TopbarFigmaV31Test.php,tests/Feature/Appearance/TopbarFigmaTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Auth/ExportControlPasswordResetV26Test.php,tests/Feature/Auth/ExportControlPasswordResetTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignBounceV7Test.php,tests/Feature/Campaigns/CampaignBounceTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignBounceVisibilityV29Test.php,tests/Feature/Campaigns/CampaignBounceVisibilityTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignConfirmationV74Test.php,tests/Feature/Campaigns/CampaignConfirmationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignConsolidationV94Test.php,tests/Feature/Campaigns/CampaignConsolidationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignContactsSelectionV91Test.php,tests/Feature/Campaigns/CampaignContactsSelectionTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignContactsTransferV92Test.php,tests/Feature/Campaigns/CampaignContactsTransferTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignDetailV761Test.php,tests/Feature/Campaigns/CampaignDetailTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignDirectLinksV905Test.php,tests/Feature/Campaigns/CampaignDirectLinksTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignDualRecoveryV69Test.php,tests/Feature/Campaigns/CampaignDualRecoveryTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignDynamicLimitsV721Test.php,tests/Feature/Campaigns/CampaignDynamicLimitsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignFigmaV67Test.php,tests/Feature/Campaigns/CampaignVisualWorkflowTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignFigmaV68Test.php,tests/Feature/Campaigns/CampaignHomeLayoutTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignFollowupV5Test.php,tests/Feature/Campaigns/CampaignFollowupTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignFollowupVisibilityV3Test.php,tests/Feature/Campaigns/CampaignFollowupForecastTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignFollowupVisibilityV4Test.php,tests/Feature/Campaigns/CampaignFollowupPlannedStateTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignGroupHierarchyV1Test.php,tests/Feature/Campaigns/CampaignGroupHierarchyTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignIntelligenceV9Test.php,tests/Feature/Campaigns/CampaignIntelligenceTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignLocalTimeV84Test.php,tests/Feature/Campaigns/CampaignLocalTimeTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignNavigationUnsubscribeV909Test.php,tests/Feature/Campaigns/CampaignNavigationUnsubscribeTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignPackage13IntegrityTest.php,tests/Feature/Campaigns/CampaignIntegrityTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignPilotV5Test.php,tests/Feature/Campaigns/CampaignPilotTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignProspectingCompanyLinksV82Test.php,tests/Feature/Campaigns/CampaignProspectingCompanyLinksTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignProspectingExclusionsV83Test.php,tests/Feature/Campaigns/CampaignProspectingExclusionsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignProspectingUIV81Test.php,tests/Feature/Campaigns/CampaignProspectingUITest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignProspectingV80Test.php,tests/Feature/Campaigns/CampaignProspectingTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignQueueSimulationV2Test.php,tests/Feature/Campaigns/CampaignQueueSimulationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignReadinessV8Test.php,tests/Feature/Campaigns/CampaignReadinessTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignRedesignV21Test.php,tests/Feature/Campaigns/CampaignRedesignTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignRepliesAndUnsubscribeV77Test.php,tests/Feature/Campaigns/CampaignRepliesAndUnsubscribeTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignRepliesRecoveryV77Test.php,tests/Feature/Campaigns/CampaignRepliesRecoveryTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignReplyRecoveryV71Test.php,tests/Feature/Campaigns/CampaignReplyRecoveryTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignRoleActionsA15Test.php,tests/Feature/Campaigns/CampaignRoleActionsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignRuntimeV68Test.php,tests/Feature/Campaigns/CampaignRuntimeTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignSafetyV3Test.php,tests/Feature/Campaigns/CampaignLiveSendGuardsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignSafetyV4Test.php,tests/Feature/Campaigns/CampaignGlobalQuotaGateTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignSchemaV75Test.php,tests/Feature/Campaigns/CampaignSchemaTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignUnifiedV90Test.php,tests/Feature/Campaigns/CampaignUnifiedTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignUnmatchedAndFollowupV294Test.php,tests/Feature/Campaigns/CampaignUnmatchedAndFollowupTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignUnsubscribeInlineLogoV9013Test.php,tests/Feature/Campaigns/CampaignUnsubscribeInlineLogoTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignUnsubscribeLogoBlendV9014Test.php,tests/Feature/Campaigns/CampaignUnsubscribeLogoBlendTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignUxV62Test.php,tests/Feature/Campaigns/CampaignUxTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignV6Test.php,tests/Feature/Campaigns/CampaignTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignWizardV93Test.php,tests/Feature/Campaigns/CampaignWizardTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignsCoreV72Test.php,tests/Feature/Campaigns/CampaignsCoreTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignsFigmaHomologacaoInteligenciaV71Test.php,tests/Feature/Campaigns/CampaignsFigmaHomologacaoInteligenciaTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignsFigmaV69Test.php,tests/Feature/Campaigns/CampaignsFigmaTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignsQueueLimitsV70Test.php,tests/Feature/Campaigns/CampaignsQueueLimitsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignsReviewV73Test.php,tests/Feature/Campaigns/CampaignsReviewTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignsUxV22Test.php,tests/Feature/Campaigns/CampaignsUxTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Campaigns/CampaignsWorkspaceV2Test.php,tests/Feature/Campaigns/CampaignsWorkspaceTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Companies/CompaniesFigmaV643Test.php,tests/Feature/Companies/CompanyListVisualRefinementTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Companies/CompaniesFigmaV64Test.php,tests/Feature/Companies/CompanyListLayoutTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Companies/CompanyDossierExportSignalsV571Test.php,tests/Feature/Companies/CompanyDossierExportSignalsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Companies/CompanyDossierFigmaV53Test.php,tests/Feature/Companies/CompanyDossierFigmaTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Companies/CompanyDossierReturnAndIcpV60Test.php,tests/Feature/Companies/CompanyDossierReturnAndIcpTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Companies/CompanyDossierScoreA13Test.php,tests/Feature/Companies/CompanyDossierScoreTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Companies/CompanyDossierSemLegadoV56Test.php,tests/Feature/Companies/CompanyDossierSemLegadoTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Companies/CompanyDossierUiV591Test.php,tests/Feature/Companies/CompanyDossierCrmShortcutTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Companies/CompanyDossierUiV592Test.php,tests/Feature/Companies/CompanyDossierCrmIdentityTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Companies/CompanyExportDossierV582Test.php,tests/Feature/Companies/CompanyExportDossierEmptyStateTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Companies/CompanyExportDossierV58Test.php,tests/Feature/Companies/CompanyExportEvidencePresentationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Companies/CompanyListRedesignV26Test.php,tests/Feature/Companies/CompanyListRedesignTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactReceitaAlphanumericA06Test.php,tests/Feature/Contacts/ContactReceitaAlphanumericTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsClientsPrefilterPackage05Test.php,tests/Feature/Contacts/ContactsClientsPrefilterTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsCountersPackage07Test.php,tests/Feature/Contacts/ContactsCountersTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsDealsPrefilterPackage06Test.php,tests/Feature/Contacts/ContactsDealsPrefilterTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsFigmaV661Test.php,tests/Feature/Contacts/ContactsInspectorLayoutTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsFigmaV662Test.php,tests/Feature/Contacts/ContactsWorkflowCopyTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsFigmaV66Test.php,tests/Feature/Contacts/ContactsLayoutTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsIndicatorsPackage04Test.php,tests/Feature/Contacts/ContactsIndicatorsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsPerformancePackage02Test.php,tests/Feature/Contacts/ContactsTotalsCacheTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsPerformancePackage03Test.php,tests/Feature/Contacts/ContactsPaginationPerformanceTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsReceitaUnifiedV10Test.php,tests/Feature/Contacts/ContactsReceitaUnifiedTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsReceitaV4Test.php,tests/Feature/Contacts/ContactsReceitaTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsReferenceV3Test.php,tests/Feature/Contacts/ContactsReferenceTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsSelectionCampaignV92Test.php,tests/Feature/Contacts/ContactsSelectionCampaignTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsSimplifiedPackage18Test.php,tests/Feature/Contacts/ContactsSimplifiedTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsStablePaginationA14Test.php,tests/Feature/Contacts/ContactsStablePaginationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsTwoPhasePaginationPackage09Test.php,tests/Feature/Contacts/ContactsTwoPhasePaginationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/ContactsUxV2Test.php,tests/Feature/Contacts/ContactsUxTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/Whatsapp200PerAccountV9Test.php,tests/Feature/Contacts/Whatsapp200PerAccountTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappBusinessDirectoryV85Test.php,tests/Feature/Contacts/WhatsappBusinessDirectoryTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappBusinessGroupedV86Test.php,tests/Feature/Contacts/WhatsappBusinessGroupedTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappCompanyApprovalV89Test.php,tests/Feature/Contacts/WhatsappCompanyApprovalTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappCompanyBatchLinkV17Test.php,tests/Feature/Contacts/WhatsappCompanyBatchLinkTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappCompanyPublicV11Test.php,tests/Feature/Contacts/WhatsappCompanyPublicTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappCompanyWebResearchV87Test.php,tests/Feature/Contacts/WhatsappCompanyWebResearchTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappCrossScreenV3Test.php,tests/Feature/Contacts/WhatsappCrossScreenTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappDossierProbeV91Test.php,tests/Feature/Contacts/WhatsappDossierProbeTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappExistingFormatMergeV19Test.php,tests/Feature/Contacts/WhatsappExistingFormatMergeTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappFullDirectoryV8Test.php,tests/Feature/Contacts/WhatsappFullDirectoryTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappFullFormatSweepV21Test.php,tests/Feature/Contacts/WhatsappFullFormatSweepTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappGeneralUiRemovedV15Test.php,tests/Feature/Contacts/WhatsappGeneralUiRemovedTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappInlineCorrectionV20Test.php,tests/Feature/Contacts/WhatsappInlineCorrectionTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappPairingOfflineCompatibilityV831Test.php,tests/Feature/Contacts/WhatsappPairingOfflineCompatibilityTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappPairingV13_1Test.php,tests/Feature/Contacts/WhatsappPairingTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappPublicChannelsV13Test.php,tests/Feature/Contacts/WhatsappPublicChannelsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappPublicDirectoryV14Test.php,tests/Feature/Contacts/WhatsappPublicDirectoryTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappPublicSitesV10Test.php,tests/Feature/Contacts/WhatsappPublicSitesTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappQrAndFormatsV18Test.php,tests/Feature/Contacts/WhatsappQrAndFormatsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappQuickPublicSearchV88Test.php,tests/Feature/Contacts/WhatsappQuickPublicSearchTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappTavilyIntegrationV163Test.php,tests/Feature/Contacts/WhatsappTavilyIntegrationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappUnifiedV7Test.php,tests/Feature/Contacts/WhatsappUnifiedTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappVerificationV941Test.php,tests/Feature/Contacts/WhatsappVerificationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappVisualV12Test.php,tests/Feature/Contacts/WhatsappTaskNavigationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappVisualV2Test.php,tests/Feature/Contacts/WhatsappRegistryLayoutTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappWebControlV6Test.php,tests/Feature/Contacts/WhatsappWebControlTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappWebDualSessionsV5Test.php,tests/Feature/Contacts/WhatsappWebDualSessionsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappWebProbeV4Test.php,tests/Feature/Contacts/WhatsappWebProbeTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Contacts/WhatsappWorkflowV16Test.php,tests/Feature/Contacts/WhatsappWorkflowTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardAdvancedVisualV33Test.php,tests/Feature/Dashboard/DashboardAdvancedVisualTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardAssignmentReuseA17Test.php,tests/Feature/Dashboard/DashboardAssignmentReuseTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardBaseFigmaV32Test.php,tests/Feature/Dashboard/DashboardBaseFigmaTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardCommercialV2Test.php,tests/Feature/Dashboard/DashboardCommercialTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardDealOwnerProjectionV248Test.php,tests/Feature/Dashboard/DashboardDealOwnerProjectionTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardDealOwnershipAggregationV246Test.php,tests/Feature/Dashboard/DashboardDealOwnershipAggregationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardDrilldownV10Test.php,tests/Feature/Dashboard/DashboardDrilldownTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardFigmaV29Test.php,tests/Feature/Dashboard/DashboardFigmaTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardMapV7Test.php,tests/Feature/Dashboard/DashboardMapTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardMapaBrasilV30Test.php,tests/Feature/Dashboard/DashboardMapaBrasilTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardMyDealsV6Test.php,tests/Feature/Dashboard/DashboardMyDealsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardOverdueFastPathV247Test.php,tests/Feature/Dashboard/DashboardOverdueFastPathTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardOverviewV3Test.php,tests/Feature/Dashboard/DashboardOverviewTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardOwnedDealsSelectiveLoadV173Test.php,tests/Feature/Dashboard/DashboardOwnedDealsSelectiveLoadTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardPrimaryDealOwnershipV15Test.php,tests/Feature/Dashboard/DashboardPrimaryDealOwnershipTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardSnapshotBundleV244Test.php,tests/Feature/Dashboard/DashboardSnapshotBundleTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardSnapshotQueryReuseV172Test.php,tests/Feature/Dashboard/DashboardSnapshotQueryReuseTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardStagesAndTasksV40Test.php,tests/Feature/Dashboard/DashboardStagesAndTasksTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardStaleCommercialActivityV14Test.php,tests/Feature/Dashboard/DashboardStaleCommercialActivityTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardStrategicV4Test.php,tests/Feature/Dashboard/DashboardStrategicAccessTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardStrategicV5Test.php,tests/Feature/Dashboard/DashboardStrategicLayoutTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardUfMapV48Test.php,tests/Feature/Dashboard/DashboardUfMapTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardV23LinksTest.php,tests/Feature/Dashboard/DashboardLinksTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardVisualV25Test.php,tests/Feature/Dashboard/DashboardPrimaryLayoutTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Dashboard/DashboardVisualV26Test.php,tests/Feature/Dashboard/DashboardLayoutIsolationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/HubSpot/HubSpotCommercialReconciliationV40Test.php,tests/Feature/HubSpot/HubSpotCommercialReconciliationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/HubSpot/HubSpotFiscalReadersConsistencyV162Test.php,tests/Feature/HubSpot/HubSpotFiscalReadersConsistencyTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/HubSpot/HubSpotFiscalSourceConsistencyV16Test.php,tests/Feature/HubSpot/HubSpotFiscalSourceConsistencyTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/HubSpot/HubSpotGatewayDNSV907Test.php,tests/Feature/HubSpot/HubSpotGatewayDNSTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/HubSpot/HubSpotLongActivityTitlesV39Test.php,tests/Feature/HubSpot/HubSpotLongActivityTitlesTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/HubSpot/HubSpotTaskAssociationPlaceholderV13Test.php,tests/Feature/HubSpot/HubSpotTaskAssociationPlaceholderTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/HubSpot/HubSpotWebhookGatewayV381Test.php,tests/Feature/HubSpot/HubSpotWebhookGatewayAccessTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/HubSpot/HubSpotWebhookGatewayV382Test.php,tests/Feature/HubSpot/HubSpotWebhookGatewayRouteTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/HubSpot/HubSpotWebhookRecoverySafetyV10Test.php,tests/Feature/HubSpot/HubSpotWebhookRecoverySafetyTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/HubSpot/SyncHubSpotOwnerTasksV55Test.php,tests/Feature/HubSpot/SyncHubSpotOwnerTasksTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Imports/ImportsFigmaContrastV652Test.php,tests/Feature/Imports/ImportsFigmaContrastTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Imports/ImportsFigmaV65Test.php,tests/Feature/Imports/ImportsFigmaTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Infrastructure/CampaignUiRuntimeV92Test.php,tests/Feature/Infrastructure/CampaignUiRuntimeTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Infrastructure/CommercialShellV2Test.php,tests/Feature/Infrastructure/CommercialShellTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Infrastructure/ComposeLoopbackA22Test.php,tests/Feature/Infrastructure/ComposeLoopbackTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/CommercialManagementAlignmentV624Test.php,tests/Feature/Leads/CommercialManagementAlignmentTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/CommercialManagementFigmaV61Test.php,tests/Feature/Leads/CommercialManagementMetricsLayoutTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/CommercialManagementFigmaV621Test.php,tests/Feature/Leads/CommercialDistributionActionAccessibilityTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/CommercialManagementFigmaV62Test.php,tests/Feature/Leads/CommercialManagementLayoutTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/CommercialManagementHubSpotWithoutScoreV13Test.php,tests/Feature/Leads/CommercialManagementHubSpotWithoutScoreTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/CommercialManagementRedesignV25Test.php,tests/Feature/Leads/CommercialManagementRedesignTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/CommercialManagementTopbarSearchV255Test.php,tests/Feature/Leads/CommercialManagementTopbarSearchTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/CommercialManagementTopbarV623Test.php,tests/Feature/Leads/CommercialManagementTopbarTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/HubSpotMissingStagesV38Test.php,tests/Feature/Leads/HubSpotMissingStagesTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/HubSpotOverdueConsistencyV12Test.php,tests/Feature/Leads/HubSpotOverdueConsistencyTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/HubSpotTaskOnlineAuditV21Test.php,tests/Feature/Leads/HubSpotTaskOnlineAuditTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/HubSpotTaskReconciliationV22Test.php,tests/Feature/Leads/HubSpotTaskReconciliationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/HubSpotTaskRotationV11Test.php,tests/Feature/Leads/HubSpotTaskRotationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadCommercialSituationV52Test.php,tests/Feature/Leads/LeadCommercialSituationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadContactColumnsV51Test.php,tests/Feature/Leads/LeadContactColumnsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadCrmOnlyExcelFiltersV185Test.php,tests/Feature/Leads/LeadCrmOnlyExcelFiltersTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadDueCounterReuseV242Test.php,tests/Feature/Leads/LeadDueCounterReuseTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadDueFastPathV243Test.php,tests/Feature/Leads/LeadDueFastPathTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadDueTasksPhpStanV543Test.php,tests/Feature/Leads/LeadDueTasksPhpStanTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadDueTimeAndActionsV17Test.php,tests/Feature/Leads/LeadDueTimeAndActionsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadExcelStreamingSafetyV186Test.php,tests/Feature/Leads/LeadExcelStreamingSafetyTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadExportV23Test.php,tests/Feature/Leads/LeadExportTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadGlobalStageExcelV452Test.php,tests/Feature/Leads/LeadGlobalStageExcelTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadHubSpotCompactV14Test.php,tests/Feature/Leads/LeadHubSpotCompactTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadHubSpotContactsExcelV50Test.php,tests/Feature/Leads/LeadHubSpotContactsExcelTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadHubSpotTasksAndVisualV16Test.php,tests/Feature/Leads/LeadHubSpotTasksAndVisualTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadPollingThrottleV249Test.php,tests/Feature/Leads/LeadPollingThrottleTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadReferenceV13Test.php,tests/Feature/Leads/LeadReferenceTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadReprospectingStrictV255Test.php,tests/Feature/Leads/LeadReprospectingStrictTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadTaxRegimeV27Test.php,tests/Feature/Leads/LeadTaxRegimeTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadUnifiedExcelBulkLoadV182Test.php,tests/Feature/Leads/LeadUnifiedExcelBulkLoadTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadUnifiedSituationV15Test.php,tests/Feature/Leads/LeadUnifiedSituationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadV201RegressionTest.php,tests/Feature/Leads/LeadRegressionTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadVisualV12Test.php,tests/Feature/Leads/LeadsCompactControlsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadVisualV18Test.php,tests/Feature/Leads/LeadsPipelineNavigationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadVisualV19Test.php,tests/Feature/Leads/LeadsDossierNavigationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadVisualV20Test.php,tests/Feature/Leads/LeadsDirectActionsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadsFigmaV34Test.php,tests/Feature/Leads/LeadsFigmaTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadsFilterPolishV49Test.php,tests/Feature/Leads/LeadsFilterPolishTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadsGlobalStagePaginationV46Test.php,tests/Feature/Leads/LeadsGlobalStagePaginationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadsGlobalStageSameQueueV47Test.php,tests/Feature/Leads/LeadsGlobalStageSameQueueTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadsHubSpotDueTasksV54Test.php,tests/Feature/Leads/LeadsHubSpotDueTasksTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadsHubSpotScopesV37Test.php,tests/Feature/Leads/LeadsHubSpotScopesTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadsIntegratedStageExcelV45Test.php,tests/Feature/Leads/LeadsIntegratedStageExcelTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadsLinkConfirmationAndStageV43Test.php,tests/Feature/Leads/LeadsLinkConfirmationAndStageTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadsPersonalPipelineV48Test.php,tests/Feature/Leads/LeadsPersonalPipelineTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadsQueueAndCrmUxV42Test.php,tests/Feature/Leads/LeadsQueueAndCrmUxTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Leads/LeadsStageNavigationV41Test.php,tests/Feature/Leads/LeadsStageNavigationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Legacy/UnusedLegacyAssetsA10Test.php,tests/Feature/Legacy/UnusedLegacyAssetsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Prospecting/ProspectingFigmaV631Test.php,tests/Feature/Prospecting/ProspectingItemErrorScopeTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Prospecting/ProspectingFigmaV632Test.php,tests/Feature/Prospecting/ProspectingPersistentFiltersTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Prospecting/ProspectingFigmaV633Test.php,tests/Feature/Prospecting/ProspectingPreviewVisibilityTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Prospecting/ProspectingFigmaV63Test.php,tests/Feature/Prospecting/ProspectingLayoutTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Prospecting/ProspectingRedesignV2Test.php,tests/Feature/Prospecting/ProspectingRedesignTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Prospecting/ProspectingShellV636Test.php,tests/Feature/Prospecting/ProspectingShellTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Prospecting/ProspectingTopbarManagementSidebarV637Test.php,tests/Feature/Prospecting/ProspectingTopbarManagementSidebarTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Settings/SettingsFigmaV63Test.php,tests/Feature/Settings/SettingsFigmaTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Feature/Settings/ThemeUnifiedV64Test.php,tests/Feature/Settings/ThemeUnifiedTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Unit/ProspectorUiA2411Test.php,tests/Unit/AppearanceLoadOrderAndRoleDialogTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Unit/ProspectorUiA2412Test.php,tests/Unit/ImportValidationAndDarkThemeTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Unit/ProspectorUiA2413Test.php,tests/Unit/DarkThemeStylesheetRegistrationTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Unit/ProspectorUiA2414Test.php,tests/Unit/DarkThemeDomResilienceTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Unit/ProspectorUiA2415Test.php,tests/Unit/DarkThemeContactAndCampaignSelectorsTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Unit/ProspectorUiA2416Test.php,tests/Unit/CampaignDarkContrastRegressionTest.php,Teste PHP,proposto na copia; validar em WSL
+tests/Unit/WhatsappFormatV3Test.php,tests/Unit/WhatsappFormatTest.php,Teste PHP,proposto na copia; validar em WSL

@@ -5,7 +5,7 @@ namespace App\Livewire;
 use App\Models\Cnae;
 use App\Models\User;
 use App\Services\CommercialManagementMetricsService;
-use App\Services\DashboardOwnedDealsV23Service;
+use App\Services\DashboardOwnedDealsService;
 use App\Services\DashboardStrategicMetricsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Query\Builder;
@@ -195,7 +195,7 @@ class DashboardOverview extends Component
             return null;
         }
 
-        return app(DashboardOwnedDealsV23Service::class)->forUser((int) $user->id);
+        return app(DashboardOwnedDealsService::class)->forUser((int) $user->id);
     }
 
     /**

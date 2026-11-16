@@ -22,25 +22,6 @@ final class HubSpotLeadStatusSyncService
     public function sync(
         CompanyHubSpotLead $lead
     ): CompanyHubSpotLead {
-        $previousStatus =
-            $this->stringValue(
-                $lead->work_status
-            );
-
-        $previousStage =
-            $this->stringValue(
-                $lead->deal_stage_id
-            );
-
-        $previousOpenTasks =
-            (int) $lead->open_task_count;
-
-        $previousDueAt =
-            $this->dateValue(
-                $lead->last_task_due_at
-            )
-                ?->toIso8601String();
-
         $companyId =
             trim(
                 (string)
@@ -168,17 +149,6 @@ final class HubSpotLeadStatusSyncService
                 lastActivityAt: $lastActivityAt,
             );
 
-        $workStatusChangedAt =
-            $lead->work_status_changed_at;
-
-        if (
-            $workStatusChangedAt === null
-            || $previousStatus !== $status
-        ) {
-            $workStatusChangedAt =
-                now();
-        }
-
         $activityType =
             match ($status) {
                 'converted',
@@ -198,7 +168,6 @@ final class HubSpotLeadStatusSyncService
                 function () use (
                     $lead,
                     $status,
-                    $workStatusChangedAt,
                     $dealStage,
                     $activityType,
                     $lastActivityAt,
@@ -211,6 +180,36 @@ final class HubSpotLeadStatusSyncService
                             ->findOrFail(
                                 $lead->id
                             );
+
+                    $previousStatus =
+                        $this->stringValue(
+                            $freshLead->work_status
+                        );
+
+                    $previousStage =
+                        $this->stringValue(
+                            $freshLead->deal_stage_id
+                        );
+
+                    $previousOpenTasks =
+                        (int) $freshLead->open_task_count;
+
+                    $previousDueAt =
+                        $this->dateValue(
+                            $freshLead->last_task_due_at
+                        )
+                            ?->toIso8601String();
+
+                    $workStatusChangedAt =
+                        $freshLead->work_status_changed_at;
+
+                    if (
+                        $workStatusChangedAt === null
+                        || $previousStatus !== $status
+                    ) {
+                        $workStatusChangedAt =
+                            now();
+                    }
 
                     $rawMetadata =
                         $freshLead->getAttribute(
@@ -262,20 +261,20 @@ final class HubSpotLeadStatusSyncService
                         'metadata' => $metadata,
                     ])->save();
 
+                    $this
+                        ->activityRecorder
+                        ->recordHubSpotChanges(
+                            lead: $freshLead,
+                            previousStatus: $previousStatus,
+                            previousStage: $previousStage,
+                            previousOpenTasks: $previousOpenTasks,
+                            previousDueAt: $previousDueAt,
+                        );
+
                     return $freshLead
                         ->refresh();
                 },
                 3
-            );
-
-        $this
-            ->activityRecorder
-            ->recordHubSpotChanges(
-                lead: $lead,
-                previousStatus: $previousStatus,
-                previousStage: $previousStage,
-                previousOpenTasks: $previousOpenTasks,
-                previousDueAt: $previousDueAt,
             );
 
         return $lead;
@@ -447,62 +446,97 @@ final class HubSpotLeadStatusSyncService
         string $fromId,
         string $toType,
     ): array {
-        $response =
-            $this->client()
-                ->get(
-                    $this->baseUrl()
-                    .'/crm/v4/objects/'
-                    .$fromType
-                    .'/'
-                    .rawurlencode($fromId)
-                    .'/associations/'
-                    .$toType,
-                    [
-                        'limit' => 100,
-                    ]
-                );
-
-        $this->ensureSuccess(
-            $response,
-            'consultar associações'
-        );
-
-        $data =
-            $response->json();
-
-        if (! is_array($data)) {
-            return [];
-        }
-
-        $results =
-            $data['results']
-            ?? [];
-
-        if (! is_array($results)) {
-            return [];
-        }
-
         $ids = [];
+        $after = null;
+        $seenCursors = [];
 
-        foreach ($results as $result) {
-            if (! is_array($result)) {
-                continue;
+        while (true) {
+            $query = [
+                'limit' => 100,
+            ];
+
+            if ($after !== null) {
+                $query['after'] = $after;
             }
 
-            $id =
-                $result[
-                    'toObjectId'
-                ]
-                ?? $result['id']
+            $response =
+                $this->client()
+                    ->get(
+                        $this->baseUrl()
+                        .'/crm/v4/objects/'
+                        .$fromType
+                        .'/'
+                        .rawurlencode($fromId)
+                        .'/associations/'
+                        .$toType,
+                        $query
+                    );
+
+            $this->ensureSuccess(
+                $response,
+                'consultar associações'
+            );
+
+            $data =
+                $response->json();
+
+            if (! is_array($data)) {
+                break;
+            }
+
+            $results =
+                $data['results']
+                ?? [];
+
+            if (! is_array($results)) {
+                break;
+            }
+
+            foreach ($results as $result) {
+                if (! is_array($result)) {
+                    continue;
+                }
+
+                $id =
+                    $result[
+                        'toObjectId'
+                    ]
+                    ?? $result['id']
+                    ?? null;
+
+                if (is_scalar($id)) {
+                    $ids[] =
+                        (string) $id;
+                }
+            }
+
+            $nextAfter =
+                $data['paging']['next']['after']
                 ?? null;
 
-            if (is_scalar($id)) {
-                $ids[] =
-                    (string) $id;
+            if (
+                ! is_scalar($nextAfter)
+                || trim((string) $nextAfter) === ''
+            ) {
+                break;
             }
+
+            $nextAfter =
+                (string) $nextAfter;
+
+            if (isset($seenCursors[$nextAfter])) {
+                throw new RuntimeException(
+                    'O HubSpot repetiu o cursor ao paginar associações.'
+                );
+            }
+
+            $seenCursors[$nextAfter] = true;
+            $after = $nextAfter;
         }
 
-        return $ids;
+        return array_values(
+            array_unique($ids)
+        );
     }
 
     /**

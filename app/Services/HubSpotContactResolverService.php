@@ -235,8 +235,17 @@ final class HubSpotContactResolverService
                 ? ($data['properties'] ?? [])
                 : [];
 
-        if (! is_array($properties)) {
-            $properties = [];
+        if (
+            ! is_array($data)
+            || ! array_key_exists(
+                'properties',
+                $data
+            )
+            || ! is_array($properties)
+        ) {
+            throw new RuntimeException(
+                'Resposta inválida ao ler contato existente no HubSpot.'
+            );
         }
 
         $updates = [];
@@ -351,39 +360,63 @@ final class HubSpotContactResolverService
         $data =
             $response->json();
 
-        $results =
-            is_array($data)
-                ? ($data['results'] ?? [])
-                : [];
-
-        if (! is_array($results)) {
-            return null;
+        if (
+            ! is_array($data)
+            || ! array_key_exists(
+                'results',
+                $data
+            )
+            || ! is_array(
+                $data[
+                    'results'
+                ]
+            )
+        ) {
+            throw new RuntimeException(
+                'Resposta inválida ao consultar contatos no HubSpot.'
+            );
         }
+
+        $results =
+            $data[
+                'results'
+            ];
 
         $ids = [];
 
         foreach ($results as $result) {
-            if (! is_array($result)) {
-                continue;
-            }
-
-            $id =
-                $result['id']
-                ?? null;
-
-            if (! is_scalar($id)) {
-                continue;
+            if (
+                ! is_array($result)
+                || ! array_key_exists(
+                    'id',
+                    $result
+                )
+                || ! is_scalar(
+                    $result[
+                        'id'
+                    ]
+                )
+            ) {
+                throw new RuntimeException(
+                    'Resposta inválida ao consultar contatos no HubSpot.'
+                );
             }
 
             $id =
                 trim(
-                    (string) $id
+                    (string) $result[
+                        'id'
+                    ]
                 );
 
-            if ($id !== '') {
-                $ids[] =
-                    $id;
+            if ($id === '') {
+                throw new RuntimeException(
+                    'Resposta inválida ao consultar contatos no HubSpot.'
+                );
             }
+
+            $ids[] =
+                $id;
         }
 
         $ids =

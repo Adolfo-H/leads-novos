@@ -6,12 +6,12 @@
 @if ($manager && $commercial !== null && $strategic !== null)
         @php
             // A mesma origem de dados utilizada pelos links do Dashboard V23.
-            $ds25MetricsService = app(\App\Services\DashboardLeadMetricsV23Service::class);
+            $ds25MetricsService = app(\App\Services\DashboardLeadMetricsService::class);
             $ds25Bundle = $ds25MetricsService->snapshotWithCompanyIds();
             $ds25Metrics = $ds25Bundle['summary'];
             $ds25Deals = $this->myHubSpotStageSummary;
             // EC_PROSPECTOR_V40: contagem individual de TAREFAS vencidas ou para hoje.
-            $ds25MyDueTasks = app(\App\Services\DashboardHubSpotDueTasksV40Service::class)
+            $ds25MyDueTasks = app(\App\Services\DashboardHubSpotDueTasksService::class)
                 ->forUser((int) auth()->id());
             $ds25Stages = $ds25Deals['stages'] ?? [];
             $ds25FirstStages = $ds25Stages;
@@ -274,7 +274,7 @@
         </div>
 
         <div class="ef29-layout ef29-layout--second">
-            @include('livewire.dashboard-overview.map-panel-v30')
+            @include('livewire.dashboard-overview.map-panel')
 
             <section class="ef29-card ef29-states-panel" aria-labelledby="ef29-states-heading">
                 <h2 id="ef29-states-heading">Estados em destaque</h2>
@@ -334,7 +334,7 @@
         @php
             // D01-V: somente carteira e negócios do usuário atual; nenhuma métrica da equipe.
             $ef29CurrentUserId = (int) auth()->id();
-            $ef29MyDeals = app(\App\Services\DashboardOwnedDealsV23Service::class)
+            $ef29MyDeals = app(\App\Services\DashboardOwnedDealsService::class)
                 ->forUser($ef29CurrentUserId);
             $ef29MyStages = array_slice($ef29MyDeals['stages'], 0, 5); // EC_PROSPECTOR_V41 vendedor.
             $ef29MyExtraStages = array_slice($ef29MyDeals['stages'], 5);
@@ -343,7 +343,7 @@
                 ->where('assigned_user_id', $ef29CurrentUserId)
                 ->count();
             // V55: hora exata do HubSpot; não inclui prazos já vencidos.
-            $ef29MyToday = app(\App\Services\DashboardHubSpotDueTasksV40Service::class)
+            $ef29MyToday = app(\App\Services\DashboardHubSpotDueTasksService::class)
                 ->forUser($ef29CurrentUserId)['today'];
             $ef29Overdue = \App\Models\CompanyLeadWorkState::query()
                 ->with('company')

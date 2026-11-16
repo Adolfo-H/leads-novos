@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\Contacts\WhatsappCompanyWebResearchV87;
+use App\Services\Contacts\WhatsappCompanyWebResearch;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -21,13 +21,13 @@ final class ResearchWhatsappCompanyWebV87 implements ShouldQueue
 
     public function __construct(public int $runId) {}
 
-    public function handle(WhatsappCompanyWebResearchV87 $service): void
+    public function handle(WhatsappCompanyWebResearch $service): void
     {
         $service->execute($this->runId);
     }
 
     public function failed(?Throwable $exception): void
     {
-        app(WhatsappCompanyWebResearchV87::class)->markFailed($this->runId);
+        app(WhatsappCompanyWebResearch::class)->markFailed($this->runId);
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\User;
-use App\Services\Contacts\WhatsappManualPhoneV16;
+use App\Services\Contacts\WhatsappManualPhone;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -28,7 +28,7 @@ class WhatsappManualVerificationV16 extends Component
 
     public function requestSpecific(): void
     {
-        $outcome = app(WhatsappManualPhoneV16::class)->queue(auth()->user(), $this->numbers);
+        $outcome = app(WhatsappManualPhone::class)->queue(auth()->user(), $this->numbers);
         $this->numbers = '';
         session()->flash('wa16_ok', $outcome['queued'].' número(s) selecionado(s) enviado(s) para a fila das contas conectadas.');
     }
@@ -44,7 +44,7 @@ class WhatsappManualVerificationV16 extends Component
 
     public function saveReview(string $decision): void
     {
-        app(WhatsappManualPhoneV16::class)->review(auth()->user(), $this->reviewPhoneId,
+        app(WhatsappManualPhone::class)->review(auth()->user(), $this->reviewPhoneId,
             $decision, $this->correctedPhone, $this->reviewNote);
         $this->reviewPhoneId = 0;
         $this->correctedPhone = '';
@@ -66,6 +66,6 @@ class WhatsappManualVerificationV16 extends Component
         }
         $items = $query->orderBy('n.id')->limit(20)->get(['n.id', 'n.digits', 'n.contacts_count']);
 
-        return view('livewire.whatsapp-manual-verification-v16', ['reviews' => $items]);
+        return view('livewire.whatsapp-manual-verification', ['reviews' => $items]);
     }
 }

@@ -34,6 +34,9 @@ __pycache__/
 # Arquivos temporários
 *.bak
 .DS_Store
+# Metadados de download materializados como arquivos no WSL
+*:Zone.Identifier
+/nul
 
 /testing
 
@@ -49,7 +52,6 @@ __pycache__/
 # BEGIN PROSPECTOR_ORGANIZACAO_A03
 # Instaladores e backups locais: arquivados fora do projeto.
 /Prospector_*.zip
-/Prospector_*.zip:Zone.Identifier
 /.exportcontrol_backups/
 /.backup-pacote-*/
 # END PROSPECTOR_ORGANIZACAO_A03
@@ -64,3 +66,16 @@ __pycache__/
 # EC_WA_CONTROL_V6: locks e PID dos dois agentes do Ubuntu
 /storage/app/private/whatsapp-web-agent-*.lock
 /storage/app/private/whatsapp-web-agente-*.pid
+
+# Manutencao: material local, nunca codigo de producao.
+/.prospector-patch-backups/
+/.ecwa-ui-backups/
+/.ecwa-ui-v7-last-backup
+/exportcontrol_whatsapp_ui_v7/
+/exportcontrol_whatsapp_ui_v7_pacote.zip
+/PROSPECTOR_*.zip
+/PROSPECTOR_*.tar.gz
+/prospector_*.zip
+/prospector_*.tar.gz
+/PROSPECTOR_Ajuste_*.patch
+/_AUDITORIA/

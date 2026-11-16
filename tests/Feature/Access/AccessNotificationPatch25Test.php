@@ -23,7 +23,7 @@ it('keeps the approved login structure and three scalable svg features', functio
         ->not->toContain('>▥<')
         ->not->toContain('>◎<')
         ->not->toContain('>↗<');
-    expect(file_exists(public_path('images/brand/login-background-v25.png')))->toBeTrue();
+    expect(file_exists(public_path('images/brand/login-background.png')))->toBeTrue();
 });
 
 it('records local-only delivery instead of pretending notification reached external mailbox', function (): void {

@@ -224,7 +224,7 @@ new class extends Component
             return ['total' => 0, 'overdue' => 0, 'today' => 0];
         }
 
-        return app(\App\Services\LeadDueTaskQueueV54Service::class)->counts($user);
+        return app(\App\Services\LeadDueTaskQueueService::class)->counts($user);
     }
 
     /** @return \Illuminate\Pagination\LengthAwarePaginator<int, \App\Models\HubSpotTask> */
@@ -237,7 +237,7 @@ new class extends Component
         $period = in_array($this->queueDuePeriod, ['overdue', 'today'], true)
             ? $this->queueDuePeriod : 'all';
 
-        return app(\App\Services\LeadDueTaskQueueV54Service::class)
+        return app(\App\Services\LeadDueTaskQueueService::class)
             ->forUser($user, $period)
             ->orderBy('hubspot_tasks.due_at')
             ->orderBy('hubspot_tasks.id')
@@ -528,7 +528,7 @@ new class extends Component
             )
             ->when(
                 $this->dashboardView === 'with_deal',
-                fn ($query) => $query->whereIn('companies.id', app(\App\Services\DashboardLeadMetricsV23Service::class)->withDealCompanyIds())
+                fn ($query) => $query->whereIn('companies.id', app(\App\Services\DashboardLeadMetricsService::class)->withDealCompanyIds())
             )
             ->when(
                 $this->dashboardView !== ''
@@ -764,11 +764,11 @@ new class extends Component
 
             ->when(
                 $this->dashboardView === 'overdue',
-                fn ($query) => $query->whereIn('companies.id', app(\App\Services\DashboardLeadMetricsV23Service::class)->overdueCompanyIds())
+                fn ($query) => $query->whereIn('companies.id', app(\App\Services\DashboardLeadMetricsService::class)->overdueCompanyIds())
             )
             ->when(
                 $this->dashboardView === 'stale90',
-                fn ($query) => $query->whereIn('companies.id', app(\App\Services\DashboardLeadMetricsV23Service::class)->staleCompanyIds())
+                fn ($query) => $query->whereIn('companies.id', app(\App\Services\DashboardLeadMetricsService::class)->staleCompanyIds())
             )
             ->when(
                 $this->dashboardCompany !== '',
@@ -1244,7 +1244,7 @@ new class extends Component
             $ids = $this->selectedExportIdsV45($this->selectedDueTaskIds);
             $period = in_array($this->queueDuePeriod, ['overdue', 'today'], true)
                 ? $this->queueDuePeriod : 'all';
-            $tasks = app(\App\Services\LeadDueTaskQueueV54Service::class)
+            $tasks = app(\App\Services\LeadDueTaskQueueService::class)
                 ->forUser($user, $period)
                 ->when($this->selectedDueTaskIds !== [], static function ($query) use ($ids): void {
                     if ($ids === []) {
@@ -1255,7 +1255,7 @@ new class extends Component
                 })
                 ->orderBy('hubspot_tasks.due_at')->orderBy('hubspot_tasks.id')->get();
 
-            return app(\App\Services\LeadDueTaskExcelV54Service::class)->excel($tasks);
+            return app(\App\Services\LeadDueTaskExcelService::class)->excel($tasks);
         }
 
         if ($this->globalHubSpotStage !== '' || $this->personalHubSpotStage !== '') {
@@ -1274,7 +1274,7 @@ new class extends Component
                 ->with(['companies.prospectorCompany.matrix', 'stage'])
                 ->get();
 
-            return app(\App\Services\LeadGlobalStageExcelV45Service::class)
+            return app(\App\Services\LeadGlobalStageExcelService::class)
                 ->excel($deals, $this->globalHubSpotStage !== '' ? $this->globalHubSpotStage : $this->personalHubSpotStage);
         }
 
@@ -1295,7 +1295,7 @@ new class extends Component
             ->when($this->selectedLeadIds !== [], static fn ($q) => $q->whereRaw('1 = 0'))
             ->with(['deals', 'contacts', 'tasks'])->get();
 
-        return app(\App\Services\LeadUnifiedExcelV23Service::class)
+        return app(\App\Services\LeadUnifiedExcelService::class)
             ->excel($companies, $crmOnly);
     }
 
@@ -2041,7 +2041,7 @@ new class extends Component
         }
 
         if ($this->dashboardStage !== '') {
-            $ids = app(\App\Services\DashboardOwnedDealsV23Service::class)
+            $ids = app(\App\Services\DashboardOwnedDealsService::class)
                 ->crmOnlyIdsForStage((int) auth()->id(), $this->dashboardStage);
             $query->whereIn('hubspot_companies.id', $ids);
         }
@@ -4770,7 +4770,7 @@ new class extends Component
 
 
     @if (!$hubSpotOnly)
-        @include('partials.leads-figma-tabs-v36')
+        @include('partials.leads-figma-tabs')
 
     @if ($commercialActionMessage !== '')
 
@@ -4798,11 +4798,11 @@ new class extends Component
     @endif
 
 
-    @include('partials.leads-figma-summary-v36')
+    @include('partials.leads-summary-toolbar')
 
     <details class="lf36-extra-shortcuts">
         <summary>Outros atalhos de fila</summary>
-        @include('partials.leads-action-center-v15')
+        @include('partials.leads-summary-controls')
     </details>
 
 
@@ -5055,11 +5055,10 @@ new class extends Component
     @endif
 
 
-        @include('partials.leads-active-filters-v11')
     </section>
 
     @if ($this->isCommercialManager())
-            @include('partials.leads-figma-stages-v36')
+            @include('partials.leads-figma-stages')
         @endif
 
         {{-- Faixa original preservada: evita perda de filtros e usa crmStageOptions. --}}
@@ -5076,7 +5075,7 @@ new class extends Component
 
 
 @if ($hubSpotOnly)
-        @include('partials.leads-figma-crm-v36')
+        @include('partials.leads-figma-crm')
     @endif
 
 
@@ -5155,9 +5154,9 @@ new class extends Component
 
         <div class="rf-list-scroll">
             @if ($dueActionOnly)
-                @include('partials.leads-due-tasks-v54')
+                @include('partials.leads-due-tasks')
             @elseif (($globalHubSpotStage !== '' && $this->isCommercialManager()) || $personalHubSpotStage !== '')
-                @include('partials.leads-global-stage-list-v45')
+                @include('partials.leads-global-stage-list')
             @else
 
             <div class="rf-list-head">
@@ -5206,7 +5205,7 @@ new class extends Component
 
             {{-- EC_PROSPECTOR_V52: resolver os rótulos em lote, sem consultas por linha. --}}
             @php
-                $v52CommercialByCompany = app(\App\Services\LeadCommercialSituationV52Service::class)
+                $v52CommercialByCompany = app(\App\Services\LeadCommercialSituationService::class)
                     ->forCompanies($this->leads->getCollection());
             @endphp
 

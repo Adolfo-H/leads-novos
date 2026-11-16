@@ -2362,7 +2362,7 @@ new class extends Component
     @endphp
 
     {{-- EC_PROSPECTOR_E53: telas Figma E05–E09 (dados locais e ações existentes). --}}
-    @include('partials.company-dossier.figma-v53')
+    @include('partials.company-dossier.figma')
 
     {{-- PROSPECTOR_DOSSIE_V56: dossiê redesenhado E05-E09 exclusivo; interface antiga removida. --}}
 </div>

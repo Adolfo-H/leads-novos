@@ -199,8 +199,14 @@ final class CampaignManager
         DB::transaction(static function () use ($campaign): void {
             $locked = EmailCampaign::query()->whereKey($campaign->getKey())
                 ->lockForUpdate()->first();
-            if ($locked === null || $locked->status !== 'running') {
+            if ($locked === null) {
+                throw ValidationException::withMessages(['campaign' => 'A campanha não está mais disponível. Atualize a página.']);
+            }
+            if ($locked->status === 'paused') {
                 return;
+            }
+            if ($locked->status !== 'running') {
+                throw ValidationException::withMessages(['campaign' => 'Somente campanhas em envio podem ser pausadas. Atualize o status e tente novamente.']);
             }
 
             $locked->update(['status' => 'paused']);
@@ -222,15 +228,24 @@ final class CampaignManager
     {
         abort_unless($user->isCommercialManager(), 403);
 
-        if ($campaign->status === 'paused') {
+        DB::transaction(static function () use ($campaign): void {
+            $locked = EmailCampaign::query()->whereKey($campaign->getKey())
+                ->lockForUpdate()->first();
+            if ($locked === null) {
+                throw ValidationException::withMessages(['campaign' => 'A campanha não está mais disponível. Atualize a página.']);
+            }
+            if ($locked->status === 'running') {
+                return;
+            }
+            if ($locked->status !== 'paused') {
+                throw ValidationException::withMessages(['campaign' => 'Somente campanhas pausadas podem ser retomadas. Atualize o status e tente novamente.']);
+            }
             if (! config('campaign_mail.enabled') || ! config('campaign_mail.live_enabled')) {
                 throw ValidationException::withMessages(['campaign' => 'Envios reais estão desabilitados.']);
             }
-            // Condição atômica: não reabre campanha cancelada por outra sessão.
-            EmailCampaign::query()->whereKey($campaign->getKey())
-                ->where('status', 'paused')
-                ->update(['status' => 'running']);
-        }
+
+            $locked->update(['status' => 'running']);
+        });
     }
 
     public function cancel(User $user, EmailCampaign $campaign): void
@@ -240,8 +255,14 @@ final class CampaignManager
         DB::transaction(static function () use ($campaign): void {
             $locked = EmailCampaign::query()->whereKey($campaign->getKey())
                 ->lockForUpdate()->first();
-            if ($locked === null || ! in_array($locked->status, ['draft', 'running', 'paused'], true)) {
+            if ($locked === null) {
+                throw ValidationException::withMessages(['campaign' => 'A campanha não está mais disponível. Atualize a página.']);
+            }
+            if ($locked->status === 'canceled') {
                 return;
+            }
+            if (! in_array($locked->status, ['draft', 'running', 'paused'], true)) {
+                throw ValidationException::withMessages(['campaign' => 'Esta campanha não pode ser cancelada no estado atual. Atualize o status e tente novamente.']);
             }
 
             $locked->update(['status' => 'canceled']);

@@ -12,7 +12,10 @@ it('uses the simplified commercial hierarchy on the leads workspace', function (
         $view
     )
         ->toContain(
-            'partials.leads-action-center'
+            'partials.leads-summary-controls'
+        )
+        ->toContain(
+            'partials.leads-summary-toolbar'
         )
         ->toContain(
             'partials.leads-crm-stage-strip'
@@ -31,11 +34,11 @@ it('uses the simplified commercial hierarchy on the leads workspace', function (
         );
 });
 
-it('keeps the daily queue in the action center instead of duplicating it in filters', function () {
+it('keeps actionable lead shortcuts in the active summary without duplicating the old daily view', function () {
     $action =
         file_get_contents(
             resource_path(
-                'views/partials/leads-action-center.blade.php'
+                'views/partials/leads-summary-controls.blade.php'
             )
         );
 
@@ -50,10 +53,10 @@ it('keeps the daily queue in the action center instead of duplicating it in filt
         $action
     )
         ->toContain(
-            'Minha fila hoje'
+            'Minha fila'
         )
         ->toContain(
-            'Na operação'
+            'Atrasados / Vencem hoje'
         );
 
     expect(

@@ -40,7 +40,7 @@
              x-show="dashboardTab === 'base'"
              x-cloak>
 
-        @include('livewire.dashboard-overview.base-figma-v32', ['s' => $s, 'manager' => $manager, 'number' => $number])
+        @include('livewire.dashboard-overview.base-figma', ['s' => $s, 'manager' => $manager, 'number' => $number])
 
     </section>
 

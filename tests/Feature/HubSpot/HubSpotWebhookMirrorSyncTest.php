@@ -3,6 +3,7 @@
 use App\Jobs\ProcessHubSpotWebhookEvent;
 use App\Jobs\RefreshCompanyFromHubSpot;
 use App\Models\HubSpotCompany;
+use App\Models\HubSpotContact;
 use App\Models\HubSpotDeal;
 use App\Models\HubSpotWebhookEvent;
 use App\Services\HubSpotWebhookMirrorSyncService;
@@ -647,5 +648,474 @@ it(
         )->toBe(
             'PR'
         );
+    }
+);
+
+it(
+    'follows every page when syncing company associations',
+    function (): void {
+        config([
+            'services.hubspot.access_token' => 'test-token',
+
+            'services.hubspot.base_url' => 'https://api.hubapi.com',
+        ]);
+
+        $event =
+            HubSpotWebhookEvent::query()
+                ->create([
+                    'event_key' => 'mirror-company-association-pages',
+
+                    'subscription_type' => 'object.propertyChange',
+
+                    'object_type' => 'company',
+
+                    'object_type_id' => '0-2',
+
+                    'object_id' => 'company-101',
+
+                    'property_name' => 'name',
+
+                    'status' => 'received',
+
+                    'payload' => [
+                        'objectTypeId' => '0-2',
+
+                        'objectId' => 'company-101',
+
+                        'subscriptionType' => 'object.propertyChange',
+                    ],
+                ]);
+
+        $firstPage = [];
+
+        foreach (range(1, 100) as $id) {
+            $firstPage[] = [
+                'toObjectId' => 'contact-'.$id,
+            ];
+        }
+
+        Http::fake(
+            function (
+                Request $request
+            ) use (
+                $firstPage
+            ) {
+                $url =
+                    $request->url();
+
+                if (
+                    str_contains(
+                        $url,
+                        '/crm/v3/objects/companies/company-101'
+                    )
+                ) {
+                    return Http::response([
+                        'id' => 'company-101',
+
+                        'createdAt' => '2026-10-07T10:00:00Z',
+
+                        'updatedAt' => '2026-10-07T10:01:00Z',
+
+                        'properties' => [
+                            'name' => 'EMPRESA PAGINADA',
+
+                            'domain' => 'paginada.test',
+
+                            'lifecyclestage' => 'lead',
+
+                            'hs_lead_status' => null,
+
+                            'hubspot_owner_id' => null,
+
+                            'city' => null,
+
+                            'state' => null,
+
+                            'phone' => null,
+
+                            'notes_last_contacted' => null,
+
+                            'notes_last_updated' => null,
+
+                            'num_contacted_notes' => '0',
+
+                            'num_associated_deals' => '0',
+                        ],
+                    ]);
+                }
+
+                if (
+                    str_contains(
+                        $url,
+                        '/crm/v4/objects/companies/company-101/associations/contacts'
+                    )
+                ) {
+                    $query = [];
+
+                    parse_str(
+                        (string) parse_url(
+                            $url,
+                            PHP_URL_QUERY
+                        ),
+                        $query
+                    );
+
+                    if (
+                        ($query['after'] ?? null)
+                        === 'contacts-page-2'
+                    ) {
+                        return Http::response([
+                            'results' => [
+                                [
+                                    'toObjectId' => 'contact-101',
+                                ],
+                            ],
+                        ]);
+                    }
+
+                    return Http::response([
+                        'results' => $firstPage,
+
+                        'paging' => [
+                            'next' => [
+                                'after' => 'contacts-page-2',
+                            ],
+                        ],
+                    ]);
+                }
+
+                if (
+                    str_contains(
+                        $url,
+                        '/crm/v4/objects/companies/company-101/associations/'
+                    )
+                ) {
+                    return Http::response([
+                        'results' => [],
+                    ]);
+                }
+
+                return Http::response([], 404);
+            }
+        );
+
+        app(
+            HubSpotWebhookMirrorSyncService::class
+        )->syncEvent(
+            $event
+        );
+
+        $company =
+            HubSpotCompany::query()
+                ->where(
+                    'hubspot_id',
+                    'company-101'
+                )
+                ->firstOrFail();
+
+        expect(
+            $company
+                ->contacts()
+                ->count()
+        )->toBe(
+            101
+        );
+
+        Http::assertSent(
+            function (
+                Request $request
+            ): bool {
+                if (
+                    ! str_contains(
+                        $request->url(),
+                        '/crm/v4/objects/companies/company-101/associations/contacts'
+                    )
+                ) {
+                    return false;
+                }
+
+                $query = [];
+
+                parse_str(
+                    (string) parse_url(
+                        $request->url(),
+                        PHP_URL_QUERY
+                    ),
+                    $query
+                );
+
+                return ($query['after'] ?? null)
+                    === 'contacts-page-2';
+            }
+        );
+    }
+);
+
+it(
+    'does not clear local associations when HubSpot returns malformed association data',
+    function (): void {
+        config([
+            'services.hubspot.access_token' => 'test-token',
+
+            'services.hubspot.base_url' => 'https://api.hubapi.com',
+        ]);
+
+        $company =
+            HubSpotCompany::query()
+                ->create([
+                    'hubspot_id' => 'company-malformed-associations',
+
+                    'name' => 'EMPRESA COM VÍNCULO',
+                ]);
+
+        $contact =
+            HubSpotContact::query()
+                ->create([
+                    'hubspot_id' => 'contact-known',
+
+                    'first_name' => 'Contato',
+                ]);
+
+        $company
+            ->contacts()
+            ->attach(
+                $contact->id
+            );
+
+        $event =
+            HubSpotWebhookEvent::query()
+                ->create([
+                    'event_key' => 'mirror-company-malformed-associations',
+
+                    'subscription_type' => 'object.propertyChange',
+
+                    'object_type' => 'company',
+
+                    'object_type_id' => '0-2',
+
+                    'object_id' => 'company-malformed-associations',
+
+                    'property_name' => 'name',
+
+                    'status' => 'received',
+
+                    'payload' => [
+                        'objectTypeId' => '0-2',
+
+                        'objectId' => 'company-malformed-associations',
+
+                        'subscriptionType' => 'object.propertyChange',
+                    ],
+                ]);
+
+        Http::fake(
+            function (
+                Request $request
+            ) {
+                $url =
+                    $request->url();
+
+                if (
+                    str_contains(
+                        $url,
+                        '/crm/v3/objects/companies/company-malformed-associations'
+                    )
+                ) {
+                    return Http::response([
+                        'id' => 'company-malformed-associations',
+
+                        'createdAt' => '2026-10-07T10:00:00Z',
+
+                        'updatedAt' => '2026-10-07T10:01:00Z',
+
+                        'properties' => [
+                            'name' => 'EMPRESA COM VÍNCULO',
+
+                            'domain' => null,
+
+                            'lifecyclestage' => 'lead',
+
+                            'hs_lead_status' => null,
+
+                            'hubspot_owner_id' => null,
+
+                            'city' => null,
+
+                            'state' => null,
+
+                            'phone' => null,
+
+                            'notes_last_contacted' => null,
+
+                            'notes_last_updated' => null,
+
+                            'num_contacted_notes' => '0',
+
+                            'num_associated_deals' => '1',
+                        ],
+                    ]);
+                }
+
+                if (
+                    str_contains(
+                        $url,
+                        '/crm/v4/objects/companies/company-malformed-associations/associations/contacts'
+                    )
+                ) {
+                    return Http::response([
+                        'unexpected' => [],
+                    ]);
+                }
+
+                if (
+                    str_contains(
+                        $url,
+                        '/crm/v4/objects/companies/company-malformed-associations/associations/'
+                    )
+                ) {
+                    return Http::response([
+                        'results' => [],
+                    ]);
+                }
+
+                return Http::response([], 404);
+            }
+        );
+
+        expect(
+            fn () => app(
+                HubSpotWebhookMirrorSyncService::class
+            )->syncEvent(
+                $event
+            )
+        )->toThrow(
+            RuntimeException::class,
+            'Resposta inválida das associações HubSpot'
+        );
+
+        expect(
+            $company
+                ->contacts()
+                ->whereKey(
+                    $contact->id
+                )
+                ->exists()
+        )->toBeTrue();
+    }
+);
+
+it(
+    'fails a deal sync when pipeline metadata cannot be loaded',
+    function (): void {
+        config([
+            'services.hubspot.access_token' => 'test-token',
+
+            'services.hubspot.base_url' => 'https://api.hubapi.com',
+        ]);
+
+        $event =
+            HubSpotWebhookEvent::query()
+                ->create([
+                    'event_key' => 'mirror-deal-pipeline-api-failure',
+
+                    'subscription_type' => 'object.propertyChange',
+
+                    'object_type' => 'deal',
+
+                    'object_type_id' => '0-3',
+
+                    'object_id' => 'deal-pipeline-failure',
+
+                    'property_name' => 'dealstage',
+
+                    'status' => 'received',
+
+                    'payload' => [
+                        'objectTypeId' => '0-3',
+
+                        'objectId' => 'deal-pipeline-failure',
+
+                        'subscriptionType' => 'object.propertyChange',
+                    ],
+                ]);
+
+        Http::fake(
+            function (
+                Request $request
+            ) {
+                if (
+                    str_contains(
+                        $request->url(),
+                        '/crm/v3/objects/deals/deal-pipeline-failure'
+                    )
+                ) {
+                    return Http::response([
+                        'id' => 'deal-pipeline-failure',
+
+                        'createdAt' => '2026-10-07T10:00:00Z',
+
+                        'updatedAt' => '2026-10-07T10:01:00Z',
+
+                        'properties' => [
+                            'dealname' => 'Negócio com pipeline indisponível',
+
+                            'pipeline' => 'default',
+
+                            'dealstage' => 'qualified',
+
+                            'hubspot_owner_id' => null,
+
+                            'amount' => null,
+
+                            'deal_currency_code' => null,
+
+                            'hs_is_closed' => 'false',
+
+                            'hs_is_closed_won' => 'false',
+
+                            'closedate' => null,
+
+                            'notes_last_contacted' => null,
+
+                            'notes_last_updated' => null,
+                        ],
+                    ]);
+                }
+
+                if (
+                    str_contains(
+                        $request->url(),
+                        '/crm/v3/pipelines/deals'
+                    )
+                ) {
+                    return Http::response(
+                        ['message' => 'temporarily unavailable'],
+                        503
+                    );
+                }
+
+                return Http::response([], 404);
+            }
+        );
+
+        expect(
+            fn () => app(
+                HubSpotWebhookMirrorSyncService::class
+            )->syncEvent(
+                $event
+            )
+        )->toThrow(
+            RuntimeException::class,
+            'Falha ao sincronizar mirror HubSpot. HTTP 503.'
+        );
+
+        expect(
+            HubSpotDeal::query()
+                ->where(
+                    'hubspot_id',
+                    'deal-pipeline-failure'
+                )
+                ->exists()
+        )->toBeFalse();
     }
 );

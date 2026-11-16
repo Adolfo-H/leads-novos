@@ -108,8 +108,23 @@ final class ContactPeopleDirectory
             ->whereIn('source_key', $keys)
             ->get()
             ->groupBy('source_key');
+        $technicalPairs = DB::table('whatsapp_phone_sources as s')
+            ->join('whatsapp_phone_numbers as n', 'n.id', '=', 's.phone_id')
+            ->join('contact_phone_verifications as cv', static function (JoinClause $join): void {
+                $join->on('cv.source_key', '=', 's.source_key')
+                    ->on('cv.phone_normalized', '=', 's.raw_digits');
+            })
+            ->join('whatsapp_web_probe_events as e', 'e.phone_id', '=', 'n.id')
+            ->whereIn('s.source_key', $keys)
+            ->where('n.evidence', 'web_found_unofficial')
+            ->where('e.result', 'found')
+            ->whereColumn('e.checked_at', 'cv.verified_at')
+            ->whereNull('cv.verified_by')
+            ->get(['cv.source_key', 'cv.phone_normalized'])
+            ->mapWithKeys(static fn (object $row): array => [$row->source_key.'|'.$row->phone_normalized => true])
+            ->all();
 
-        $result->through(static function (stdClass $row) use ($checks): stdClass {
+        $result->through(static function (stdClass $row) use ($checks, $technicalPairs): stdClass {
             $byField = [];
             foreach (['phone', 'mobile_phone'] as $field) {
                 $digits = ContactDirectory::digits((string) ($row->{$field} ?? ''));
@@ -119,6 +134,10 @@ final class ContactPeopleDirectory
                 $entry = $checks->get((string) $row->source_key)
                     ?->first(static fn (ContactPhoneVerification $v): bool => $v->phone_normalized === $digits);
                 $found = $entry?->whatsapp_status;
+                if ($entry !== null && $entry->verified_by === null
+                    && isset($technicalPairs[$row->source_key.'|'.$digits])) {
+                    $found = 'unknown';
+                }
                 $byField[$field] = $found === 'yes' || $found === 'no' ? $found : 'unknown';
             }
             $statuses = array_values($byField);
@@ -470,11 +489,33 @@ final class ContactPeopleDirectory
             ->fromSub($hubspotPhones->unionAll($manualPhones)->unionAll($receitaPhones), 'p')
             ->leftJoin('contact_phone_verifications as cv_phone', static function (JoinClause $join) use ($normalPhone): void {
                 $join->on('cv_phone.source_key', '=', 'p.source_key')
-                    ->whereRaw('cv_phone.phone_normalized = '.$normalPhone);
+                    ->whereRaw('cv_phone.phone_normalized = '.$normalPhone)
+                    ->whereNotExists(static function (Builder $technical): void {
+                        $technical->selectRaw('1')->from('whatsapp_phone_sources as s')
+                            ->join('whatsapp_phone_numbers as n', 'n.id', '=', 's.phone_id')
+                            ->join('whatsapp_web_probe_events as e', 'e.phone_id', '=', 'n.id')
+                            ->whereColumn('s.source_key', 'p.source_key')
+                            ->whereColumn('s.raw_digits', 'cv_phone.phone_normalized')
+                            ->where('n.evidence', 'web_found_unofficial')
+                            ->where('e.result', 'found')
+                            ->whereColumn('e.checked_at', 'cv_phone.verified_at')
+                            ->whereNull('cv_phone.verified_by');
+                    });
             })
             ->leftJoin('contact_phone_verifications as cv_mobile', static function (JoinClause $join) use ($normalMobile): void {
                 $join->on('cv_mobile.source_key', '=', 'p.source_key')
-                    ->whereRaw('cv_mobile.phone_normalized = '.$normalMobile);
+                    ->whereRaw('cv_mobile.phone_normalized = '.$normalMobile)
+                    ->whereNotExists(static function (Builder $technical): void {
+                        $technical->selectRaw('1')->from('whatsapp_phone_sources as s')
+                            ->join('whatsapp_phone_numbers as n', 'n.id', '=', 's.phone_id')
+                            ->join('whatsapp_web_probe_events as e', 'e.phone_id', '=', 'n.id')
+                            ->whereColumn('s.source_key', 'p.source_key')
+                            ->whereColumn('s.raw_digits', 'cv_mobile.phone_normalized')
+                            ->where('n.evidence', 'web_found_unofficial')
+                            ->where('e.result', 'found')
+                            ->whereColumn('e.checked_at', 'cv_mobile.verified_at')
+                            ->whereNull('cv_mobile.verified_by');
+                    });
             });
 
         // COALESCE respeita a lógica EXISTS anterior, mesmo com NULLs.
@@ -865,7 +906,16 @@ final class ContactPeopleDirectory
         return 'EXISTS (SELECT 1 FROM contact_phone_verifications cv '
             .'WHERE cv.source_key = p.source_key '
             .'AND cv.phone_normalized = '.$digitsSql
-            ." AND cv.whatsapp_status = '".$status."')";
+            ." AND cv.whatsapp_status = '".$status."' "
+            .'AND NOT EXISTS (SELECT 1 FROM whatsapp_phone_sources tech_source '
+            .'JOIN whatsapp_phone_numbers tech_phone ON tech_phone.id = tech_source.phone_id '
+            .'JOIN whatsapp_web_probe_events tech_event ON tech_event.phone_id = tech_phone.id '
+            .'WHERE tech_source.source_key = cv.source_key '
+            .'AND tech_source.raw_digits = cv.phone_normalized '
+            ."AND tech_phone.evidence = 'web_found_unofficial' "
+            ."AND tech_event.result = 'found' "
+            .'AND tech_event.checked_at = cv.verified_at '
+            .'AND cv.verified_by IS NULL))';
     }
 
     /**

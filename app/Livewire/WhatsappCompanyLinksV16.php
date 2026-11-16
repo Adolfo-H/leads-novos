@@ -3,7 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\User;
-use App\Services\Contacts\WhatsappCompanyChannelLinkV16;
+use App\Services\Contacts\WhatsappCompanyChannelLink;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -108,7 +108,7 @@ final class WhatsappCompanyLinksV16 extends Component
     {
         /** @var User $actor */
         $actor = auth()->user();
-        $amount = app(WhatsappCompanyChannelLinkV16::class)
+        $amount = app(WhatsappCompanyChannelLink::class)
             ->assignMany($actor, $this->selectedChannels, $this->selectedCompany);
         $this->clearSelection();
         $this->numberSearch = '';
@@ -176,6 +176,6 @@ final class WhatsappCompanyLinksV16 extends Component
             $matches = $local->concat($hubspot)->take(15)->values();
         }
 
-        return view('livewire.whatsapp-company-links-v16', compact('channels', 'groups', 'selectedCount', 'matches'));
+        return view('livewire.whatsapp-company-links', compact('channels', 'groups', 'selectedCount', 'matches'));
     }
 }

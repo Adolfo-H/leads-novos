@@ -11,7 +11,17 @@ use App\Services\ImportQueueService;
 use App\Support\Cnpj;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
+
+beforeEach(function (): void {
+    config([
+        'services.hubspot.access_token' => 'test-only-token',
+        'prospector.export_research.enabled' => false,
+    ]);
+
+    Http::preventStrayRequests();
+});
 
 it('queues ready import items', function () {
     Queue::fake();

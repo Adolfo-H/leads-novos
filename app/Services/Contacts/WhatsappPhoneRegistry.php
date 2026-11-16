@@ -233,6 +233,7 @@ SQL);
             })
             ->join('whatsapp_phone_numbers as n', 'n.id', '=', 's.phone_id')
             ->where('n.status', 'unknown')
+            ->whereNotNull('v.verified_by')
             ->whereIn('v.whatsapp_status', ['yes', 'no'])
             ->select('s.phone_id', 'v.whatsapp_status', 'v.verified_by', 'v.verified_at')
             ->get()->groupBy('phone_id');
@@ -262,6 +263,19 @@ SQL);
         DB::table('whatsapp_phone_sources as s')
             ->join('whatsapp_phone_numbers as n', 'n.id', '=', 's.phone_id')
             ->whereIn('n.status', ['yes', 'no'])
+            ->where(static function ($query): void {
+                $query->where(static function ($manual): void {
+                    $manual->where(static function ($yes): void {
+                        $yes->where('n.status', 'yes')
+                            ->whereIn('n.evidence', ['manual_app_confirmed', 'directory_manual_check']);
+                    })->orWhere(static function ($no): void {
+                        $no->where('n.status', 'no')
+                            ->whereIn('n.evidence', ['manual_app_unavailable', 'directory_manual_check']);
+                    });
+                })->orWhere(static function ($legacy): void {
+                    $legacy->where('n.evidence', 'legacy_manual')->whereNotNull('n.verified_by');
+                });
+            })
             ->select('s.id', 's.source_key', 's.raw_digits', 'n.status', 'n.verified_by', 'n.verified_at')
             ->chunkById(350, static function ($references): void {
                 $now = now('UTC');
@@ -295,9 +309,9 @@ SQL);
             ->selectRaw("SUM(CASE WHEN kind = 'mobile' THEN 1 ELSE 0 END) AS mobile")
             ->selectRaw("SUM(CASE WHEN kind = 'landline' THEN 1 ELSE 0 END) AS landline")
             ->selectRaw("SUM(CASE WHEN kind = 'review' THEN 1 ELSE 0 END) AS review")
-            ->selectRaw("SUM(CASE WHEN status = 'yes' THEN 1 ELSE 0 END) AS yes")
-            ->selectRaw("SUM(CASE WHEN status = 'no' THEN 1 ELSE 0 END) AS no")
-            ->selectRaw("SUM(CASE WHEN status = 'unknown' AND kind <> 'review' THEN 1 ELSE 0 END) AS pending")
+            ->selectRaw("SUM(CASE WHEN status = 'yes' AND (evidence IN ('manual_app_confirmed', 'directory_manual_check', 'web_found_unofficial') OR (evidence = 'legacy_manual' AND verified_by IS NOT NULL)) THEN 1 ELSE 0 END) AS yes")
+            ->selectRaw("SUM(CASE WHEN status = 'no' AND (evidence IN ('manual_app_unavailable', 'directory_manual_check') OR (evidence = 'legacy_manual' AND verified_by IS NOT NULL)) THEN 1 ELSE 0 END) AS no")
+            ->selectRaw("SUM(CASE WHEN kind <> 'review' AND (status = 'unknown' OR evidence = 'web_found_unofficial') THEN 1 ELSE 0 END) AS pending")
             ->first();
 
         return [
@@ -326,8 +340,26 @@ SQL);
                     ->whereIn('rv.decision', ['invalid', 'corrected']);
             });
         }
-        if (in_array($status, ['yes', 'no', 'unknown'], true)) {
-            $query->where('n.status', $status);
+        if (in_array($status, ['yes', 'no'], true)) {
+            $query->where('n.status', $status)
+                ->where(static function ($evidence): void {
+                    $evidence->where(static function ($manual): void {
+                        $manual->where(static function ($yes): void {
+                            $yes->where('n.status', 'yes')
+                                ->whereIn('n.evidence', ['manual_app_confirmed', 'directory_manual_check', 'web_found_unofficial']);
+                        })->orWhere(static function ($no): void {
+                            $no->where('n.status', 'no')
+                                ->whereIn('n.evidence', ['manual_app_unavailable', 'directory_manual_check']);
+                        });
+                    })->orWhere(static function ($legacy): void {
+                        $legacy->where('n.evidence', 'legacy_manual')->whereNotNull('n.verified_by');
+                    });
+                });
+        } elseif ($status === 'unknown') {
+            $query->where(static function ($pending): void {
+                $pending->where('n.status', 'unknown')
+                    ->orWhere('n.evidence', 'web_found_unofficial');
+            });
         }
         if (in_array($origin, ['hubspot', 'manual', 'receita'], true)) {
             $query->whereExists(static function ($q) use ($origin): void {

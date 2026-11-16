@@ -361,4 +361,4 @@ new class extends Component
 ?>
 
 {{-- Layout visual Figma figma-index-v63; backend Volt preservado. --}}
-@include('pages.prospecting.partials.figma-index-v63')
+@include('pages.prospecting.partials.figma-index')

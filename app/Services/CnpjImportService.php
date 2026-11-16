@@ -58,122 +58,169 @@ final class CnpjImportService
             $duplicates = 0;
             $existing = 0;
 
+            // Bound IN lists below SQLite's parameter limit and avoid one lookup per row.
             foreach (
-                array_values($values) as $index => $rawValue
+                array_chunk(
+                    array_values($values),
+                    500,
+                    true
+                ) as $chunk
             ) {
-                $raw = trim(
-                    (string) $rawValue
-                );
+                $cnpjsToLookup = [];
 
-                if ($raw === '') {
-                    continue;
-                }
-
-                $normalized = Cnpj::normalize(
-                    $raw
-                );
-
-                $isValid =
-                    Cnpj::isValid(
-                        $normalized
+                foreach ($chunk as $rawValue) {
+                    $raw = trim(
+                        (string) $rawValue
                     );
 
-                $cnpjRoot =
-                    $isValid
-                        ? Cnpj::root(
-                            $normalized
-                        )
-                        : null;
-
-                $status = 'pending';
-                $error = null;
-                $companyId = null;
-
-                if (! $isValid) {
-                    $status = 'invalid';
-                    $error = 'CNPJ inválido.';
-                    $invalid++;
-                } elseif (isset($seen[$normalized])) {
-                    $status = 'duplicate';
-                    $duplicates++;
-                } else {
-                    $seen[$normalized] = true;
-
-                    $establishment =
-                        Establishment::query()
-                            ->where(
-                                'cnpj',
-                                $normalized
-                            )
-                            ->first();
-
-                    if ($establishment) {
-                        $status = 'existing';
-
-                        $companyId =
-                            $establishment->company_id;
-
-                        $existing++;
-                    } else {
-                        $status = 'ready';
-                        $valid++;
+                    if ($raw === '') {
+                        continue;
                     }
-                }
 
-                /*
-                 * raw_cnpj possui limite de 50 caracteres.
-                 *
-                 * Uma linha inválida e muito longa não
-                 * pode derrubar a transação inteira.
-                 */
-                $rawLength =
-                    mb_strlen(
+                    $normalized = Cnpj::normalize(
                         $raw
                     );
 
-                $rawForStorage =
-                    mb_substr(
-                        $raw,
-                        0,
-                        50
+                    if (Cnpj::isValid($normalized)) {
+                        $cnpjsToLookup[] = $normalized;
+                    }
+                }
+
+                $existingByCnpj = [];
+
+                if ($cnpjsToLookup !== []) {
+                    $establishments =
+                        Establishment::query()
+                            ->whereIn(
+                                'cnpj',
+                                array_values(
+                                    array_unique(
+                                        $cnpjsToLookup
+                                    )
+                                )
+                            )
+                            ->get([
+                                'cnpj',
+                                'company_id',
+                            ]);
+
+                    foreach ($establishments as $establishment) {
+                        $existingByCnpj[
+                            (string) $establishment->cnpj
+                        ] = $establishment->company_id;
+                    }
+                }
+
+                foreach ($chunk as $index => $rawValue) {
+                    $raw = trim(
+                        (string) $rawValue
                     );
 
-                $metadata =
-                    $rawLength > 50
-                        ? [
-                            'input' => [
-                                'raw_truncated' => true,
+                    if ($raw === '') {
+                        continue;
+                    }
 
-                                'raw_length' => $rawLength,
-                            ],
-                        ]
-                        : null;
+                    $normalized = Cnpj::normalize(
+                        $raw
+                    );
 
-                $batch->items()->create([
-                    'row_number' => $index + 1,
+                    $isValid =
+                        Cnpj::isValid(
+                            $normalized
+                        );
 
-                    'raw_cnpj' => $rawForStorage,
+                    $cnpjRoot =
+                        $isValid
+                            ? Cnpj::root(
+                                $normalized
+                            )
+                            : null;
+
+                    $status = 'pending';
+                    $error = null;
+                    $companyId = null;
+
+                    if (! $isValid) {
+                        $status = 'invalid';
+                        $error = 'CNPJ inválido.';
+                        $invalid++;
+                    } elseif (isset($seen[$normalized])) {
+                        $status = 'duplicate';
+                        $duplicates++;
+                    } else {
+                        $seen[$normalized] = true;
+
+                        if (
+                            array_key_exists(
+                                $normalized,
+                                $existingByCnpj
+                            )
+                        ) {
+                            $status = 'existing';
+                            $companyId =
+                                $existingByCnpj[$normalized];
+                            $existing++;
+                        } else {
+                            $status = 'ready';
+                            $valid++;
+                        }
+                    }
 
                     /*
-                     * normalized_cnpj possui 14 caracteres.
+                     * raw_cnpj possui limite de 50 caracteres.
                      *
-                     * Só gravamos quando o valor
-                     * efetivamente for um CNPJ válido.
+                     * Uma linha inválida e muito longa não
+                     * pode derrubar a transação inteira.
                      */
-                    'normalized_cnpj' => $isValid
-                            ? $normalized
-                            : null,
+                    $rawLength =
+                        mb_strlen(
+                            $raw
+                        );
 
-                    'cnpj_root' => $cnpjRoot,
+                    $rawForStorage =
+                        mb_substr(
+                            $raw,
+                            0,
+                            50
+                        );
 
-                    'status' => $status,
+                    $metadata =
+                        $rawLength > 50
+                            ? [
+                                'input' => [
+                                    'raw_truncated' => true,
 
-                    'company_id' => $companyId,
+                                    'raw_length' => $rawLength,
+                                ],
+                            ]
+                            : null;
 
-                    'error_message' => $error,
+                    $batch->items()->create([
+                        'row_number' => $index + 1,
 
-                    'metadata' => $metadata,
-                ]);
+                        'raw_cnpj' => $rawForStorage,
+
+                        /*
+                         * normalized_cnpj possui 14 caracteres.
+                         *
+                         * Só gravamos quando o valor
+                         * efetivamente for um CNPJ válido.
+                         */
+                        'normalized_cnpj' => $isValid
+                                ? $normalized
+                                : null,
+
+                        'cnpj_root' => $cnpjRoot,
+
+                        'status' => $status,
+
+                        'company_id' => $companyId,
+
+                        'error_message' => $error,
+
+                        'metadata' => $metadata,
+                    ]);
+                }
             }
 
             $batch->update([

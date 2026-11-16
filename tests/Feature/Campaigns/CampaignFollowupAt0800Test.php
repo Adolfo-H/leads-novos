@@ -3,8 +3,8 @@
 use App\Models\EmailCampaign;
 use App\Models\User;
 use App\Services\Campaigns\CampaignFollowupScheduleClock;
-use App\Services\Campaigns\CampaignFollowupScheduleViewV4;
-use App\Services\Campaigns\CampaignFollowupSettingsV5;
+use App\Services\Campaigns\CampaignFollowupSettings;
+use App\Services\Campaigns\CampaignFollowupTimeline;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -61,7 +61,7 @@ it('honors an explicitly selected first follow-up date', function (): void {
 
 it('stores the manager-approved local time without starting SMTP or creating another campaign', function (): void {
     [$user, $root] = makeClockFixture();
-    $planId = app(CampaignFollowupSettingsV5::class)->save($user, (int) $root->id, [
+    $planId = app(CampaignFollowupSettings::class)->save($user, (int) $root->id, [
         'name' => 'Retomada comercial',
         'delay_days' => 3,
         'send_time_local' => '08:00',
@@ -97,7 +97,7 @@ it('removes recipients who replied in another campaign from the next-round previ
         'replied_at' => '2026-11-03 12:00:00',
     ]);
 
-    app(CampaignFollowupSettingsV5::class)->save($user, (int) $root->id, [
+    app(CampaignFollowupSettings::class)->save($user, (int) $root->id, [
         'name' => 'Retomada comercial',
         'delay_days' => 3,
         'send_time_local' => '08:00',
@@ -106,7 +106,7 @@ it('removes recipients who replied in another campaign from the next-round previ
         'body' => 'Bom dia, gostaria de retomar nossa conversa sobre o controle fiscal.',
     ]);
 
-    $view = app(CampaignFollowupScheduleViewV4::class)->forCampaign($root);
+    $view = app(CampaignFollowupTimeline::class)->forCampaign($root);
     expect($view)->not->toBeNull()
         ->and($view['eligible_count'])->toBe(0)
         ->and($view['due_datetime'])->toBe('06/11/2026 08:00');

@@ -2,7 +2,7 @@
 
 use App\Models\EmailCampaign;
 use App\Models\User;
-use App\Services\Campaigns\CampaignFollowupScheduleViewV4;
+use App\Services\Campaigns\CampaignFollowupTimeline;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 
@@ -69,7 +69,7 @@ it('shows real SMTP acceptance for a follow-up round even before the campaign st
         'updated_at' => now('UTC'),
     ]);
 
-    $service = app(CampaignFollowupScheduleViewV4::class);
+    $service = app(CampaignFollowupTimeline::class);
     $snapshot = $service->forCampaign($root);
     $home = $service->home();
 
@@ -89,7 +89,7 @@ it('shows real SMTP acceptance for a follow-up round even before the campaign st
 });
 
 it('contains a visible SMTP result and navigation to the actual round in both campaign views', function (): void {
-    $home = file_get_contents(resource_path('views/campaigns/followup-schedule-home-v4.blade.php'));
+    $home = file_get_contents(resource_path('views/campaigns/followup-timeline-home.blade.php'));
     $detail = file_get_contents(resource_path('views/livewire/campaign-followup-editor.blade.php'));
 
     expect($home)->toContain('ecv6-home-result')

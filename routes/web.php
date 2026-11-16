@@ -3,11 +3,17 @@
 use App\Http\Controllers\Access\AccessAdminController;
 use App\Http\Controllers\Access\AccessInvitationController;
 use App\Http\Controllers\Access\AccessRequestController;
+use App\Http\Controllers\CampaignContactsSelectionController;
+use App\Http\Controllers\CampaignContactsTransferController;
 use App\Http\Controllers\CampaignIntelligenceController;
+use App\Http\Controllers\CampaignOperationsController;
 use App\Http\Controllers\CampaignProductionReadinessController;
-use App\Http\Controllers\CampaignProspectingControllerV80;
+use App\Http\Controllers\CampaignProspectingController;
 use App\Http\Controllers\CampaignUnsubscribeController;
+use App\Http\Controllers\CampaignWizardController;
 use App\Http\Controllers\HubSpotWebhookController;
+use App\Http\Controllers\WhatsappVerificationController;
+use App\Http\Middleware\RedirectLegacyCampaignWizard;
 use Illuminate\Support\Facades\Route;
 
 Route::post(
@@ -41,6 +47,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function () {
     Route::livewire('/contatos', 'pages::contacts.index')
         ->name('contacts.index');
+    // EC_CONTACT_CAMPAIGN_EXACT_ROUTE_V91: seleção HTTP nativa, sem disparar SMTP.
+    Route::post('/contatos/criar-campanha', CampaignContactsSelectionController::class)
+        ->middleware(['commercial.manager', 'throttle:15,1'])->name('campaigns.from-contacts');
     /* CONTACTS_RECEITA_V4_ROUTE */
     Route::livewire('/contatos/receita', 'pages::contacts.receita')->name('contacts.receita');
     /* EC_WHATSAPP_REGISTRY_V1_ROUTE */
@@ -52,22 +61,23 @@ Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function 
 /* EC_EMAIL_CAMPAIGNS_V1_ROUTES */
 // Os dados comerciais e o envio são exclusivos de gestores autorizados.
 Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function () {
-    Route::livewire('/campanhas', 'pages::campaigns.index')->name('campaigns.index');
+    Route::livewire('/campanhas', 'pages::campaigns.index')
+        ->middleware(RedirectLegacyCampaignWizard::class)->name('campaigns.index');
     // CAMPANHAS_V6 — paginas independentes, todas restritas aos gestores.
     Route::livewire('/campanhas/respostas', 'pages::campaigns.replies')->name('campaigns.replies');
     Route::livewire('/campanhas/fila', 'pages::campaigns.queue')->name('campaigns.queue');
     Route::livewire('/campanhas/configuracoes', 'pages::campaigns.settings')->name('campaigns.settings');
     /* EC_CAMPAIGN_PROSPECTING_V80_BEGIN */
-    Route::get('/campanhas/prospeccao-inteligente', [CampaignProspectingControllerV80::class, 'index'])
+    Route::get('/campanhas/prospeccao-inteligente', [CampaignProspectingController::class, 'index'])
         ->middleware('commercial.manager')->name('campaigns.prospecting.index');
-    Route::post('/campanhas/prospeccao-inteligente/rascunho', [CampaignProspectingControllerV80::class, 'draft'])
+    Route::post('/campanhas/prospeccao-inteligente/rascunho', [CampaignProspectingController::class, 'draft'])
         ->middleware(['commercial.manager', 'throttle:5,1'])->name('campaigns.prospecting.draft');
-    Route::get('/campanhas/prospeccao-inteligente/exportar', [CampaignProspectingControllerV80::class, 'export'])
+    Route::get('/campanhas/prospeccao-inteligente/exportar', [CampaignProspectingController::class, 'export'])
         ->middleware(['commercial.manager', 'throttle:5,1'])->name('campaigns.prospecting.export');
     // EC_PROSPECTING_EXCLUDE_V83: mudanças somente na seleção individual.
-    Route::post('/campanhas/prospeccao-inteligente/excluir', [CampaignProspectingControllerV80::class, 'exclude'])
+    Route::post('/campanhas/prospeccao-inteligente/excluir', [CampaignProspectingController::class, 'exclude'])
         ->middleware(['commercial.manager', 'throttle:30,1'])->name('campaigns.prospecting.exclude');
-    Route::post('/campanhas/prospeccao-inteligente/restaurar', [CampaignProspectingControllerV80::class, 'restore'])
+    Route::post('/campanhas/prospeccao-inteligente/restaurar', [CampaignProspectingController::class, 'restore'])
         ->middleware(['commercial.manager', 'throttle:30,1'])->name('campaigns.prospecting.restore');
     /* EC_CAMPAIGN_PROSPECTING_V80_END */
     // EC_CAMPAIGNS_UX_V22: tela exclusivamente de leitura para gestores.
@@ -218,3 +228,35 @@ Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function 
         ->whereNumber('sequence')->name('campaigns.intelligence.sequence.pause');
     Route::post('/campanhas/inteligencia/responder', [CampaignIntelligenceController::class, 'sendReply'])->name('campaigns.intelligence.reply');
 });
+
+/* EC92: selecao HTTP nativa de Contatos; sem despacho de mensagens. */
+Route::middleware(['auth', 'verified', 'commercial.workspace', 'commercial.manager'])
+    ->post('/campanhas/contatos-selecionados-v92',
+        [CampaignContactsTransferController::class, 'store'])
+    ->name('campaigns.contacts-transfer-v92');
+
+/* EC_CAMPAIGNS_V93: nova criação HTTP independente de Livewire, sem SMTP automático. */
+Route::middleware(['auth', 'verified', 'commercial.workspace', 'commercial.manager'])->group(function (): void {
+    Route::get('/campanhas/novo-v93', [CampaignWizardController::class, 'index'])->name('campaigns.wizard-v93');
+    Route::post('/campanhas/novo-v93/selecionar', [CampaignWizardController::class, 'selection'])->name('campaigns.wizard-v93.selection');
+    Route::post('/campanhas/novo-v93/adicionar-filtrados', [CampaignWizardController::class, 'addFiltered'])->name('campaigns.wizard-v93.filtered');
+    Route::post('/campanhas/novo-v93/remover', [CampaignWizardController::class, 'remove'])->name('campaigns.wizard-v93.remove');
+    Route::post('/campanhas/novo-v93/mensagem', [CampaignWizardController::class, 'message'])->name('campaigns.wizard-v93.message');
+    Route::post('/campanhas/novo-v93/ritmo', [CampaignWizardController::class, 'pace'])->name('campaigns.wizard-v93.pace');
+    Route::post('/campanhas/novo-v93/salvar-rascunho', [CampaignWizardController::class, 'save'])->name('campaigns.wizard-v93.save');
+});
+
+/* EC94: ações HTTP autenticadas, reaproveitando o motor original de envios. */
+Route::middleware(['auth', 'verified', 'commercial.workspace', 'commercial.manager'])->group(function (): void {
+    Route::post('/campanhas/{campaign}/iniciar-v94', [CampaignOperationsController::class, 'start'])->whereNumber('campaign')->name('campaigns.ops-v94.start');
+    Route::post('/campanhas/{campaign}/cancelar-v94', [CampaignOperationsController::class, 'cancel'])->whereNumber('campaign')->name('campaigns.ops-v94.cancel');
+    Route::post('/campanhas/{campaign}/pausar-v94', [CampaignOperationsController::class, 'pause'])->whereNumber('campaign')->name('campaigns.ops-v94.pause');
+    Route::post('/campanhas/{campaign}/retomar-v94', [CampaignOperationsController::class, 'resume'])->whereNumber('campaign')->name('campaigns.ops-v94.resume');
+});
+
+/* EC941: confirmacao manual WhatsApp via POST, mantendo o registro original/auditoria. */
+Route::middleware(['auth', 'verified', 'commercial.manager', 'throttle:30,1'])
+    ->post('/contatos/verificacao-whatsapp/{phone}/registrar-v941',
+        [WhatsappVerificationController::class, 'store'])
+    ->whereNumber('phone')
+    ->name('contacts.whatsapp.verify-v941');

@@ -8,6 +8,6 @@ final class DashboardStageDrilldownService
     /** @return list<int> */
     public function companyIdsForStage(int $userId, string $selectedStage): array
     {
-        return app(DashboardOwnedDealsV23Service::class)->companyIdsForStage($userId, $selectedStage);
+        return app(DashboardOwnedDealsService::class)->companyIdsForStage($userId, $selectedStage);
     }
 }
