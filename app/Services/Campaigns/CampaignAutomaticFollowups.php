@@ -28,6 +28,14 @@ final class CampaignAutomaticFollowups
         $ids = DB::table('email_campaign_sequences')
             ->where('automatic', true)
             ->where('status', 'active')
+            // Um plano criado durante o rascunho não consome vagas do agendador.
+            ->whereExists(static function ($query): void {
+                $query->selectRaw('1')
+                    ->from('email_campaigns as initial')
+                    ->whereColumn('initial.id', 'email_campaign_sequences.email_campaign_id')
+                    ->where('initial.status', 'completed')
+                    ->whereNotNull('initial.completed_at');
+            })
             ->orderBy('id')
             ->limit(15)
             ->pluck('id');
@@ -108,6 +116,12 @@ final class CampaignAutomaticFollowups
                 DB::table('email_campaign_sequences')->where('id', $sequenceId)
                     ->update(['status' => 'paused', 'updated_at' => now('UTC')]);
 
+                return false;
+            }
+            // Segurança contra corrida: a campanha inicial E a rodada anterior
+            // precisam estar concluídas antes de criar qualquer novo envio.
+            if ($root->status !== 'completed' || $root->completed_at === null
+                || $previous->status !== 'completed' || $previous->completed_at === null) {
                 return false;
             }
             // O plano legado mantém N x 24h; um horário configurado usa DIAS DE

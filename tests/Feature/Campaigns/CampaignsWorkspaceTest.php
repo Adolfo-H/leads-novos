@@ -63,7 +63,7 @@ it('opens the newest existing campaign as soon as manager enters the module', fu
         ->assertSee('Campanha mais recente')
         // EC_SIMPLE_CAMPAIGNS_WORKSPACE_TEST: detalhes só após escolha explícita.
         ->call('openCampaign', $latest->id)
-        ->assertSee('Ações rápidas')
+        ->assertSee('E-mail de teste')
         ->assertSee('Na fila')
         ->call('openCampaign', $old->id)
         ->assertSet('selectedCampaignId', $old->id);
@@ -151,7 +151,7 @@ it('keeps the genuine API safety lock when live campaigns are disabled', functio
         ->assertSet('screen', 'overview')
         ->call('openCampaign', $campaign->id)
         ->assertSet('screen', 'detail')
-        ->assertSee('Envio real bloqueado')
+        ->assertSee('Modo seguro · disparos bloqueados')
         ->assertDontSee('Envios reais habilitados');
 
     expect($campaign->fresh()->status)->toBe('draft');

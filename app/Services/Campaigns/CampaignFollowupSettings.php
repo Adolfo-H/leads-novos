@@ -44,10 +44,13 @@ final class CampaignFollowupSettings
                 throw ValidationException::withMessages(['flow' => 'Trava global de envio não encontrada.']);
             }
             $root = EmailCampaign::query()->whereKey($campaignId)->lockForUpdate()->firstOrFail();
-            if ($root->followup_root_campaign_id !== null || $root->status !== 'completed') {
-                throw ValidationException::withMessages(['flow' => 'A continuidade exige uma campanha inicial concluída.']);
+            if ($root->followup_root_campaign_id !== null || ! in_array($root->status, ['draft', 'completed'], true)) {
+                throw ValidationException::withMessages(['flow' => 'Planeje no rascunho inicial ou após a conclusão. Uma campanha em andamento não pode ter a automação alterada.']);
             }
-            if (! $root->recipients()->where('status', 'sent')->exists()) {
+            if ($root->status === 'draft' && ! $root->recipients()->where('status', 'pending')->exists()) {
+                throw ValidationException::withMessages(['flow' => 'Salve primeiro o rascunho com destinatários válidos antes de programar próximos e-mails.']);
+            }
+            if ($root->status === 'completed' && ! $root->recipients()->where('status', 'sent')->exists()) {
                 throw ValidationException::withMessages(['flow' => 'A campanha não possui mensagens aceitas pelo SMTP.']);
             }
 

@@ -137,7 +137,10 @@ class CampaignFollowupEditor extends Component
                 'body' => $this->body,
             ]);
             $this->saved = true;
-            $this->feedback = 'Programação salva. No horário configurado o agendador poderá iniciar a rodada, se SMTP, IMAP, janela e trabalhadores estiverem operacionais.';
+            $root = EmailCampaign::query()->findOrFail($this->campaignId);
+            $this->feedback = $root->status === 'draft'
+                ? 'Próximos e-mails programados. Nada será enviado enquanto a primeira campanha estiver em rascunho; o prazo começa após a conclusão dela.'
+                : 'Programação salva. A próxima rodada dependerá do prazo configurado, dos destinatários elegíveis, do SMTP, do IMAP e dos trabalhadores operacionais.';
         } catch (ValidationException $e) {
             $this->setErrorBag($e->errors());
             $this->feedback = 'Confira os campos indicados. A programação anterior foi preservada.';

@@ -200,8 +200,12 @@ final class CampaignFollowupTimeline
             $stateReason = 'A campanha original ou a rodada anterior não está disponível para continuar.';
         } elseif (! $previousCompleted) {
             $state = 'waiting';
-            $stateLabel = 'Aguardando rodada anterior';
-            $stateReason = 'A contagem de dias começa após a conclusão e a última aceitação SMTP da rodada anterior.';
+            $stateLabel = $root->status === 'draft'
+                ? 'Planejado antes do primeiro envio'
+                : 'Aguardando rodada anterior';
+            $stateReason = $root->status === 'draft'
+                ? 'A sequência está salva, mas nenhum e-mail adicional sairá enquanto a campanha inicial não tiver sido enviada e concluída.'
+                : 'A contagem de dias começa após a conclusão e a última aceitação SMTP da rodada anterior.';
         } elseif ($eligible === 0) {
             $state = 'no_recipients';
             $stateLabel = 'Sem contatos elegíveis';

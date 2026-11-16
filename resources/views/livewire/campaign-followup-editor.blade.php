@@ -21,7 +21,7 @@
             @if($schedule)
                 <p><strong>Acompanhamento:</strong> {{ $schedule['name'] }}</p>
             @endif
-            <p>{{ $schedule && (int) $schedule['remaining_followups'] === 0 ? 'Todas as rodadas previstas foram iniciadas. Confira abaixo os resultados SMTP reais e o acompanhamento das devoluções.' : 'A campanha termina, o prazo é contado e o sistema prepara a próxima rodada sozinho. Veja ou altere a programação aqui.' }}</p>
+            <p>{{ $schedule && (int) $schedule['remaining_followups'] === 0 ? 'Todas as rodadas previstas foram iniciadas. Confira abaixo os resultados SMTP reais e o acompanhamento das devoluções.' : ($root->status === 'draft' ? 'Defina agora a quantidade, o intervalo, o horário e o texto dos próximos e-mails. Nada será enviado enquanto a campanha inicial estiver em rascunho.' : 'Após a conclusão da rodada anterior, o sistema calcula os prazos e prepara a próxima, respeitando as proteções comerciais.') }}</p>
         </div>
         @if($schedule && $schedule['automatic'])
             <span class="ecv5-status ecv5-status--{{ $schedule['state'] }}">{{ $schedule['state_label'] }}</span>
@@ -86,7 +86,7 @@
             <section class="ecv5-timeline" aria-label="Rodadas programadas">
                 <div class="ecv5-section-head"><h3>Sequência das rodadas</h3><span>O histórico é registrado em campanhas individuais</span></div>
                 <div class="ecv5-steps">
-                    <div class="ecv5-step is-started"><b>1</b><span><strong>Rodada inicial</strong><small>Concluída</small></span></div>
+                    <div class="ecv5-step {{ $root->status === 'completed' ? 'is-started' : 'is-future' }}"><b>1</b><span><strong>Rodada inicial</strong><small>{{ $root->status === 'completed' ? 'Concluída' : ($root->status === 'draft' ? 'Rascunho — ainda não enviado' : 'Aguardando conclusão') }}</small></span></div>
                     @foreach($schedule['rounds'] as $round)
                         <div class="ecv5-step is-{{ $round['stage'] }}"><b>{{ $round['number'] }}</b><span><strong>{{ $round['label'] }}</strong><small>{{ $round['date'] ? $round['date'].' · previsto' : ($round['stage'] === 'started' ? 'Já iniciada' : 'Após a anterior') }}</small></span></div>
                     @endforeach
@@ -94,13 +94,13 @@
             </section>
         @endif
     @else
-        <div class="ecv5-no-plan">Nenhuma sequência cadastrada para esta campanha. Configure o intervalo e a mensagem abaixo; o plano será ativado ao salvar.</div>
+        <div class="ecv5-no-plan">Nenhuma sequência cadastrada para esta campanha. Você pode planejar os próximos envios antes de disparar a primeira mensagem.</div>
     @endif
 
-    @if($canEdit && $root->status === 'completed' && ($schedule === null || $schedule['remaining_followups'] > 0))
+    @if($canEdit && in_array($root->status, ['draft', 'completed'], true) && ($schedule === null || $schedule['remaining_followups'] > 0))
         <section class="ecv5-settings" aria-labelledby="ecv5-settings-title">
             <div class="ecv5-section-head">
-                <div><h3 id="ecv5-settings-title">Ajustar os próximos envios</h3><p>Sem botão separado de ativação. Alterou um campo? O sistema salva quando você sai dele.</p></div>
+                <div><h3 id="ecv5-settings-title">{{ $root->status === 'draft' ? 'Planejar próximos e-mails antes do envio' : 'Ajustar os próximos envios' }}</h3><p>Revise todas as opções e clique em salvar para autorizar as futuras rodadas. Alterar um campo não dispara e-mails.</p></div>
                 @if($schedule && $schedule['automatic'] && in_array($schedule['status'], ['active','paused'], true))
                     <button type="button" class="ecv5-pause" wire:click="togglePause" wire:loading.attr="disabled" wire:target="togglePause">
                         {{ $schedule['status'] === 'paused' ? 'Retomar próximas rodadas' : 'Pausar próximas rodadas' }}
@@ -108,16 +108,16 @@
                 @endif
             </div>
             <form wire:submit="saveChanges" class="ecv5-form">
-                <label><span>Nome do acompanhamento</span><input type="text" wire:model="name" wire:blur="saveChanges" maxlength="150" minlength="3" required></label>
+                <label><span>Nome do acompanhamento</span><input type="text" wire:model="name" maxlength="150" minlength="3" required></label>
                 <div class="ecv5-form-cols">
                     <label><span>Intervalo entre rodadas</span>
-                        <select wire:model="delayDays" wire:change="saveChanges">
+                        <select wire:model="delayDays">
                             @foreach([3,4,5,7,10,14] as $days)<option value="{{ $days }}">{{ $days }} dias</option>@endforeach
                             @if(! in_array($delayDays, [3,4,5,7,10,14], true))<option value="{{ $delayDays }}">{{ $delayDays }} dias</option>@endif
                         </select>
                     </label>
                     <label><span>Quantidade de e-mails adicionais</span>
-                        <select wire:model="maxRounds" wire:change="saveChanges">
+                        <select wire:model="maxRounds">
                             <option value="1">1 · Segunda rodada</option>
                             <option value="2">2 · Até terceira rodada</option>
                             <option value="3">3 · Até quarta rodada</option>
@@ -135,12 +135,12 @@
                         <small>Vale somente para a 2ª rodada. Em branco: data do último envio + intervalo em dias de calendário.</small>
                     </label>
                 </div>
-                <p class="ecv5-read-only">Após salvar uma programação já vencida, o agendador poderá iniciar os envios na próxima execução. Não é possível voltar ao passado para enviar às 08h de hoje.</p>
-                <label><span>Assunto das próximas rodadas</span><input type="text" wire:model="subject" wire:blur="saveChanges" maxlength="180" minlength="3" required></label>
-                <label><span>Mensagem das próximas rodadas</span><textarea rows="5" wire:model="body" wire:blur="saveChanges" maxlength="12000" minlength="10" required></textarea></label>
+                <p class="ecv5-read-only">{{ $root->status === 'draft' ? 'A segunda rodada só poderá começar depois que a campanha inicial for concluída. Os intervalos são contados a partir da conclusão real, não da criação do rascunho.' : 'Se uma programação já estiver vencida, o agendador poderá iniciar a próxima rodada, sujeito às verificações de segurança.' }}</p>
+                <label><span>Assunto das próximas rodadas</span><input type="text" wire:model="subject" maxlength="180" minlength="3" required></label>
+                <label><span>Mensagem das próximas rodadas</span><textarea rows="5" wire:model="body" maxlength="12000" minlength="10" required></textarea></label>
                 <div class="ecv5-save-row">
-                    <span>As alterações valem para próximas rodadas ainda não iniciadas. O e-mail atual de uma rodada em andamento não é modificado.</span>
-                    <button type="submit" class="ecv5-save" wire:loading.attr="disabled" wire:target="saveChanges">Salvar agora</button>
+                    <span>As próximas rodadas usam o assunto e a mensagem definidos acima, no intervalo escolhido. Respostas, descadastros e falhas impedem novas tentativas aos contatos afetados.</span>
+                    <button type="submit" class="ecv5-save" wire:loading.attr="disabled" wire:target="saveChanges">Salvar programação dos próximos e-mails</button>
                 </div>
                 @foreach(['name','delayDays','maxRounds','sendTimeLocal','firstSendDate','subject','body'] as $field)
                     @error($field)<p class="ecv5-error" role="alert">{{ $message }}</p>@enderror

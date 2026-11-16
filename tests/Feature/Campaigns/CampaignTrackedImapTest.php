@@ -152,5 +152,5 @@ it('permits seller navigation but restricts tracked SMTP testing to managers', f
     Livewire::actingAs($manager)
         ->test('pages::campaigns.index')
         ->call('openCampaign', $campaign->id)
-        ->assertSee('Enviar teste rastreado');
+        ->assertSee('Enviar e-mail de teste');
 });

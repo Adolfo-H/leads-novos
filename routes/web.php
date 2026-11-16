@@ -252,6 +252,7 @@ Route::middleware(['auth', 'verified', 'commercial.workspace', 'commercial.manag
     Route::post('/campanhas/{campaign}/cancelar-v94', [CampaignOperationsController::class, 'cancel'])->whereNumber('campaign')->name('campaigns.ops-v94.cancel');
     Route::post('/campanhas/{campaign}/pausar-v94', [CampaignOperationsController::class, 'pause'])->whereNumber('campaign')->name('campaigns.ops-v94.pause');
     Route::post('/campanhas/{campaign}/retomar-v94', [CampaignOperationsController::class, 'resume'])->whereNumber('campaign')->name('campaigns.ops-v94.resume');
+    Route::post('/campanhas/{campaign}/email-de-teste', [CampaignOperationsController::class, 'test'])->whereNumber('campaign')->middleware('throttle:3,60')->name('campaigns.email-test');
 });
 
 /* EC941: confirmacao manual WhatsApp via POST, mantendo o registro original/auditoria. */

@@ -1357,7 +1357,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                 </section>
             @elseif ($screen === 'detail' && $selected)
                 <section class="ecm2-detail">
-                    <header class="ecm2-detail-header"><div><div class="ecm2-eyebrow">CAMPANHA #{{ $selected->id }} <span class="ecm2-pill is-{{ $selected->status }}">{{ $labels[$selected->status] ?? $selected->status }}</span></div><h2>{{ $selected->name }}</h2><p>{{ $selected->subject }}</p></div>@if ($selected->status === 'draft' && $canManageCampaigns)<a class="ecm2-btn ecm2-btn-muted" href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'editar' => $selected->id]) }}">✎ Editar rascunho</a>@endif</header>
+                    <header class="ecm2-detail-header"><div><div class="ecm2-eyebrow">CAMPANHA #{{ $selected->id }} <span class="ecm2-pill is-{{ $selected->status }}">{{ $labels[$selected->status] ?? $selected->status }}</span></div><h2>{{ $selected->name }}</h2><p>{{ $selected->subject }}</p></div>@if ($selected->status === 'draft' && $canManageCampaigns)<a class="ecm2-btn ecm2-btn-muted" href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'editar' => $selected->id]) }}">✎ Editar rascunho</a><a class="ecm2-btn ecm2-btn-muted" href="#proximos-emails">Programar próximos e-mails</a>@endif</header>
                     <div class="ecm2-progress-section"><div><strong>Progresso de aceitação SMTP</strong><span>{{ $sentCount }} de {{ $totalCount }} destinatário(s) · {{ $progress }}%</span></div><div class="ecm2-progress"><span style="width:{{ $progress }}%"></span></div><small>Mensagens aceitas pelo servidor não significam entrega na caixa de entrada.</small></div>
                     <div class="ecm2-detail-stats">
                         <div><small>Destinatários</small><strong>{{ number_format($totalCount, 0, ',', '.') }}</strong></div>
@@ -1477,7 +1477,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                         <div class="ecm2-table-wrap"><table class="ecm2-table"><thead><tr><th>Contato / E-mail</th><th>Empresa</th><th>Situação</th><th>Data / hora (Brasília)</th></tr></thead><tbody>
                             @forelse ($this->recipients as $recipient)
                                 <tr wire:key="ecm2-recipient-{{ $recipient->id }}"><td><strong>{{ $recipient->contact_name ?: 'Contato sem nome' }}</strong><small>{{ $recipient->email }}</small></td><td>{{ $recipient->company_name ?: '—' }}</td><td>
-                                    <span class="ecm2-pill is-delivery-{{ $recipient->status }}">{{ $delivery[$recipient->status] ?? $recipient->status }}</span>
+                                    <span class="ecm2-pill is-delivery-{{ $recipient->status }}" style="{{ $recipient->status === 'pending' ? 'background:#eaf2f7 !important;color:#173b51 !important;-webkit-text-fill-color:#173b51 !important;border:1px solid #bdd1df !important;font-weight:700 !important;opacity:1 !important;' : '' }}">{{ $delivery[$recipient->status] ?? $recipient->status }}</span>
                                     @if ($recipient->bounces->isNotEmpty())
                                         @php $latestBounce = $recipient->bounces->first(); @endphp
                                         <span class="ec29-recipient-bounced">↩ Devolvido · {{ \App\Services\Campaigns\CampaignBounceReason::label((string) $latestBounce->status_code) }}</span>
@@ -1564,7 +1564,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                     {{-- EC_CAMPAIGNS_UNIFIED_V90: única configuração de follow-up, depois dos indicadores e respostas. --}}
                 </section>
                 @if ($canManageCampaigns)
-                    <section class="ec90-followup-bottom" aria-label="Próximos e-mails da campanha">
+                    <section id="proximos-emails" class="ec90-followup-bottom" aria-label="Próximos e-mails da campanha">
                         @include('campaigns.followup-settings-detail')
                     </section>
                 @endif
@@ -1603,26 +1603,38 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                     <div class="ecm2-key-value"><span>Aprovada em</span><strong>{{ \App\Support\CampaignLocalTime::format($selected->getRawOriginal('approved_at')) }}</strong></div>
                 </section>
                 @if ($canManageCampaigns)
-                <section class="ecm2-context-card"><header><h2>Ações rápidas</h2></header>
+                <section id="email-teste" class="ecm2-context-card" aria-label="E-mail de teste">
+                    <header><h2>E-mail de teste</h2></header>
                     <div class="ecm2-quick-actions">
-                        @if ($selected->status === 'draft')
-                            <button type="button" wire:click="sendTrackedTest({{ $selected->id }})"
-                                wire:loading.attr="disabled" wire:target="sendTrackedTest"
-                                class="ecm2-btn ecm2-btn-muted"
-                                @disabled(! config('campaign_mail.imap_enabled') || ! config('campaign_mail.tracked_test_to'))>
-                                ✉ Enviar teste rastreado
-                            </button>
-                            <div class="ecm2-alert-note">Destino: {{ config('campaign_mail.tracked_test_to') ?: 'Configure CAMPAIGN_TRACKED_TEST_TO no .env' }}. Nunca utiliza os contatos da campanha.</div>
-                            @if ($lastTrackedTest)
-                                <div class="ecm2-alert-note">Último teste: {{ $lastTrackedTest->replied_at ? 'Resposta identificada pelo IMAP' : ($lastTrackedTest->status === 'smtp_accepted' ? 'Aceito SMTP · aguardando resposta' : 'Envio não confirmado') }}. @if($lastTrackedTest->replied_at) {{ \App\Support\CampaignLocalTime::format($lastTrackedTest->getRawOriginal('replied_at')) }} @endif</div>
-                            @endif
+                        @if (session('campaigns_test_ok'))
+                            <div class="ecm2-notice is-success" role="status" style="padding:12px;border:1px solid #a0ddbc;border-radius:8px;background:#eaf8f1;color:#165f42;">
+                                {{ session('campaigns_test_ok') }}
+                            </div>
                         @endif
-                        {{-- EC94: editar, cancelar e iniciar agora ficam somente no cabeçalho HTTP acima. --}}
-                        <div class="ecm2-alert-note">As ações de editar, iniciar, pausar e cancelar ficam no cabeçalho da campanha.</div>
+                        @if (session('campaigns_test_error'))
+                            <div class="ecm2-notice is-error" role="alert" style="padding:12px;border:1px solid #eeb8ac;border-radius:8px;background:#fff0ed;color:#8b3228;">
+                                {{ session('campaigns_test_error') }}
+                            </div>
+                        @endif
+                        <form method="POST" action="{{ route('campaigns.email-test', ['campaign' => $selected->id], false) }}" style="margin:0;display:block;">
+                            @csrf
+                            <input type="hidden" name="aba" value="{{ $detailTab }}">
+                            <button type="submit" class="ecm2-btn ecm2-btn-muted"
+                                style="width:100%;color:#10374e;background:#eaf5f4;border:1px solid #9acdc5;cursor:pointer;"
+                                @disabled(! config('campaign_mail.enabled') || ! filter_var((string) config('campaign_mail.test_to'), FILTER_VALIDATE_EMAIL))>
+                                ✉ Enviar e-mail de teste
+                            </button>
+                        </form>
+                        <div class="ecm2-alert-note">
+                            Destino: <strong>{{ config('campaign_mail.test_to') ?: 'Não configurado' }}</strong>.
+                            É enviado apenas um teste com a mensagem salva, sem usar os destinatários comerciais.
+                        </div>
+                        @if (! config('campaign_mail.enabled'))
+                            <div class="ecm2-alert-note" role="alert">O SMTP de teste está desativado. A liberação do teste não exige ativar o envio comercial.</div>
+                        @elseif (! filter_var((string) config('campaign_mail.test_to'), FILTER_VALIDATE_EMAIL))
+                            <div class="ecm2-alert-note" role="alert">Configure um endereço válido em CAMPAIGN_MAIL_TEST_TO.</div>
+                        @endif
                     </div>
-                    @unless ($canStart)
-                        <div class="ecm2-alert-note">Envio real bloqueado. Para ativar futuramente é necessário configurar as permissões do ambiente e URL pública HTTPS para descadastro.</div>
-                    @endunless
                 </section>
                 @else
                     <section class="ecm2-context-card"><header><h2>Acesso somente leitura</h2></header><p>Você pode consultar campanhas e resultados. A criação, o envio e as alterações são exclusivos do gestor.</p></section>
