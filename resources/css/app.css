@@ -1,44 +1,44 @@
-@import './auth-v24.css'; /* EC_ACCESS_V24 */
+@import './auth.css'; /* EC_ACCESS_V24 */
 @import './final-workspaces.css';
 @import './imports-workspace.css';
 @import './contacts-workspace.css';
-@import './contacts-ux-v2.css';
+@import './contacts-ux.css';
 @import './campaigns-workspace.css';
 @import './campaigns-queue-lab.css';
-@import './campaigns-workspace-v2.css';
-@import './campaigns-v6.css';
-@import './campaigns-ux-v62.css';
+@import './campaigns-workspace-refinements.css';
+@import './campaigns-navigation.css';
+@import './campaigns-ux.css';
 /* EC_CAMPAIGNS_V7_CSS */
-@import './campaigns-bounces-v7.css';
-@import './campaigns-pilot-v5.css';
-@import './contacts-reference-v3.css';
-@import './contacts-figma-v66.css';
+@import './campaigns-bounces.css';
+@import './campaigns-pilot.css';
+@import './contacts-reference.css';
+@import './contacts-figma.css';
 /* CONTACTS_RECEITA_V4_STYLES */
-@import './contacts-receita-v4.css';
+@import './contacts-receita.css';
 @import './company-list-workspace.css';
 @import './company-create-workspace.css';
 @import './company-dossier.css';
 /* EC_PROSPECTOR_E53: interfaces do dossie Figma E05-E09 */
-@import './company-dossier-figma-v53.css';
+@import './company-dossier-figma.css';
 @import './dashboard-overview.css';
-@import './dashboard-commercial-v2.css';
+@import './dashboard-commercial.css';
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
 @import './prospecting-workspace.css';
-@import './prospecting-workspace-v2.css';
-@import './prospecting-figma-v63.css';
+@import './prospecting-workspace-refinements.css';
+@import './prospecting-figma.css';
 @import './leads-workspace.css';
 @import './commercial-management.css';
-@import './app-shell-v2.css';
-@import './dashboard-strategic-v5.css';
+@import './app-shell.css';
+@import './dashboard-strategic.css';
 @import './global-company-search.css';
-@import './dashboard-my-deals-v6.css';
-@import './dashboard-map-v7.css';
-@import './company-list-redesign-v26.css';
+@import './dashboard-my-deals.css';
+@import './dashboard-map-interactions.css';
+@import './company-list-redesign.css';
 @import './companies-figma-consolidated.css';
 @import './commercial-management-consolidated.css';
-@import './leads-figma-v34.css';
-@import './campaigns-replies-v77.css';
+@import './leads-figma.css';
+@import './campaigns-replies.css';
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
@@ -18049,42 +18049,42 @@ body:not(.dark)
 */
 
 /* EC_THEME_MASTER_END */
-@import './dashboard-drilldown-v10.css';
-@import './leads-redesign-v11.css';
-@import './leads-visual-v12.css';
-@import './leads-reference-v13.css';
-@import './leads-hubspot-compact-v14.css';
-@import './leads-v15.css';
-@import './leads-v16.css';
-@import './leads-v18.css';
-@import './leads-v19.css';
-@import './leads-v20.css';
-@import './leads-v20-1.css';
-@import './dashboard-v23.css';
-@import './leads-v23.css';
-@import './dashboard-v25.css';
-@import './dashboard-v26.css';
-@import './dossier-company-commercial-v1.css';
-@import './imports-screen-v2.css';
+@import './dashboard-drilldown.css';
+@import './leads-redesign.css';
+@import './leads-visual.css';
+@import './leads-reference.css';
+@import './leads-hubspot-compact.css';
+@import './leads-summary-controls.css';
+@import './leads-layout-refinements.css';
+@import './leads-pipeline-layout.css';
+@import './leads-complementary-details.css';
+@import './leads-compact-details.css';
+@import './leads-commercial-context.css';
+@import './dashboard-profile-summary.css';
+@import './leads-direct-actions.css';
+@import './dashboard-panels-layout.css';
+@import './dashboard-panels-refinements.css';
+@import './dossier-company-commercial.css';
+@import './imports-screen.css';
 @import './imports-figma-consolidated.css';
 /* EC_SIMPLE_CAMPAIGNS_2026_V1 */
-@import './campaigns-simple-v1.css';
+@import './campaigns-pace-controls.css';
 /* EC_CAMPAIGN_REDESIGN_V21 */
-@import './campaigns-redesign-v21.css';
+@import './campaigns-redesign.css';
 /* EC_CAMPAIGNS_UX_V22 */
-@import './campaigns-v22.css';
-@import './campaigns-figma-v67.css';
-@import './campaigns-figma-v68.css';
-@import './campaigns-simple-v69.css';
-@import './campaigns-queue-v70.css';
-@import './campaigns-core-v72.css';
-@import './campaigns-review-v73.css';
-@import './campaigns-detail-v761.css';
-@import './dashboard-figma-v29.css';
-@import './dashboard-map-v30.css';
-@import './dashboard-base-v32.css';
-@import './dashboard-advanced-v33.css';
-@import './campaigns-replies-optout-v77.css';
+@import './campaigns-composer-layout.css';
+@import './campaigns-layout-foundation.css';
+@import './campaigns-overview-layout.css';
+@import './campaigns-compact-layout.css';
+@import './campaigns-queue.css';
+@import './campaigns-core.css';
+@import './campaigns-review.css';
+@import './campaigns-detail.css';
+@import './dashboard-figma.css';
+@import './dashboard-geographic-map.css';
+@import './dashboard-base.css';
+@import './dashboard-advanced.css';
+@import './campaigns-replies-optout.css';
 
 /* EC_LEADS_V35_BEGIN */
 /* PACOTE 35 · ExportControl Prospector · Leads + Gestão Comercial

@@ -18,6 +18,12 @@ fi
 echo '=== Python e-mail: testes simulados, sem IMAP real ==='
 python3 -B -m unittest discover -s tools/email -p 'test_*.py' -v
 
+echo '=== DSN Python: testes locais, sem rede ==='
+python3 -B -m unittest discover -s tests/python -p 'test_*.py' -v
+
+echo '=== WhatsApp: classificador puro, sem conectar agente ==='
+./vendor/bin/sail node --test integrations/whatsapp-web/tests/presence-classifier.test.mjs
+
 echo '=== Receita: testes no container (sem publicar base) ==='
 ./vendor/bin/sail exec receita-data python -B -m unittest discover -s /app -p 'test_*.py'
 

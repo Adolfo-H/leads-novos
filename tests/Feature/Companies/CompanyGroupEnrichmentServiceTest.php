@@ -1,6 +1,8 @@
 <?php
 
 use App\Contracts\CnpjGroupDataProvider;
+use App\Models\Company;
+use App\Models\Establishment;
 use App\Services\CompanyGroupEnrichmentService;
 use App\Support\Cnpj;
 
@@ -254,3 +256,54 @@ it('rejects an establishment from another cnpj root', function () {
     InvalidArgumentException::class,
     'A fonte retornou um estabelecimento pertencente a outra raiz de CNPJ.'
 );
+
+it('rolls back the group when a later establishment belongs to another root', function () {
+    $matrixBase = '112223330001';
+    $foreignBase = '998887770001';
+    $matrixCnpj = $matrixBase.Cnpj::calculateCheckDigits($matrixBase);
+    $foreignCnpj = $foreignBase.Cnpj::calculateCheckDigits($foreignBase);
+
+    $provider = new class($matrixCnpj, $foreignCnpj) implements CnpjGroupDataProvider
+    {
+        public function __construct(
+            private readonly string $matrixCnpj,
+            private readonly string $foreignCnpj,
+        ) {}
+
+        public function name(): string
+        {
+            return 'invalid-late-establishment';
+        }
+
+        public function lookupRoot(string $cnpjRoot): array
+        {
+            return [
+                'company' => ['corporate_name' => 'Grupo Parcial'],
+                'establishments' => [
+                    [
+                        'establishment' => [
+                            'cnpj' => $this->matrixCnpj,
+                            'type' => 'matrix',
+                        ],
+                        'cnaes' => [],
+                    ],
+                    [
+                        'establishment' => [
+                            'cnpj' => $this->foreignCnpj,
+                            'type' => 'branch',
+                        ],
+                        'cnaes' => [],
+                    ],
+                ],
+            ];
+        }
+    };
+
+    expect(fn () => app(CompanyGroupEnrichmentService::class)->enrich($matrixCnpj, $provider))
+        ->toThrow(
+            InvalidArgumentException::class,
+            'A fonte retornou um estabelecimento pertencente a outra raiz de CNPJ.'
+        )
+        ->and(Company::query()->count())->toBe(0)
+        ->and(Establishment::query()->count())->toBe(0);
+});

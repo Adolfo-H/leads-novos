@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { classifyPresence } from './presence-classifier.mjs';
 /**
  * Consulta experimental pelo WhatsApp Web via dispositivo vinculado.
  * NÃO faz envio, NÃO usa API da Meta, NÃO atualiza confirmações humanas.
@@ -70,13 +71,7 @@ function artisan(params, timeoutMs = 60000) {
   });
 }
 
-function interpretPresence(response) {
-  // Resposta AUSENTE / indefinida não prova que não existe conta.
-  if (!Array.isArray(response)) return 'inconclusive';
-  if (response.some((record) => record?.exists === true)) return 'found';
-  if (response.some((record) => record?.exists === false)) return 'not_found';
-  return 'inconclusive';
-}
+function interpretPresence(response) { return classifyPresence(response); }
 
 function mask(phone) {
   const text = String(phone);

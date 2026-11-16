@@ -4,10 +4,14 @@
 use App\Models\CommercialContact;
 use App\Models\ContactPhoneVerification;
 use App\Models\HubSpotImportRun;
+use App\Services\Campaigns\CampaignAudience;
 use App\Services\Contacts\ContactDirectory;
 use App\Services\Contacts\ContactPeopleDirectory;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -57,6 +61,7 @@ new class extends Component
         if ($this->segment === 'fiscal') {
             $this->segment = 'all';
         }
+        $this->campaignTransferToken = (string) Str::uuid();
     }
 
     public function updatedSearchTerm(): void
@@ -93,7 +98,6 @@ new class extends Component
         $this->peoplePage = 1;
         $this->selectedPersonKey = null;
         $this->contactsPage = 1;
-        $this->checkedContactKeys = [];
         unset($this->contactIndex);
     }
 
@@ -104,7 +108,6 @@ new class extends Component
         $this->selectedKey = null;
         $this->selectedPersonKey = null;
         $this->contactsPage = 1;
-        $this->checkedContactKeys = [];
         unset($this->contactIndex);
     }
 
@@ -321,6 +324,13 @@ new class extends Component
     /** @var list<string> */
     public array $checkedContactKeys = [];
 
+    #[Locked]
+    public string $campaignTransferToken = '';
+
+    /** @var array<string, string> */
+    #[Locked]
+    public array $checkedContactEmails = [];
+
     public bool $inspectorOpen = false;
 
     // Contadores pesados carregam depois da primeira pintura da listagem.
@@ -342,7 +352,6 @@ new class extends Component
             $this->contactsPerPage = 12;
         }
         $this->contactsPage = 1;
-        $this->checkedContactKeys = [];
     }
 
     public function updatedContactsSort(): void
@@ -364,14 +373,12 @@ new class extends Component
         $this->selectedKey = null;
         $this->selectedPersonKey = null;
         $this->contactsPage = 1;
-        $this->checkedContactKeys = [];
         unset($this->contactIndex);
     }
 
     public function changeContactsPage(int $page): void
     {
         $this->contactsPage = max(1, min(100000, $page));
-        $this->checkedContactKeys = [];
         $this->selectedPersonKey = null;
         unset($this->contactIndex);
     }
@@ -431,11 +438,73 @@ new class extends Component
         } else {
             $this->checkedContactKeys = array_values(array_unique(array_merge($this->checkedContactKeys, $pageKeys)));
         }
+        $this->syncCampaignTransferSelection();
+    }
+
+    public function updatedCheckedContactKeys(): void
+    {
+        $this->syncCampaignTransferSelection();
+    }
+
+    private function syncCampaignTransferSelection(): void
+    {
+        $limit = max(1, min(1000, (int) config('campaign_mail.max_recipients', 100)));
+        if (count($this->checkedContactKeys) > $limit) {
+            throw ValidationException::withMessages([
+                'recipients' => 'A seleção excede o limite de '.$limit.' contatos por campanha.',
+            ]);
+        }
+
+        $keys = [];
+        foreach ($this->checkedContactKeys as $key) {
+            if (! is_string($key)
+                || preg_match('/^(?:(?:hubspot|manual):[0-9]+|receita:[0-9a-fA-F-]{36})$/D', $key) !== 1
+                || in_array($key, $keys, true)) {
+                throw ValidationException::withMessages([
+                    'recipients' => 'A seleção contém um contato inválido ou duplicado.',
+                ]);
+            }
+            $keys[] = $key;
+        }
+        $this->checkedContactKeys = $keys;
+
+        $sessionKey = 'campaign_contact_transfer_v92_'.$this->campaignTransferToken;
+        if ($keys === []) {
+            $this->checkedContactEmails = [];
+            session()->forget($sessionKey);
+
+            return;
+        }
+
+        $stored = session()->get($sessionKey, []);
+        $emails = [];
+        $unresolved = [];
+        foreach ($keys as $key) {
+            if (is_array($stored) && array_key_exists($key, $stored) && is_string($stored[$key])) {
+                $emails[$key] = $stored[$key];
+            } else {
+                $unresolved[] = $key;
+            }
+        }
+
+        $resolvedByKey = [];
+        if ($unresolved !== []) {
+            foreach (app(CampaignAudience::class)->resolve($unresolved) as $entry) {
+                $resolvedByKey[$entry['source_key']] = $entry['normalized_email'];
+            }
+        }
+        foreach ($unresolved as $key) {
+            $emails[$key] = $resolvedByKey[$key] ?? '';
+        }
+
+        $this->checkedContactEmails = $emails;
+        session()->put($sessionKey, $emails);
     }
 
     public function clearChecked(): void
     {
         $this->checkedContactKeys = [];
+        $this->syncCampaignTransferSelection();
     }
 
     public function startNewContactFromWorkspace(): void
@@ -527,17 +596,9 @@ new class extends Component
     // EC_EMAIL_CAMPAIGNS_V1_CONTACT_ACTION
     public function createCampaignFromSelected(): void
     {
-        $keys = [];
-        $selected = $this->checkedContactKeys;
-        foreach ($this->contactIndex->items() as $row) {
-            if (in_array((string) $row->source_key, $selected, true)
-                && filter_var((string) $row->email, FILTER_VALIDATE_EMAIL) !== false) {
-                $keys[] = (string) $row->source_key;
-            }
-        }
-        $keys = array_values(array_unique($keys));
+        $keys = $this->checkedContactKeys;
         if ($keys === []) {
-            $this->addError('recipients', 'Selecione nesta página contatos com e-mail válido.');
+            $this->addError('recipients', 'Selecione contatos com e-mail válido.');
 
             return;
         }
@@ -547,8 +608,9 @@ new class extends Component
 
             return;
         }
-        session()->put('campaign_mail_selected', $keys);
-        $this->redirect(route('campaigns.index'), navigate: true);
+        app(\App\Services\Campaigns\CampaignContactsSelection::class)->remember($keys, $this->checkedContactEmails);
+        // Navegação completa: evita reusar estado Livewire de outra campanha.
+        $this->redirect(route('campaigns.index'), navigate: false);
     }
 
     public function exportSelectedCsv(): StreamedResponse
@@ -611,13 +673,14 @@ new class extends Component
         $contextKey === $selectedKey ? $this->detail : app(ContactDirectory::class)->selected($contextKey)
     ) : null;
     $fmt = static fn (?int $value): string => $value === null ? '…' : number_format($value, 0, ',', '.');
-    $selectedKeys = array_values(array_filter(
-        $checkedContactKeys,
-        static fn ($key) => collect($rows)->contains(fn ($r) => $r->source_key === $key)
+    $selectedKeys = array_values(array_filter($checkedContactKeys, static fn ($key): bool => is_string($key)));
+    $visibleSelectedKeys = array_values(array_filter(
+        $selectedKeys,
+        static fn (string $key): bool => collect($rows)->contains(fn ($r) => $r->source_key === $key)
     ));
-    $allPageSelected = $rows !== [] && count($selectedKeys) === count($rows);
+    $allPageSelected = $rows !== [] && count($visibleSelectedKeys) === count($rows);
     $selectedEmails = collect($rows)->filter(
-        static fn ($r) => in_array($r->source_key, $selectedKeys, true) && trim((string) $r->email) !== ''
+        static fn ($r) => in_array($r->source_key, $visibleSelectedKeys, true) && trim((string) $r->email) !== ''
     )->pluck('email')->unique()->values()->all();
     $singleSelected = count($selectedKeys) === 1
         ? collect($rows)->first(fn ($r) => $r->source_key === $selectedKeys[0]) : null;
@@ -662,7 +725,7 @@ new class extends Component
             <span class="c66-accessible">Central de Contatos</span>
             <span class="c66-accessible">Detalhes do contato</span>
             <h1>@if ($selectedKeys !== []){{ count($selectedKeys) }} contatos selecionados @else Pessoas e canais de contato @endif</h1>
-            <p>@if ($selectedKeys !== [])A seleção é limitada aos contatos da página atual. @else Encontre o contato certo sem perder a origem da informação. @endif</p>
+            <p>@if ($selectedKeys !== [])A seleção permanece ao pesquisar, filtrar e paginar. @else Encontre o contato certo sem perder a origem da informação. @endif</p>
         </div>
         <div class="ecc3-heading-actions">
             <button type="button" class="ecc3-button ecc3-button-ghost ecc3-only-small c661-filter-toggle" x-on:click="mobileFilters = !mobileFilters">☷ Filtros</button>
@@ -671,6 +734,18 @@ new class extends Component
             </button>
         </div>
     </header>
+
+    <form id="ec-v92-contact-campaign-form" method="POST" action="{{ route('campaigns.contacts-transfer-v92') }}" hidden>
+        @csrf
+        <input type="hidden" name="campaign_transfer_token" value="{{ $campaignTransferToken }}">
+        @foreach ($selectedKeys as $transferKey)
+            <input type="hidden" name="campaign_contacts_v92[]" value="{{ $transferKey }}">
+            <input type="hidden" name="campaign_emails_v92[{{ $transferKey }}]" value="{{ $checkedContactEmails[$transferKey] ?? '' }}">
+        @endforeach
+    </form>
+    @if ($errors->has('recipients'))
+        <div role="alert" class="ecc3-error" style="padding:12px;color:#9a3412;border:1px solid #fbd38d;margin-bottom:12px">{{ $errors->first('recipients') }}</div>
+    @endif
 
     @if (session('contacts_success'))
         <div class="ecc3-notice" role="status">{{ session('contacts_success') }}</div>
@@ -709,12 +784,12 @@ new class extends Component
     </section>
     @if ($selectedKeys !== [])
         <div class="c66-selected-actions" role="status">
-            <strong>{{ count($selectedKeys) }} selecionado(s) nesta página</strong>
-            <span>Ao mudar de página, sua seleção será limpa. Criar campanha abre o fluxo de rascunho; não envia mensagens.</span>
+            <strong>{{ count($selectedKeys) }} contato(s) selecionado(s)</strong>
+            <span>A seleção inclui todas as páginas e origens visíveis. Criar campanha abre um rascunho; não envia mensagens.</span>
             <div class="c66-selected-buttons">
                 <button type="button" class="ecc3-button" wire:click="clearChecked">Limpar seleção</button>
                 <button type="button" class="ecc3-button" wire:click="exportSelectedCsv">Exportar seleção CSV</button>
-                <button type="button" class="ecc3-button ecc3-button-primary" wire:click="createCampaignFromSelected" @disabled($selectedEmails === [])>Criar campanha</button>
+                <button type="submit" form="ec-v92-contact-campaign-form" class="ecc3-button ecc3-button-primary">Criar campanha</button>
             </div>
         </div>
     @endif
@@ -854,7 +929,7 @@ new class extends Component
             </section>
 
             {{-- EC_WA_PUBLIC_DIRECTORY_V14_CONTACTS: telefones institucionais ficam visíveis sem criar pessoas fictícias. --}}
-            @include('contacts.whatsapp-public-in-contacts-v14')
+            @include('contacts.whatsapp-public-in-contacts')
 
             <div class="ecc3-table-panel">
                 <div class="ecc3-list-header">
@@ -876,21 +951,21 @@ new class extends Component
                         @endif
                     </div>
                 </div>
+                {{-- EC_CONTACT_CAMPAIGN_EXACT_V91: form HTML fora da tabela, associado aos checkboxes por ID. --}}
+                <form id="ec91-contact-campaign-form" method="POST" action="{{ route('campaigns.from-contacts') }}" hidden>@csrf</form>
+                @error('recipients')<div class="ecc-error" role="alert">{{ $message }}</div>@enderror
+                @error('source_keys')<div class="ecc-error" role="alert">{{ $message }}</div>@enderror
                 <div class="ecc3-bulk {{ $selectedKeys !== [] ? 'has-selection' : '' }}">
                     <button type="button" class="ecc3-bulk-check {{ $allPageSelected ? 'is-active' : '' }}"
                             wire:click="toggleCurrentPage" aria-label="Selecionar todos os contatos desta página"
                             title="Selecionar a página">{{ $allPageSelected ? '☑' : '□' }}</button>
                     <span><strong>{{ count($selectedKeys) }}</strong> selecionado(s)</span>
-                    @if ($selectedEmails !== [])
-                        <button type="button" class="ecc3-button ecc3-button-mini" wire:click="createCampaignFromSelected"
-                            title="Criar campanha no Prospector com os contatos selecionados">✉ Criar campanha</button>
-                    @else
-                        <button type="button" class="ecc3-button ecc3-button-mini" disabled title="Selecione contatos com e-mail">✉ Criar campanha</button>
-                    @endif
+                    <button type="submit" form="ec-v92-contact-campaign-form" class="ecc3-button ecc3-button-mini"
+                        title="Levar todos os contatos marcados para o rascunho da campanha" @disabled($selectedKeys === [])>✉ Criar campanha</button>
                     @if ($singleSelectedWhatsapp)
                         <a href="{{ $singleSelectedWhatsapp }}" target="_blank" rel="noopener noreferrer"
                            class="ecc3-button ecc3-button-mini c661-bulk-whatsapp" title="Abre a conversa; não envia automaticamente">
-                            @include('partials.contacts.integration-icon-v661', ['service' => 'whatsapp']) <span>Abrir WhatsApp</span>
+                            @include('partials.contacts.integration-icon', ['service' => 'whatsapp']) <span>Abrir WhatsApp</span>
                         </a>
                     @else
                         <button type="button" class="ecc3-button ecc3-button-mini" disabled
@@ -944,6 +1019,7 @@ new class extends Component
                                 <td>
                                     <input type="checkbox" wire:model.live="checkedContactKeys" value="{{ $key }}"
                                            aria-label="Selecionar {{ $shortName }}">
+                                    <input type="hidden" form="ec91-contact-campaign-form" name="source_emails[{{ $key }}]" value="{{ $row->email }}">
                                 </td>
                                 <td>
                                     <button type="button" class="ecc3-person-cell" wire:click="showGlobalPerson(@js($key))"
@@ -1037,10 +1113,10 @@ new class extends Component
                             @if ($telLink)<a class="ecc3-button ecc3-button-primary" href="{{ $telLink }}">☎ Ligar</a>@else<button class="ecc3-button" disabled>☎ Ligar</button>@endif
                             @if ($selected->email)<a class="ecc3-button" href="mailto:{{ $selected->email }}">✉ E-mail</a>@else<button class="ecc3-button" disabled>✉ E-mail</button>@endif
                             @if ($waLink)<a href="{{ $waLink }}" target="_blank" rel="noopener noreferrer" class="ecc3-button c661-whatsapp-link" title="Abrir WhatsApp; isso não confirma o cadastro">
-                                @include('partials.contacts.integration-icon-v661', ['service' => 'whatsapp']) <span>WhatsApp</span>
+                                @include('partials.contacts.integration-icon', ['service' => 'whatsapp']) <span>WhatsApp</span>
                             </a>@endif
                             @if ($hubspotPersonUrl)<a class="ecc3-button ecc3-button-icon c661-hubspot-link" href="{{ $hubspotPersonUrl }}" target="_blank" rel="noopener noreferrer" title="Abrir contato no HubSpot" aria-label="Abrir contato no HubSpot">
-                                @include('partials.contacts.integration-icon-v661', ['service' => 'hubspot']) <span>HubSpot</span>
+                                @include('partials.contacts.integration-icon', ['service' => 'hubspot']) <span>HubSpot</span>
                             </a>@endif
                         </div>
                     </section>

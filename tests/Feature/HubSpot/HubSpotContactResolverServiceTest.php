@@ -4,6 +4,7 @@ use App\Models\Company;
 use App\Services\HubSpotContactResolverService;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 
 beforeEach(function () {
     config([
@@ -273,5 +274,114 @@ it('keeps an existing contact and only fills missing channels', function () {
         ): bool => $request->method() === 'POST'
             && $request->url()
                 === 'https://api.hubapi.com/crm/v3/objects/contacts'
+    );
+});
+
+it('does not create a contact when the HubSpot search response is malformed', function () {
+    $company = Company::query()->create([
+        'cnpj_root' => '99999991',
+        'corporate_name' => 'EMPRESA BUSCA INVALIDA',
+    ]);
+
+    Http::fake([
+        'https://api.hubapi.com/crm/v3/objects/contacts/search' => Http::response([
+            'unexpected' => [],
+        ]),
+        'https://api.hubapi.com/crm/v3/objects/contacts' => Http::response([
+            'id' => 'contact-must-not-be-created',
+        ], 201),
+    ]);
+
+    expect(
+        fn () => app(HubSpotContactResolverService::class)->resolve(
+            company: $company,
+            email: 'comercial@busca-invalida.test',
+            phone: null,
+            mobilePhone: null,
+            ownerId: null,
+        )
+    )->toThrow(
+        RuntimeException::class,
+        'Resposta inválida ao consultar contatos no HubSpot.'
+    );
+
+    Http::assertNotSent(
+        fn (Request $request): bool => $request->method() === 'POST'
+            && $request->url() === 'https://api.hubapi.com/crm/v3/objects/contacts'
+    );
+});
+
+it('does not create a contact when a search result has no valid ID', function () {
+    $company = Company::query()->create([
+        'cnpj_root' => '99999993',
+        'corporate_name' => 'EMPRESA RESULTADO INVALIDO',
+    ]);
+
+    Http::fake([
+        'https://api.hubapi.com/crm/v3/objects/contacts/search' => Http::response([
+            'results' => [
+                ['properties' => []],
+            ],
+        ]),
+        'https://api.hubapi.com/crm/v3/objects/contacts' => Http::response([
+            'id' => 'contact-must-not-be-created',
+        ], 201),
+    ]);
+
+    expect(
+        fn () => app(HubSpotContactResolverService::class)->resolve(
+            company: $company,
+            email: 'comercial@resultado-invalido.test',
+            phone: null,
+            mobilePhone: null,
+            ownerId: null,
+        )
+    )->toThrow(
+        RuntimeException::class,
+        'Resposta inválida ao consultar contatos no HubSpot.'
+    );
+
+    Http::assertNotSent(
+        fn (Request $request): bool => $request->method() === 'POST'
+            && $request->url() === 'https://api.hubapi.com/crm/v3/objects/contacts'
+    );
+});
+
+it('does not fill existing contact channels when its response is malformed', function () {
+    $company = Company::query()->create([
+        'cnpj_root' => '99999992',
+        'corporate_name' => 'EMPRESA CONTATO INVALIDO',
+    ]);
+
+    Http::fake([
+        'https://api.hubapi.com/crm/v3/objects/contacts/search' => Http::response([
+            'results' => [
+                ['id' => 'contact-existing-invalid'],
+            ],
+        ]),
+        'https://api.hubapi.com/crm/v3/objects/contacts/contact-existing-invalid*' => Http::response([
+            'id' => 'contact-existing-invalid',
+            'properties' => 'resposta inválida',
+        ]),
+        'https://api.hubapi.com/crm/v3/objects/contacts/contact-existing-invalid' => Http::response([
+            'id' => 'contact-existing-invalid',
+        ]),
+    ]);
+
+    expect(
+        fn () => app(HubSpotContactResolverService::class)->resolve(
+            company: $company,
+            email: 'existente@contato-invalido.test',
+            phone: '45999993333',
+            mobilePhone: '45999994444',
+            ownerId: null,
+        )
+    )->toThrow(
+        RuntimeException::class,
+        'Resposta inválida ao ler contato existente no HubSpot.'
+    );
+
+    Http::assertNotSent(
+        fn (Request $request): bool => $request->method() === 'PATCH'
     );
 });

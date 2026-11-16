@@ -1093,89 +1093,167 @@ final class HubSpotWebhookMirrorSyncService
         string $fromId,
         string $toType,
     ): array {
-        $response =
-            $this->client()
-                ->get(
-                    $this->baseUrl()
-                    .'/crm/v4/objects/'
-                    .$fromType
-                    .'/'
-                    .rawurlencode(
-                        $fromId
-                    )
-                    .'/associations/'
-                    .$toType,
-                    [
-                        'limit' => 100,
-                    ]
-                );
-
-        if (
-            $response->status()
-            === 404
-        ) {
-            return [];
-        }
-
-        $this->ensureSuccess(
-            $response
-        );
-
-        $data =
-            $response->json();
-
-        if (! is_array($data)) {
-            return [];
-        }
-
-        $results =
-            $data[
-                'results'
-            ]
-            ?? [];
-
-        if (! is_array($results)) {
-            return [];
-        }
-
         $ids = [];
 
-        foreach (
-            $results as $result
-        ) {
-            if (! is_array($result)) {
-                continue;
+        $after = null;
+
+        $seenAfter = [];
+
+        do {
+            $query = [
+                'limit' => 100,
+            ];
+
+            if ($after !== null) {
+                $query['after'] = $after;
             }
 
-            $id =
-                $result[
-                    'toObjectId'
-                ]
-                ?? $result[
-                    'id'
-                ]
+            $response =
+                $this->client()
+                    ->get(
+                        $this->baseUrl()
+                        .'/crm/v4/objects/'
+                        .$fromType
+                        .'/'
+                        .rawurlencode(
+                            $fromId
+                        )
+                        .'/associations/'
+                        .$toType,
+                        $query
+                    );
+
+            if (
+                $response->status()
+                === 404
+            ) {
+                return [];
+            }
+
+            $this->ensureSuccess(
+                $response
+            );
+
+            $data =
+                $response->json();
+
+            if (
+                ! is_array($data)
+                || ! is_array(
+                    $data['results']
+                    ?? null
+                )
+            ) {
+                throw new RuntimeException(
+                    'Resposta inválida das associações HubSpot.'
+                );
+            }
+
+            foreach (
+                $data['results'] as $result
+            ) {
+                if (! is_array($result)) {
+                    continue;
+                }
+
+                $id =
+                    $result[
+                        'toObjectId'
+                    ]
+                    ?? $result[
+                        'id'
+                    ]
+                    ?? null;
+
+                if (! is_scalar($id)) {
+                    continue;
+                }
+
+                $value =
+                    trim(
+                        (string)
+                        $id
+                    );
+
+                if ($value !== '') {
+                    $ids[] =
+                        $value;
+                }
+            }
+
+            $paging =
+                $data['paging']
                 ?? null;
 
-            if (! is_scalar($id)) {
+            if (
+                $paging !== null
+                && ! is_array($paging)
+            ) {
+                throw new RuntimeException(
+                    'Resposta inválida das associações HubSpot.'
+                );
+            }
+
+            $nextPage =
+                is_array($paging)
+                    ? (
+                        $paging['next']
+                        ?? null
+                    )
+                    : null;
+
+            if (
+                $nextPage !== null
+                && ! is_array($nextPage)
+            ) {
+                throw new RuntimeException(
+                    'Resposta inválida das associações HubSpot.'
+                );
+            }
+
+            $next =
+                is_array($nextPage)
+                    ? (
+                        $nextPage['after']
+                        ?? null
+                    )
+                    : null;
+
+            if ($next === null) {
+                $after = null;
+
                 continue;
             }
 
-            $value =
+            if (! is_scalar($next)) {
+                throw new RuntimeException(
+                    'Resposta inválida das associações HubSpot.'
+                );
+            }
+
+            $next =
                 trim(
-                    (string)
-                    $id
+                    (string) $next
                 );
 
-            if ($value !== '') {
-                $ids[] =
-                    $value;
+            if ($next === '') {
+                $after = null;
+
+                continue;
             }
-        }
+
+            if (isset($seenAfter[$next])) {
+                throw new RuntimeException(
+                    'HubSpot repetiu o cursor de associações.'
+                );
+            }
+
+            $seenAfter[$next] = true;
+            $after = $next;
+        } while ($after !== null);
 
         return array_values(
-            array_unique(
-                $ids
-            )
+            array_unique($ids)
         );
     }
 
@@ -1352,111 +1430,112 @@ final class HubSpotWebhookMirrorSyncService
                     .'/crm/v3/pipelines/deals'
                 );
 
-        if ($response->failed()) {
-            $this->pipelineStages = [];
-
-            return [];
-        }
+        $this->ensureSuccess(
+            $response
+        );
 
         $data =
             $response->json();
 
+        if (
+            ! is_array($data)
+            || ! is_array(
+                $data['results']
+                ?? null
+            )
+        ) {
+            throw new RuntimeException(
+                'Resposta inválida das etapas de pipeline HubSpot.'
+            );
+        }
+
         $pipelines =
-            is_array($data)
-                ? (
-                    $data[
-                        'results'
-                    ]
-                    ?? []
-                )
-                : [];
+            $data['results'];
 
         $map = [];
 
-        if (is_array($pipelines)) {
-            foreach (
-                $pipelines as $pipeline
-            ) {
-                if (! is_array($pipeline)) {
+        foreach (
+            $pipelines as $pipeline
+        ) {
+            if (! is_array($pipeline)) {
+                continue;
+            }
+
+            $pipelineId =
+                $this->stringValue(
+                    $pipeline[
+                        'id'
+                    ]
+                    ?? null
+                );
+
+            if ($pipelineId === null) {
+                continue;
+            }
+
+            $pipelineLabel =
+                $this->stringValue(
+                    $pipeline[
+                        'label'
+                    ]
+                    ?? null
+                )
+                ?? $pipelineId;
+
+            $stages =
+                $pipeline[
+                    'stages'
+                ]
+                ?? [];
+
+            if (! is_array($stages)) {
+                continue;
+            }
+
+            foreach ($stages as $stage) {
+                if (! is_array($stage)) {
                     continue;
                 }
 
-                $pipelineId =
+                $stageId =
                     $this->stringValue(
-                        $pipeline[
+                        $stage[
                             'id'
                         ]
                         ?? null
                     );
 
-                if ($pipelineId === null) {
+                if ($stageId === null) {
                     continue;
                 }
 
-                $pipelineLabel =
-                    $this->stringValue(
-                        $pipeline[
+                $map[
+                    $pipelineId
+                    .'|'
+                    .$stageId
+                ] = [
+                    'pipeline_label' => $pipelineLabel,
+
+                    'stage_label' => $this->stringValue(
+                        $stage[
                             'label'
                         ]
                         ?? null
                     )
-                    ?? $pipelineId;
+                        ?? $stageId,
 
-                $stages =
-                    $pipeline[
-                        'stages'
-                    ]
-                    ?? [];
-
-                if (! is_array($stages)) {
-                    continue;
-                }
-
-                foreach ($stages as $stage) {
-                    if (! is_array($stage)) {
-                        continue;
-                    }
-
-                    $stageId =
-                        $this->stringValue(
-                            $stage[
-                                'id'
-                            ]
-                            ?? null
-                        );
-
-                    if ($stageId === null) {
-                        continue;
-                    }
-
-                    $map[
-                        $pipelineId
-                        .'|'
-                        .$stageId
-                    ] = [
-                        'pipeline_label' => $pipelineLabel,
-
-                        'stage_label' => $this->stringValue(
-                            $stage[
-                                'label'
-                            ]
-                            ?? null
-                        )
-                            ?? $stageId,
-
-                        'display_order' => is_numeric(
-                            $stage[
-                                'displayOrder'
-                            ]
-                            ?? null
-                        )
-                                ? (int)
-                                    $stage[
-                                        'displayOrder'
-                                    ]
-                                : null,
-                    ];
-                }
+                    'display_order' => is_numeric(
+                        $stage[
+                            'displayOrder'
+                        ]
+                        ?? null
+                    )
+                            ? (int)
+                                $stage[
+                                    'displayOrder'
+                                ]
+                            : null,
+                ];
             }
         }
 

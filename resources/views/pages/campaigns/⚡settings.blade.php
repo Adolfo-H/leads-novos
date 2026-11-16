@@ -79,8 +79,8 @@ new class extends Component
     @if (session('policy_success'))<div class="ec22-success" role="status">{{ session('policy_success') }}</div>@endif
     <div class="ec22-settings-intro"><h2>Configuração técnica do SMTP</h2><p>O gestor pode ajustar tetos autorizados; as campanhas escolhem seu próprio ritmo dentro desses limites.</p></div>
     {{-- EC_CAMPAIGNS_UNIFIED_V90: parâmetros do servidor fora do fluxo comercial cotidiano. --}}
-    <details class="ec90-server-advanced" style="border:1px solid #d7e7e3;border-radius:12px;padding:15px;background:white;margin-top:18px">
-        <summary style="color:#08786b;cursor:pointer;font-weight:720">Abrir configurações técnicas e simulações do servidor SMTP</summary>
+    <section class="ec90-server-advanced" style="border:1px solid #d7e7e3;border-radius:12px;padding:15px;background:white;margin-top:18px">
+        <h2 class="ec92-smtp-visible-title" style="color:#08786b;font-weight:720">Configurações técnicas e simulações do servidor SMTP</h2>
     <div class="ec22-two-columns ec22-settings-grid" style="margin-top:16px">
         <section class="ec22-card ec22-settings-form">
             <header class="ec22-card-head"><div><h2>Quanto você pretende enviar?</h2><p>As configurações efetivas são globais e exigem aprovação do SMTP.</p></div></header>
@@ -109,6 +109,6 @@ new class extends Component
             <div class="ec22-info-note">Aceitação pelo SMTP não garante entrega. Salvar configurações não inicia nenhum envio. Para ampliar a cota autorizada, utilize o assistente de limites SMTP incluído no pacote.</div>
         </aside>
     </div>
-    </details>
+    </section>
 
 </div>

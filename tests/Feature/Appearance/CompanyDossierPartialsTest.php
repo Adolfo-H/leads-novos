@@ -9,23 +9,23 @@ uses(RefreshDatabase::class);
 
 it('uses the active dossier entry point and three real tabs', function (): void {
     $show = file_get_contents(resource_path('views/pages/companies/⚡show.blade.php'));
-    $figma = file_get_contents(resource_path('views/partials/company-dossier/figma-v53.blade.php'));
+    $figma = file_get_contents(resource_path('views/partials/company-dossier/figma.blade.php'));
 
-    expect($show)->toContain("@include('partials.company-dossier.figma-v53')")
+    expect($show)->toContain("@include('partials.company-dossier.figma')")
         ->and($figma)->toContain('aria-label="Abas do dossiê empresarial"')
         ->toContain("setDossierTab('commercial')")
         ->toContain("setDossierTab('company')")
         ->toContain("setDossierTab('cnaes')")
-        ->toContain("@include('partials.company-dossier.figma-summary-v53')")
-        ->toContain("@include('partials.company-dossier.figma-group-v53')")
-        ->toContain("@include('partials.company-dossier.figma-cnaes-v53')");
+        ->toContain("@include('partials.company-dossier.figma-summary')")
+        ->toContain("@include('partials.company-dossier.figma-group')")
+        ->toContain("@include('partials.company-dossier.figma-cnaes')");
 });
 
 it('keeps commercial evidence group information and matrix CNAE actions in active partials', function (): void {
-    $summary = file_get_contents(resource_path('views/partials/company-dossier/figma-summary-v53.blade.php'));
-    $group = file_get_contents(resource_path('views/partials/company-dossier/figma-group-v53.blade.php'));
-    $cnaes = file_get_contents(resource_path('views/partials/company-dossier/figma-cnaes-v53.blade.php'));
-    $modals = file_get_contents(resource_path('views/partials/company-dossier/figma-modals-v53.blade.php'));
+    $summary = file_get_contents(resource_path('views/partials/company-dossier/figma-summary.blade.php'));
+    $group = file_get_contents(resource_path('views/partials/company-dossier/figma-group.blade.php'));
+    $cnaes = file_get_contents(resource_path('views/partials/company-dossier/figma-cnaes.blade.php'));
+    $modals = file_get_contents(resource_path('views/partials/company-dossier/figma-modals.blade.php'));
 
     expect($summary)->toContain('Evidências de exportação')
         ->and($group)->toContain('CNAEs consolidados do grupo')

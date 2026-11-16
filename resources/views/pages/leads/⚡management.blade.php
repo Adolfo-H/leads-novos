@@ -706,7 +706,7 @@ new class extends Component
             </div>
         </section>
 
-        @include('partials.commercial-distribution-preview-v61')
+        @include('partials.commercial-distribution-dialog')
 
         <div class="ecgm62-dist-footer">
             <button type="button" class="ecgm62-btn" x-on:click="view='overview'; showConfirm=false">Cancelar</button>

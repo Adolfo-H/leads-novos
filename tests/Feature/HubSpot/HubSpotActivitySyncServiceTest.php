@@ -2,6 +2,7 @@
 
 use App\Models\Company;
 use App\Models\CompanyLeadActivity;
+use App\Models\HubSpotActivity;
 use App\Models\HubSpotWebhookEvent;
 use App\Services\HubSpotActivitySyncService;
 use Illuminate\Support\Facades\Http;
@@ -397,5 +398,113 @@ it(
                     $activity->id
                 )
         )->toBeFalse();
+    }
+);
+
+it(
+    'preserves existing activity when HubSpot returns malformed properties',
+    function (): void {
+        config([
+            'services.hubspot.access_token' => 'test-token',
+
+            'services.hubspot.base_url' => 'https://api.hubapi.com',
+        ]);
+
+        $company =
+            hubSpotActivityCompany(
+                '95444444',
+                'Empresa Resposta Inválida HubSpot'
+            );
+
+        Http::fake([
+            'https://api.hubapi.com/crm/v3/objects/notes/note-invalid-properties*' => Http::sequence()
+                ->push([
+                    'id' => 'note-invalid-properties',
+
+                    'createdAt' => '2026-09-24T12:00:00Z',
+
+                    'updatedAt' => '2026-09-24T12:00:00Z',
+
+                    'properties' => [
+                        'hs_timestamp' => '2026-09-24T12:00:00Z',
+
+                        'hs_note_body' => '<p>Conteúdo preservado.</p>',
+                    ],
+                ])
+                ->push([
+                    'id' => 'note-invalid-properties',
+
+                    'createdAt' => '2026-09-24T12:00:00Z',
+
+                    'updatedAt' => '2026-09-24T13:00:00Z',
+
+                    'properties' => 'resposta inválida',
+                ]),
+        ]);
+
+        $service =
+            app(
+                HubSpotActivitySyncService::class
+            );
+
+        $service->syncEvent(
+            event: hubSpotActivityEvent(
+                type: 'note',
+                id: 'note-invalid-properties',
+                subscription: 'object.creation',
+            ),
+            companyIds: [
+                $company->id,
+            ],
+        );
+
+        $updateEvent =
+            hubSpotActivityEvent(
+                type: 'note',
+                id: 'note-invalid-properties',
+                subscription: 'object.propertyChange',
+            );
+
+        expect(
+            fn () => $service->syncEvent(
+                event: $updateEvent,
+                companyIds: [
+                    $company->id,
+                ],
+            )
+        )->toThrow(
+            RuntimeException::class,
+            'Resposta inválida ao consultar atividade no HubSpot.'
+        );
+
+        $mirror =
+            HubSpotActivity::query()
+                ->where(
+                    'object_type',
+                    'note'
+                )
+                ->where(
+                    'hubspot_id',
+                    'note-invalid-properties'
+                )
+                ->firstOrFail();
+
+        $projection =
+            CompanyLeadActivity::query()
+                ->where(
+                    'company_id',
+                    $company->id
+                )
+                ->where(
+                    'source_object_id',
+                    'note-invalid-properties'
+                )
+                ->firstOrFail();
+
+        expect($mirror->description)
+            ->toContain('Conteúdo preservado.');
+
+        expect($projection->description)
+            ->toContain('Conteúdo preservado.');
     }
 );

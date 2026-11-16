@@ -180,4 +180,4 @@ new class extends Component
 ?>
 
 {{-- Layout visual Figma figma-show-v63; backend Volt preservado. --}}
-@include('pages.prospecting.partials.figma-show-v63')
+@include('pages.prospecting.partials.figma-show')

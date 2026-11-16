@@ -30,51 +30,47 @@ final class HubSpotExportImportService
         array $files,
         bool $replace = false,
     ): HubSpotImportRun {
-        if ($replace) {
-            $this->clearMirrorData();
-        }
+        $runAttributes = [
+            'uuid' => (string) Str::uuid(),
 
-        $run =
-            HubSpotImportRun::query()
-                ->create([
-                    'uuid' => (string) Str::uuid(),
+            'source' => 'hubspot_export',
 
-                    'source' => 'hubspot_export',
+            'status' => 'processing',
 
-                    'status' => 'processing',
+            'source_files' => [
+                'companies' => basename(
+                    $files['companies']
+                ),
 
-                    'source_files' => [
-                        'companies' => basename(
-                            $files['companies']
-                        ),
+                'deals' => basename(
+                    $files['deals']
+                ),
 
-                        'deals' => basename(
-                            $files['deals']
-                        ),
+                'contacts' => basename(
+                    $files['contacts']
+                ),
 
-                        'contacts' => basename(
-                            $files['contacts']
-                        ),
+                'tasks' => basename(
+                    $files['tasks']
+                ),
+            ],
 
-                        'tasks' => basename(
-                            $files['tasks']
-                        ),
-                    ],
+            'started_at' => now(),
+        ];
 
-                    'started_at' => now(),
-                ]);
+        $run = null;
 
         $tempDirectory =
             storage_path(
                 'app/hubspot-import/tmp/'
-                .$run->uuid
+                .$runAttributes['uuid']
             );
 
-        File::ensureDirectoryExists(
-            $tempDirectory
-        );
-
         try {
+            File::ensureDirectoryExists(
+                $tempDirectory
+            );
+
             $csvFiles = [
                 'companies' => $this->resolveCsv(
                     $files['companies'],
@@ -100,6 +96,47 @@ final class HubSpotExportImportService
                     $tempDirectory,
                 ),
             ];
+
+            $this->assertHeaders(
+                $csvFiles['companies'],
+                [
+                    'ID do registro',
+                    'Nome da empresa',
+                ]
+            );
+
+            $this->assertHeaders(
+                $csvFiles['deals'],
+                [
+                    'ID do registro',
+                    'Nome do negócio',
+                    'Pipeline',
+                    'Etapa do negócio',
+                ]
+            );
+
+            $this->assertHeaders(
+                $csvFiles['contacts'],
+                [
+                    'ID do registro',
+                    'Nome',
+                ]
+            );
+
+            $this->assertHeaders(
+                $csvFiles['tasks'],
+                [
+                    'ID do registro',
+                    'Título da tarefa',
+                ]
+            );
+
+            if ($replace) {
+                $this->clearMirrorData();
+            }
+
+            $run = HubSpotImportRun::query()
+                ->create($runAttributes);
 
             /*
              * Antes de apagar a base antiga,
@@ -185,19 +222,31 @@ final class HubSpotExportImportService
 
             return $run->refresh();
         } catch (Throwable $exception) {
-            $run
-                ->forceFill([
-                    'status' => 'failed',
+            $failure = [
+                'status' => 'failed',
 
-                    'finished_at' => now(),
+                'finished_at' => now(),
 
-                    'error' => mb_substr(
-                        $exception->getMessage(),
-                        0,
-                        5000
-                    ),
-                ])
-                ->save();
+                'error' => mb_substr(
+                    $exception->getMessage(),
+                    0,
+                    5000
+                ),
+            ];
+
+            if ($run instanceof HubSpotImportRun) {
+                $run
+                    ->forceFill($failure)
+                    ->save();
+            } else {
+                HubSpotImportRun::query()
+                    ->create(
+                        array_merge(
+                            $runAttributes,
+                            $failure
+                        )
+                    );
+            }
 
             throw $exception;
         } finally {

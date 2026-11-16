@@ -69,7 +69,7 @@ final class WhatsappPublicCompanyChannels
         }
         // EC_WA_PUBLIC_DIRECTORY_V14_SYNC: novo telefone publicado entra no índice local
         // imediatamente; não altera a confirmação de WhatsApp e não cria pessoas.
-        app(WhatsappPublicPhoneIndexerV14::class)->syncDomain($domain);
+        app(WhatsappPublicPhoneIndexer::class)->syncDomain($domain);
 
         return max(0, count($rows) - $before);
     }

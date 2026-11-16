@@ -291,6 +291,7 @@ final class ContactDirectory
         )));
         $verifications = ContactPhoneVerification::query()
             ->whereIn('source_key', $sourceKeys ?: ['__none__'])
+            ->whereNotNull('verified_by')
             ->get()
             ->mapWithKeys(static fn (ContactPhoneVerification $v): array => [
                 $v->source_key.'|'.$v->phone_normalized => $v->whatsapp_status,
@@ -374,12 +375,14 @@ final class ContactDirectory
             $query->whereExists(function (QueryBuilder $q) use ($waFilter): void {
                 $q->selectRaw('1')->from('contact_phone_verifications as cv')
                     ->whereColumn('cv.source_key', 'people.source_key')
+                    ->whereNotNull('cv.verified_by')
                     ->where('cv.whatsapp_status', $waFilter);
             });
             if ($waFilter === 'no') {
                 $query->whereNotExists(function (QueryBuilder $q): void {
                     $q->selectRaw('1')->from('contact_phone_verifications as cv')
                         ->whereColumn('cv.source_key', 'people.source_key')
+                        ->whereNotNull('cv.verified_by')
                         ->where('cv.whatsapp_status', 'yes');
                 });
             }
@@ -387,6 +390,7 @@ final class ContactDirectory
             $query->whereNotExists(function (QueryBuilder $q): void {
                 $q->selectRaw('1')->from('contact_phone_verifications as cv')
                     ->whereColumn('cv.source_key', 'people.source_key')
+                    ->whereNotNull('cv.verified_by')
                     ->whereIn('cv.whatsapp_status', ['yes', 'no']);
             });
         }

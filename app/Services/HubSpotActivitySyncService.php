@@ -507,15 +507,26 @@ final class HubSpotActivitySyncService
             );
         }
 
+        if (
+            ! array_key_exists(
+                'properties',
+                $data
+            )
+            || ! is_array(
+                $data[
+                    'properties'
+                ]
+            )
+        ) {
+            throw new RuntimeException(
+                'Resposta inválida ao consultar atividade no HubSpot.'
+            );
+        }
+
         $properties =
             $data[
                 'properties'
-            ]
-            ?? [];
-
-        if (! is_array($properties)) {
-            $properties = [];
-        }
+            ];
 
         return [
             'properties' => $properties,

@@ -110,4 +110,4 @@ new #[Title('Configurações do perfil')] class extends Component
     }
 };
 ?>
-@include('pages.settings.partials.profile-v63')
+@include('pages.settings.partials.profile')

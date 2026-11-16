@@ -220,7 +220,7 @@ new class extends Component
         $actor = auth()->user();
         abort_unless($actor instanceof User && $actor->isCommercialManager(), 403);
 
-        $moved = app(\App\Services\Contacts\WhatsappInlinePhoneCorrectionV20::class)
+        $moved = app(\App\Services\Contacts\WhatsappInlinePhoneCorrection::class)
             ->correct($actor, (int) $selected->id, $this->inlineCorrectedPhone, $this->inlineCorrectionNote);
         $this->selectedId = null;
         $this->inlineCorrectedPhone = '';
@@ -237,7 +237,7 @@ new class extends Component
         $actor = auth()->user();
         abort_unless($actor instanceof User && $actor->isCommercialManager(), 403);
 
-        app(\App\Services\Contacts\WhatsappInlinePhoneCorrectionV20::class)
+        app(\App\Services\Contacts\WhatsappInlinePhoneCorrection::class)
             ->invalid($actor, (int) $selected->id, $this->inlineCorrectionNote);
         $this->selectedId = null;
         $this->inlineCorrectedPhone = '';
@@ -477,7 +477,7 @@ new class extends Component
     {
         abort_unless(auth()->user()?->isCommercialManager(), 403);
         try {
-            $business = app(\App\Services\Contacts\WhatsappBusinessDirectoryV86::class)->snapshot($key);
+            $business = app(\App\Services\Contacts\WhatsappBusinessGroupDirectory::class)->snapshot($key);
         } catch (\Throwable $exception) {
             report($exception);
             $this->addError('public_site', 'Falha ao carregar os detalhes. A ocorrência foi registrada no log do Laravel; nenhum vínculo foi alterado.');
@@ -518,7 +518,7 @@ new class extends Component
     #[Computed]
     public function businessCandidatesV85(): \Illuminate\Support\Collection
     {
-        return app(\App\Services\Contacts\WhatsappBusinessDirectoryV86::class)
+        return app(\App\Services\Contacts\WhatsappBusinessGroupDirectory::class)
             ->search($this->publicCompanyQuery);
     }
 
@@ -529,7 +529,7 @@ new class extends Component
             return null;
         }
         try {
-            return app(\App\Services\Contacts\WhatsappBusinessDirectoryV86::class)
+            return app(\App\Services\Contacts\WhatsappBusinessGroupDirectory::class)
                 ->snapshot($this->publicBusinessKeyV85);
         } catch (\Throwable $exception) {
             report($exception);
@@ -563,7 +563,7 @@ new class extends Component
     {
         abort_unless(auth()->user()?->isCommercialManager(), 403);
         abort_unless($this->publicCompanyId !== null, 422);
-        $run = app(\App\Services\Contacts\WhatsappExternalCompanyDiscoveryV14::class)
+        $run = app(\App\Services\Contacts\WhatsappExternalCompanyDiscovery::class)
             ->queue(auth()->user(), (int) $this->publicCompanyId);
         session()->flash('wa_public_success', 'Pesquisa externa na fila #'.$run.'. Atualize a seção para acompanhar.');
     }
@@ -572,7 +572,7 @@ new class extends Component
     {
         abort_unless(auth()->user()?->isCommercialManager(), 403);
         abort_unless($this->publicCompanyId !== null, 422);
-        app(\App\Services\Contacts\WhatsappExternalCompanyDiscoveryV14::class)
+        app(\App\Services\Contacts\WhatsappExternalCompanyDiscovery::class)
             ->accept(auth()->user(), (int) $this->publicCompanyId, $findingId);
         unset($this->publicSelectedCompany);
         session()->flash('wa_public_success', 'Canal público adicionado à empresa; o número está disponível em Contatos.');
@@ -586,7 +586,7 @@ new class extends Component
         $legacy = $this->publicCompanyId !== null
             ? 'hubspot:'.$this->publicCompanyId : null;
         abort_unless($targetKey === $current || $targetKey === $legacy, 404);
-        $runId = app(\App\Services\Contacts\WhatsappCompanyWebResearchV87::class)
+        $runId = app(\App\Services\Contacts\WhatsappCompanyWebResearch::class)
             ->queue(auth()->user(), $targetKey);
         $status = (string) \Illuminate\Support\Facades\DB::table('whatsapp_company_web_runs_v87')
             ->where('id', $runId)->value('status');
@@ -599,7 +599,7 @@ new class extends Component
     public function selectAllPublicPhonesV89(): void
     {
         abort_unless(auth()->user()?->isCommercialManager(), 403);
-        $research = app(\App\Services\Contacts\WhatsappCompanyQuickResearchV88::class);
+        $research = app(\App\Services\Contacts\WhatsappCompanyQuickResearch::class);
         $run = $this->publicQuickSearchKeyV88 !== null
             ? $research->latest($this->publicQuickSearchKeyV88) : null;
         if ($run === null || $run->status !== 'completed'
@@ -621,14 +621,14 @@ new class extends Component
             return;
         }
         $key = $this->publicQuickSearchKeyV88;
-        $research = app(\App\Services\Contacts\WhatsappCompanyQuickResearchV88::class);
+        $research = app(\App\Services\Contacts\WhatsappCompanyQuickResearch::class);
         $run = $key !== null ? $research->latest($key) : null;
         if ($run === null || $key === null) {
             $this->addError('wa89_selection', 'Não há pesquisa concluída para aprovação.');
             return;
         }
         try {
-            $out = app(\App\Services\Contacts\WhatsappCompanyPhoneApprovalV89::class)->approve(
+            $out = app(\App\Services\Contacts\WhatsappCompanyPhoneApproval::class)->approve(
                 auth()->user(), (string) $this->publicQuickNameV88, $key,
                 (int) $run->id, (string) $this->publicSaveTargetV89,
                 (array) $this->publicSelectedPhonesV89, $this->publicApprovalNoteV89
@@ -649,7 +649,7 @@ new class extends Component
     {
         abort_unless(auth()->user()?->isCommercialManager(), 403);
         $this->resetValidation('wa88_name');
-        $service = app(\App\Services\Contacts\WhatsappCompanyQuickResearchV88::class);
+        $service = app(\App\Services\Contacts\WhatsappCompanyQuickResearch::class);
         try {
             $name = trim($this->publicQuickNameV88);
             $service->start(auth()->user(), $name);
@@ -757,8 +757,32 @@ new class extends Component
     $summary = $this->summary;
     $selected = $this->selectedNumber;
     $fmt = static fn (int $value): string => number_format($value, 0, ',', '.');
-    $statusLabel = static fn (string $status): string => match ($status) {
-        'yes' => 'Com WhatsApp', 'no' => 'Não possui', default => 'A verificar',
+    $hasManualConfirmation = static function (string $status, ?string $evidence, mixed $verifiedBy = null): bool {
+        if ($status === 'yes' && in_array($evidence, [
+            'manual_app_confirmed', 'directory_manual_check',
+        ], true)) {
+            return true;
+        }
+        if ($status === 'no' && in_array($evidence, [
+            'manual_app_unavailable', 'directory_manual_check',
+        ], true)) {
+            return true;
+        }
+
+        return in_array($status, ['yes', 'no'], true)
+            && $evidence === 'legacy_manual' && $verifiedBy !== null;
+    };
+    $statusLabel = static function (string $status, ?string $evidence = null, mixed $verifiedBy = null) use ($hasManualConfirmation): string {
+        if ($evidence === 'web_found_unofficial') {
+            return 'Indício técnico — conferir';
+        }
+        if (! $hasManualConfirmation($status, $evidence, $verifiedBy)) {
+            return 'A verificar';
+        }
+
+        return match ($status) {
+            'yes' => 'Com WhatsApp', 'no' => 'Não possui', default => 'A verificar',
+        };
     };
     $kindLabel = static fn (string $kind): string => match ($kind) {
         'mobile' => 'Celular', 'landline' => 'Fixo', default => 'Revisar formato',
@@ -770,18 +794,24 @@ new class extends Component
     $valid = (int) $summary['mobile'] + (int) $summary['landline'];
     $percentage = $valid > 0 ? min(100, (int) round($verified * 100 / $valid)) : 0;
 @endphp
+<style id="ec941-wa-style">
+    .ec941-wa-form {display:grid;gap:10px}
+    .ec941-confirm {display:flex;gap:8px;align-items:flex-start;color:#35576b;font-size:12px;line-height:1.5}
+    .ec941-confirm input {accent-color:#008f82;margin-top:3px}
+    .ec941-wa-form .wpr-action-row {display:flex;gap:8px;flex-wrap:wrap}
+    </style>
 <div class="wpr wpr-v2 wpr-v3 wpr-v7 wpr-v8 wa12" wire:poll.30s data-test="whatsapp-phone-registry-v1" data-ec-whatsapp-design="v2" data-test-v12="central-por-tarefas"
     x-data="{ tab: window.location.hash === '#wa11-empresa' ? 'company' : 'numbers' }"
     x-on:wa12-show-numbers.window="tab='numbers'; $nextTick(() => document.getElementById('wa8-lista')?.scrollIntoView({behavior:'smooth',block:'start'}))">
     @include('contacts.whatsapp-registry-styles')
-    @include('contacts.whatsapp-registry-theme-v2')
-    @include('contacts.whatsapp-registry-theme-v3')
-    @include('contacts.whatsapp-web-v4-styles')
-    @include('contacts.whatsapp-web-v6-styles')
-    @include('contacts.whatsapp-v7-styles')
-    @include('contacts.whatsapp-v8-styles')
-    @include('contacts.whatsapp-v9-styles')
-    @include('contacts.whatsapp-v12-styles') {{-- EC_WA_VISUAL_V12 --}}
+    @include('contacts.whatsapp-registry-light-theme')
+    @include('contacts.whatsapp-registry-theme-overrides')
+    @include('contacts.whatsapp-web-results-styles')
+    @include('contacts.whatsapp-web-controls-styles')
+    @include('contacts.whatsapp-verification-workspace-styles')
+    @include('contacts.whatsapp-verification-operation-styles')
+    @include('contacts.whatsapp-verification-schedule-styles')
+    @include('contacts.whatsapp-verification-tabs-styles') {{-- EC_WA_VISUAL_V12 --}}
     <header class="wpr-heading">
         <div>
             <p class="wpr-kicker">RELACIONAMENTO <span> / </span> VERIFICAÇÃO WHATSAPP</p>
@@ -792,14 +822,17 @@ new class extends Component
     </header>
 
     {{-- EC_WA_UNIFIED_V7_VIEW: visão geral, execução e histórico em um único painel. --}}
-    @include('contacts.whatsapp-v12-summary')
-    @include('contacts.whatsapp-v12-tabs')
+    @include('contacts.whatsapp-summary')
+    @include('contacts.whatsapp-tabs')
 
     @if (session('wa_registry_success'))
         <div class="wpr-alert" role="status">✓ {{ session('wa_registry_success') }}</div>
     @endif
     @error('wa_status')<div class="wpr-alert wpr-alert-error" role="alert">{{ $message }}</div>@enderror
     @error('wa_note')<div class="wpr-alert wpr-alert-error" role="alert">{{ $message }}</div>@enderror
+    @error('confirmed')<div class="wpr-alert wpr-alert-error" role="alert">{{ $message }}</div>@enderror
+    @error('status')<div class="wpr-alert wpr-alert-error" role="alert">{{ $message }}</div>@enderror
+    @error('note')<div class="wpr-alert wpr-alert-error" role="alert">{{ $message }}</div>@enderror
 
 
 
@@ -841,6 +874,7 @@ new class extends Component
                         @php
                             $active = (int) $selected?->id === (int) $row->id;
                             $number = BrazilPhoneNumber::display($row->e164, $row->digits);
+                            $rowStatus = $hasManualConfirmation($row->status, $row->evidence, $row->verified_by) ? $row->status : 'unknown';
                         @endphp
                         <button type="button" wire:key="wpr-number-{{ $row->id }}" class="wpr-number {{ $active ? 'is-active' : '' }}" wire:click="selectNumber({{ $row->id }})" aria-pressed="{{ $active ? 'true' : 'false' }}">
                             <span class="wpr-number-icon">{{ $row->kind === 'mobile' ? '◉' : ($row->kind === 'landline' ? '☎' : '!') }}</span>
@@ -848,7 +882,13 @@ new class extends Component
                             @if(($publicLink = $this->publicEvidencePage[(int) $row->id] ?? null))
                                 <span class="wa10-public-pill" title="Divulgação pública; conta pode não estar ativa">Divulgado no site</span>
                             @endif
-                            <span class="wpr-status wpr-status-{{ $row->status }}">{{ $statusLabel($row->status) }}</span>
+                            <span class="wpr-status wpr-status-{{ $rowStatus }}">
+@if ($rowStatus === 'unknown' && ($this->webProbePage[(int) $row->id] ?? null)?->result === 'inconclusive')
+    Não confirmado — não utilizar WhatsApp
+@else
+{{ $rowStatus === 'unknown' && ($this->webProbePage[(int) $row->id] ?? null)?->result === 'not_found' ? 'WhatsApp não encontrado pelo robô' : $statusLabel($rowStatus, $row->evidence, $row->verified_by) }}
+@endif
+</span>
                             <span class="wpr-number-chevron">›</span>
                         </button>
                     @endforeach
@@ -859,7 +899,14 @@ new class extends Component
 
         <aside class="wpr-detail-panel" aria-label="Verificação do telefone selecionado">
             @if ($selected)
-                <div class="wpr-detail-top"><span class="wpr-eyebrow">TELEFONE SELECIONADO</span><span class="wpr-status wpr-status-{{ $selected->status }}">{{ $statusLabel($selected->status) }}</span></div>
+                @php $selectedStatus = $hasManualConfirmation($selected->status, $selected->evidence, $selected->verified_by) ? $selected->status : 'unknown'; @endphp
+                <div class="wpr-detail-top"><span class="wpr-eyebrow">TELEFONE SELECIONADO</span><span class="wpr-status wpr-status-{{ $selectedStatus }}">
+@if ($selectedStatus === 'unknown' && ($this->webProbePage[(int) $selected->id] ?? null)?->result === 'inconclusive')
+    Não confirmado — não utilizar WhatsApp
+@else
+{{ $selectedStatus === 'unknown' && ($this->webProbePage[(int) $selected->id] ?? null)?->result === 'not_found' ? 'WhatsApp não encontrado pelo robô' : $statusLabel($selectedStatus, $selected->evidence, $selected->verified_by) }}
+@endif
+</span></div>
                 <h2>{{ BrazilPhoneNumber::display($selected->e164, $selected->digits) }}</h2>
                 <p class="wpr-muted">{{ $kindLabel($selected->kind) }} · {{ $fmt((int) $selected->contacts_count) }} registro(s), {{ $fmt((int) $selected->occurrences_count) }} ocorrência(s)</p>
 
@@ -873,7 +920,18 @@ new class extends Component
                         <p>A divulgação não substitui uma confirmação de conta ativa.</p>
                     </div>
                 @endif
-                @include('contacts.whatsapp-v7-selected')
+                @include('contacts.whatsapp-selected')
+                {{-- Resultado técnico sem confirmação = não elegível para ações via WhatsApp. --}}
+                @if ($selectedStatus === 'unknown' && ($this->webProbePage[(int) $selected->id] ?? null)?->result === 'inconclusive')
+                    <div class="wpr-warning" role="status"><strong>Não confirmado — não utilizar WhatsApp</strong>
+                        <p>O robô não concluiu a consulta. Isso não comprova que a conta exista nem que esteja ausente. Para prospecção, não utilize este número como WhatsApp confirmado; confira no aplicativo para registrar “Não possui”.</p>
+                    </div>
+                @endif
+                @if ($selected->evidence === 'web_found_unofficial')
+                    <div class="wpr-warning" role="status"><strong>Indício técnico — conferir</strong>
+                        <p>A consulta não oficial encontrou um possível resultado. Isso não é confirmação manual nem decisão operacional; confira no aplicativo antes de usar este número como WhatsApp.</p>
+                    </div>
+                @endif
 
                 @if ($selected->kind === 'review')
                     <div class="wpr-warning"><strong>Formato precisa de revisão</strong><p>Confira o DDD, o prefixo e os dígitos diretamente no HubSpot ou no cadastro de origem. Este número não pode ser marcado como confirmado enquanto estiver inconsistente.</p></div>
@@ -888,18 +946,33 @@ new class extends Component
                         </div>
                     @endif
                     {{-- EC_WA_INLINE_REVIEW_V20 --}}
-                    @include('contacts.whatsapp-inline-review-v20')
+                    @include('contacts.whatsapp-inline-review')
                 @else
                     <div class="wpr-action-panel">
                         <h3>Conferir no aplicativo</h3>
                         <p>Abra a conversa para verificar manualmente. A abertura do link não altera o status e não envia mensagem.</p>
                         <a class="wpr-button wpr-button-primary" href="https://wa.me/{{ $selected->e164 }}" target="_blank" rel="noopener noreferrer">↗ Abrir no WhatsApp</a>
-                        <label class="wpr-note-label"><span>Observação da conferência <small>{{ $selected->status === 'unknown' ? '(obrigatória para registrar “Não possui”)' : '(opcional)' }}</small></span>
-                            <textarea wire:model="note" rows="2" maxlength="300" placeholder="Ex.: aplicativo confirmou a conta / informou que o número não está no WhatsApp"></textarea>
-                        </label>
-                        <div class="wpr-action-row"><button type="button" class="wpr-button wpr-button-positive" wire:click="mark('yes')" wire:confirm="Você conferiu no aplicativo e comprovou que o número possui WhatsApp?">✓ Tem WhatsApp</button><button type="button" class="wpr-button wpr-button-neutral" wire:click="mark('no')" wire:confirm="O aplicativo confirmou que este número NÃO possui WhatsApp?">× Não possui</button></div>
-                        @if ($selected->status !== 'unknown')
-                            <button type="button" class="wpr-clear" wire:click="mark('unknown')" wire:confirm="Remover a confirmação para este número e todos os contatos vinculados?">↶ Desfazer confirmação</button>
+                        {{-- EC941_WA_MANUAL_POST: confirmação real por POST, não depende de wire:click. --}}
+                        <form method="POST" action="{{ route('contacts.whatsapp.verify-v941', ['phone' => $selected->id]) }}" class="ec941-wa-form">
+                            @csrf
+                            <label class="wpr-note-label"><span>Observação da conferência (obrigatória para “Não possui”)</span>
+                                <textarea name="note" rows="2" maxlength="300" placeholder="Observação da confirmação no aplicativo">{{ old('note') }}</textarea>
+                            </label>
+                            @error('note')<p class="ecc3-error" role="alert">{{ $message }}</p>@enderror
+                            <label class="ec941-confirm"><input type="checkbox" name="confirmed" value="1" required> Conferi diretamente este número no aplicativo e confirmo o resultado escolhido.</label>
+                            @error('confirmed')<p class="ecc3-error" role="alert">{{ $message }}</p>@enderror
+                            <div class="wpr-action-row">
+                                <button type="submit" name="status" value="yes" class="wpr-button wpr-button-positive">✓ Tem WhatsApp</button>
+                                <button type="submit" name="status" value="no" class="wpr-button wpr-button-neutral">× Não possui</button>
+                            </div>
+                        </form>
+                        @if ($selectedStatus !== 'unknown')
+                            <form method="POST" action="{{ route('contacts.whatsapp.verify-v941', ['phone' => $selected->id]) }}">
+                                @csrf <input type="hidden" name="status" value="unknown">
+                                <label class="ec941-confirm"><input type="checkbox" name="confirmed" value="1" required> Confirmo que desejo desfazer a confirmação deste número e dos contatos vinculados.</label>
+                                @error('confirmed')<p class="ecc3-error" role="alert">{{ $message }}</p>@enderror
+                                <button type="submit" class="wpr-clear" onclick="return confirm('Desfazer a confirmação deste telefone e dos contatos vinculados?')">↶ Desfazer confirmação</button>
+                            </form>
                         @endif
                     </div>
                 @endif
@@ -928,18 +1001,18 @@ new class extends Component
             @endif
         </aside>
     </div>
-    </section> {{-- /wa12-numbers --}}
+    </section> {{-- EC92_WA_LABEL: status técnico aparece sem alterar confirmações humanas. --}} {{-- /wa12-numbers --}}
     {{-- EC_WA_PUBLIC_COMPANY_V11: o diretório vem ANTES da pesquisa complementar. --}}
     <section id="wa12-company" class="wa12-pane wa12-pane-company" role="tabpanel" x-show="tab==='company'" x-cloak aria-label="Pesquisar WhatsApp de uma empresa">
         {{-- V88: fluxo principal simples; o legado continua acessível apenas para ações já existentes. --}}
         @if($publicCompanyId !== null || $publicBusinessKeyV85 !== null || mb_strlen(trim($publicCompanyQuery)) >= 3)
-            @include('contacts.whatsapp-public-v11')
+            @include('contacts.whatsapp-company-public-research')
         @else
-            @include('contacts.whatsapp-pesquisa-simples-v88')
+            @include('contacts.whatsapp-pesquisa-simples')
         @endif
     </section>
     {{-- EC_WA_FULL_DIRECTORY_V8: execução e histórico depois da lista completa. --}}
     <section id="wa12-operation" class="wa12-pane wa12-pane-operation" role="tabpanel" x-show="tab==='operation'" x-cloak aria-label="Lotes, programação e histórico">
-        @include('contacts.whatsapp-v8-operation')
+        @include('contacts.whatsapp-operation')
     </section>
 </div>

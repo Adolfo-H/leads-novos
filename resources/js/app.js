@@ -1,1 +1,1 @@
-import './leads-return-v60.js';
+import './leads-return.js';

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\CnpjGroupDataProvider;
 use App\Models\Company;
 use App\Support\Cnpj;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 final class CompanyGroupEnrichmentService
@@ -58,84 +59,90 @@ final class CompanyGroupEnrichmentService
             );
         }
 
-        $company = null;
+        return DB::transaction(function () use (
+            $root,
+            $companyData,
+            $establishments,
+        ): Company {
+            $company = null;
 
-        foreach (
-            $establishments as $item
-        ) {
-            $establishmentData =
-                $item['establishment'];
-
-            $cnaes =
-                $item['cnaes'];
-
-            if (
-                empty(
-                    $establishmentData[
-                        'cnpj'
-                    ]
-                )
+            foreach (
+                $establishments as $item
             ) {
-                throw new InvalidArgumentException(
-                    'A fonte retornou um estabelecimento sem CNPJ.'
-                );
-            }
+                $establishmentData =
+                    $item['establishment'];
 
-            $establishmentCnpj =
-                Cnpj::normalize(
-                    (string)
+                $cnaes =
+                    $item['cnaes'];
+
+                if (
+                    empty(
                         $establishmentData[
                             'cnpj'
                         ]
-                );
+                    )
+                ) {
+                    throw new InvalidArgumentException(
+                        'A fonte retornou um estabelecimento sem CNPJ.'
+                    );
+                }
 
-            Cnpj::assertValid(
-                $establishmentCnpj
-            );
+                $establishmentCnpj =
+                    Cnpj::normalize(
+                        (string)
+                            $establishmentData[
+                                'cnpj'
+                            ]
+                    );
 
-            if (
-                Cnpj::root(
+                Cnpj::assertValid(
                     $establishmentCnpj
-                ) !== $root
-            ) {
-                throw new InvalidArgumentException(
-                    'A fonte retornou um estabelecimento pertencente a outra raiz de CNPJ.'
                 );
+
+                if (
+                    Cnpj::root(
+                        $establishmentCnpj
+                    ) !== $root
+                ) {
+                    throw new InvalidArgumentException(
+                        'A fonte retornou um estabelecimento pertencente a outra raiz de CNPJ.'
+                    );
+                }
+
+                $establishmentData[
+                    'cnpj'
+                ] = $establishmentCnpj;
+
+                $company =
+                    $this->companies
+                        ->createOrUpdateFromEstablishment(
+                            $companyData,
+                            $establishmentData,
+                            $cnaes,
+                            loadRelations: false,
+                            replaceCnaes: true,
+                        );
             }
 
-            $establishmentData[
-                'cnpj'
-            ] = $establishmentCnpj;
+            /**
+             * O array de estabelecimentos já foi validado
+             * como não vazio antes do foreach.
+             *
+             * @var Company $company
+             */
+            $company = $company->fresh([
+                'establishments.cnaes',
+                'icpScore',
+            ]);
 
-            $company =
-                $this->companies
-                    ->createOrUpdateFromEstablishment(
-                        $companyData,
-                        $establishmentData,
-                        $cnaes,
-                        loadRelations: false,
-                        replaceCnaes: true,
-                    );
-        }
+            $this->icp->calculate(
+                $company
+            );
 
-        /**
-         * O array de estabelecimentos já foi validado
-         * como não vazio antes do foreach.
-         *
-         * @var Company $company
-         */
-        $company = $company->fresh([
-            'establishments.cnaes',
-            'icpScore',
-        ]);
-
-        $this->icp->calculate(
-            $company
-        );
-
-        return $company->fresh([
-            'establishments.cnaes',
-            'icpScore',
-        ]);
+            return $company->fresh([
+                'establishments.cnaes',
+                'icpScore',
+            ]);
+        });
     }
 }

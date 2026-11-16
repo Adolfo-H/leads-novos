@@ -30,7 +30,7 @@ it('contains the responsive commercial management workspace structure', function
             'ecgm62-attention-table'
         )
         ->toContain(
-            'partials.commercial-distribution-preview'
+            'partials.commercial-distribution-dialog'
         );
 });
 

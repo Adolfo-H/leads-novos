@@ -220,6 +220,12 @@ final class HubSpotDealCompanyAssociationService
                 $response->status()
                 === 404
             ) {
+                if ($after !== null) {
+                    throw new RuntimeException(
+                        'Falha ao paginar associações Deal -> Company. HTTP 404.'
+                    );
+                }
+
                 return [];
             }
 
@@ -246,45 +252,109 @@ final class HubSpotDealCompanyAssociationService
                 $data[
                     'results'
                 ]
-                ?? [];
+                ?? null;
 
-            if (is_array($results)) {
-                foreach (
-                    $results as $result
+            if (! is_array($results)) {
+                throw new RuntimeException(
+                    'Resposta inválida das associações Deal -> Company.'
+                );
+            }
+
+            foreach (
+                $results as $result
+            ) {
+                if (
+                    ! is_array($result)
+                    || $this->associationObjectId(
+                        $result
+                    ) === null
                 ) {
-                    if (
-                        is_array(
-                            $result
-                        )
-                    ) {
-                        $rows[] =
-                            $result;
-                    }
+                    throw new RuntimeException(
+                        'Resposta inválida das associações Deal -> Company.'
+                    );
                 }
+
+                $rows[] =
+                    $result;
+            }
+
+            $paging =
+                $data[
+                    'paging'
+                ]
+                ?? null;
+
+            if (
+                $paging !== null
+                && ! is_array($paging)
+            ) {
+                throw new RuntimeException(
+                    'Resposta inválida das associações Deal -> Company.'
+                );
+            }
+
+            $nextPage =
+                is_array($paging)
+                    ? (
+                        $paging[
+                            'next'
+                        ]
+                        ?? null
+                    )
+                    : null;
+
+            if (
+                $nextPage !== null
+                && ! is_array($nextPage)
+            ) {
+                throw new RuntimeException(
+                    'Resposta inválida das associações Deal -> Company.'
+                );
             }
 
             $next =
-                data_get(
-                    $data,
-                    'paging.next.after'
+                is_array($nextPage)
+                    ? (
+                        $nextPage[
+                            'after'
+                        ]
+                        ?? null
+                    )
+                    : null;
+
+            if ($next === null) {
+                $after = null;
+
+                continue;
+            }
+
+            if (! is_scalar($next)) {
+                throw new RuntimeException(
+                    'Resposta inválida das associações Deal -> Company.'
                 );
+            }
 
             $next =
-                is_scalar($next)
-                    ? trim(
-                        (string) $next
-                    )
-                    : '';
+                trim(
+                    (string) $next
+                );
+
+            if ($next === '') {
+                $after = null;
+
+                continue;
+            }
 
             if (
-                $next === ''
-                || isset(
+                isset(
                     $seenAfter[
                         $next
                     ]
                 )
             ) {
-                $after = null;
+                throw new RuntimeException(
+                    'HubSpot repetiu o cursor de associações Deal -> Company.'
+                );
             } else {
                 $seenAfter[
                     $next

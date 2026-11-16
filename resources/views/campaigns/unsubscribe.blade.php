@@ -14,9 +14,12 @@
         html{min-height:100%;background:#f1f7f7}
         body{min-height:100vh;margin:0;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ec-ink);background:radial-gradient(850px 560px at 85% -15%,#ccece4 0,transparent 72%),radial-gradient(650px 430px at -15% 100%,#dfebf4 0,transparent 70%),#f1f7f7}
         .page{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:45px 20px}
-        .brand{width:min(100%,580px);display:flex;align-items:center;gap:11px;letter-spacing:.06em;font-weight:800;font-size:14px;color:var(--ec-navy)}
-        .brand-mark{height:37px;width:37px;display:grid;place-items:center;border:2px solid #0c817a;border-radius:12px;color:#087d76;background:#e0f6ef;font-weight:900;letter-spacing:-.12em;padding-right:2px}
-        .brand strong{display:block;line-height:1.1}.brand span{font-size:10px;letter-spacing:.13em;color:#198b85;font-weight:750}
+        .brand{width:min(100%,580px);display:flex;align-items:center;gap:14px;letter-spacing:.06em;font-weight:800;font-size:14px;color:var(--ec-navy)}
+        .brand-logo-wrap{display:inline-flex;align-items:center;justify-content:center;padding:6px 0}
+        .brand-logo-wrap img{display:block;height:48px;width:auto;max-width:min(240px,62vw);object-fit:contain;filter:drop-shadow(0 8px 20px rgba(9,39,62,.08))}
+        .brand-copy{display:flex;flex-direction:column;gap:2px}
+        .brand-copy strong{display:block;line-height:1.1}.brand-copy span{font-size:10px;letter-spacing:.13em;color:#198b85;font-weight:750}
+        /* EC_UNSUBSCRIBE_LOGO_V9011: usa a logo oficial da ExportControl no cabeçalho público. */
         .card{width:min(100%,580px);overflow:hidden;border:1px solid #d5e6e6;background:#fff;border-radius:20px;box-shadow:0 22px 70px #17364b14,0 2px 8px #17364b08}
         .bar{height:5px;background:linear-gradient(90deg,#006d76,#15bda5 56%,#8ad5b9)}
         .content{padding:36px 39px 35px}
@@ -43,9 +46,44 @@
 </head>
 <body>
 <div class="page">
+    @php
+        // EC_UNSUBSCRIBE_INLINE_LOGO_V9013: o gateway público bloqueia /images/*.
+        // Incorporar logo no HTML preserva a restrição de rotas do Nginx.
+        $ecUnsubscribeInlineLogo = null;
+        foreach ([
+            public_path('images/logo-exportcontrol.png.jpeg'),
+            public_path('images/brand/pngexportcontrol.png'),
+        ] as $ecUnsubscribeLogoFile) {
+            if (! is_file($ecUnsubscribeLogoFile) || ! is_readable($ecUnsubscribeLogoFile)) {
+                continue;
+            }
+            $ecUnsubscribeLogoSize = @filesize($ecUnsubscribeLogoFile);
+            if (! is_int($ecUnsubscribeLogoSize) || $ecUnsubscribeLogoSize < 1 || $ecUnsubscribeLogoSize > 3000000) {
+                continue;
+            }
+            $ecUnsubscribeLogoInfo = @getimagesize($ecUnsubscribeLogoFile);
+            $ecUnsubscribeLogoMime = is_array($ecUnsubscribeLogoInfo)
+                ? ($ecUnsubscribeLogoInfo['mime'] ?? null) : null;
+            if (! in_array($ecUnsubscribeLogoMime, ['image/png', 'image/jpeg', 'image/webp'], true)) {
+                continue;
+            }
+            $ecUnsubscribeLogoBytes = @file_get_contents($ecUnsubscribeLogoFile);
+            if (! is_string($ecUnsubscribeLogoBytes) || $ecUnsubscribeLogoBytes === '') {
+                continue;
+            }
+            $ecUnsubscribeInlineLogo = 'data:'.$ecUnsubscribeLogoMime.';base64,'.base64_encode($ecUnsubscribeLogoBytes);
+            break;
+        }
+    @endphp
     <div class="brand" aria-label="ExportControl">
-        <div class="brand-mark" aria-hidden="true">EC</div>
-        <div><strong>EXPORTCONTROL</strong><span>COMUNICAÇÃO COMERCIAL</span></div>
+        <span class="brand-logo-wrap">
+            @if ($ecUnsubscribeInlineLogo !== null)
+                <img src="{{ $ecUnsubscribeInlineLogo }}" alt="ExportControl" style="display:block;height:auto;max-height:52px;width:auto;background:transparent;mix-blend-mode:multiply;isolation:isolate"> <!-- EC_UNSUBSCRIBE_LOGO_BLEND_V9014 -->
+            @else
+                <span aria-label="ExportControl" style="color:#087d76;font-size:12px;font-weight:800">EC</span>
+            @endif
+        </span>
+        <div class="brand-copy"><strong>EXPORTCONTROL</strong><span>COMUNICAÇÃO COMERCIAL</span></div>
     </div>
     <main class="card">
         <div class="bar" aria-hidden="true"></div>

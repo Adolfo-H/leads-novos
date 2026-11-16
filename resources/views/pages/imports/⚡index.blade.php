@@ -759,4 +759,4 @@ new class extends Component
 };
 ?>
 
-@include('partials.imports.figma-v65')
+@include('partials.imports.figma')

@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 new class extends Component
@@ -52,9 +53,14 @@ new class extends Component
     /** @var list<string> */
     public array $audienceKeys = [];
 
+    /** @var array<string,string> A seleção enviada de Contatos só pode gerar estes e-mails. */
+    public array $importedExpectedEmailsV91 = [];
+
     public bool $lawfulBasisConfirmed = false;
 
     public string $campaignSearch = '';
+
+    #[Url(as: 'situacao')]
 
     public string $campaignStatus = 'all';
 
@@ -80,6 +86,45 @@ new class extends Component
 
     public function mount(): void
     {
+        // EC_CAMPAIGNS_V93_NATIVE_MOUNT: filtros GET funcionam mesmo sem JavaScript.
+        $v93Status = request()->query('situacao');
+        if (is_string($v93Status) && in_array($v93Status, ['all', 'draft', 'running', 'paused', 'completed', 'canceled'], true)) {
+            $this->campaignStatus = $v93Status;
+        }
+        $v94Page = request()->query('paginaCampanha');
+        if (is_string($v94Page) && preg_match('/^[1-9][0-9]{0,5}$/D', $v94Page) === 1) {
+            $this->campaignTablePage = min(10000, (int) $v94Page);
+        }
+        $v93Search = request()->query('buscar');
+        if (is_string($v93Search)) {
+            $this->campaignSearch = mb_substr(trim($v93Search), 0, 120);
+        }
+        // EC92: transferência por POST usa snapshot exato e nao depende de eventos JS.
+        $v92Pending = session()->pull('campaign_transfer_pending_v92', []);
+        if ($this->canManageCampaigns && is_array($v92Pending) && $v92Pending !== []) {
+            $v92Keys = array_values(array_keys($v92Pending));
+            app(\App\Services\Campaigns\CampaignContactTransfer::class)->guard($v92Keys, $v92Pending);
+            $this->audienceKeys = $v92Keys;
+            $this->screen = 'composer';
+            $this->composerStep = 'audience';
+            $this->applyTemplate('initial');
+            session()->put('campaign_transfer_expected_v92', $v92Pending);
+
+            return;
+        }
+        // GET apenas prepara o assistente e os modelos; jamais dispara SMTP.
+        if ((string) request()->query('nova', '') === '1' && $this->canManageCampaigns) {
+            $this->screen = 'composer';
+            $this->composerStep = 'audience';
+            $v92Model = (string) request()->query('modelo', 'initial');
+            $this->applyTemplate(in_array($v92Model, ['initial', 'followup', 'meeting'], true) ? $v92Model : 'initial');
+            $v92Origin = (string) request()->query('origem', 'all');
+            $this->audienceOrigin = in_array($v92Origin, ['all', 'hubspot', 'manual', 'receita'], true) ? $v92Origin : 'all';
+            $this->audienceSearch = mb_substr(trim((string) request()->query('busca', '')), 0, 120);
+
+            return;
+        }
+
         // EC_CAMPAIGN_DIRECT_LINK_V905: a ficha abre também por URL HTTP.
         // Somente leitura: não inicia SMTP, não cria campanha e não altera banco.
         $campaignId = request()->query('campanha');
@@ -107,15 +152,36 @@ new class extends Component
                 return;
             }
         }
+        // EC_CAMPAIGN_NEW_HTTP_V91: nova campanha abre até com Livewire JavaScript indisponível.
+        if (request()->query('nova') === '1') {
+            session()->forget(['campaign_mail_selected', 'campaign_mail_expected_emails']);
+            $this->screen = 'composer';
+            $this->composerStep = 'audience';
+            $this->applyTemplate('initial');
+            return;
+        }
         $keys = session()->pull('campaign_mail_selected', []);
+        $expectedEmails = session()->pull('campaign_mail_expected_emails', []);
         if ($this->canManageCampaigns && is_array($keys) && $keys !== []) {
             $this->audienceKeys = array_values(array_unique(array_filter($keys,
                 static fn (mixed $key): bool => is_string($key)
                     && preg_match('/^(?:(?:hubspot|manual):[0-9]+|receita:[0-9a-fA-F-]{36})$/D', $key) === 1
             )));
-            $this->screen = 'composer';
-            $this->composerStep = 'audience';
-            $this->applyTemplate('initial');
+            // Validação fail-closed: sem e-mail original, nenhum destinatário será importado.
+            try {
+                $snapshot = app(\App\Services\Campaigns\CampaignContactsSelection::class)
+                    ->validateExact($this->audienceKeys, is_array($expectedEmails) ? $expectedEmails : []);
+                $this->audienceKeys = $snapshot['keys'];
+                $this->importedExpectedEmailsV91 = $snapshot['emails'];
+                $this->screen = 'composer';
+                $this->composerStep = 'audience';
+                $this->applyTemplate('initial');
+            } catch (\Illuminate\Validation\ValidationException $error) {
+                $this->audienceKeys = [];
+                $this->importedExpectedEmailsV91 = [];
+                $this->screen = 'overview';
+                $this->addError('recipients', 'Os e-mails mudaram desde a seleção. Nenhum contato foi importado. Volte a Contatos e selecione novamente.');
+            }
         } else {
             // Quando já existem campanhas, a mais recente abre na área operacional.
             $latestId = EmailCampaign::query()->latest('id')->value('id');
@@ -600,9 +666,11 @@ new class extends Component
 
     public function newCampaign(): void
     {
+        session()->forget('campaign_transfer_expected_v92');
         $this->assertCampaignManager();
         $this->sendConfirmationOpen = false;
         $this->reviewRecipientsPage = 1;
+        $this->importedExpectedEmailsV91 = [];
         $this->reset(['editingCampaignId', 'selectedCampaignId', 'name', 'subject', 'body',
             'audienceSearch', 'audienceOrigin', 'audiencePage', 'audienceKeys', 'lawfulBasisConfirmed']);
         $this->screen = 'composer';
@@ -794,6 +862,10 @@ new class extends Component
     public function saveDraft(CampaignManager $manager): void
     {
         $user = $this->assertCampaignManager();
+        if ($this->importedExpectedEmailsV91 !== []) {
+            app(\App\Services\Campaigns\CampaignContactsSelection::class)
+                ->validateExact($this->audienceKeys, $this->importedExpectedEmailsV91);
+        }
         $validated = $this->validate([
             'name' => ['required', 'string', 'min:3', 'max:180'],
             'subject' => ['required', 'string', 'min:3', 'max:180'],
@@ -801,12 +873,18 @@ new class extends Component
             'audienceKeys' => ['required', 'array', 'min:1'],
             'audienceKeys.*' => ['string', 'max:160', 'regex:/^(?:(?:hubspot|manual):[0-9]+|receita:[0-9a-fA-F-]{36})$/'],
         ]);
+        // EC92: antes de gravar, bloquear qualquer troca silenciosa do e-mail original.
+        app(\App\Services\Campaigns\CampaignContactTransfer::class)->guard(
+            array_values($validated['audienceKeys']),
+            (array) session()->get('campaign_transfer_expected_v92', []),
+        );
         $campaign = $manager->saveDraft($user, [
             'name' => $validated['name'], 'subject' => $validated['subject'], 'body' => $validated['body'],
         ], array_values($validated['audienceKeys']), $this->editingCampaignId !== null
             ? EmailCampaign::query()->findOrFail($this->editingCampaignId) : null);
-        app(\App\Services\Campaigns\CampaignPacingV90::class)->save($campaign, (int) $this->plannedHours);
-        session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.');
+        app(\App\Services\Campaigns\CampaignPacing::class)->save($campaign, (int) $this->plannedHours);
+        session()->forget('campaign_transfer_expected_v92');
+session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.');
         unset($this->overview, $this->campaigns);
         $this->openCampaign((int) $campaign->id);
     }
@@ -955,6 +1033,12 @@ new class extends Component
     $progress = $totalCount > 0 ? min(100, (int) round($sentCount * 100 / $totalCount)) : 0;
 @endphp
 
+{{-- EC_CAMPAIGNS_V93_NATIVE_LINKS: filtros reais por HTTP, sem eventos JS. --}}
+<style>
+.ecm2 .ecm2-filters>a{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:12px;color:#56758b;border:1px solid transparent;border-radius:8px;padding:9px 12px}
+.ecm2 .ecm2-filters>a.is-active{background:#e6f7f1;border-color:#bce7db;color:#008779}
+.ecm2 .ecm2-campaign-list>a{display:block;text-decoration:none;color:inherit}
+</style>
 {{-- EC_CAMPAIGN_STATUS_CONTRAST_V83: corrigir badge azul-escuro ilegível da coluna Situação. --}}
 <style>
 .ecm2 .ecm2-table td .ecm2-pill[class*="is-delivery-"] { display:inline-flex;align-items:center;min-height:24px;padding:4px 9px;border-radius:7px;font-size:11px;font-weight:730;line-height:1.3;background:#eef2f6 !important;border:1px solid #d5dfe8 !important;color:#2d4d61 !important;-webkit-text-fill-color:#2d4d61 !important; }
@@ -966,8 +1050,15 @@ new class extends Component
 .ecm2 .ecm2-table td .ecm2-pill.is-delivery-uncertain { background:#fff4dd !important;border-color:#efd7ac !important;color:#85601d !important;-webkit-text-fill-color:#85601d !important; }
 .ecm2 .ecm2-table td .ecm2-pill.is-delivery-canceled { background:#f1f3f5 !important;border-color:#dce2e6 !important;color:#52616a !important;-webkit-text-fill-color:#52616a !important; }
 </style>
-@include('campaigns.context-and-visual-v90')
+@include('campaigns.workspace-context')
 <div class="ecm2 ec21-page ec22-page ec68-page ec69-page" data-ec-campaigns-simple="M01-M10-V69" data-ec-campaigns-figma="M01-M10-V68" data-ec21="EC_CAMPAIGN_REDESIGN_V21" data-ec22-screen="{{ $screen }}" @if ($screen === 'detail') wire:poll.60s @endif>
+    {{-- EC92_FORMS_START: navegacao GET de seguranca, sem criar rascunhos --}}
+    <form id="ec-v92-campaign-filter-form" method="GET" action="{{ route('campaigns.index') }}"></form>
+    <form id="ec-v92-campaign-template-form" method="GET" action="{{ route('campaigns.index') }}"></form>
+    <form id="ec-v92-audience-filter-form" method="GET" action="{{ route('campaigns.index') }}"></form>
+    <form id="ec-v92-audience-search-form" method="GET" action="{{ route('campaigns.index') }}"></form>
+    {{-- EC92_FORMS_END --}}
+
     <header class="ecm2-head">
         <div>
             <div class="ecm2-breadcrumb">CAMPANHAS</div>
@@ -984,9 +1075,8 @@ new class extends Component
                 <a href="#ecm7-context" class="ecm7-jump" aria-label="Ir para detalhes e ações da campanha">Ações e detalhes ↓</a>
             @endif
             @if ($canManageCampaigns)
-                <button type="button" class="ecm2-btn ecm2-btn-primary" wire:click="newCampaign">
-                    <span aria-hidden="true">＋</span> Nova campanha
-                </button>
+                {{-- EC94_MAIN_HEADER_ENTRY: único assistente de nova campanha. --}}
+                <a class="ecm2-btn ecm2-btn-primary" href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1]) }}">＋ Nova campanha</a>
             @endif
             <a href="{{ route('campaigns.replies') }}" wire:navigate class="ec68-replies-shortcut">Ver respostas</a>
             @if ($canManageCampaigns)
@@ -1017,9 +1107,9 @@ new class extends Component
     </details>
 
     @if ($screen === 'overview')
-        @include('campaigns.figma-home-v68')
+        @include('campaigns.home')
     @elseif ($screen === 'detail' && $selected)
-        @include('campaigns.figma-detail-header-v761')
+        @include('campaigns.detail-header')
     @endif
 
     <div class="ecm2-shell ec21-shell is-{{ $screen }}">
@@ -1035,7 +1125,7 @@ new class extends Component
                 </label>
                 <div class="ecm2-filters" aria-label="Filtrar campanhas por situação">
                     @foreach (['all' => 'Todas', 'draft' => 'Rascunhos', 'running' => 'Enviando', 'paused' => 'Pausadas', 'completed' => 'Concluídas', 'canceled' => 'Canceladas'] as $code => $label)
-                        <button type="button" wire:click="$set('campaignStatus', @js($code))" class="{{ $campaignStatus === $code ? 'is-active' : '' }}" aria-pressed="{{ $campaignStatus === $code ? 'true' : 'false' }}">{{ $label }}</button>
+                        <a wire:click="$set('campaignStatus', @js($code))" class="{{ $campaignStatus === $code ? 'is-active' : '' }}" aria-pressed="{{ $campaignStatus === $code ? 'true' : 'false' }}" href="{{ route('campaigns.index', ['situacao' => $code]) }}">{{ $label }}</a>
                     @endforeach
                 </div>
             </div>
@@ -1046,9 +1136,9 @@ new class extends Component
                         $itemTotal = (int) $item->recipients_count;
                         $itemProgress = $itemTotal > 0 ? min(100, (int) round($itemSent * 100 / $itemTotal)) : 0;
                     @endphp
-                    <button type="button" role="listitem" wire:key="ecm2-campaign-{{ $item->id }}" wire:click="openCampaign({{ $item->id }})"
+                    <a role="listitem" wire:key="ecm2-campaign-{{ $item->id }}" wire:click="openCampaign({{ $item->id }})"
                         class="ecm2-campaign {{ $selectedCampaignId === $item->id && $screen === 'detail' ? 'is-current' : '' }}"
-                        aria-current="{{ $selectedCampaignId === $item->id && $screen === 'detail' ? 'true' : 'false' }}">
+                        aria-current="{{ $selectedCampaignId === $item->id && $screen === 'detail' ? 'true' : 'false' }}" href="{{ route('campaigns.index', ['campanha' => $item->id]) }}">
                         <span class="ecm2-campaign-heading"><strong title="{{ $item->name }}">{{ $item->name }}</strong><span class="ecm2-pill is-{{ $item->status }}">{{ $labels[$item->status] ?? $item->status }}</span></span>
                         <span class="ecm2-campaign-sub">@if ((int) ($item->followup_round ?? 1) > 1) Rodada {{ (int) $item->followup_round }} · @else Rodada 1 · @endif{{ $itemTotal }} destinatário(s) · {{ $item->created_at?->format('d/m/Y') }}</span>
                         @if ((int) $item->bounce_reports_count > 0)
@@ -1058,14 +1148,14 @@ new class extends Component
                             <span class="ecm2-mini-progress"><i style="width: {{ $itemProgress }}%"></i></span>
                             <span class="ecm2-campaign-footer">{{ $itemSent }} aceito(s) SMTP <b>{{ $itemProgress }}%</b></span>
                         @endif
-                    </button>
+                    </a>
                 @empty
                     <div class="ecm2-no-campaigns">
                         <span aria-hidden="true">✉</span>
                         <strong>{{ $counts['campaigns'] === 0 ? 'Sua primeira campanha começa aqui' : 'Nenhuma campanha neste filtro' }}</strong>
                         <p>{{ $counts['campaigns'] === 0 ? 'Crie um rascunho para organizar destinatários e mensagem.' : 'Altere os filtros ou pesquise outro nome.' }}</p>
                         @if ($counts['campaigns'] === 0 && $canManageCampaigns)
-                            <button type="button" class="ecm2-text-action" wire:click="newCampaign">Criar campanha →</button>
+                            <a class="ecm2-text-action" href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1]) }}">Criar campanha →</a>
                         @endif
                     </div>
                 @endforelse
@@ -1097,7 +1187,7 @@ new class extends Component
                         @endif
                         <div class="ec22-home-cta">
                             @if ($canManageCampaigns)
-                                <button type="button" class="ec22-button ec22-button-primary" wire:click="newCampaign">＋ Começar campanha <span aria-hidden="true">→</span></button>
+                                <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1]) }}" class="ec22-button ec22-button-primary">＋ Começar campanha <span aria-hidden="true">→</span></a>
                             @endif
                             <a href="{{ route('contacts.index') }}" wire:navigate>Consultar contatos →</a>
                         </div>
@@ -1106,9 +1196,9 @@ new class extends Component
                     <div class="ec22-home-templates">
                         <div class="ec22-section-head"><div><h3>Modelos prontos para começar</h3><p>Você pode editar a mensagem antes de salvar a campanha.</p></div></div>
                         <div class="ec22-home-template-grid">
-                            <button type="button" wire:click="startWithTemplate('initial')"><span aria-hidden="true">✉</span><strong>Apresentação</strong><small>Primeiro contato com uma empresa.</small><em>Usar modelo →</em></button>
-                            <button type="button" wire:click="startWithTemplate('followup')"><span aria-hidden="true">↩</span><strong>Retomada</strong><small>Retome uma conversa com contexto.</small><em>Usar modelo →</em></button>
-                            <button type="button" wire:click="startWithTemplate('meeting')"><span aria-hidden="true">▣</span><strong>Agendamento</strong><small>Convide para uma apresentação.</small><em>Usar modelo →</em></button>
+                            <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'initial']) }}"><span aria-hidden="true">✉</span><strong>Apresentação</strong><small>Primeiro contato com uma empresa.</small><em>Usar modelo →</em></a>
+                            <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'followup']) }}"><span aria-hidden="true">↩</span><strong>Retomada</strong><small>Retome uma conversa com contexto.</small><em>Usar modelo →</em></a>
+                            <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'meeting']) }}"><span aria-hidden="true">▣</span><strong>Agendamento</strong><small>Convide para uma apresentação.</small><em>Usar modelo →</em></a>
                         </div>
                     </div>
                     @endif
@@ -1123,7 +1213,7 @@ new class extends Component
                             <h1>{{ match ($composerStep) { 'audience' => 'Selecione os contatos', 'message' => 'Escreva a mensagem', default => 'Ritmo e revisão' } }}</h1><small class="ec68-composer-subtitle">Nova campanha</small>
                             <p>{{ match ($composerStep) { 'audience' => 'Escolha quem vai receber seu e-mail.', 'message' => 'Escreva sua mensagem e confira a prévia.', default => 'Confira o ritmo e revise antes de solicitar o envio.' } }}</p>
                         </div>
-                        <button type="button" class="ec22-button ec22-button-outline" wire:click="showOverview">Cancelar e voltar</button>
+                        <a class="ec22-button ec22-button-outline" wire:click="showOverview" href="{{ route('campaigns.index') }}">Cancelar e voltar</a>
                     </header>
                     @php $ec22Step = ['audience' => 1, 'message' => 2, 'pace' => 3, 'review' => 3][$composerStep] ?? 1; @endphp
                     <nav class="ec22-stepper" aria-label="Etapas da criação">
@@ -1132,13 +1222,28 @@ new class extends Component
                         @endforeach
                     </nav>
                     @if ($composerStep === 'audience')
+                        @if ($importedExpectedEmailsV91 !== [])
+                            <section class="ec22-card" data-ec-v91-exact-selection style="border-color:#86cfbc;background:#f0faf6;margin-bottom:16px">
+                                <strong style="display:block;color:#096c60;font-size:15px">{{ count($importedExpectedEmailsV91) }} e-mail(s) selecionado(s) em Contatos</strong>
+                                <p style="font-size:12px;color:#315f58">Somente estes endereços foram importados. A lista abaixo é o catálogo geral; não são novos destinatários até serem marcados.</p>
+                                <div style="display:flex;flex-wrap:wrap;gap:7px;max-height:200px;overflow:auto">
+                                    @foreach ($importedExpectedEmailsV91 as $email)
+                                        <span style="background:white;border:1px solid #cce8de;color:#135d51;border-radius:7px;padding:6px 9px;font-size:12px">{{ $email }}</span>
+                                    @endforeach
+                                </div>
+                                <small style="display:block;margin-top:9px;color:#436b61">Se precisar trocar os destinatários, inicie uma nova campanha. Uma seleção importada nunca será substituída silenciosamente.</small>
+                            </section>
+                        @endif
                         <div class="ec22-two-columns ec22-audience-layout">
                             <section class="ec22-card ec22-audience-card">
                                 <header class="ec22-card-head"><div><h2>Escolha os contatos</h2><p>Selecione na base. Você poderá revisar a lista antes de salvar.</p></div><span class="ec22-count">{{ number_format($this->audience->total(), 0, ',', '.') }} encontrados</span></header>
-                                <label class="ec22-search"><span aria-hidden="true">⌕</span><input aria-label="Buscar contatos" type="search" wire:model.live.debounce.400ms="audienceSearch" placeholder="Buscar por nome, empresa ou e-mail..."></label>
+                                <label class="ec22-search"><span aria-hidden="true">⌕</span><input aria-label="Buscar contatos" type="search" wire:model.live.debounce.400ms="audienceSearch" placeholder="Buscar por nome, empresa ou e-mail..." name="busca" form="ec-v92-audience-search-form"></label>
+                                <input type="hidden" form="ec-v92-audience-search-form" name="nova" value="1">
+                                <input type="hidden" form="ec-v92-audience-search-form" name="origem" value="{{ $audienceOrigin }}">
+                                <button type="submit" form="ec-v92-audience-search-form" class="ec22-audience-fallback-submit">Buscar</button>
                                 <div class="ec22-tabs" role="group" aria-label="Origem dos contatos">
                                     @foreach (['all' => 'Todos', 'hubspot' => 'HubSpot', 'manual' => 'Cadastro manual', 'receita' => 'Receita Federal'] as $key => $caption)
-                                        <button type="button" class="{{ $audienceOrigin === $key ? 'is-active' : '' }}" wire:click="$set('audienceOrigin', @js($key))" aria-pressed="{{ $audienceOrigin === $key ? 'true' : 'false' }}">{{ $caption }}</button>
+                                        <button type="submit" class="{{ $audienceOrigin === $key ? 'is-active' : '' }}" wire:click.prevent="$set('audienceOrigin', @js($key))" aria-pressed="{{ $audienceOrigin === $key ? 'true' : 'false' }}" form="ec-v92-audience-filter-form" formaction="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'origem' => $key, 'busca' => $audienceSearch]) }}" formmethod="GET">{{ $caption }}</button>
                                     @endforeach
                                 </div>
                                 <div class="ec22-recipient-tools"><button type="button" wire:click="toggleAudiencePage">Selecionar página</button><button type="button" wire:click="addAllFiltered">Adicionar resultados filtrados</button><button type="button" wire:click="$set('audienceKeys', [])" @disabled($audienceKeys === [])>Limpar seleção</button></div>
@@ -1183,7 +1288,7 @@ new class extends Component
                                 @error('audienceKeys')<div class="ec22-error" role="alert">{{ $message }}</div>@enderror
                             </aside>
                         </div>
-                        <footer class="ec22-footer"><button type="button" class="ec22-button ec22-button-outline" wire:click="showOverview">Cancelar</button><button type="button" class="ec22-button ec22-button-primary" wire:click="goToComposerStep('message')">Continuar →</button></footer>
+                        <footer class="ec22-footer"><a class="ec22-button ec22-button-outline" wire:click="showOverview" href="{{ route('campaigns.index') }}">Cancelar</a><button type="button" class="ec22-button ec22-button-primary" wire:click="goToComposerStep('message')">Continuar →</button></footer>
                     @elseif ($composerStep === 'message')
                         <div class="ec22-two-columns ec22-message-layout">
                             <section class="ec22-card ec22-editor-card">
@@ -1228,7 +1333,7 @@ new class extends Component
                         <section class="ec22-card ec22-review-card">
                             <header class="ec22-card-head"><div><h2>Revisão final</h2><p>Confira antes de salvar ou solicitar o envio.</p></div><button type="button" class="ec22-button ec22-button-outline" wire:click="goToComposerStep('message')">Editar mensagem</button></header>
                             <div class="ec22-review-grid"><div><span>Campanha</span><strong>{{ $name ?: '(sem nome)' }}</strong></div><div><span>Destinatários selecionados</span><strong>{{ count($audienceKeys) }}</strong></div><div><span>Remetente</span><strong>{{ config('campaign_mail.from_address') ?: 'Não configurado' }}</strong></div><div><span>Assunto</span><strong>{{ $subject ?: '(sem assunto)' }}</strong></div></div>
-                            @include('campaigns.review-recipients-v73')
+                            @include('campaigns.review-recipients')
                             <div class="ec22-test-block ec73-test-block" data-ec73-test-block>
                                 <div class="ec73-test-content">
                                     <span class="ec73-test-label">TESTE DE MENSAGEM</span>
@@ -1252,7 +1357,7 @@ new class extends Component
                 </section>
             @elseif ($screen === 'detail' && $selected)
                 <section class="ecm2-detail">
-                    <header class="ecm2-detail-header"><div><div class="ecm2-eyebrow">CAMPANHA #{{ $selected->id }} <span class="ecm2-pill is-{{ $selected->status }}">{{ $labels[$selected->status] ?? $selected->status }}</span></div><h2>{{ $selected->name }}</h2><p>{{ $selected->subject }}</p></div>@if ($selected->status === 'draft' && $canManageCampaigns)<button type="button" class="ecm2-btn ecm2-btn-muted" wire:click="editDraft({{ $selected->id }})">✎ Editar rascunho</button>@endif</header>
+                    <header class="ecm2-detail-header"><div><div class="ecm2-eyebrow">CAMPANHA #{{ $selected->id }} <span class="ecm2-pill is-{{ $selected->status }}">{{ $labels[$selected->status] ?? $selected->status }}</span></div><h2>{{ $selected->name }}</h2><p>{{ $selected->subject }}</p></div>@if ($selected->status === 'draft' && $canManageCampaigns)<a class="ecm2-btn ecm2-btn-muted" href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'editar' => $selected->id]) }}">✎ Editar rascunho</a>@endif</header>
                     <div class="ecm2-progress-section"><div><strong>Progresso de aceitação SMTP</strong><span>{{ $sentCount }} de {{ $totalCount }} destinatário(s) · {{ $progress }}%</span></div><div class="ecm2-progress"><span style="width:{{ $progress }}%"></span></div><small>Mensagens aceitas pelo servidor não significam entrega na caixa de entrada.</small></div>
                     <div class="ecm2-detail-stats">
                         <div><small>Destinatários</small><strong>{{ number_format($totalCount, 0, ',', '.') }}</strong></div>
@@ -1260,7 +1365,84 @@ new class extends Component
                         <div><small>Respostas</small><strong>{{ number_format((int) $selected->replies()->count(), 0, ',', '.') }}</strong></div>
                         <div><small>Na fila</small><strong>{{ number_format((int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0), 0, ',', '.') }}</strong></div>
                     </div>
-                    <nav class="ecm2-tabs" aria-label="Conteúdo da campanha">
+                    {{-- EC_CAMPAIGN_TABS_VISUAL_V9012: mantém links HTTP da V90.9, restaura abas V76 sem depender do build Vite. --}}
+                    <style>
+                      #ec9012-tabs.ecm2-tabs {
+                        display: flex !important;
+                        align-items: center !important;
+                        flex-wrap: wrap !important;
+                        gap: 6px !important;
+                        border: 0 !important;
+                        border-bottom: 1px solid #e4edf0 !important;
+                        padding: 14px 0 !important;
+                        margin: 0 0 16px !important;
+                        background: #fff !important;
+                      }
+                      #ec9012-tabs.ecm2-tabs > a {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        gap: 7px !important;
+                        min-height: 40px !important;
+                        padding: 10px 16px !important;
+                        border: 0 !important;
+                        border-radius: 8px !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                        color: #58748a !important;
+                        -webkit-text-fill-color: #58748a !important;
+                        font-size: 13px !important;
+                        line-height: 1.2 !important;
+                        font-weight: 660 !important;
+                        text-decoration: none !important;
+                        white-space: nowrap !important;
+                        cursor: pointer !important;
+                      }
+                      #ec9012-tabs.ecm2-tabs > a:hover {
+                        background: #f1f8f5 !important;
+                        color: #08776b !important;
+                        -webkit-text-fill-color: #08776b !important;
+                      }
+                      #ec9012-tabs.ecm2-tabs > a.is-active,
+                      #ec9012-tabs.ecm2-tabs > a[aria-current="page"] {
+                        background: #e5f5ee !important;
+                        color: #007f71 !important;
+                        -webkit-text-fill-color: #007f71 !important;
+                        font-weight: 760 !important;
+                      }
+                      #ec9012-tabs.ecm2-tabs > a:focus-visible {
+                        outline: 2px solid #0c9a88 !important;
+                        outline-offset: 2px !important;
+                      }
+                      #ec9012-tabs.ecm2-tabs > a > span {
+                        display: inline-flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        min-width: 19px !important;
+                        height: 20px !important;
+                        padding: 0 6px !important;
+                        border: 1px solid #d9e7ed !important;
+                        border-radius: 6px !important;
+                        background: #f1f6f9 !important;
+                        color: #547389 !important;
+                        -webkit-text-fill-color: #547389 !important;
+                        font-size: 10px !important;
+                        font-weight: 700 !important;
+                        line-height: 1 !important;
+                      }
+                      #ec9012-tabs.ecm2-tabs > a.is-active > span,
+                      #ec9012-tabs.ecm2-tabs > a[aria-current="page"] > span {
+                        background: #d4eee2 !important;
+                        border-color: #c1e6d6 !important;
+                        color: #007d70 !important;
+                        -webkit-text-fill-color: #007d70 !important;
+                      }
+                      @media (max-width: 600px) {
+                        #ec9012-tabs.ecm2-tabs { gap: 4px !important; padding: 12px 0 !important; }
+                        #ec9012-tabs.ecm2-tabs > a { padding: 10px 11px !important; font-size: 12px !important; }
+                      }
+                    </style>
+                    <nav class="ecm2-tabs" id="ec9012-tabs" aria-label="Conteúdo da campanha">
                         @foreach (['overview' => 'Visão geral', 'recipients' => 'Destinatários', 'bounces' => 'Devoluções', 'message' => 'Mensagem', 'replies' => 'Respostas'] as $tabKey => $tabLabel)
                             <a href="{{ route('campaigns.index', ['campanha' => $selected->id, 'aba' => $tabKey]) }}" class="{{ $detailTab === $tabKey ? 'is-active' : '' }}" @if ($detailTab === $tabKey) aria-current="page" @endif>{{ $tabLabel }} @if ($tabKey === 'replies' && $selected->replies()->count() > 0)<span>{{ $selected->replies()->count() }}</span>@elseif ($tabKey === 'bounces' && $this->bounceSummary['total'] > 0)<span>{{ $this->bounceSummary['total'] }}</span>@endif</a>
                         @endforeach
@@ -1383,7 +1565,7 @@ new class extends Component
                 </section>
                 @if ($canManageCampaigns)
                     <section class="ec90-followup-bottom" aria-label="Próximos e-mails da campanha">
-                        @include('campaigns.followup-schedule-detail-v5')
+                        @include('campaigns.followup-settings-detail')
                     </section>
                 @endif
             @else
@@ -1391,7 +1573,7 @@ new class extends Component
                     <div class="ecm2-eyebrow">CAMPANHA INDISPONÍVEL</div>
                     <h2>A campanha selecionada não está mais disponível.</h2>
                     <p>Ela pode ter sido excluída em outra sessão. Escolha outra campanha na lista ou volte ao início.</p>
-                    <div class="ecm2-welcome-actions"><button type="button" wire:click="showOverview" class="ecm2-btn ecm2-btn-muted">← Visão geral</button></div>
+                    <div class="ecm2-welcome-actions"><a wire:click="showOverview" class="ecm2-btn ecm2-btn-muted" href="{{ route('campaigns.index') }}">← Visão geral</a></div>
                 </div>
             @endif
         </main>
@@ -1435,18 +1617,8 @@ new class extends Component
                                 <div class="ecm2-alert-note">Último teste: {{ $lastTrackedTest->replied_at ? 'Resposta identificada pelo IMAP' : ($lastTrackedTest->status === 'smtp_accepted' ? 'Aceito SMTP · aguardando resposta' : 'Envio não confirmado') }}. @if($lastTrackedTest->replied_at) {{ \App\Support\CampaignLocalTime::format($lastTrackedTest->getRawOriginal('replied_at')) }} @endif</div>
                             @endif
                         @endif
-                        @if ($selected->status === 'draft')
-                            <button type="button" wire:click="editDraft({{ $selected->id }})" class="ecm2-btn ecm2-btn-muted">✎ Editar campanha</button>
-                            <label class="ecm2-legal"><input type="checkbox" wire:model.live="lawfulBasisConfirmed"> Confirmo a base legal, a elegibilidade do público e a opção de descadastro.</label>
-                            <button type="button" wire:click="startCampaign({{ $selected->id }})" wire:loading.attr="disabled" wire:target="startCampaign" class="ecm2-btn ecm2-btn-primary" @disabled(! $canStart || ! $lawfulBasisConfirmed)>✓ Aprovar e iniciar</button>
-                        @elseif ($selected->status === 'running')
-                            <button type="button" wire:click="pauseCampaign({{ $selected->id }})" class="ecm2-btn ecm2-btn-muted">Ⅱ Pausar novos envios</button>
-                        @elseif ($selected->status === 'paused')
-                            <button type="button" wire:click="resumeCampaign({{ $selected->id }})" class="ecm2-btn ecm2-btn-primary" @disabled(! $canStart)>▶ Continuar campanha</button>
-                        @endif
-                        @if (in_array($selected->status, ['draft', 'running', 'paused'], true))
-                            <button type="button" wire:click="cancelCampaign({{ $selected->id }})" wire:confirm="Cancelar esta campanha? E-mails já enviados não podem ser desfeitos." class="ecm2-btn ecm2-btn-danger">Cancelar campanha</button>
-                        @endif
+                        {{-- EC94: editar, cancelar e iniciar agora ficam somente no cabeçalho HTTP acima. --}}
+                        <div class="ecm2-alert-note">As ações de editar, iniciar, pausar e cancelar ficam no cabeçalho da campanha.</div>
                     </div>
                     @unless ($canStart)
                         <div class="ecm2-alert-note">Envio real bloqueado. Para ativar futuramente é necessário configurar as permissões do ambiente e URL pública HTTPS para descadastro.</div>
@@ -1540,6 +1712,6 @@ new class extends Component
             </details>
         </aside>
     </div>
-    @include('campaigns.send-confirmation-v73')
+    @include('campaigns.send-confirmation')
     <footer class="ecm2-footer"><span aria-hidden="true">●</span> Dados locais · SMTP individual · IMAP por cabeçalhos · Sem métricas fictícias de abertura</footer>
 </div>

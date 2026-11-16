@@ -159,8 +159,8 @@ new class extends Component
     <header class="ec21-module-header"><div><span class="ec22-kicker">CAMPANHAS / RESPOSTAS</span><h1>Caixa de respostas</h1><p>Somente conversas relacionadas às suas campanhas.</p></div><span class="ec21-status">Respostas registradas</span></header>
     @include('campaigns.module-nav')
     {{-- EC_CAMPAIGNS_UNIFIED_V90 --}}
-    @include('campaigns.context-and-visual-v90')
-    @include('campaigns.replies-health-v77')
+    @include('campaigns.workspace-context')
+    @include('campaigns.replies-health')
     <section class="ec69-reply-filter-card" aria-label="Encontre uma conversa">
         <h2>Encontre uma conversa</h2>
         <div class="ec69-reply-filter-grid">
@@ -182,11 +182,11 @@ new class extends Component
     </section>
     {{-- EC77_REPLIES: filtros de respostas e opt-out no mesmo módulo, sem remover os dados históricos. --}}
     @if ($kind === 'suppressed')
-        @include('campaigns.unsubscribed-v77')
+        @include('campaigns.unsubscribed')
     @else
     @php
         $ec90ReplyCompanies = $kind === 'commercial'
-            ? app(\App\Services\Campaigns\CampaignReplyCompanyV90::class)->forReplies($this->conversations->items())
+            ? app(\App\Services\Campaigns\CampaignReplyCompany::class)->forReplies($this->conversations->items())
             : [];
     @endphp
     <div class="ec21-inbox">
@@ -215,7 +215,7 @@ new class extends Component
                     $body = $test ? $entry->reply_body_text : $entry->body_text;
                     $subject = $test ? $entry->reply_subject : $entry->subject;
                     $when = $test ? $entry->replied_at : $entry->received_at;
-                    $ec90SelectedCompanies = $test ? [] : app(\App\Services\Campaigns\CampaignReplyCompanyV90::class)->forReplies([$entry]);
+                    $ec90SelectedCompanies = $test ? [] : app(\App\Services\Campaigns\CampaignReplyCompany::class)->forReplies([$entry]);
                     $ec90Company = $ec90SelectedCompanies[(int)$entry->id] ?? null;
                 @endphp
                 <header class="ec21-reader-heading"><div><span class="ec21-eyebrow">MENSAGEM RECEBIDA</span><h3>{{ $subject ?: 'Sem assunto' }}</h3><p>Campanha vinculada: <strong>{{ $entry->campaign?->name ?: ('#'.(string) $entry->email_campaign_id.' · não localizada') }}</strong>@if($entry->campaign) <a href="{{ route('campaigns.index') }}" wire:navigate>Ver campanhas</a> @endif</p></div><span class="ec21-tag">{{ $test ? 'Teste piloto' : 'Comercial' }}</span></header>

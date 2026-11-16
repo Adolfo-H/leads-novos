@@ -4,8 +4,8 @@ namespace App\Livewire;
 
 use App\Models\EmailCampaign;
 use App\Models\User;
-use App\Services\Campaigns\CampaignFollowupScheduleViewV4;
-use App\Services\Campaigns\CampaignFollowupSettingsV5;
+use App\Services\Campaigns\CampaignFollowupSettings;
+use App\Services\Campaigns\CampaignFollowupTimeline;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -87,10 +87,10 @@ class CampaignFollowupEditor extends Component
     {
         $root = EmailCampaign::query()->findOrFail($this->campaignId);
 
-        return app(CampaignFollowupScheduleViewV4::class)->forCampaign($root);
+        return app(CampaignFollowupTimeline::class)->forCampaign($root);
     }
 
-    public function saveChanges(CampaignFollowupSettingsV5 $settings): void
+    public function saveChanges(CampaignFollowupSettings $settings): void
     {
         $actor = auth()->user();
         if (! $actor instanceof User || ! $actor->isCommercialManager()) {
@@ -147,7 +147,7 @@ class CampaignFollowupEditor extends Component
         }
     }
 
-    public function togglePause(CampaignFollowupSettingsV5 $settings): void
+    public function togglePause(CampaignFollowupSettings $settings): void
     {
         $actor = auth()->user();
         if (! $actor instanceof User || ! $actor->isCommercialManager()) {

@@ -168,4 +168,4 @@ new #[Title('Security settings')] class extends Component
         $this->twoFactorEnabled = false;
     }
 }; ?>
-@include('pages.settings.partials.security-v63')
+@include('pages.settings.partials.security')

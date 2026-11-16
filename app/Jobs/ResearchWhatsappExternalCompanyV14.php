@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\Contacts\WhatsappExternalCompanyDiscoveryV14;
+use App\Services\Contacts\WhatsappExternalCompanyDiscovery;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -19,7 +19,7 @@ final class ResearchWhatsappExternalCompanyV14 implements ShouldQueue
 
     public function __construct(public int $runId) {}
 
-    public function handle(WhatsappExternalCompanyDiscoveryV14 $discovery): void
+    public function handle(WhatsappExternalCompanyDiscovery $discovery): void
     {
         $discovery->execute($this->runId);
     }

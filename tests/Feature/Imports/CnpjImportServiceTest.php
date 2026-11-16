@@ -1,8 +1,11 @@
 <?php
 
+use App\Models\Company;
+use App\Models\Establishment;
 use App\Models\ImportBatch;
 use App\Services\CnpjImportService;
 use App\Support\Cnpj;
+use Illuminate\Support\Facades\DB;
 
 it('classifies imported cnpjs', function () {
     $service = app(
@@ -57,6 +60,102 @@ it('classifies imported cnpjs', function () {
             )
             ->count()
     )->toBe(2);
+});
+
+it('uses a batched establishment lookup for a modest import', function () {
+    $cnpjs = [];
+
+    foreach (range(1, 40) as $index) {
+        $base = str_pad(
+            (string) (223334440000 + $index),
+            12,
+            '0',
+            STR_PAD_LEFT
+        );
+
+        $cnpjs[] =
+            $base
+            .Cnpj::calculateCheckDigits(
+                $base
+            );
+    }
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    $batch = app(
+        CnpjImportService::class
+    )->import($cnpjs);
+
+    $lookupQueries = collect(
+        DB::getQueryLog()
+    )
+        ->filter(
+            static function (
+                array $query
+            ): bool {
+                $sql = mb_strtolower(
+                    ltrim(
+                        $query['query']
+                    )
+                );
+
+                return str_starts_with(
+                    $sql,
+                    'select'
+                )
+                    && str_contains(
+                        $sql,
+                        'establishments'
+                    );
+            }
+        )
+        ->count();
+
+    DB::disableQueryLog();
+
+    expect($batch->total_rows)->toBe(40);
+    expect($lookupQueries)->toBe(1);
+});
+
+it('preserves existing and duplicate classification in a batched import', function () {
+    $base = '223334440001';
+    $cnpj =
+        $base
+        .Cnpj::calculateCheckDigits(
+            $base
+        );
+
+    $company = Company::query()->create([
+        'cnpj_root' => substr($cnpj, 0, 8),
+        'corporate_name' => 'Empresa Importada Existente',
+    ]);
+
+    Establishment::query()->create([
+        'company_id' => $company->id,
+        'cnpj' => $cnpj,
+        'order_number' => substr($cnpj, 8, 4),
+        'check_digits' => substr($cnpj, 12, 2),
+        'type' => 'matrix',
+    ]);
+
+    $batch = app(
+        CnpjImportService::class
+    )->import([
+        $cnpj,
+        $cnpj,
+    ]);
+
+    $items = $batch->items()
+        ->orderBy('row_number')
+        ->get();
+
+    expect($batch->existing_rows)->toBe(1);
+    expect($batch->duplicate_rows)->toBe(1);
+    expect($batch->valid_rows)->toBe(0);
+    expect($items[0]->status)->toBe('existing');
+    expect($items[0]->company_id)->toBe($company->id);
+    expect($items[1]->status)->toBe('duplicate');
 });
 
 it('parses pasted cnpj lists', function () {

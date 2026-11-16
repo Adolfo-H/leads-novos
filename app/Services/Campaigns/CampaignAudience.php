@@ -2,10 +2,7 @@
 
 namespace App\Services\Campaigns;
 
-use App\Models\CommercialContact;
 use App\Models\EmailCampaignSuppression;
-use App\Models\Establishment;
-use App\Models\HubSpotContact;
 use App\Services\Contacts\ReceitaContactChannels;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -63,54 +60,60 @@ final class CampaignAudience
             throw new InvalidArgumentException('A campanha ultrapassa o limite de destinatários configurado.');
         }
 
-        $results = [];
+        if ($keys === []) {
+            return [];
+        }
+
+        $people = $this->query('', 'all')
+            ->whereIn('source_key', $keys)
+            ->get(['source_key', 'email', 'person_name', 'company_name', 'job_title'])
+            ->keyBy('source_key');
+
+        $eligible = [];
         $usedEmails = [];
         foreach ($keys as $key) {
-            if (preg_match('/^hubspot:([0-9]+)$/D', $key, $match) === 1) {
-                $person = HubSpotContact::query()->where('hubspot_id', $match[1])->first();
-                if ($person === null) {
-                    continue;
-                }
-                $name = trim((string) $person->first_name.' '.(string) $person->last_name);
-                $email = (string) $person->email;
-                $company = (string) $person->company_name;
-                $job = (string) $person->job_title;
-            } elseif (preg_match('/^manual:([0-9]+)$/D', $key, $match) === 1) {
-                $person = CommercialContact::query()->with('company')->find((int) $match[1]);
-                if ($person === null) {
-                    continue;
-                }
-                $name = (string) $person->name;
-                $email = (string) $person->email;
-                $company = (string) ($person->company->corporate_name ?? '');
-                $job = (string) $person->job_title;
-            } elseif (preg_match('/^receita:([0-9a-fA-F-]{36})$/D', $key, $match) === 1) {
-                $person = Establishment::query()->with('company')
-                    ->where('uuid', $match[1])->whereNotNull('company_id')->first();
-                if ($person === null || $person->company === null) {
-                    continue;
-                }
-                $name = 'Equipe';
-                $email = (string) $person->email;
-                $company = (string) $person->company->corporate_name;
-                $job = 'Canal cadastral da Receita';
-            } else {
+            $person = $people->get($key);
+            if ($person === null) {
                 continue;
             }
 
-            $normal = self::normalizedEmail($email);
+            $normal = self::normalizedEmail((string) $person->email);
             if (filter_var($normal, FILTER_VALIDATE_EMAIL) === false || isset($usedEmails[$normal])) {
                 continue;
             }
             $usedEmails[$normal] = true;
+            $eligible[$key] = [
+                'person' => $person,
+                'normalized_email' => $normal,
+            ];
+        }
+
+        if ($eligible === []) {
+            return [];
+        }
+
+        $suppressedEmails = array_fill_keys(
+            EmailCampaignSuppression::query()
+                ->whereIn('normalized_email', array_keys($usedEmails))
+                ->pluck('normalized_email')
+                ->all(),
+            true,
+        );
+        $results = [];
+        foreach ($keys as $key) {
+            if (! isset($eligible[$key])) {
+                continue;
+            }
+            $person = $eligible[$key]['person'];
+            $normal = $eligible[$key]['normalized_email'];
             $results[] = [
                 'source_key' => $key,
                 'email' => $normal,
                 'normalized_email' => $normal,
-                'contact_name' => mb_substr($name, 0, 180),
-                'company_name' => mb_substr($company, 0, 255),
-                'job_title' => mb_substr($job, 0, 180),
-                'suppressed' => EmailCampaignSuppression::query()->where('normalized_email', $normal)->exists(),
+                'contact_name' => mb_substr(trim((string) $person->person_name), 0, 180),
+                'company_name' => mb_substr((string) $person->company_name, 0, 255),
+                'job_title' => mb_substr((string) $person->job_title, 0, 180),
+                'suppressed' => isset($suppressedEmails[$normal]),
             ];
         }
 

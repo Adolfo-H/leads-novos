@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { classifyPresence } from './presence-classifier.mjs';
 /**
  * Agente Ubuntu somente leitura (não oficial). Cada conta tem sessão isolada.
  * Permanece conectado e SÓ consulta quando o gestor solicita um lote no Prospector.
@@ -83,12 +84,7 @@ function mask(phone) {
   const p = String(phone);
   return p.length > 7 ? `+${p.slice(0, 4)}••••${p.slice(-3)}` : '***';
 }
-function classify(result) {
-  if (!Array.isArray(result)) return 'inconclusive';
-  if (result.some((entry) => entry?.exists === true)) return 'found';
-  if (result.some((entry) => entry?.exists === false)) return 'not_found';
-  return 'inconclusive';
-}
+function classify(response) { return classifyPresence(response); }
 async function onWhatsAppWithTimeout(number) {
   let timer;
   try {

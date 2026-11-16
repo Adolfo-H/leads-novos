@@ -4,6 +4,7 @@ use App\Models\Company;
 use App\Models\HubSpotCompany;
 use App\Models\HubSpotContact;
 use App\Models\HubSpotDeal;
+use App\Models\HubSpotImportRun;
 use App\Models\HubSpotPipelineStage;
 use App\Models\HubSpotTask;
 use App\Services\HubSpotExportImportService;
@@ -40,6 +41,12 @@ it(
                 'metadata' => [],
 
                 'checked_at' => now(),
+            ]);
+
+        HubSpotCompany::query()
+            ->create([
+                'hubspot_id' => 'previous-company',
+                'name' => 'Previous snapshot company',
             ]);
 
         $directory =
@@ -305,7 +312,8 @@ it(
                         'contacts' => $contacts,
 
                         'tasks' => $tasks,
-                    ]
+                    ],
+                    replace: true,
                 );
 
             expect(
@@ -429,5 +437,51 @@ it(
                 $directory
             );
         }
+    }
+);
+
+it(
+    'preserves existing mirror data when replacement files fail preflight',
+    function () {
+        $company = HubSpotCompany::query()
+            ->create([
+                'hubspot_id' => 'existing-company',
+                'name' => 'Existing company',
+            ]);
+
+        $missingDirectory =
+            storage_path(
+                'framework/testing/missing-hubspot-export-'
+                .Str::uuid()
+            );
+
+        expect(
+            fn () => app(
+                HubSpotExportImportService::class
+            )->import(
+                [
+                    'companies' => $missingDirectory.'/companies.csv',
+                    'deals' => $missingDirectory.'/deals.csv',
+                    'contacts' => $missingDirectory.'/contacts.csv',
+                    'tasks' => $missingDirectory.'/tasks.csv',
+                ],
+                replace: true,
+            )
+        )->toThrow(
+            RuntimeException::class,
+            'Arquivo não encontrado'
+        );
+
+        expect(
+            HubSpotCompany::query()
+                ->whereKey($company->id)
+                ->value('name')
+        )->toBe('Existing company');
+
+        expect(
+            HubSpotImportRun::query()
+                ->latest('id')
+                ->value('status')
+        )->toBe('failed');
     }
 );

@@ -8,4 +8,4 @@ new #[Title('Aparência')] class extends Component
     //
 };
 ?>
-@include('pages.settings.partials.appearance-v63')
+@include('pages.settings.partials.appearance')
