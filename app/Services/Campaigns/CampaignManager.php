@@ -9,7 +9,6 @@ use App\Models\EmailCampaignSuppression;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use LogicException;
 
@@ -289,12 +288,6 @@ final class CampaignManager
         if (filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
             throw ValidationException::withMessages(['campaign' => 'Configure CAMPAIGN_MAIL_TEST_TO com um e-mail autorizado.']);
         }
-        $key = 'campaigns-test:'.$user->id;
-        if (RateLimiter::tooManyAttempts($key, 3)) {
-            throw ValidationException::withMessages(['campaign' => 'Limite de três testes por hora.']);
-        }
-        RateLimiter::hit($key, 3600);
-
         $person = new EmailCampaignRecipient([
             'contact_name' => $user->name,
             'company_name' => 'ExportControl',
