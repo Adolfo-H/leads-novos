@@ -36,7 +36,7 @@ final class CampaignQueueSimulator
      */
     public function report(int $requested = 50): array
     {
-        // CAMPANHAS_V6_SIM_POLICY: mesmo limite e janela usados pelo despachante.
+        // O simulador replica as cotas moveis do dispatcher, sem janela horaria.
         $policyService = app(CampaignSendPolicy::class);
         $policy = $policyService->effective();
         // CAMPANHAS_V70_LIMITES_DINAMICOS: a simulação replica o despachante.
@@ -61,9 +61,6 @@ final class CampaignQueueSimulator
         // Máximo 7 dias: nunca cria jobs nem acessa o SMTP.
         for ($minute = 0; $minute < 10080 && $remaining > 0; $minute++) {
             $instant = $start->addMinutes($minute);
-            if (! $policyService->windowOpen($policy, $instant)) {
-                continue;
-            }
             $calendarDay = $instant->toDateString();
             // >= cutoff no despachante inclui a reserva exatamente no limite.
             while ($hourHead < count($window) && $window[$hourHead] < $minute - 60) {

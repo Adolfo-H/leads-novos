@@ -27,7 +27,6 @@ final class CampaignProspectingController extends Controller
         $people = $hasAnalysis
             ? $audience->paginate($filters, $page, (int) $actor->id)
             : new LengthAwarePaginator([], 0, 50, 1);
-        $cap = $this->cap();
         $counts = DB::table('email_campaign_recipients')
             ->selectRaw("COUNT(*) FILTER (WHERE status = 'sent') AS sent")
             ->selectRaw("COUNT(*) FILTER (WHERE status IN ('reserved','sending','uncertain')) AS in_progress")
@@ -37,7 +36,6 @@ final class CampaignProspectingController extends Controller
             'filters' => $filters,
             'hasAnalysis' => $hasAnalysis,
             'people' => $people,
-            'cap' => $cap,
             'previousSent' => (int) ($counts->sent ?? 0),
             'inProgress' => (int) ($counts->in_progress ?? 0),
             'excludedCount' => DB::table('email_campaign_prospecting_exclusions_v83')
@@ -67,26 +65,14 @@ final class CampaignProspectingController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
         ]);
         $filters = CampaignProspectingAudience::filters($data);
-        $cap = $this->cap();
-        $candidates = $audience->query($filters, (int) $user->id)->limit($cap)->get();
-        // A seleção é inteiramente automática: sem Livewire arrays de 20 mil IDs.
-        $keys = [];
-        foreach ($candidates as $candidate) {
-            if (filter_var((string) $candidate->normalized_email, FILTER_VALIDATE_EMAIL)) {
-                $keys[] = (string) $candidate->source_key;
-            }
-        }
-        if ($keys === []) {
-            throw ValidationException::withMessages([
-                'recipients' => 'Não há e-mails válidos elegíveis para esses filtros.',
-            ]);
-        }
-
-        $campaign = $manager->saveDraft($user, [
+        // EC_PROSPECTING_DRAFT_UNCAPPED_V1: todos os e-mails elegíveis entram
+        // no rascunho; a cota SMTP é aplicada somente no momento do envio.
+        // Cursor + inserções em lotes evitam carregar milhares de chaves no PHP.
+        $campaign = $manager->saveProspectingDraft($user, [
             'name' => (string) $data['name'],
             'subject' => (string) $data['subject'],
             'body' => (string) $data['body'],
-        ], $keys);
+        ], $audience->query($filters, (int) $user->id));
 
         app(CampaignPacing::class)->save($campaign, (int) ($data['pace_hours'] ?? 1));
 
@@ -197,12 +183,6 @@ final class CampaignProspectingController extends Controller
             'analyze' => '1',
             'page' => (int) ($input['page'] ?? 1),
         ]);
-    }
-
-    private function cap(): int
-    {
-        // Preserva o teto do fluxo atual e do resolver de campanhas.
-        return max(1, min(1000, (int) config('campaign_mail.max_recipients', 100)));
     }
 
     private function manager(): User

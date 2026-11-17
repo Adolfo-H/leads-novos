@@ -10,7 +10,7 @@ it('carrega Livewire explicitamente e mantem Flux nos layouts', function (): voi
 it('mostra configuracoes SMTP sem accordion oculto', function (): void {
     $source = file_get_contents(resource_path('views/pages/campaigns/⚡settings.blade.php'));
     expect((string) $source)->toContain('Configuração técnica do SMTP')
-        ->toContain('Quanto você pretende enviar?')
+        ->toContain('Limites SMTP globais')
         ->not->toContain('<details class="ec90-server-advanced"');
 });
 

@@ -62,11 +62,72 @@ final class CampaignSendPolicy
                 ? min((int) config('campaign_mail.per_day', 500), $plan['target_volume'])
                 : (int) config('campaign_mail.per_day', 500))),
             'tick' => min($maxTick, max(1, $plan['active'] ? $plan['per_tick_limit'] : (int) config('campaign_mail.per_tick', 1))),
-            'window_active' => $plan['active'],
-            'window_start' => $plan['window_start'],
-            'duration_hours' => $plan['duration_hours'],
+            // Campos legados mantidos na API, mas a janela nao bloqueia envios.
+            'window_active' => false,
+            'window_start' => '00:00',
+            'duration_hours' => 24,
             'source' => $plan['active'] ? 'prospector' : 'ambiente',
         ];
+    }
+
+    /**
+     * Salva exclusivamente limites globais SMTP, sem horario de inicio.
+     * Colunas antigas de janela sao preenchidas com 24h para manter o schema.
+     * O backend nunca amplia o teto SMTP autorizado pelo ambiente.
+     */
+    public function saveLimits(
+        User $user,
+        int $daily,
+        int $hourly,
+        int $perTick,
+        bool $activate,
+        bool $capacityConfirmed,
+    ): void {
+        abort_unless($user->isCommercialManager(), 403);
+
+        $maxDaily = max(1, min(65535,
+            (int) config('campaign_mail.per_day', 500),
+            (int) config('campaign_mail.smtp_approved_per_day', 500)));
+        $maxHourly = max(1, min(65535,
+            (int) config('campaign_mail.smtp_approved_per_hour', 100)));
+        $maxTick = max(1, min(255,
+            (int) config('campaign_mail.smtp_approved_per_tick', 5)));
+
+        if ($daily < 1 || $daily > $maxDaily || $hourly < 1 || $hourly > $maxHourly
+            || $hourly > $daily || $perTick < 1 || $perTick > $maxTick
+            || $perTick > $hourly) {
+            throw ValidationException::withMessages([
+                'policy' => 'Limites fora da capacidade SMTP autorizada ou inconsistentes entre minuto, hora e 24h.',
+            ]);
+        }
+        if ($activate && ! $capacityConfirmed) {
+            throw ValidationException::withMessages([
+                'capacityConfirmed' => 'Confirme que o provedor SMTP autorizou estes limites.',
+            ]);
+        }
+
+        $now = now('UTC');
+        DB::transaction(static function () use ($user, $daily, $hourly, $perTick, $activate, $now): void {
+            $gate = DB::table('email_campaign_dispatch_gates')
+                ->where('id', 1)->lockForUpdate()->first();
+            if ($gate === null) {
+                throw new \LogicException('Campaign dispatch quota gate is missing.');
+            }
+            DB::table('email_campaign_send_policies')->updateOrInsert(
+                ['id' => 1],
+                [
+                    'target_volume' => $daily,
+                    'hourly_limit' => $hourly,
+                    'per_tick_limit' => $perTick,
+                    'duration_hours' => 24,
+                    'window_start' => '00:00',
+                    'active' => $activate,
+                    'updated_by' => $user->id,
+                    'capacity_confirmed_at' => $activate ? $now : null,
+                    'updated_at' => $now,
+                ],
+            );
+        });
     }
 
     /** @return array{hourly_limit:int,per_tick_limit:int,possible:bool,reason:string} */
@@ -129,18 +190,13 @@ final class CampaignSendPolicy
         });
     }
 
-    /** @param array{window_active:bool,window_start:string,duration_hours:int} $policy */
+    /**
+     * Compatibilidade com chamadas antigas. Nenhuma janela horaria e aplicada.
+     *
+     * @param  array{window_active:bool,window_start:string,duration_hours:int}  $policy
+     */
     public function windowOpen(array $policy, ?CarbonImmutable $instant = null): bool
     {
-        if (! $policy['window_active']) {
-            return true;
-        }
-        $local = ($instant ?? CarbonImmutable::now('UTC'))->setTimezone((string) config('app.timezone', 'America/Sao_Paulo'));
-        $parts = explode(':', $policy['window_start']);
-        $start = ((int) $parts[0]) * 60 + (int) $parts[1];
-        $current = ((int) $local->format('H')) * 60 + (int) $local->format('i');
-        $elapsed = ($current - $start + 1440) % 1440;
-
-        return $elapsed < $policy['duration_hours'] * 60;
+        return true;
     }
 }

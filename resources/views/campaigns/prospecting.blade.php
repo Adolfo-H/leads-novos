@@ -101,7 +101,7 @@
 
         <div class="ecpi80-grid" aria-label="Indicadores de elegibilidade">
             <div class="ecpi80-kpi is-accent"><span>E-mails elegíveis no filtro</span><strong>{{ $hasAnalysis ? number_format($people->total(), 0, ',', '.') : '—' }}</strong><small>Únicos, sem bloqueios conhecidos</small></div>
-            <div class="ecpi80-kpi"><span>Destinatários no rascunho</span><strong>{{ $hasAnalysis ? number_format(min($cap, $people->total()), 0, ',', '.') : '—' }}</strong><small>Máximo permitido por rascunho</small></div>
+            <div class="ecpi80-kpi"><span>Destinatários no rascunho</span><strong>{{ $hasAnalysis ? number_format($people->total(), 0, ',', '.') : '—' }}</strong><small>Todos os elegíveis; sem corte artificial de 1.000</small></div>
             <div class="ecpi80-kpi"><span>Aceitos pelo SMTP (histórico)</span><strong>{{ number_format($previousSent, 0, ',', '.') }}</strong><small>Eventos históricos, não pessoas únicas</small></div>
             <div class="ecpi80-kpi"><span>Teto SMTP configurado</span><strong>{{ number_format($smtpPerDay, 0, ',', '.') }}/dia</strong><small>Capacidade cadastrada, não disponibilidade real</small></div>
         </div>
@@ -162,7 +162,7 @@
                     @endif
                 </div>
                 @if($people->total() > 0)
-                    <div class="ecpi80-summary"><strong>{{ number_format($people->total(), 0, ',', '.') }}</strong><span>e-mails elegíveis após os filtros. Até {{ number_format($cap, 0, ',', '.') }} serão incluídos no próximo rascunho. <span>{{ number_format($excludedCount, 0, ',', '.') }} excluído(s) por você.</span></span></div>
+                    <div class="ecpi80-summary"><strong>{{ number_format($people->total(), 0, ',', '.') }}</strong><span>e-mails elegíveis após os filtros. Todos serão incluídos no próximo rascunho, após nova validação dos filtros. <span>{{ number_format($excludedCount, 0, ',', '.') }} excluído(s) por você.</span></span></div>
                 @else
                     <div class="ecpi80-note">Nenhum destinatário elegível para os filtros atuais. Altere o período ou a origem e analise novamente. O formulário de campanha só aparece quando há resultados.</div>
                 @endif
@@ -252,7 +252,7 @@
         @if($hasAnalysis && $people->total() > 0)
             <section class="ecpi80-card" id="ecpi80-draft" aria-labelledby="ecpi80-compose-title">
                 <div class="ecpi80-cardhead">
-                    <div><h2 id="ecpi80-compose-title">3. Preparar nova campanha</h2><p class="ecpi80-muted">Os destinatários serão selecionados automaticamente a partir da análise. Esta etapa cria somente um rascunho com até {{ number_format($cap, 0, ',', '.') }} contatos; nenhum e-mail será enviado agora.</p></div>
+                    <div><h2 id="ecpi80-compose-title">3. Preparar nova campanha</h2><p class="ecpi80-muted">Os destinatários serão selecionados automaticamente a partir da análise. Esta etapa cria somente um rascunho com todos os contatos elegíveis; nenhum e-mail será enviado agora. A cota SMTP diária continua sendo respeitada no despacho.</p></div>
                 </div>
                 <form method="POST" action="{{ route('campaigns.prospecting.draft') }}">
                     @csrf
@@ -280,7 +280,7 @@
                     <label class="ecpi80-check"><input type="checkbox" name="basis_reviewed" value="1" required><span>Revisei a finalidade comercial, a base legal e a pertinência do público. Confirmo que será criado apenas um rascunho, sem envio automático.</span></label>
                     <div class="ecpi80-actions">
                         <button type="submit" class="ecpi80-button ecpi80-button-primary">Criar rascunho com seleção automática</button>
-                        <span class="ecpi80-muted">Os limites de destinatários e SMTP existentes continuam valendo.</span>
+                        <span class="ecpi80-muted">Sem limite artificial de 1.000 no rascunho. O envio continua sujeito ao teto SMTP configurado.</span>
                     </div>
                 </form>
             </section>

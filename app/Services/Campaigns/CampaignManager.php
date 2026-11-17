@@ -7,9 +7,9 @@ use App\Models\EmailCampaign;
 use App\Models\EmailCampaignRecipient;
 use App\Models\EmailCampaignSuppression;
 use App\Models\User;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use LogicException;
 
@@ -139,6 +139,80 @@ final class CampaignManager
                     'reserved_at' => null,
                     'reservation_token' => null,
                 ]);
+
+            return $campaign;
+        });
+    }
+
+    /**
+     * EC_PROSPECTING_DRAFT_UNCAPPED_V1: rascunho de prospecção com o público
+     * completo, independentemente de CAMPAIGN_MAIL_MAX_RECIPIENTS e do SMTP.
+     * Apenas a consulta de elegíveis produz destinatários; não inicia disparos.
+     * O dispatcher e o job de envio preservam as cotas globais de 24 horas.
+     *
+     * @param  array{name:string,subject:string,body:string}  $fields
+     */
+    public function saveProspectingDraft(User $user, array $fields, Builder $eligibleQuery): EmailCampaign
+    {
+        abort_unless($user->isCommercialManager(), 403);
+
+        return DB::transaction(static function () use ($user, $fields, $eligibleQuery): EmailCampaign {
+            // Mesma trava de consistência usada pelo saveDraft tradicional.
+            $gate = DB::table('email_campaign_dispatch_gates')
+                ->where('id', 1)->lockForUpdate()->first();
+            if ($gate === null) {
+                throw new LogicException('Campaign dispatch quota gate is missing.');
+            }
+
+            $campaign = new EmailCampaign;
+            $campaign->fill([
+                'name' => trim($fields['name']),
+                'subject' => trim($fields['subject']),
+                'body' => trim($fields['body']),
+                'status' => 'draft',
+                'from_address' => (string) config('campaign_mail.from_address'),
+                'from_name' => (string) config('campaign_mail.from_name'),
+                'reply_to' => (string) config('campaign_mail.reply_to'),
+                'created_by' => $user->id,
+            ]);
+            $campaign->save();
+
+            $batch = [];
+            $count = 0;
+            $now = now('UTC');
+            foreach ($eligibleQuery->cursor() as $person) {
+                $email = CampaignAudience::normalizedEmail((string) ($person->normalized_email ?? ''));
+                if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+                    continue;
+                }
+
+                $batch[] = [
+                    'email_campaign_id' => (int) $campaign->id,
+                    'source_key' => (string) $person->source_key,
+                    'email' => $email,
+                    'normalized_email' => $email,
+                    'contact_name' => mb_substr(trim((string) ($person->contact_name ?? '')), 0, 180),
+                    'company_name' => mb_substr((string) ($person->company_name ?? ''), 0, 255),
+                    'job_title' => mb_substr((string) ($person->job_title ?? ''), 0, 180),
+                    'status' => 'pending',
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+                $count++;
+                if (count($batch) === 500) {
+                    DB::table('email_campaign_recipients')->insert($batch);
+                    $batch = [];
+                }
+            }
+
+            if ($count === 0) {
+                throw ValidationException::withMessages([
+                    'recipients' => 'Não há e-mails válidos elegíveis para esses filtros.',
+                ]);
+            }
+            if ($batch !== []) {
+                DB::table('email_campaign_recipients')->insert($batch);
+            }
 
             return $campaign;
         });
@@ -289,12 +363,6 @@ final class CampaignManager
         if (filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
             throw ValidationException::withMessages(['campaign' => 'Configure CAMPAIGN_MAIL_TEST_TO com um e-mail autorizado.']);
         }
-        $key = 'campaigns-test:'.$user->id;
-        if (RateLimiter::tooManyAttempts($key, 3)) {
-            throw ValidationException::withMessages(['campaign' => 'Limite de três testes por hora.']);
-        }
-        RateLimiter::hit($key, 3600);
-
         $person = new EmailCampaignRecipient([
             'contact_name' => $user->name,
             'company_name' => 'ExportControl',

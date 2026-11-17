@@ -242,6 +242,7 @@ Route::middleware(['auth', 'verified', 'commercial.workspace', 'commercial.manag
     Route::post('/campanhas/novo-v93/adicionar-filtrados', [CampaignWizardController::class, 'addFiltered'])->name('campaigns.wizard-v93.filtered');
     Route::post('/campanhas/novo-v93/remover', [CampaignWizardController::class, 'remove'])->name('campaigns.wizard-v93.remove');
     Route::post('/campanhas/novo-v93/mensagem', [CampaignWizardController::class, 'message'])->name('campaigns.wizard-v93.message');
+    Route::post('/campanhas/novo-v93/escolher-modelo', [CampaignWizardController::class, 'chooseTemplate'])->name('campaigns.wizard-v93.choose-template');
     Route::post('/campanhas/novo-v93/ritmo', [CampaignWizardController::class, 'pace'])->name('campaigns.wizard-v93.pace');
     Route::post('/campanhas/novo-v93/salvar-rascunho', [CampaignWizardController::class, 'save'])->name('campaigns.wizard-v93.save');
 });
@@ -252,7 +253,7 @@ Route::middleware(['auth', 'verified', 'commercial.workspace', 'commercial.manag
     Route::post('/campanhas/{campaign}/cancelar-v94', [CampaignOperationsController::class, 'cancel'])->whereNumber('campaign')->name('campaigns.ops-v94.cancel');
     Route::post('/campanhas/{campaign}/pausar-v94', [CampaignOperationsController::class, 'pause'])->whereNumber('campaign')->name('campaigns.ops-v94.pause');
     Route::post('/campanhas/{campaign}/retomar-v94', [CampaignOperationsController::class, 'resume'])->whereNumber('campaign')->name('campaigns.ops-v94.resume');
-    Route::post('/campanhas/{campaign}/email-de-teste', [CampaignOperationsController::class, 'test'])->whereNumber('campaign')->middleware('throttle:3,60')->name('campaigns.email-test');
+    Route::post('/campanhas/{campaign}/email-de-teste', [CampaignOperationsController::class, 'test'])->whereNumber('campaign')->name('campaigns.email-test');
 });
 
 /* EC941: confirmacao manual WhatsApp via POST, mantendo o registro original/auditoria. */

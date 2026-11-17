@@ -179,7 +179,8 @@
     <section class="ec68-starters" aria-labelledby="ec68-models-title">
         <header><h2 id="ec68-models-title">Comece por uma mensagem</h2><p>Modelos editáveis: escolha um para abrir o assistente de campanha.</p></header>
         <div class="ec68-starter-grid">
-            <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'initial']) }}"><span class="ec68-model-label">Modelo rápido</span><strong>Apresentação</strong><small>Primeiro contato com uma empresa.</small><em>Usar modelo <span aria-hidden="true">→</span></em></a>
+            <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'initial']) }}"><span class="ec68-model-label">Prospecção inicial</span><strong>Vendas para tradings</strong><small>Comprovação da exportação e risco fiscal.</small><em>Usar modelo <span aria-hidden="true">→</span></em></a>
+            <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'direct']) }}"><span class="ec68-model-label">Prospecção inicial</span><strong>Exportação direta</strong><small>NF-e, DU-E, averbações e saldos pendentes.</small><em>Usar modelo <span aria-hidden="true">→</span></em></a>
             <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'followup']) }}"><span class="ec68-model-label">Modelo rápido</span><strong>Retomada</strong><small>Retome uma conversa anterior.</small><em>Usar modelo <span aria-hidden="true">→</span></em></a>
             <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'meeting']) }}"><span class="ec68-model-label">Modelo de mensagem</span><strong>Agendamento</strong><small>Convide para uma reunião.</small><em>Usar modelo <span aria-hidden="true">→</span></em></a>
         </div>
