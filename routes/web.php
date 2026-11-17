@@ -242,6 +242,7 @@ Route::middleware(['auth', 'verified', 'commercial.workspace', 'commercial.manag
     Route::post('/campanhas/novo-v93/adicionar-filtrados', [CampaignWizardController::class, 'addFiltered'])->name('campaigns.wizard-v93.filtered');
     Route::post('/campanhas/novo-v93/remover', [CampaignWizardController::class, 'remove'])->name('campaigns.wizard-v93.remove');
     Route::post('/campanhas/novo-v93/mensagem', [CampaignWizardController::class, 'message'])->name('campaigns.wizard-v93.message');
+    Route::post('/campanhas/novo-v93/escolher-modelo', [CampaignWizardController::class, 'chooseTemplate'])->name('campaigns.wizard-v93.choose-template');
     Route::post('/campanhas/novo-v93/ritmo', [CampaignWizardController::class, 'pace'])->name('campaigns.wizard-v93.pace');
     Route::post('/campanhas/novo-v93/salvar-rascunho', [CampaignWizardController::class, 'save'])->name('campaigns.wizard-v93.save');
 });

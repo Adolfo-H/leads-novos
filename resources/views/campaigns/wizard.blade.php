@@ -152,6 +152,18 @@
             <div class="v93-layout">
                 <section class="v93-card">
                     <div class="v93-card-head"><div><h2>Escreva a mensagem</h2><p>Personalize o conteúdo antes de configurar o ritmo.</p></div></div>
+                    {{-- EC_CAMP_MAIL_COMPACT_V2: trocar modelo exige POST/CSRF; preserva contatos. --}}
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 12px" role="group" aria-label="Abordagem comercial">
+                        @foreach (['initial' => 'Vendas para tradings', 'direct' => 'Exportação direta', 'followup' => 'Retomada', 'meeting' => 'Agendamento'] as $modelCode => $modelLabel)
+                            <form method="POST" action="{{ route('campaigns.wizard-v93.choose-template') }}">
+                                @csrf
+                                <input type="hidden" name="wizard_id" value="{{ $wizardId }}">
+                                <input type="hidden" name="model" value="{{ $modelCode }}">
+                                <button class="v93-btn {{ ($state['model'] ?? 'initial') === $modelCode ? 'v93-btn-primary' : 'v93-btn-quiet' }}" type="submit" aria-pressed="{{ ($state['model'] ?? 'initial') === $modelCode ? 'true' : 'false' }}">{{ $modelLabel }}</button>
+                            </form>
+                        @endforeach
+                    </div>
+                    <p class="v93-hint" style="margin:0 0 15px">Escolher outro modelo substitui o assunto e o texto abaixo. Contatos selecionados permanecem; nenhum e-mail é enviado.</p>
                     <form method="POST" action="{{ route('campaigns.wizard-v93.message') }}" class="v93-editor">
                         @csrf
                         <input type="hidden" name="wizard_id" value="{{ $wizardId }}">

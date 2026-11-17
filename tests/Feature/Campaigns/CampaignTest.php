@@ -89,7 +89,7 @@ it('requires an explicit capacity confirmation to activate a policy', function (
     expect(DB::table('email_campaign_send_policies')->count())->toBe(0);
 });
 
-it('enforces the daily window in Sao Paulo without changing the live flag', function (): void {
+it('keeps legacy window calls nonblocking without changing the live flag', function (): void {
     $user = ecV6Manager();
     config()->set('app.timezone', 'America/Sao_Paulo');
     config()->set('campaign_mail.per_day', 500);
@@ -102,10 +102,10 @@ it('enforces the daily window in Sao Paulo without changing the live flag', func
         ->and($active['day'])->toBe(500)
         ->and($active['tick'])->toBe(2)
         ->and($active['source'])->toBe('prospector')
-        ->and($policy->windowOpen($active, CarbonImmutable::parse('2026-10-16 07:59:00', 'America/Sao_Paulo')))->toBeFalse()
+        ->and($policy->windowOpen($active, CarbonImmutable::parse('2026-10-16 07:59:00', 'America/Sao_Paulo')))->toBeTrue()
         ->and($policy->windowOpen($active, CarbonImmutable::parse('2026-10-16 08:00:00', 'America/Sao_Paulo')))->toBeTrue()
         ->and($policy->windowOpen($active, CarbonImmutable::parse('2026-10-16 15:59:00', 'America/Sao_Paulo')))->toBeTrue()
-        ->and($policy->windowOpen($active, CarbonImmutable::parse('2026-10-16 16:00:00', 'America/Sao_Paulo')))->toBeFalse()
+        ->and($policy->windowOpen($active, CarbonImmutable::parse('2026-10-16 16:00:00', 'America/Sao_Paulo')))->toBeTrue()
         ->and(config('campaign_mail.live_enabled'))->toBeFalse();
 });
 
@@ -186,13 +186,7 @@ it('keeps settings inaccessible to sellers even when invoked through Livewire', 
         ->toThrow(HttpException::class);
 });
 
-it('does not start an already-reserved SMTP job outside the configured window', function (): void {
-    $user = ecV6Manager();
-    config()->set('app.timezone', 'America/Sao_Paulo');
-    config()->set('campaign_mail.per_day', 500);
-    config()->set('campaign_mail.live_enabled', false);
-    app(CampaignSendPolicy::class)->save($user, 500, 8, '08:00', true, true);
-
+it('never starts a reserved SMTP job while live sending remains disabled', function (): void {
     $this->travelTo(CarbonImmutable::parse('2026-10-16 16:05:00', 'America/Sao_Paulo'));
     $campaign = ecV6Draft();
     $campaign->update(['status' => 'running']);
@@ -205,7 +199,7 @@ it('does not start an already-reserved SMTP job outside the configured window', 
         'reservation_token' => $token,
     ]);
     config()->set('campaign_mail.enabled', true);
-    config()->set('campaign_mail.live_enabled', true);
+    config()->set('campaign_mail.live_enabled', false);
     Mail::fake();
     (new SendEmailCampaignRecipient((int) $recipient->id, $token))->handle(
         app(CampaignDispatcher::class),

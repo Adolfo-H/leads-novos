@@ -764,8 +764,7 @@ new class extends Component
         $withinPolicy = $possible
             && $total <= $effective['day']
             && $quote['hourly_limit'] <= $effective['hour']
-            && $quote['per_tick_limit'] <= $effective['tick']
-            && (! $effective['window_active'] || $hours <= $effective['duration_hours']);
+            && $quote['per_tick_limit'] <= $effective['tick'];
 
         return [
             'total' => $total,
@@ -792,24 +791,10 @@ new class extends Component
     public function applyTemplate(string $key): void
     {
         $this->assertCampaignManager();
-        $templates = [
-            'initial' => [
-                'Apresentação ExportControl — {{empresa}}',
-                "Olá, {{primeiro_nome}}!\n\nTudo bem?\n\nSou Adolfo, da ExportControl. Atuamos com soluções para acompanhamento e controle documental das operações de exportação.\n\nGostaria de entender como a {{empresa}} realiza hoje esse acompanhamento e verificar se faz sentido conversarmos.\n\nSe não for sua área, poderia me indicar a pessoa responsável?\n\nObrigado,\nAdolfo\nExportControl",
-            ],
-            'followup' => [
-                'Retomando nosso contato — ExportControl',
-                "Olá, {{primeiro_nome}}!\n\nRetomo meu contato sobre o controle e acompanhamento das operações de exportação da {{empresa}}.\n\nSe o assunto fizer sentido, podemos conversar brevemente nesta semana.\n\nObrigado,\nAdolfo | ExportControl",
-            ],
-            'meeting' => [
-                'Convite para apresentação — ExportControl',
-                "Olá, {{primeiro_nome}}!\n\nGostaria de agendar uma apresentação rápida das soluções ExportControl para sua equipe.\n\nVocê teria disponibilidade nos próximos dias?\n\nAtenciosamente,\nAdolfo | ExportControl",
-            ],
-        ];
-        if (! isset($templates[$key])) {
+        if (! in_array($key, \App\Services\Campaigns\CampaignProspectingTemplates::keys(), true)) {
             return;
         }
-        [$this->subject, $this->body] = $templates[$key];
+        [$this->subject, $this->body] = \App\Services\Campaigns\CampaignProspectingTemplates::template($key);
     }
 
     public function toggleAudiencePage(): void
@@ -973,7 +958,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
         $manager->start($this->assertCampaignManager(), EmailCampaign::query()->findOrFail($id), $this->lawfulBasisConfirmed);
         $this->lawfulBasisConfirmed = false;
         $this->openCampaign($id);
-        session()->flash('campaign_success', 'Campanha autorizada. O agendador liberará os envios conforme os limites.');
+        session()->flash('campaign_success', 'Campanha autorizada. O envio sera processado a partir do proximo ciclo do agendador, respeitando as cotas SMTP.');
         unset($this->overview, $this->campaigns);
     }
 
@@ -1196,7 +1181,8 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                     <div class="ec22-home-templates">
                         <div class="ec22-section-head"><div><h3>Modelos prontos para começar</h3><p>Você pode editar a mensagem antes de salvar a campanha.</p></div></div>
                         <div class="ec22-home-template-grid">
-                            <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'initial']) }}"><span aria-hidden="true">✉</span><strong>Apresentação</strong><small>Primeiro contato com uma empresa.</small><em>Usar modelo →</em></a>
+                            <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'initial']) }}"><span aria-hidden="true">✉</span><strong>Vendas para tradings</strong><small>Risco fiscal e comprovação da exportação.</small><em>Usar modelo →</em></a>
+                            <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'direct']) }}"><span aria-hidden="true">↗</span><strong>Exportação direta</strong><small>Averbações, saldos e pendências.</small><em>Usar modelo →</em></a>
                             <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'followup']) }}"><span aria-hidden="true">↩</span><strong>Retomada</strong><small>Retome uma conversa com contexto.</small><em>Usar modelo →</em></a>
                             <a href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1, 'modelo' => 'meeting']) }}"><span aria-hidden="true">▣</span><strong>Agendamento</strong><small>Convide para uma apresentação.</small><em>Usar modelo →</em></a>
                         </div>
@@ -1297,7 +1283,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                                 <div class="ec22-input"><label for="ec22-subject">Assunto do e-mail</label><input id="ec22-subject" type="text" wire:model.live.debounce.400ms="subject" maxlength="180" placeholder="Escreva um assunto claro...">@error('subject')<small role="alert">{{ $message }}</small>@enderror</div>
                                 <div class="ec22-token-row"><strong>Personalizar:</strong>@foreach (['primeiro_nome' => 'Primeiro nome', 'nome' => 'Nome', 'empresa' => 'Empresa', 'cargo' => 'Cargo'] as $token => $caption)<button type="button" wire:click="appendTemplateVariable(@js($token))" title="Inserir {{ $caption }} ao final da mensagem">&#123;&#123;{{ $token }}&#125;&#125;</button>@endforeach</div>
                                 <div class="ec22-input"><label for="ec22-body">Mensagem</label><textarea id="ec22-body" rows="15" maxlength="12000" wire:model.live.debounce.500ms="body" placeholder="Escreva aqui sua mensagem personalizada..."></textarea><small>Editor de texto simples, sem HTML. {{ mb_strlen($body) }}/12.000 caracteres.</small>@error('body')<small role="alert">{{ $message }}</small>@enderror</div>
-                                <div class="ec22-quick-templates"><strong>Usar modelo:</strong><button type="button" wire:click="applyTemplate('initial')">Apresentação</button><button type="button" wire:click="applyTemplate('followup')">Retomada</button><button type="button" wire:click="applyTemplate('meeting')">Agendamento</button></div>
+                                <div class="ec22-quick-templates"><strong>Usar modelo:</strong><button type="button" wire:click="applyTemplate('initial')">Vendas para tradings</button><button type="button" wire:click="applyTemplate('direct')">Exportação direta</button><button type="button" wire:click="applyTemplate('followup')">Retomada</button><button type="button" wire:click="applyTemplate('meeting')">Agendamento</button></div>
                                 @if ($errors->any())<div class="ec22-error" role="alert"><strong>Não foi possível avançar. Confira os campos:</strong><ul>@foreach ($errors->all() as $messageError)<li>{{ $messageError }}</li>@endforeach</ul></div>@endif
                             </section>
                             <aside class="ec22-card ec22-preview-card">

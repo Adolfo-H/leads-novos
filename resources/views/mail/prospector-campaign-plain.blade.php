@@ -1,17 +1,14 @@
 {{ $messageBody }}
 
-Conversar no WhatsApp: https://wa.me/5544991026597
-
----
+—
 Adolfo Heerdt
-Assistente Comercial | ExportControl
+Assistente Comercial · ExportControl
 adolfo@exportcontrol.com.br
 (44) 99102-6597
-https://exportcontrol.com.br
+Conversar pelo WhatsApp: https://wa.me/5544991026597
 
 @if ($unsubscribeUrl)
-Você está recebendo uma mensagem comercial da ExportControl.
-Para não receber novos e-mails, solicite o descadastro em:
+Se não desejar novos e-mails comerciais da ExportControl, solicite o descadastro:
 {{ $unsubscribeUrl }}
 @endif
 @if ($isTest)

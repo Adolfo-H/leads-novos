@@ -9,6 +9,7 @@ use App\Services\Campaigns\CampaignAudience;
 use App\Services\Campaigns\CampaignContactTransfer;
 use App\Services\Campaigns\CampaignManager;
 use App\Services\Campaigns\CampaignPacing;
+use App\Services\Campaigns\CampaignProspectingTemplates;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ final class CampaignWizardController extends Controller
     private const ORIGINS = ['all', 'hubspot', 'manual', 'receita'];
 
     /** @var list<string> */
-    private const MODELS = ['initial', 'followup', 'meeting'];
+    private const MODELS = ['initial', 'direct', 'followup', 'meeting'];
 
     public function index(Request $request, CampaignAudience $audience, CampaignContactTransfer $transfer): View|RedirectResponse
     {
@@ -255,6 +256,28 @@ final class CampaignWizardController extends Controller
         ]);
     }
 
+    /** A troca de modelo substitui somente assunto/corpo deste assistente. Sem SMTP. */
+    public function chooseTemplate(Request $request): RedirectResponse
+    {
+        $this->manager($request);
+        $wizardId = $this->wizardId($request);
+        $data = $request->validate([
+            'wizard_id' => ['required', 'uuid'],
+            'model' => ['required', 'in:initial,direct,followup,meeting'],
+        ]);
+        $state = $this->state($request, $wizardId);
+        if ($state === []) {
+            return redirect()->route('campaigns.wizard-v93', ['wizard_id' => $wizardId]);
+        }
+        [$subject, $body] = CampaignProspectingTemplates::template($data['model']);
+        $state['model'] = $data['model'];
+        $state['subject'] = $subject;
+        $state['body'] = $body;
+        $request->session()->put($this->sessionKey($wizardId), $state);
+
+        return redirect()->route('campaigns.wizard-v93', ['wizard_id' => $wizardId, 'passo' => 'mensagem']);
+    }
+
     public function message(Request $request): RedirectResponse
     {
         $this->manager($request);
@@ -405,19 +428,6 @@ final class CampaignWizardController extends Controller
     /** @return array{0: string, 1: string} */
     private function template(string $key): array
     {
-        return match ($key) {
-            'followup' => [
-                'Retomando nosso contato — ExportControl',
-                "Olá, {{primeiro_nome}}!\n\nRetomo meu contato sobre o controle e acompanhamento das operações de exportação da {{empresa}}.\n\nPodemos conversar brevemente nesta semana?\n\nObrigado,\nExportControl",
-            ],
-            'meeting' => [
-                'Convite para apresentação — ExportControl',
-                "Olá, {{primeiro_nome}}!\n\nGostaria de agendar uma apresentação rápida das soluções ExportControl para sua equipe.\n\nVocê teria disponibilidade nos próximos dias?\n\nAtenciosamente,\nExportControl",
-            ],
-            default => [
-                'Apresentação ExportControl — {{empresa}}',
-                "Olá, {{primeiro_nome}}!\n\nTudo bem?\n\nAtuamos com soluções para acompanhamento e controle documental das operações de exportação.\n\nGostaria de entender como a {{empresa}} realiza hoje esse acompanhamento.\n\nObrigado,\nExportControl",
-            ],
-        };
+        return CampaignProspectingTemplates::template($key);
     }
 }

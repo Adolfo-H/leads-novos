@@ -14,6 +14,7 @@ final class CampaignContent
         return strtr($template, [
             '{{nome}}' => $name !== '' ? $name : 'Contato',
             '{{primeiro_nome}}' => $first,
+            '{{saudacao}}' => $name !== '' ? 'Olá, '.$first.'!' : 'Olá!',
             '{{empresa}}' => trim((string) $recipient->company_name) ?: 'sua empresa',
             '{{cargo}}' => trim((string) $recipient->job_title) ?: 'profissional',
         ]);

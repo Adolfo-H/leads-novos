@@ -112,15 +112,9 @@ class SendEmailCampaignRecipient implements ShouldQueue
                 return null;
             }
 
-            // CAMPANHAS_V6_SEND_WINDOW: um job reservado no fim da janela
-            // nao pode comecar o SMTP fora do horario configurado.
-            $sendPolicy = app(CampaignSendPolicy::class);
-            $policy = $sendPolicy->effective();
-            if (! $sendPolicy->windowOpen($policy)) {
-                $row->update(['status' => 'pending', 'reserved_at' => null, 'reservation_token' => null]);
-
-                return null;
-            }
+            // Sem janela global: a seguranca do envio depende das cotas, da
+            // autorizacao, do status, do opt-out e dos demais guards acima.
+            $policy = app(CampaignSendPolicy::class)->effective();
 
             $utcNow = now('UTC');
             // EC_CAMPAIGNS_UNIFIED_V90: respeitar cota SMTP aprovada, sem teto legado de 100/h.

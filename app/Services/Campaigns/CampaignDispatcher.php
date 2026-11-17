@@ -41,67 +41,94 @@ final class CampaignDispatcher
             }
 
             $policy = $policyService->effective();
-            if (! $policyService->windowOpen($policy)) {
-                return [];
-            }
             $hour = max(1, min((int) config('campaign_mail.smtp_approved_per_hour', 100), $policy['hour']));
             $day = max(1, min((int) config('campaign_mail.smtp_approved_per_day', 500), $policy['day']));
             $tick = max(1, min((int) config('campaign_mail.smtp_approved_per_tick', 5), $policy['tick']));
 
-            $campaign = EmailCampaign::query()
-                ->where('status', 'running')->orderBy('id')->lockForUpdate()->first();
-            if ($campaign === null) {
-                return [];
-            }
-            // EC_CAMPAIGNS_UNIFIED_V90: a duração escolhida na campanha limita
-            // esta reserva, mas nunca amplia os tetos globais SMTP.
-            $perCampaign = app(CampaignPacing::class)->limits((int) $campaign->id);
-            if ($perCampaign !== null) {
-                $hour = min($hour, $perCampaign['hour']);
-                $tick = min($tick, $perCampaign['tick']);
-            }
-
             $utcNow = now('UTC');
+            $hourCutoff = $utcNow->copy()->subHour();
+            $dayCutoff = $utcNow->copy()->subDay();
+
+            // Os contadores GLOBAIS protegem a capacidade SMTP de todas as campanhas.
+            // Nunca aplique um limite individual ao uso global: a campanha seguinte
+            // ficaria aguardando 60 minutos por um envio feito pela campanha anterior.
             $hourUsed = EmailCampaignRecipient::query()
-                ->where(static function ($query) use ($utcNow): void {
-                    $query->where('attempted_at', '>=', $utcNow->copy()->subHour())
-                        ->orWhere(static function ($query) use ($utcNow): void {
+                ->where(static function ($query) use ($hourCutoff): void {
+                    $query->where('attempted_at', '>=', $hourCutoff)
+                        ->orWhere(static function ($query) use ($hourCutoff): void {
                             $query->where('status', 'reserved')
-                                ->where('reserved_at', '>=', $utcNow->copy()->subHour());
+                                ->where('reserved_at', '>=', $hourCutoff);
                         });
                 })->count();
             $dayUsed = EmailCampaignRecipient::query()
-                ->where(static function ($query) use ($utcNow): void {
-                    $query->where('attempted_at', '>=', $utcNow->copy()->subDay())
-                        ->orWhere(static function ($query) use ($utcNow): void {
+                ->where(static function ($query) use ($dayCutoff): void {
+                    $query->where('attempted_at', '>=', $dayCutoff)
+                        ->orWhere(static function ($query) use ($dayCutoff): void {
                             $query->where('status', 'reserved')
-                                ->where('reserved_at', '>=', $utcNow->copy()->subDay());
+                                ->where('reserved_at', '>=', $dayCutoff);
                         });
                 })->count();
-            $available = min($tick, max(0, $hour - $hourUsed), max(0, $day - $dayUsed));
-            if ($available === 0) {
+
+            $globallyAvailable = min($tick, max(0, $hour - $hourUsed), max(0, $day - $dayUsed));
+            if ($globallyAvailable === 0) {
                 return [];
             }
 
-            $ids = EmailCampaignRecipient::query()
-                ->where('email_campaign_id', $campaign->id)
-                ->where('status', 'pending')
-                ->orderBy('id')->limit($available)
-                ->lockForUpdate()->pluck('id')->all();
+            // Não permitir que uma campanha sem capacidade individual / pendentes
+            // bloqueie outras campanhas ativas. Mantém a ordem histórica por ID.
+            $campaigns = EmailCampaign::query()
+                ->where('status', 'running')
+                ->whereHas('recipients', static fn ($query) => $query->where('status', 'pending'))
+                ->orderBy('id')->lockForUpdate()->get(['id']);
 
             $result = [];
-            foreach ($ids as $id) {
-                $token = (string) Str::uuid();
-                $updated = EmailCampaignRecipient::query()
-                    ->whereKey((int) $id)->where('status', 'pending')
-                    ->update([
-                        'status' => 'reserved',
-                        'reserved_at' => $utcNow,
-                        'reservation_token' => $token,
-                    ]);
+            foreach ($campaigns as $campaign) {
+                $remaining = $globallyAvailable - count($result);
+                if ($remaining <= 0) {
+                    break;
+                }
 
-                if ($updated > 0) {
-                    $result[] = ['id' => (int) $id, 'token' => $token];
+                // O ritmo desta campanha só considera destinatários DELA.
+                // O teto global continua sendo aplicado à soma de todas as campanhas.
+                $perCampaign = app(CampaignPacing::class)->limits((int) $campaign->id);
+                $campaignHourLimit = $perCampaign['hour'] ?? $hour;
+                $campaignTickLimit = $perCampaign['tick'] ?? $tick;
+                $campaignHourUsed = EmailCampaignRecipient::query()
+                    ->where('email_campaign_id', $campaign->id)
+                    ->where(static function ($query) use ($hourCutoff): void {
+                        $query->where('attempted_at', '>=', $hourCutoff)
+                            ->orWhere(static function ($query) use ($hourCutoff): void {
+                                $query->where('status', 'reserved')
+                                    ->where('reserved_at', '>=', $hourCutoff);
+                            });
+                    })->count();
+                $available = min(
+                    $remaining,
+                    $campaignTickLimit,
+                    max(0, $campaignHourLimit - $campaignHourUsed),
+                );
+                if ($available <= 0) {
+                    continue;
+                }
+
+                $ids = EmailCampaignRecipient::query()
+                    ->where('email_campaign_id', $campaign->id)
+                    ->where('status', 'pending')
+                    ->orderBy('id')->limit($available)
+                    ->lockForUpdate()->pluck('id')->all();
+
+                foreach ($ids as $id) {
+                    $token = (string) Str::uuid();
+                    $updated = EmailCampaignRecipient::query()
+                        ->whereKey((int) $id)->where('status', 'pending')
+                        ->update([
+                            'status' => 'reserved',
+                            'reserved_at' => $utcNow,
+                            'reservation_token' => $token,
+                        ]);
+                    if ($updated > 0) {
+                        $result[] = ['id' => (int) $id, 'token' => $token];
+                    }
                 }
             }
 
