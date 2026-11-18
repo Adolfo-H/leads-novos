@@ -3,6 +3,8 @@
 use App\Models\EmailCampaignReply;
 use App\Models\EmailCampaignSuppression;
 use App\Services\Campaigns\CampaignImapHealth;
+use App\Services\Campaigns\CampaignInboundNoticeFilter;
+use Illuminate\Database\Query\Builder;
 use App\Models\EmailCampaignTestMessage;
 use App\Models\User;
 use App\Services\Campaigns\CampaignReplyReader;
@@ -33,10 +35,11 @@ new class extends Component
     public function chooseKind(string $kind): void
     {
         $this->ensureManager();
-        abort_unless(in_array($kind, ['commercial', 'pilot', 'suppressed'], true), 422);
+        abort_unless(in_array($kind, ['commercial', 'pilot', 'suppressed', 'notices'], true), 422);
         $this->kind = $kind;
         $this->selectedId = null;
         $this->resetPage('replyPage');
+        $this->resetPage('noticePage');
         $this->resetPage('unsubscribedPage');
         unset($this->selected, $this->conversations);
     }
@@ -46,6 +49,7 @@ new class extends Component
         $this->ensureManager();
         $this->search = mb_substr(trim($this->search), 0, 100);
         $this->resetPage('replyPage');
+        $this->resetPage('noticePage');
         $this->resetPage('unsubscribedPage');
         $this->selectedId = null;
         unset($this->selected, $this->conversations);
@@ -118,6 +122,24 @@ new class extends Component
             ->orderByDesc('received_at')->paginate(14, ['*'], 'replyPage');
     }
 
+    /** @return LengthAwarePaginator<int, object> */
+    #[Computed]
+    public function inboundNotices(): LengthAwarePaginator
+    {
+        $this->ensureManager();
+        $term = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], mb_substr(trim($this->search), 0, 100));
+
+        return CampaignInboundNoticeFilter::query()
+            ->when($term !== '', static function (Builder $query) use ($term): void {
+                $query->where(static function (Builder $filter) use ($term): void {
+                    $filter->where('from_email', 'like', '%'.$term.'%')
+                        ->orWhere('subject', 'like', '%'.$term.'%');
+                });
+            })
+            ->orderByDesc('received_at')
+            ->paginate(14, ['*'], 'noticePage');
+    }
+
     #[Computed]
     public function selected(): EmailCampaignReply|EmailCampaignTestMessage|null
     {
@@ -173,6 +195,7 @@ new class extends Component
                 <span>Categoria</span>
                 <div class="ec69-reply-categories" role="group" aria-label="Tipo de resposta">
                     <button type="button" wire:click="chooseKind('commercial')" class="{{ $kind === 'commercial' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'commercial' ? 'true' : 'false' }}">Comerciais</button>
+                    <button type="button" wire:click="chooseKind('notices')" class="{{ $kind === 'notices' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'notices' ? 'true' : 'false' }}">Retornos úteis</button>
                     <button type="button" wire:click="chooseKind('pilot')" class="{{ $kind === 'pilot' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'pilot' ? 'true' : 'false' }}">Respostas de teste</button>
                 </div>
                 <button type="button" wire:click="chooseKind('suppressed')" class="{{ $kind === 'suppressed' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'suppressed' ? 'true' : 'false' }}">Descadastrados</button>
@@ -181,7 +204,9 @@ new class extends Component
         </div>
     </section>
     {{-- EC77_REPLIES: filtros de respostas e opt-out no mesmo módulo, sem remover os dados históricos. --}}
-    @if ($kind === 'suppressed')
+    @if ($kind === 'notices')
+        @include('campaigns.inbound-notices-global')
+    @elseif ($kind === 'suppressed')
         @include('campaigns.unsubscribed')
     @else
     @php

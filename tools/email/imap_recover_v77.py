@@ -116,6 +116,9 @@ def run():
                     "in_reply_to": str(message.get("In-Reply-To", ""))[:500],
                     "references": str(message.get("References", ""))[:2000],
                     "auto_submitted": str(message.get("Auto-Submitted", ""))[:80],
+                    "x_autoreply": str(message.get("X-Autoreply", ""))[:80],
+                    "x_autorespond": str(message.get("X-Autorespond", ""))[:80],
+                    "x_ms_exchange_inbox_rules_loop": str(message.get("X-MS-Exchange-Inbox-Rules-Loop", ""))[:80],
                     "received_at": received,
                 })
             except (ValueError, TypeError, UnicodeError, LookupError):

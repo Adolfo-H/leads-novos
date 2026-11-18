@@ -1546,6 +1546,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                                 <tr><td colspan="3" class="ecm2-empty-cell">Nenhuma resposta identificada pelo IMAP até agora.</td></tr>
                             @endforelse
                         </tbody></table></div>
+                        @include('campaigns.inbound-notices')
                     @endif
                     {{-- EC_CAMPAIGNS_UNIFIED_V90: única configuração de follow-up, depois dos indicadores e respostas. --}}
                 </section>
