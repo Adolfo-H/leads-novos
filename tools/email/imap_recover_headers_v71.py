@@ -54,6 +54,9 @@ def _headers(raw: bytes, uid: int) -> dict[str, object]:
         "in_reply_to": str(parsed.get("In-Reply-To", ""))[:500],
         "references": str(parsed.get("References", ""))[:2000],
         "auto_submitted": str(parsed.get("Auto-Submitted", ""))[:80],
+        "x_autoreply": str(parsed.get("X-Autoreply", ""))[:80],
+        "x_autorespond": str(parsed.get("X-Autorespond", ""))[:80],
+        "x_ms_exchange_inbox_rules_loop": str(parsed.get("X-MS-Exchange-Inbox-Rules-Loop", ""))[:80],
         "received_at": received_at,
     }
 

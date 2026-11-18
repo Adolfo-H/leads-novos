@@ -9,6 +9,7 @@ use App\Models\EmailCampaignReply;
 use App\Models\EmailCampaignTestMessage;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /** IMAP: registra apenas cabeçalhos associados a nossos Message-ID enviados. */
 final class CampaignInbox
@@ -31,6 +32,7 @@ final class CampaignInbox
             }
             $cursor->uid_validity = $validity;
             $matched = 0;
+            $noticeTableReady = Schema::hasTable('email_campaign_inbound_notices');
             foreach ($batch['messages'] as $message) {
                 $uid = (int) ($message['uid'] ?? 0);
                 // EC_CAMPAIGNS_V7_DSN: antes dos filtros de auto-resposta.
@@ -60,6 +62,12 @@ final class CampaignInbox
                 }
                 $from = CampaignAudience::normalizedEmail((string) ($message['from_email'] ?? ''));
                 if ($uid < 1 || filter_var($from, FILTER_VALIDATE_EMAIL) === false) {
+                    continue;
+                }
+                // Registra retornos automáticos e não confirmados em categoria separada.
+                // Nunca os transforma em respostas humanas nem altera replied_at.
+                if ($noticeTableReady && app(CampaignInboundNoticeRecorder::class)
+                    ->record($mailbox, $validity, $uid, $message)) {
                     continue;
                 }
                 $auto = mb_strtolower(trim((string) ($message['auto_submitted'] ?? '')));

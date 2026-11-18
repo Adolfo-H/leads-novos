@@ -9,6 +9,8 @@ use App\Models\EmailCampaignRecipient;
 use App\Services\Campaigns\CampaignAudience;
 use App\Services\Campaigns\CampaignInbox;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Process\Process;
 use Throwable;
 
@@ -124,14 +126,23 @@ final class RecoverCampaignReplies extends Command
 
                 return self::SUCCESS;
             }
+            // EC_INBOUND_V21_BACKFILL: uma caixa pode ter avisos de endereco
+            // alterado ou de canal institucional mesmo quando nao existem
+            // novas respostas humanas com Message-ID exatamente correlacionado.
             if ($metrics['matched'] === 0) {
-                $this->warn('Nenhuma resposta comercial correspondeu com segurança. Nada foi gravado; confira remetente, Message-ID e Reply-To no Outlook.');
-
-                return self::SUCCESS;
+                $this->warn('Sem novas respostas humanas exatas; avaliando avisos úteis com vínculo conservador.');
             }
-
+            $noticeBefore = Schema::hasTable('email_campaign_inbound_notices')
+                ? DB::table('email_campaign_inbound_notices')->count() : 0;
+            $unlinkedBefore = Schema::hasTable('email_campaign_unlinked_notices')
+                ? DB::table('email_campaign_unlinked_notices')->count() : 0;
             $imported = $inbox->import($mailbox, $batch);
-            $this->info("Respostas identificadas e registradas agora: {$imported} (inclui respostas de teste, quando houver).");
+            $noticesAdded = Schema::hasTable('email_campaign_inbound_notices')
+                ? DB::table('email_campaign_inbound_notices')->count() - $noticeBefore : 0;
+            $unlinkedAdded = Schema::hasTable('email_campaign_unlinked_notices')
+                ? DB::table('email_campaign_unlinked_notices')->count() - $unlinkedBefore : 0;
+            $this->info("Respostas humanas novas: {$imported} (inclui testes rastreados, quando houver).");
+            $this->info("Avisos correlacionados novos: {$noticesAdded}; avisos sem destinatário confirmado: {$unlinkedAdded}.");
             $this->comment('Nenhum e-mail foi enviado ou marcado como lido. A análise usa apenas cabeçalhos IMAP.');
 
             return self::SUCCESS;
