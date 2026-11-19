@@ -868,8 +868,9 @@ new class extends Component
     html.dark .wpr .wa-web-robot-manual > summary {color:#c6f4e9}
 </style>
 <div class="wpr wpr-v2 wpr-v3 wpr-v7 wpr-v8 wa12" wire:poll.30s data-test="whatsapp-phone-registry-v1" data-ec-whatsapp-design="v2" data-test-v12="central-por-tarefas"
-    x-data="{ tab: window.location.hash === '#wa11-empresa' ? 'company' : 'numbers' }"
-    x-on:wa12-show-numbers.window="tab='numbers'; $nextTick(() => document.getElementById('wa8-lista')?.scrollIntoView({behavior:'smooth',block:'start'}))">
+    {{-- EC_WA_PAIR_HTTP_V1: ao voltar do POST, mostrar a aba do QR. --}}
+    x-data="{ tab: window.location.hash === '#wa12-operation' || new URLSearchParams(window.location.search).get('aba') === 'operation' ? 'operation' : window.location.hash === '#wa11-empresa' ? 'company' : 'numbers' }"
+>
     @include('contacts.whatsapp-registry-styles')
     @include('contacts.whatsapp-registry-light-theme')
     @include('contacts.whatsapp-registry-theme-overrides')
@@ -903,7 +904,7 @@ new class extends Component
 
 
 
-    <section id="wa12-numbers" class="wa12-pane wa12-pane-numbers" role="tabpanel" x-show="tab==='numbers'" x-cloak aria-label="Lista de números cadastrados">
+    <section id="wa12-numbers" class="wa12-pane wa12-pane-numbers" role="tabpanel" x-show="tab==='numbers'" aria-label="Lista de números cadastrados">
     <section class="wa8-directory-head" id="wa8-lista" aria-label="Todos os telefones registrados">
         <div>
             <strong>Lista completa de números</strong>

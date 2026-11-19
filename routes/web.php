@@ -12,6 +12,8 @@ use App\Http\Controllers\CampaignProspectingController;
 use App\Http\Controllers\CampaignUnsubscribeController;
 use App\Http\Controllers\CampaignWizardController;
 use App\Http\Controllers\HubSpotWebhookController;
+use App\Http\Controllers\WhatsappOperationsHttpController;
+use App\Http\Controllers\WhatsappPairHttpController;
 use App\Http\Controllers\WhatsappVerificationController;
 use App\Http\Middleware\RedirectLegacyCampaignWizard;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +58,14 @@ Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function 
     Route::livewire('/contatos/verificacao-whatsapp', 'pages::contacts.whatsapp')
         ->middleware('commercial.manager')
         ->name('contacts.whatsapp');
+    // EC_WA_OPERATIONS_HTTP_V1: consultas, cancelamento e revisao sem Livewire.
+    Route::post('/contatos/verificacao-whatsapp/operacoes-http-v1', WhatsappOperationsHttpController::class)
+        ->middleware(['commercial.manager', 'throttle:20,1'])
+        ->name('contacts.whatsapp.operations-http-v1');
+    // EC_WA_PAIR_HTTP_V1: fallback POST para o conector Ubuntu quando Livewire nao responde.
+    Route::post('/contatos/verificacao-whatsapp/parear-v1', WhatsappPairHttpController::class)
+        ->middleware(['commercial.manager', 'throttle:30,1'])
+        ->name('contacts.whatsapp.pair-http-v1');
 });
 
 /* EC_EMAIL_CAMPAIGNS_V1_ROUTES */
