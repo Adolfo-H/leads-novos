@@ -24,9 +24,20 @@
                     @if($wa131Online)
                         <p class="wa131-caption">Conta conectada. Não precisa ler um novo QR.</p>
                     @else
-                        <div class="wa131-pair-actions">
-                            <button type="button" wire:click="requestWebPairing({{ $wa131Session }})" wire:loading.attr="disabled" wire:target="requestWebPairing" @disabled($wa131Busy || ! $wa131ConnectorUp) class="wa131-btn primary">Conectar / reconectar</button>
-                            <button type="button" wire:click="requestWebPairing({{ $wa131Session }}, true)" wire:loading.attr="disabled" wire:target="requestWebPairing" @disabled($wa131Busy || ! $wa131ConnectorUp) class="wa131-btn">Gerar novo QR</button>
+                        <div class="wa131-pair-actions" data-ec-wa-pair-http="EC_WA_PAIR_HTTP_V1">
+                            {{-- EC_WA_PAIR_HTTP_V1: POST com CSRF, sem Livewire. --}}
+                            <form method="POST" action="{{ route('contacts.whatsapp.pair-http-v1') }}" class="wa131-native-form">
+                                @csrf
+                                <input type="hidden" name="session" value="{{ $wa131Session }}">
+                                <input type="hidden" name="reset" value="0">
+                                <button type="submit" @disabled($wa131Busy) class="wa131-btn primary">Conectar / reconectar</button>
+                            </form>
+                            <form method="POST" action="{{ route('contacts.whatsapp.pair-http-v1') }}" class="wa131-native-form" onsubmit="return confirm('Gerar um QR novo arquiva a sessao local anterior desta conta. Continuar?')">
+                                @csrf
+                                <input type="hidden" name="session" value="{{ $wa131Session }}">
+                                <input type="hidden" name="reset" value="1">
+                                <button type="submit" @disabled($wa131Busy) class="wa131-btn">Gerar novo QR</button>
+                            </form>
                         </div>
                         @if(is_array($wa131State) && ($wa131State['state'] ?? '') === 'error')
                             <p class="wa131-error" role="alert">{{ $wa131State['message'] ?? 'Não foi possível conectar. Tente novamente.' }}</p>
@@ -42,12 +53,14 @@
                 </div>
             @endforeach
         </div>
-        @unless($wa131ConnectorUp)
+        @if (! $wa131ConnectorUp)
             <p class="wa131-error" role="alert">O conector Ubuntu está offline. Inicie o conector antes de solicitar pareamento ou novo QR.</p>
             <code class="wa18-command">cd ~/projetos/prospector-exportcontrol &amp;&amp; bash integrations/whatsapp-web/recuperar-conector-v83.sh</code>
-        @endunless
+        @endif
+        @if(session('wa_pair_notice_error'))<p class="wa131-error" role="alert">{{ session('wa_pair_notice_error') }}</p>@endif
         @if(session('wa_pair_notice'))<p class="wa131-notice" role="status">{{ session('wa_pair_notice') }}</p>@endif
         @error('wa_pair')<p class="wa131-error" role="alert">{{ $message }}</p>@enderror
-        <small class="wa131-caption">O botão solicita a conexão ao conector no Ubuntu; não inicia mensagens. Se o conector não estiver ativo, use o comando indicado no README.</small>
+        <small class="wa131-caption">O botao solicita a conexao ao conector no Ubuntu; nao inicia mensagens. Se aparecer Conector Ubuntu offline, execute o comando acima. Use Atualizar QR e estado na coluna direita.</small>
+        <style>.wa131-pair-actions .wa131-native-form{margin:0;display:inline-flex}.wa131-pair-actions .wa131-native-form button{min-height:38px}</style>
     </section>
 @endif

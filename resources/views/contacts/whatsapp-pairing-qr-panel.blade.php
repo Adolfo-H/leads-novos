@@ -15,6 +15,8 @@
             .wa18-qr-head small{display:block;font-size:11px;color:#7891a0;margin-top:4px}
             .wa18-health{font-size:10px;padding:5px 9px;border-radius:20px;background:#eaf8f3;color:#0b7868}
             .wa18-health.offline{background:#fff0e9;color:#a25738}
+            .wa18-reload{display:inline-flex;align-items:center;justify-content:center;min-height:34px;border:1px solid #b8dcd4;border-radius:8px;padding:7px 11px;background:#effaf6;color:#08796d;font-size:11px;font-weight:750;text-decoration:none}
+            .wa18-reload:hover{background:#e1f5ed}
             .wa18-qr-slot{border:1px solid #d7e5e9;border-radius:10px;padding:13px;background:white}
             .wa18-qr-slot h4{font-size:13px;color:#123b4e;margin:0 0 7px}
             .wa18-qr-slot p{font-size:11px;color:#6c8796;line-height:1.5;margin:7px 0}
@@ -26,6 +28,8 @@
         <div class="wa18-qr-head">
             <div><strong>Conexão por QR Code</strong><small>O código aparecerá aqui depois de solicitar o pareamento na coluna esquerda.</small></div>
             <span class="wa18-health {{ $wa18ConnectorUp ? '' : 'offline' }}">{{ $wa18ConnectorUp ? 'Conector Ubuntu ativo' : 'Conector Ubuntu offline' }}</span>
+            {{-- EC_WA_PAIR_HTTP_V1: QR atualiza por GET, sem depender de wire:poll. --}}
+            <a href="{{ route('contacts.whatsapp', ['aba' => 'operation']) }}#wa12-operation" class="wa18-reload" aria-label="Atualizar QR e estado da conexao">Atualizar QR e estado</a>
         </div>
         @unless($wa18ConnectorUp)
             <div class="wa18-qr-slot">

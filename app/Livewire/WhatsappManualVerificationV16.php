@@ -21,6 +21,27 @@ class WhatsappManualVerificationV16 extends Component
 
     public string $reviewNote = '';
 
+    // EC_WA_OPERATIONS_HTTP_V1: filtros e escolha de formato por GET nativo.
+    public function mount(): void
+    {
+        $search = request()->query('revisarBusca');
+        if (is_string($search)) {
+            $this->reviewSearch = mb_substr(preg_replace('/\D+/', '', $search) ?? '', 0, 20);
+        }
+        $id = request()->query('revisarNumero');
+        if (! is_string($id) || preg_match('/^[1-9][0-9]{0,10}$/D', $id) !== 1) {
+            return;
+        }
+        $candidate = DB::table('whatsapp_phone_numbers')->where('id', (int) $id)
+            ->where('kind', 'review')->whereNotExists(static function ($query): void {
+                $query->selectRaw('1')->from('whatsapp_phone_format_reviews_v16 as rv')
+                    ->whereColumn('rv.original_phone_id', 'whatsapp_phone_numbers.id');
+            })->exists();
+        if ($candidate) {
+            $this->reviewPhoneId = (int) $id;
+        }
+    }
+
     public function boot(): void
     {
         abort_unless(auth()->user() instanceof User && auth()->user()->isCommercialManager(), 403);

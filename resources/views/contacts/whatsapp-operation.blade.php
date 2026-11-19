@@ -8,11 +8,20 @@
     $wa7Active = $wa7Agents->contains(fn ($agent) => $agent->batch && in_array($agent->batch->status, ['queued', 'running'], true));
 @endphp
 <div class="wa7-dashboard wa8-operation-block" data-test="whatsapp-v8-operations">
+    <style>
+      .wa7-dashboard .wa-http-cancel{margin:0}
+      .wa7-dashboard .wa7-history-native{color:#078577;font-weight:750;font-size:11px;text-decoration:none}
+      .wa7-dashboard a.wa7-result{display:flex;text-decoration:none;color:inherit}
+      .wa7-dashboard a.wa7-result:hover{background:#f1faf8}
+    </style>
     <section class="wa7-operation" id="wa8-operacao" aria-label="Operar consultas do WhatsApp">
         <div class="wa7-operation-header">
             <div><span class="wa7-eyebrow">EXECUÇÃO</span><h2>Verificar números</h2><p>Escolha quais tipos de número deseja conferir. Celulares e fixos válidos podem entrar na fila; formatos incompletos não.</p></div>
             <span class="wa7-online-count">{{ $wa7Connected }}/2 contas conectadas</span>
         </div>
+        {{-- EC_WA_OPERATIONS_HTTP_V1: retorno claro da operacao, sem componentes JS. --}}
+        @if(session('wa_operations_success'))<div class="wa7-success" role="status">{{ session('wa_operations_success') }}</div>@endif
+        @error('wa_operation')<p class="wa7-error" role="alert">{{ $message }}</p>@enderror
         <div class="wa7-operation-grid">
             <div class="wa7-operation-card">
                 <div class="wa7-card-title"><h3>Verificar agora</h3><span class="wa7-muted">Consulta sem envio de mensagens</span></div>
@@ -28,7 +37,12 @@
                                 <div class="wa7-batch-progress">{{ $agent->batch->status === 'queued' ? 'Lote aguardando' : 'Consultando' }} · {{ $agent->batch->processed }}/{{ $agent->batch->requested_limit }}
                                     @if ($agent->current_e164 && $agent->online)<small>Agora: {{ \App\Services\Contacts\BrazilPhoneNumber::display($agent->current_e164, $agent->current_digits) }}</small>@endif
                                 </div>
-                                <button class="wa7-stop" type="button" wire:click="cancelWebBatch({{ $agent->batch->id }})" wire:loading.attr="disabled" wire:target="cancelWebBatch">{{ $agent->batch->cancel_requested_at ? 'Pausa solicitada' : 'Interromper após o número atual' }}</button>
+                                <form method="POST" action="{{ route('contacts.whatsapp.operations-http-v1') }}" class="wa-http-cancel">
+                                    @csrf
+                                    <input type="hidden" name="mode" value="cancel">
+                                    <input type="hidden" name="batch_id" value="{{ $agent->batch->id }}">
+                                    <button class="wa7-stop" type="submit" @disabled($agent->batch->cancel_requested_at !== null)>{{ $agent->batch->cancel_requested_at ? 'Pausa solicitada' : 'Interromper após o número atual' }}</button>
+                                </form>
                             @elseif($agent->batch)
                                 <small class="wa7-last-run">Último lote: {{ $agent->batch->processed }} números · {{ match ($agent->batch->status) { 'completed' => 'Concluído', 'cancelled' => 'Interrompido', 'failed' => 'Falha', default => 'Aguardando' } }}</small>
                             @else
@@ -41,8 +55,10 @@
                 {{-- EC_WA_PAIR_V13_1: ligação por QR direto na Central; não aciona consultas. --}}
                 @include('contacts.whatsapp-pairing-styles')
                 @include('contacts.whatsapp-pairing')
+                {{-- EC_WA_OPERATIONS_HTTP_V1: selects + botoes usam POST HTML normal. --}}
+                <form id="wa-http-operations-form-v1" method="POST" action="{{ route('contacts.whatsapp.operations-http-v1') }}">@csrf</form>
                 <label class="wa7-input-label wa8-scope-choice">Quais números consultar
-                    <select wire:model.live="webScanScope" aria-label="Tipo de telefones para consultas">
+                    <select form="wa-http-operations-form-v1" name="scope" aria-label="Tipo de telefones para consultas">
                         <option value="all">Celulares e fixos</option>
                         <option value="mobile">Somente celulares</option>
                         <option value="landline">Somente fixos</option>
@@ -50,11 +66,11 @@
                 </label>
                 <div class="wa7-now-row">
                     <label class="wa7-input-label">Lote por conta
-                        <select wire:model.live="webBatchLimit" aria-label="Quantidade de números por conta">
+                        <select form="wa-http-operations-form-v1" name="limit" aria-label="Quantidade de números por conta">
                             <option value="3">3 números</option><option value="5">5 números</option><option value="10">10 números</option>
                         </select>
                     </label>
-                    <button type="button" class="wa7-primary" wire:click="requestWebBoth" wire:loading.attr="disabled" wire:target="requestWebBoth" @disabled($wa7Connected === 0 || $wa7Budget['remaining'] === 0)>
+                    <button type="submit" form="wa-http-operations-form-v1" name="mode" value="both" class="wa7-primary" @disabled($wa7Connected === 0 || $wa7Budget['remaining'] === 0)>
                         {{ $wa7Active ? 'Verificar nas contas livres' : 'Verificar agora com as 2 contas' }}
                     </button>
                 </div>
@@ -62,7 +78,7 @@
                 <div class="wa7-account-shortcuts"><span>Usar só uma conta:</span>
                     @foreach($wa7Agents as $agent)
                         @php $busy = $agent->batch && in_array($agent->batch->status, ['queued', 'running'], true); @endphp
-                        <button type="button" wire:click="requestWebBatch({{ $agent->session }})" wire:loading.attr="disabled" wire:target="requestWebBatch" @disabled(!$agent->online || $busy || $wa7Budget['remaining'] === 0)>Conta {{ $agent->session }}</button>
+                        <button type="submit" form="wa-http-operations-form-v1" name="mode" value="single:{{ $agent->session }}" @disabled(!$agent->online || $busy || $wa7Budget['remaining'] === 0)>Conta {{ $agent->session }}</button>
                     @endforeach
                 </div>
             </div>
@@ -88,10 +104,10 @@
     <div style="padding:13px 17px;margin:12px 0;background:#f0f9f7;border:1px solid #d2eae5;border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div><strong style="font-size:13px;color:#0b4151">Também precisa revisar telefones incompletos?</strong>
         <p style="font-size:11px;color:#698694;margin:3px 0">A lista completa inclui números com DDD ou dígitos inconsistentes. Corrija o cadastro antes de consultar pelo WhatsApp.</p></div>
-        <button type="button" wire:click="quickFilter('review','all')" x-on:click="$dispatch('wa12-show-numbers')" style="background:#fff;border:1px solid #a4d8d1;color:#087d72;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700">Ver formatos a revisar</button>
+        <a href="{{ route('contacts.whatsapp', ['tipo' => 'review', 'situacao' => 'all', 'consulta' => 'all']) }}#wa8-lista" style="display:inline-flex;text-decoration:none;background:#fff;border:1px solid #a4d8d1;color:#087d72;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700">Ver formatos a revisar</a>
     </div>
     <section class="wa7-recent" data-test="whatsapp-web-v6-recent" aria-label="Últimas verificações realizadas">
-        <div class="wa7-recent-head"><div><span class="wa7-eyebrow">HISTÓRICO</span><h2>Histórico recente de consultas</h2><p>O resultado já está associado aos contatos que usam o mesmo telefone.</p></div><button type="button" wire:click="quickWebFilter('consulted')" x-on:click="$dispatch('wa12-show-numbers')">Filtrar lista pelos consultados ›</button></div>
+        <div class="wa7-recent-head"><div><span class="wa7-eyebrow">HISTÓRICO</span><h2>Histórico recente de consultas</h2><p>O resultado já está associado aos contatos que usam o mesmo telefone.</p></div><a href="{{ route('contacts.whatsapp', ['consulta' => 'consulted']) }}#wa8-lista" class="wa7-history-native">Filtrar lista pelos consultados ›</a></div>
         @if($this->webRecent->isEmpty())
             <p class="wa7-empty">Nenhuma consulta realizada. Ao consultar o primeiro lote, os números aparecerão aqui.</p>
         @else
@@ -107,12 +123,12 @@
                         };
                         $wa7Class = $recent->result === 'found' && $recent->status === 'yes' ? 'confirmed' : $recent->result;
                     @endphp
-                    <button type="button" wire:key="wa7-recent-{{ $recent->id }}" class="wa7-result" wire:click="openWebRecent({{ $recent->id }})" x-on:click="$dispatch('wa12-show-numbers')">
+                    <a wire:key="wa7-recent-{{ $recent->id }}" class="wa7-result" href="{{ route('contacts.whatsapp', ['busca' => $recent->e164, 'numero' => $recent->id, 'consulta' => 'all']) }}#wa8-lista">
                         <span class="wa7-result-phone"><strong>{{ \App\Services\Contacts\BrazilPhoneNumber::display($recent->e164, $recent->digits) }}</strong><small>{{ $recent->contacts_count }} contato(s) vinculado(s)</small></span>
                         <span class="wa7-result-pill wa7-pill-{{ $wa7Class }}">{{ $wa7Result }}{{ $recent->result === 'found' && $recent->status === 'yes' ? ' · via Web' : '' }}</span>
                         <span class="wa7-result-time">{{ $recent->session ? 'Conta '.$recent->session : 'Consulta anterior' }}<small>{{ \Carbon\Carbon::parse($recent->checked_at)->timezone('America/Sao_Paulo')->format('d/m H:i') }}</small></span>
                         <span class="wa7-chevron">›</span>
-                    </button>
+                    </a>
                 @endforeach
             </div>
         @endif
