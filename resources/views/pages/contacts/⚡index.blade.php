@@ -62,6 +62,28 @@ new class extends Component
             $this->segment = 'all';
         }
         $this->campaignTransferToken = (string) Str::uuid();
+        // EC_NATIVE_CONTACTS_FILTER_GET_V1: filtros HTTP funcionam sem Livewire JS.
+        // Cada valor e validado; GET nunca grava ou altera CRM.
+        $origin = request()->query('fonte');
+        if (is_string($origin) && in_array($origin, ['all', 'hubspot', 'manual', 'receita'], true)) {
+            $this->peopleOrigin = $origin;
+        }
+        $whatsapp = request()->query('wa');
+        if (is_string($whatsapp) && in_array($whatsapp, ['all', 'yes', 'no', 'unknown'], true)) {
+            $this->whatsappFilter = $whatsapp;
+        }
+        $sort = request()->query('ordem');
+        if (is_string($sort) && in_array($sort, ['recent', 'name'], true)) {
+            $this->contactsSort = $sort;
+        }
+        $perPage = request()->query('porPagina');
+        if (is_string($perPage) && in_array($perPage, ['12', '25', '50'], true)) {
+            $this->contactsPerPage = (int) $perPage;
+        }
+        $page = request()->query('pagina');
+        if (is_string($page) && preg_match('/^[1-9][0-9]{0,5}$/D', $page) === 1) {
+            $this->contactsPage = min(100000, (int) $page);
+        }
     }
 
     public function updatedSearchTerm(): void
@@ -766,12 +788,12 @@ new class extends Component
                     ['receita', 'Receita', 'receita'],
                     ['unlinked', 'Sem vínculo', 'unlinked'],
                 ] as [$code, $label, $countKey])
-                    <button type="button" class="ecc3-chip {{ $segment === $code ? 'is-active' : '' }}"
-                            wire:click="chooseSegment('{{ $code }}')"
-                            aria-pressed="{{ $segment === $code ? 'true' : 'false' }}">
+                    <a class="ecc3-chip {{ $segment === $code ? 'is-active' : '' }}"
+                            href="{{ route('contacts.index', ['q' => $searchTerm, 'filtro' => $code, 'fonte' => $peopleOrigin, 'wa' => $whatsappFilter, 'ordem' => $contactsSort, 'porPagina' => $contactsPerPage]) }}"
+                            aria-current="{{ $segment === $code ? 'true' : 'false' }}">
                         {{ $label }}
                         @if ($countKey !== null)<b>{{ $fmt($totals[$countKey]) }}</b>@endif
-                    </button>
+                    </a>
                 @endforeach
                 <button type="button" class="ecc3-chip ecc3-chip-filter" x-on:click="mobileFilters = !mobileFilters">☷ Mais filtros</button>
             </nav>
@@ -890,42 +912,55 @@ new class extends Component
         <section class="ecc3-center" aria-label="Contatos encontrados">
 
             {{-- FIGMA C01 – filtros existentes apresentados em duas linhas. --}}
+            <style id="ec-native-contact-filters-css">
+                .ecc3-page .ec-native-contacts-actions{display:flex;align-items:end;flex-wrap:wrap;gap:8px}
+                .ecc3-page .ec-native-contacts-actions :is(button,a){min-height:39px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+                .ecc3-page .ec-native-mini-filter{display:inline-flex;align-items:center;gap:7px;flex-wrap:wrap}
+                .ecc3-page .ec-native-mini-filter button{cursor:pointer;border:1px solid #cbdde4;border-radius:7px;padding:7px 10px;background:#eaf6f2;color:#086b62;font-size:11px;font-weight:700}
+                .ecc3-page .ec-native-pager{display:inline-flex;align-items:center;justify-content:center;min-width:31px;min-height:31px;border:1px solid #d7e5eb;border-radius:7px;background:#fff;color:#087b71;text-decoration:none}
+                .ecc3-page .ec-native-pager[aria-disabled="true"]{opacity:.45}
+                .ecc3-page .ecc3-chips a.ecc3-chip{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+            </style>
             <section class="c66-refine" aria-labelledby="c66-refine-title">
                 <h2 id="c66-refine-title">Pesquisar e refinar</h2>
-                <div class="c66-refine-grid">
+                <form id="ec-native-contacts-filter" method="GET" action="{{ route('contacts.index') }}" class="c66-refine-grid" data-ec-native-contacts-filter="v1">
                     <label><span>Contato, empresa, cargo, CNPJ ou e-mail</span>
-                        <input type="search" wire:model.live.debounce.350ms="searchTerm" placeholder="Buscar contato, empresa ou CNPJ..." autocomplete="off">
+                        <input type="search" name="q" value="{{ $searchTerm }}" wire:model.live.debounce.350ms="searchTerm" placeholder="Buscar contato, empresa ou CNPJ..." autocomplete="off">
                     </label>
                     <label><span>Fonte</span>
-                        <select wire:model.live="peopleOrigin" aria-label="Filtrar por origem">
-                            <option value="all">Todas</option><option value="hubspot">HubSpot</option>
-                            <option value="manual">Manual</option><option value="receita">Receita Federal</option>
+                        <select name="fonte" wire:model.live="peopleOrigin" aria-label="Filtrar por origem">
+                            <option value="all"@if($peopleOrigin === 'all') selected @endif>Todas</option><option value="hubspot"@if($peopleOrigin === 'hubspot') selected @endif>HubSpot</option>
+                            <option value="manual"@if($peopleOrigin === 'manual') selected @endif>Manual</option><option value="receita"@if($peopleOrigin === 'receita') selected @endif>Receita Federal</option>
                         </select>
                     </label>
                     <label><span>Situação</span>
-                        <select wire:model.live="segment" aria-label="Filtrar situação dos contatos">
-                            <option value="all">Todas</option><option value="with_email">Com e-mail</option>
-                            <option value="with_phone">Com telefone</option><option value="unlinked">Sem vínculo</option>
-                            <option value="clients">Clientes</option><option value="deals">Com negócios</option>
+                        <select name="filtro" wire:model.live="segment" aria-label="Filtrar situação dos contatos">
+                            <option value="all"@if($segment === 'all') selected @endif>Todas</option><option value="with_email"@if($segment === 'with_email') selected @endif>Com e-mail</option>
+                            <option value="with_phone"@if($segment === 'with_phone') selected @endif>Com telefone</option><option value="unlinked"@if($segment === 'unlinked') selected @endif>Sem vínculo</option>
+                            <option value="clients"@if($segment === 'clients') selected @endif>Clientes</option><option value="deals"@if($segment === 'deals') selected @endif>Com negócios</option>
                         </select>
                     </label>
                     <label><span>WhatsApp</span>
-                        <select wire:model.live="whatsappFilter" aria-label="Filtrar WhatsApp">
-                            <option value="all">Todos</option><option value="yes">Confirmado</option>
-                            <option value="no">Não possui</option><option value="unknown">Não verificado</option>
+                        <select name="wa" wire:model.live="whatsappFilter" aria-label="Filtrar WhatsApp">
+                            <option value="all"@if($whatsappFilter === 'all') selected @endif>Todos</option><option value="yes"@if($whatsappFilter === 'yes') selected @endif>Confirmado</option>
+                            <option value="no"@if($whatsappFilter === 'no') selected @endif>Não possui</option><option value="unknown"@if($whatsappFilter === 'unknown') selected @endif>Não verificado</option>
                         </select>
                     </label>
                     <label><span>Ordenação</span>
-                        <select wire:model.live="contactsSort" aria-label="Ordenar contatos">
-                            <option value="recent">Mais recentes</option><option value="name">Nome A–Z</option>
+                        <select name="ordem" wire:model.live="contactsSort" aria-label="Ordenar contatos">
+                            <option value="recent"@if($contactsSort === 'recent') selected @endif>Mais recentes</option><option value="name"@if($contactsSort === 'name') selected @endif>Nome A–Z</option>
                         </select>
                     </label>
                     <label><span>Por página</span>
-                        <select wire:model.live="contactsPerPage" aria-label="Contatos por página">
-                            <option value="12">12</option><option value="25">25</option><option value="50">50</option>
+                        <select name="porPagina" wire:model.live="contactsPerPage" aria-label="Contatos por página">
+                            <option value="12"@if($contactsPerPage === '12') selected @endif>12</option><option value="25"@if($contactsPerPage === '25') selected @endif>25</option><option value="50"@if($contactsPerPage === '50') selected @endif>50</option>
                         </select>
                     </label>
-                </div>
+                    <div class="ec-native-contacts-actions">
+                        <button type="submit" class="ecc3-button ecc3-button-primary">Aplicar filtros</button>
+                        <a class="ecc3-button" href="{{ route('contacts.index') }}">Limpar</a>
+                    </div>
+                </form>
             </section>
 
             {{-- EC_WA_PUBLIC_DIRECTORY_V14_CONTACTS: telefones institucionais ficam visíveis sem criar pessoas fictícias. --}}
@@ -941,11 +976,19 @@ new class extends Component
                         @endif
                     </div>
                     <div class="ecc3-controls">
-                        <label for="ecc3-order">Ordenar:</label>
-                        <select id="ecc3-order" wire:model.live="contactsSort">
-                            <option value="recent">Mais recentes</option>
-                            <option value="name">Nome A–Z</option>
-                        </select>
+                        <form method="GET" action="{{ route('contacts.index') }}" class="ec-native-mini-filter">
+                            <input type="hidden" name="q" value="{{ $searchTerm }}">
+                            <input type="hidden" name="filtro" value="{{ $segment }}">
+                            <input type="hidden" name="fonte" value="{{ $peopleOrigin }}">
+                            <input type="hidden" name="wa" value="{{ $whatsappFilter }}">
+                            <input type="hidden" name="porPagina" value="{{ $contactsPerPage }}">
+                            <label for="ecc3-order">Ordenar:</label>
+                            <select id="ecc3-order" name="ordem" wire:model.live="contactsSort">
+                                <option value="recent"@if($contactsSort === 'recent') selected @endif>Mais recentes</option>
+                                <option value="name"@if($contactsSort === 'name') selected @endif>Nome A–Z</option>
+                            </select>
+                            <button type="submit">Ordenar</button>
+                        </form>
                         @if (!$inspectorOpen)
                             <button type="button" class="ecc3-button ecc3-button-mini" wire:click="$set('inspectorOpen', true)">Abrir detalhes</button>
                         @endif
@@ -1070,18 +1113,32 @@ new class extends Component
                 <footer class="ecc3-pagination">
                     <span>Exibindo {{ $index->firstItem() ?? 0 }}–{{ $index->lastItem() ?? 0 }} de {{ $fmt($index->total()) }} contatos</span>
                     <div class="ecc3-pagination-actions">
-                        <button type="button" wire:click="changeContactsPage({{ max(1, $index->currentPage() - 1) }})"
-                                @disabled($index->onFirstPage()) aria-label="Página anterior">‹</button>
+                        @if ($index->onFirstPage())
+                            <span class="ec-native-pager" aria-disabled="true">‹</span>
+                        @else
+                            <a class="ec-native-pager" href="{{ route('contacts.index', ['q' => $searchTerm, 'filtro' => $segment, 'fonte' => $peopleOrigin, 'wa' => $whatsappFilter, 'ordem' => $contactsSort, 'porPagina' => $contactsPerPage, 'pagina' => $index->currentPage() - 1]) }}" aria-label="Página anterior">‹</a>
+                        @endif
                         <strong>{{ $index->currentPage() }}</strong>
                         <span>/ {{ $index->lastPage() }}</span>
-                        <button type="button" wire:click="changeContactsPage({{ $index->currentPage() + 1 }})"
-                                @disabled(! $index->hasMorePages()) aria-label="Próxima página">›</button>
+                        @if ($index->hasMorePages())
+                            <a class="ec-native-pager" href="{{ route('contacts.index', ['q' => $searchTerm, 'filtro' => $segment, 'fonte' => $peopleOrigin, 'wa' => $whatsappFilter, 'ordem' => $contactsSort, 'porPagina' => $contactsPerPage, 'pagina' => $index->currentPage() + 1]) }}" aria-label="Próxima página">›</a>
+                        @else
+                            <span class="ec-native-pager" aria-disabled="true">›</span>
+                        @endif
                     </div>
-                    <label>Por página
-                        <select wire:model.live="contactsPerPage">
-                            <option value="12">12</option><option value="25">25</option><option value="50">50</option>
-                        </select>
-                    </label>
+                    <form method="GET" action="{{ route('contacts.index') }}" class="ec-native-mini-filter">
+                        <input type="hidden" name="q" value="{{ $searchTerm }}">
+                        <input type="hidden" name="filtro" value="{{ $segment }}">
+                        <input type="hidden" name="fonte" value="{{ $peopleOrigin }}">
+                        <input type="hidden" name="wa" value="{{ $whatsappFilter }}">
+                        <input type="hidden" name="ordem" value="{{ $contactsSort }}">
+                        <label>Por página
+                            <select name="porPagina" wire:model.live="contactsPerPage">
+                                <option value="12"@if($contactsPerPage === 12) selected @endif>12</option><option value="25"@if($contactsPerPage === 25) selected @endif>25</option><option value="50"@if($contactsPerPage === 50) selected @endif>50</option>
+                            </select>
+                        </label>
+                        <button type="submit">Exibir</button>
+                    </form>
                 </footer>
             </div>
         </section>
