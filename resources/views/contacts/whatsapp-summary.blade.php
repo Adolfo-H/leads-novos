@@ -9,6 +9,12 @@
     $wa12Valid = (int) $summary['mobile'] + (int) $summary['landline'];
     $wa12Percent = $wa12Valid > 0 ? min(100, round(100 * $wa12Confirmed / $wa12Valid)) : 0;
 @endphp
+{{-- EC_WA_KPI_NATIVE_GET_V11: atalhos de filtro via HTTP nativo, sem Livewire. --}}
+<style id="ec-wa-kpi-native-get-v11">
+    .wpr.wa12 .wa12-metrics a.wa12-metric {text-decoration:none;}
+    .wpr.wa12 .wa12-metrics a.wa12-metric.is-filter-active {border-color:#0ca897;box-shadow:0 0 0 2px rgba(12,168,151,.12);}
+    .wpr.wa12 .wa12-metrics a.wa12-metric:focus-visible {outline:2px solid #0c9a88;outline-offset:2px;}
+</style>
 <section class="wa12-overview" aria-label="Situação dos números cadastrados" data-test="wa12-overview">
     <div class="wa12-overview-head">
         <div>
@@ -22,18 +28,18 @@
         </div>
     </div>
     <div class="wa12-metrics" aria-label="Indicadores da base">
-        <button type="button" class="wa12-metric" wire:click="quickFilter('all','all')" x-on:click="tab='numbers'" aria-label="Mostrar todos os números">
+        <a class="wa12-metric {{ $status === 'all' && $webFilter === 'all' && $kind === 'all' && $search === '' ? 'is-filter-active' : '' }}" href="{{ route('contacts.whatsapp', ['tipo' => 'all', 'situacao' => 'all', 'origem' => 'all', 'consulta' => 'all', 'publico' => 'all', 'porPagina' => $pageSize]) }}#wa8-lista" aria-label="Mostrar todos os números">
             <span>Números cadastrados</span><strong>{{ $fmt($wa12Total) }}</strong><small>{{ $fmt((int) $summary['mobile']) }} celulares · {{ $fmt((int) $summary['landline']) }} fixos</small>
-        </button>
-        <button type="button" class="wa12-metric wa12-metric-green" wire:click="quickFilter('all','yes')" x-on:click="tab='numbers'" aria-label="Mostrar números com WhatsApp">
+        </a>
+        <a class="wa12-metric wa12-metric-green {{ $status === 'yes' && $webFilter === 'all' && $kind === 'all' ? 'is-filter-active' : '' }}" href="{{ route('contacts.whatsapp', ['situacao' => 'yes', 'porPagina' => $pageSize]) }}#wa8-lista" aria-label="Mostrar números com WhatsApp">
             <span>Com WhatsApp</span><strong>{{ $fmt($wa12Confirmed) }}</strong><small>Confirmados no Prospector</small>
-        </button>
-        <button type="button" class="wa12-metric" wire:click="quickFilter('all','unknown')" x-on:click="tab='numbers'" aria-label="Mostrar números a verificar">
+        </a>
+        <a class="wa12-metric {{ $status === 'unknown' && $webFilter === 'all' && $kind === 'all' ? 'is-filter-active' : '' }}" href="{{ route('contacts.whatsapp', ['situacao' => 'unknown', 'porPagina' => $pageSize]) }}#wa8-lista" aria-label="Mostrar números a verificar">
             <span>A verificar</span><strong>{{ $fmt($wa12Pending) }}</strong><small>Inclui {{ $fmt($wa12Review) }} para revisar formato</small>
-        </button>
-        <button type="button" class="wa12-metric" wire:click="quickWebFilter('consulted')" x-on:click="tab='numbers'" aria-label="Mostrar números já consultados pelo Web">
+        </a>
+        <a class="wa12-metric {{ $webFilter === 'consulted' && $kind === 'all' && $status === 'all' ? 'is-filter-active' : '' }}" href="{{ route('contacts.whatsapp', ['consulta' => 'consulted', 'porPagina' => $pageSize]) }}#wa8-lista" aria-label="Mostrar números já consultados pelo Web">
             <span>Consultados via Web</span><strong>{{ $fmt((int) $wa12Metrics['consulted']) }}</strong><small>{{ $fmt((int) $wa12Metrics['never_consulted']) }} nunca consultados</small>
-        </button>
+        </a>
     </div>
     <div class="wa12-overview-bottom">
         <div class="wa12-overview-track" role="progressbar" aria-label="Percentual confirmado" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ (int) $wa12Percent }}"><span style="width:{{ (int) $wa12Percent }}%"></span></div>

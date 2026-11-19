@@ -79,6 +79,20 @@ new class extends Component
         $this->webDailyTime = (string) $settings->start_time;
         $this->webDailyEndTime = (string) $settings->end_time;
         $this->webDailyEnabled = (bool) $settings->auto_enabled;
+        // EC_NATIVE_WA_FILTER_GET_V1: pagina, limite e numero selecionado por GET.
+        // Validacao sem alterar o status dos telefones ou chamar o robo.
+        $perPage = request()->query('porPagina');
+        if (is_string($perPage) && in_array($perPage, ['20', '50', '100'], true)) {
+            $this->pageSize = (int) $perPage;
+        }
+        $page = request()->query('pagina');
+        if (is_string($page) && preg_match('/^[1-9][0-9]{0,5}$/D', $page) === 1) {
+            $this->page = min(100000, (int) $page);
+        }
+        $selected = request()->query('numero');
+        if (is_string($selected) && preg_match('/^[1-9][0-9]{0,10}$/D', $selected) === 1) {
+            $this->selectedId = (int) $selected;
+        }
     }
 
 
@@ -772,9 +786,11 @@ new class extends Component
         return in_array($status, ['yes', 'no'], true)
             && $evidence === 'legacy_manual' && $verifiedBy !== null;
     };
+    // EC_WA_WEB_RESULT_V1: o status da tela representa o resultado real da consulta.
+    // NAO escreve uma confirmacao humana e NAO trata 'inconclusive' como 'not_found'.
     $statusLabel = static function (string $status, ?string $evidence = null, mixed $verifiedBy = null) use ($hasManualConfirmation): string {
-        if ($evidence === 'web_found_unofficial') {
-            return 'Indício técnico — conferir';
+        if ($status === 'yes' && $evidence === 'web_found_unofficial') {
+            return 'Tem WhatsApp · robô';
         }
         if (! $hasManualConfirmation($status, $evidence, $verifiedBy)) {
             return 'A verificar';
@@ -783,6 +799,41 @@ new class extends Component
         return match ($status) {
             'yes' => 'Com WhatsApp', 'no' => 'Não possui', default => 'A verificar',
         };
+    };
+    /**
+     * Resultado visual, nunca uma confirmacao humana ou gravacao em Contatos.
+     * Confirmacoes manuais prevalecem sobre a biblioteca nao oficial.
+     * @return array{css:string,label:string,source:string}
+     */
+    $webDisplayStatus = static function (object $phone, ?object $probe) use ($hasManualConfirmation, $statusLabel): array {
+        $status = (string) ($phone->status ?? 'unknown');
+        $evidence = (string) ($phone->evidence ?? '');
+        $verifiedBy = $phone->verified_by ?? null;
+        if ($hasManualConfirmation($status, $evidence, $verifiedBy)) {
+            return ['css' => $status, 'label' => $statusLabel($status, $evidence, $verifiedBy), 'source' => 'manual'];
+        }
+        $result = (string) ($probe->result ?? '');
+        if ($status === 'yes' && $evidence === 'web_found_unofficial') {
+            if ($result === 'not_found') {
+                return ['css' => 'unknown', 'label' => 'Resultados divergentes · revisar', 'source' => 'conflict'];
+            }
+            return ['css' => 'yes', 'label' => 'Tem WhatsApp · robô', 'source' => 'web_found'];
+        }
+        if ($status === 'unknown' && $result === 'not_found') {
+            return ['css' => 'no', 'label' => 'Não possui WhatsApp · robô', 'source' => 'web_not_found'];
+        }
+        if ($status === 'unknown' && $result === 'inconclusive') {
+            return ['css' => 'unknown', 'label' => 'Consulta inconclusiva', 'source' => 'inconclusive'];
+        }
+        if ($status === 'unknown' && $result === 'error') {
+            return ['css' => 'unknown', 'label' => 'Falha na consulta', 'source' => 'error'];
+        }
+        if ($status === 'unknown' && $result === 'found') {
+            // Promocao pode ter sido bloqueada por uma decisao antiga conflitante.
+            return ['css' => 'unknown', 'label' => 'Encontrado · conferir vinculo', 'source' => 'conflict'];
+        }
+
+        return ['css' => 'unknown', 'label' => 'A verificar', 'source' => 'pending'];
     };
     $kindLabel = static fn (string $kind): string => match ($kind) {
         'mobile' => 'Celular', 'landline' => 'Fixo', default => 'Revisar formato',
@@ -800,6 +851,22 @@ new class extends Component
     .ec941-confirm input {accent-color:#008f82;margin-top:3px}
     .ec941-wa-form .wpr-action-row {display:flex;gap:8px;flex-wrap:wrap}
     </style>
+<style id="wa-web-result-v1-style">
+    .wpr .wa-web-robot-positive {background:#eaf8f0;border-color:#9cddba;color:#135b3c}
+    .wpr .wa-web-robot-positive :is(strong,p) {color:#135b3c}
+    .wpr .wa-web-robot-negative {background:#fff5ed;border-color:#ecc9af;color:#89421f}
+    .wpr .wa-web-robot-negative :is(strong,p) {color:#89421f}
+    .wpr .wa-web-robot-manual {margin-top:13px;border:1px solid #d8e5e6;border-radius:10px;background:#f7faf9;padding:12px}
+    .wpr .wa-web-robot-manual > summary {cursor:pointer;color:#215766;font-weight:700;font-size:13px}
+    .wpr .wa-web-robot-manual[open] > form {margin-top:12px}
+    .wpr .wa-web-robot-manual .ec941-wa-form {margin-top:12px}
+    html.dark .wpr .wa-web-robot-positive {background:#153d33;color:#d6f7e5;border-color:#386c55}
+    html.dark .wpr .wa-web-robot-positive :is(strong,p) {color:#d6f7e5}
+    html.dark .wpr .wa-web-robot-negative {background:#4b3028;color:#ffe0cd;border-color:#96634e}
+    html.dark .wpr .wa-web-robot-negative :is(strong,p) {color:#ffe0cd}
+    html.dark .wpr .wa-web-robot-manual {background:#1f2d32;border-color:#3e5055}
+    html.dark .wpr .wa-web-robot-manual > summary {color:#c6f4e9}
+</style>
 <div class="wpr wpr-v2 wpr-v3 wpr-v7 wpr-v8 wa12" wire:poll.30s data-test="whatsapp-phone-registry-v1" data-ec-whatsapp-design="v2" data-test-v12="central-por-tarefas"
     x-data="{ tab: window.location.hash === '#wa11-empresa' ? 'company' : 'numbers' }"
     x-on:wa12-show-numbers.window="tab='numbers'; $nextTick(() => document.getElementById('wa8-lista')?.scrollIntoView({behavior:'smooth',block:'start'}))">
@@ -846,26 +913,45 @@ new class extends Component
     </section>
     <p class="wa12-hint">Os números com formato inconsistente continuam disponíveis para revisão, sem entrar nos lotes automáticos.</p>
 
-    <section class="wpr-filters wa12-filters" aria-label="Filtrar lista de telefones">
+    <form id="ec-native-wa-filter" method="GET" action="{{ route('contacts.whatsapp') }}" class="wpr-filters wa12-filters" aria-label="Filtrar lista de telefones">
         <label class="wpr-search"><span>Buscar número, contato ou empresa</span>
-            <input type="search" wire:model.live.debounce.400ms="search" placeholder="Pesquisar em todos os telefones..." autocomplete="off">
+            <input type="search" name="busca" value="{{ $search }}" wire:model.live.debounce.400ms="search" placeholder="Pesquisar em todos os telefones..." autocomplete="off">
         </label>
-        <label><span>Tipo de número</span><select wire:model.live="kind"><option value="all">Todos</option><option value="mobile">Celulares</option><option value="landline">Fixos</option><option value="review">Revisar formato</option></select></label>
-        <label><span>Status WhatsApp</span><select wire:model.live="status"><option value="all">Todos</option><option value="unknown">A verificar</option><option value="yes">Com WhatsApp</option><option value="no">Não possui</option></select></label>
-        <label><span>Origem</span><select wire:model.live="origin"><option value="all">Todas</option><option value="hubspot">HubSpot</option><option value="manual">Manual</option><option value="receita">Receita Federal</option></select></label>
-        <button type="button" class="wpr-button wpr-button-quiet wa12-clear" wire:click="resetFilters">Limpar</button>
+        <label><span>Tipo de número</span><select name="tipo" wire:model.live="kind"><option value="all"@if($kind === 'all') selected @endif>Todos</option><option value="mobile"@if($kind === 'mobile') selected @endif>Celulares</option><option value="landline"@if($kind === 'landline') selected @endif>Fixos</option><option value="review"@if($kind === 'review') selected @endif>Revisar formato</option></select></label>
+        <label><span>Status WhatsApp</span><select name="situacao" wire:model.live="status"><option value="all"@if($status === 'all') selected @endif>Todos</option><option value="unknown"@if($status === 'unknown') selected @endif>A verificar</option><option value="yes"@if($status === 'yes') selected @endif>Com WhatsApp</option><option value="no"@if($status === 'no') selected @endif>Não possui</option></select></label>
+        <label><span>Origem</span><select name="origem" wire:model.live="origin"><option value="all"@if($origin === 'all') selected @endif>Todas</option><option value="hubspot"@if($origin === 'hubspot') selected @endif>HubSpot</option><option value="manual"@if($origin === 'manual') selected @endif>Manual</option><option value="receita"@if($origin === 'receita') selected @endif>Receita Federal</option></select></label>
+        <a class="wpr-button wpr-button-quiet wa12-clear" href="{{ route('contacts.whatsapp') }}">Limpar</a>
+        <button type="submit" class="wpr-button wpr-button-primary ec-native-wa-apply">Aplicar filtros</button>
         <details class="wa12-advanced">
             <summary>Mais filtros de pesquisa ⌄</summary>
             <div class="wa12-advanced-grid">
-                <label><span>Divulgação pública</span><select wire:model.live="publicFilter"><option value="all">Todos</option><option value="published">Divulgado em site</option><option value="not_published">Sem link público</option></select></label>
-                <label><span>Consulta WhatsApp Web</span><select wire:model.live="webFilter"><option value="all">Todas as consultas</option><option value="never">Não consultados</option><option value="consulted">Já consultados</option><option value="found">Encontrados</option><option value="not_found">Não localizados</option><option value="inconclusive">Inconclusivos / erros</option></select></label>
+                <label><span>Divulgação pública</span><select name="publico" wire:model.live="publicFilter"><option value="all"@if($publicFilter === 'all') selected @endif>Todos</option><option value="published"@if($publicFilter === 'published') selected @endif>Divulgado em site</option><option value="not_published"@if($publicFilter === 'not_published') selected @endif>Sem link público</option></select></label>
+                <label><span>Consulta WhatsApp Web</span><select name="consulta" wire:model.live="webFilter"><option value="all"@if($webFilter === 'all') selected @endif>Todas as consultas</option><option value="never"@if($webFilter === 'never') selected @endif>Não consultados</option><option value="consulted"@if($webFilter === 'consulted') selected @endif>Já consultados</option><option value="found"@if($webFilter === 'found') selected @endif>Encontrados</option><option value="not_found"@if($webFilter === 'not_found') selected @endif>Não localizados</option><option value="inconclusive"@if($webFilter === 'inconclusive') selected @endif>Inconclusivos / erros</option></select></label>
             </div>
         </details>
-    </section>
+    </form>
 
+    <style id="ec-native-wa-filters-css">
+        .wpr form.wa12-filters .ec-native-wa-apply{min-height:40px;white-space:nowrap;color:#fff}
+        .wpr .ec-native-wa-page-size{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .wpr .ec-native-wa-page-size button{border:1px solid #cbdde4;background:#e7f6f2;color:#086b62;border-radius:7px;padding:7px 11px;font-size:11px;font-weight:700;cursor:pointer}
+        .wpr .ec-native-wa-pager{display:inline-flex;align-items:center;justify-content:center;min-width:55px;min-height:31px;border:1px solid #d8e6eb;border-radius:8px;background:#fff;color:#087b70;text-decoration:none;padding:6px 10px}
+        .wpr .ec-native-wa-pager[aria-disabled="true"]{opacity:.5}
+        .wpr .wpr-number-list a.wpr-number{display:flex;text-decoration:none}
+        html.dark .wpr .ec-native-wa-page-size button,html.dark .wpr .ec-native-wa-pager{background:#172f34;color:#c4efe4;border-color:#45646a}
+    </style>
     <div class="wpr-workspace" wire:loading.class="wpr-is-loading" wire:target="search,kind,status,origin,changePage,mark">
         <section class="wpr-list-panel" aria-label="Números encontrados">
-            <div class="wpr-panel-header"><div><h2>Todos os números e contatos</h2><p>{{ $fmt($items->total()) }} números com os filtros atuais</p></div><label class="wa8-per-page">Exibir <select wire:model.live="pageSize" aria-label="Números por página"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select> por página</label></div>
+            <div class="wpr-panel-header"><div><h2>Todos os números e contatos</h2><p>{{ $fmt($items->total()) }} números com os filtros atuais</p></div><form method="GET" action="{{ route('contacts.whatsapp') }}" class="ec-native-wa-page-size">
+                <input type="hidden" name="busca" value="{{ $search }}">
+                <input type="hidden" name="tipo" value="{{ $kind }}">
+                <input type="hidden" name="situacao" value="{{ $status }}">
+                <input type="hidden" name="origem" value="{{ $origin }}">
+                <input type="hidden" name="consulta" value="{{ $webFilter }}">
+                <input type="hidden" name="publico" value="{{ $publicFilter }}">
+                <label class="wa8-per-page">Exibir <select name="porPagina" wire:model.live="pageSize" aria-label="Números por página"><option value="20"@if($pageSize === 20) selected @endif>20</option><option value="50"@if($pageSize === 50) selected @endif>50</option><option value="100"@if($pageSize === 100) selected @endif>100</option></select> por página</label>
+                <button type="submit">Exibir</button>
+            </form></div>
             @if ($rows === [])
                 <div class="wpr-empty"><strong>Nenhum número encontrado</strong><p>Altere os filtros para visualizar outra categoria. A lista precisa ser sincronizada pelo comando de indexação.</p><button wire:click="resetFilters" type="button">Mostrar todos os números</button></div>
             @else
@@ -874,39 +960,33 @@ new class extends Component
                         @php
                             $active = (int) $selected?->id === (int) $row->id;
                             $number = BrazilPhoneNumber::display($row->e164, $row->digits);
-                            $rowStatus = $hasManualConfirmation($row->status, $row->evidence, $row->verified_by) ? $row->status : 'unknown';
+                            $rowProbe = $this->webProbePage[(int) $row->id] ?? null;
+                            $rowView = $webDisplayStatus($row, $rowProbe);
+                            $rowStatus = $rowView['css'];
                         @endphp
-                        <button type="button" wire:key="wpr-number-{{ $row->id }}" class="wpr-number {{ $active ? 'is-active' : '' }}" wire:click="selectNumber({{ $row->id }})" aria-pressed="{{ $active ? 'true' : 'false' }}">
+                        <a href="{{ route('contacts.whatsapp', ['busca' => $search, 'tipo' => $kind, 'situacao' => $status, 'origem' => $origin, 'consulta' => $webFilter, 'publico' => $publicFilter, 'porPagina' => $pageSize, 'pagina' => $items->currentPage(), 'numero' => $row->id]) }}" wire:key="wpr-number-{{ $row->id }}" class="wpr-number {{ $active ? 'is-active' : '' }}" aria-current="{{ $active ? 'true' : 'false' }}">
                             <span class="wpr-number-icon">{{ $row->kind === 'mobile' ? '◉' : ($row->kind === 'landline' ? '☎' : '!') }}</span>
-                            <span class="wpr-number-content"><strong>{{ $number }}</strong><small>{{ $kindLabel($row->kind) }} · {{ $fmt((int) $row->contacts_count) }} registro(s) vinculado(s) @if (($webRow = $this->webProbePage[(int) $row->id] ?? null)) · <b class="wpr-web-v4-list-note">{{ match ($webRow->result) {'found' => 'Indício: encontrado', 'not_found' => 'Indício: não localizado', 'inconclusive' => 'Consulta inconclusiva', default => 'Falha na consulta'} }}</b> @endif</small></span>
+                            <span class="wpr-number-content"><strong>{{ $number }}</strong><small>{{ $kindLabel($row->kind) }} · {{ $fmt((int) $row->contacts_count) }} registro(s) vinculado(s) @if ($rowProbe) · <b class="wpr-web-v4-list-note">{{ match ($rowProbe->result) {'found' => 'Encontrado pelo robô', 'not_found' => 'Não localizado pelo robô', 'inconclusive' => 'Consulta inconclusiva', default => 'Falha na consulta'} }}</b> @endif</small></span>
                             @if(($publicLink = $this->publicEvidencePage[(int) $row->id] ?? null))
                                 <span class="wa10-public-pill" title="Divulgação pública; conta pode não estar ativa">Divulgado no site</span>
                             @endif
-                            <span class="wpr-status wpr-status-{{ $rowStatus }}">
-@if ($rowStatus === 'unknown' && ($this->webProbePage[(int) $row->id] ?? null)?->result === 'inconclusive')
-    Não confirmado — não utilizar WhatsApp
-@else
-{{ $rowStatus === 'unknown' && ($this->webProbePage[(int) $row->id] ?? null)?->result === 'not_found' ? 'WhatsApp não encontrado pelo robô' : $statusLabel($rowStatus, $row->evidence, $row->verified_by) }}
-@endif
-</span>
+                            <span class="wpr-status wpr-status-{{ $rowStatus }}" title="{{ $rowView['source'] === 'manual' ? 'Confirmado manualmente' : 'Resultado automático ou pendente, sem confirmação humana' }}">{{ $rowView['label'] }}</span>
                             <span class="wpr-number-chevron">›</span>
-                        </button>
+                        </a>
                     @endforeach
                 </div>
             @endif
-            <footer class="wpr-pagination"><span>{{ $items->firstItem() ?? 0 }}–{{ $items->lastItem() ?? 0 }} de {{ $fmt($items->total()) }}</span><div><button type="button" wire:click="changePage({{ $items->currentPage() - 1 }})" @disabled($items->onFirstPage())>Anterior</button><span>{{ $items->currentPage() }} / {{ $items->lastPage() }}</span><button type="button" wire:click="changePage({{ $items->currentPage() + 1 }})" @disabled(! $items->hasMorePages())>Próxima</button></div></footer>
+            <footer class="wpr-pagination"><span>{{ $items->firstItem() ?? 0 }}–{{ $items->lastItem() ?? 0 }} de {{ $fmt($items->total()) }}</span><div>@if ($items->onFirstPage())<span class="ec-native-wa-pager" aria-disabled="true">Anterior</span>@else<a class="ec-native-wa-pager" href="{{ route('contacts.whatsapp', ['busca' => $search, 'tipo' => $kind, 'situacao' => $status, 'origem' => $origin, 'consulta' => $webFilter, 'publico' => $publicFilter, 'porPagina' => $pageSize, 'pagina' => $items->currentPage() - 1]) }}">Anterior</a>@endif<span>{{ $items->currentPage() }} / {{ $items->lastPage() }}</span>@if ($items->hasMorePages())<a class="ec-native-wa-pager" href="{{ route('contacts.whatsapp', ['busca' => $search, 'tipo' => $kind, 'situacao' => $status, 'origem' => $origin, 'consulta' => $webFilter, 'publico' => $publicFilter, 'porPagina' => $pageSize, 'pagina' => $items->currentPage() + 1]) }}">Próxima</a>@else<span class="ec-native-wa-pager" aria-disabled="true">Próxima</span>@endif</div></footer>
         </section>
 
         <aside class="wpr-detail-panel" aria-label="Verificação do telefone selecionado">
             @if ($selected)
-                @php $selectedStatus = $hasManualConfirmation($selected->status, $selected->evidence, $selected->verified_by) ? $selected->status : 'unknown'; @endphp
-                <div class="wpr-detail-top"><span class="wpr-eyebrow">TELEFONE SELECIONADO</span><span class="wpr-status wpr-status-{{ $selectedStatus }}">
-@if ($selectedStatus === 'unknown' && ($this->webProbePage[(int) $selected->id] ?? null)?->result === 'inconclusive')
-    Não confirmado — não utilizar WhatsApp
-@else
-{{ $selectedStatus === 'unknown' && ($this->webProbePage[(int) $selected->id] ?? null)?->result === 'not_found' ? 'WhatsApp não encontrado pelo robô' : $statusLabel($selectedStatus, $selected->evidence, $selected->verified_by) }}
-@endif
-</span></div>
+                @php
+                    $selectedProbe = $this->webProbePage[(int) $selected->id] ?? null;
+                    $selectedView = $webDisplayStatus($selected, $selectedProbe);
+                    $selectedStatus = $selectedView['css'];
+                @endphp
+                <div class="wpr-detail-top"><span class="wpr-eyebrow">TELEFONE SELECIONADO</span><span class="wpr-status wpr-status-{{ $selectedStatus }}">{{ $selectedView['label'] }}</span></div>
                 <h2>{{ BrazilPhoneNumber::display($selected->e164, $selected->digits) }}</h2>
                 <p class="wpr-muted">{{ $kindLabel($selected->kind) }} · {{ $fmt((int) $selected->contacts_count) }} registro(s), {{ $fmt((int) $selected->occurrences_count) }} ocorrência(s)</p>
 
@@ -921,15 +1001,22 @@ new class extends Component
                     </div>
                 @endif
                 @include('contacts.whatsapp-selected')
-                {{-- Resultado técnico sem confirmação = não elegível para ações via WhatsApp. --}}
-                @if ($selectedStatus === 'unknown' && ($this->webProbePage[(int) $selected->id] ?? null)?->result === 'inconclusive')
-                    <div class="wpr-warning" role="status"><strong>Não confirmado — não utilizar WhatsApp</strong>
-                        <p>O robô não concluiu a consulta. Isso não comprova que a conta exista nem que esteja ausente. Para prospecção, não utilize este número como WhatsApp confirmado; confira no aplicativo para registrar “Não possui”.</p>
+                {{-- A apresentação é automática, mas a fonte da evidência permanece explícita. --}}
+                @if ($selectedView['source'] === 'inconclusive')
+                    <div class="wpr-warning" role="status"><strong>Consulta inconclusiva</strong>
+                        <p>O robô não concluiu a consulta. Não é uma resposta negativa. Não confirmado — não utilizar WhatsApp como verificado até nova consulta.</p>
                     </div>
-                @endif
-                @if ($selected->evidence === 'web_found_unofficial')
-                    <div class="wpr-warning" role="status"><strong>Indício técnico — conferir</strong>
-                        <p>A consulta não oficial encontrou um possível resultado. Isso não é confirmação manual nem decisão operacional; confira no aplicativo antes de usar este número como WhatsApp.</p>
+                @elseif ($selectedView['source'] === 'web_found')
+                    <div class="wpr-warning wa-web-robot-positive" role="status"><strong>✓ Tem WhatsApp · encontrado pelo robô</strong>
+                        <p>O resultado positivo já foi registrado automaticamente no índice da central. Você não precisa confirmá-lo manualmente nesta página. Origem: integração Web não oficial, diferente de uma confirmação humana no aplicativo.</p>
+                    </div>
+                @elseif ($selectedView['source'] === 'web_not_found')
+                    <div class="wpr-warning wa-web-robot-negative" role="status"><strong>Não possui WhatsApp · resultado do robô</strong>
+                        <p>O robô não encontrou conta nesta consulta. A tela mostra esse resultado diretamente, mas a ausência não foi confirmada manualmente; o cadastro definitivo não é marcado como “não possui”, pois um resultado negativo pode falhar.</p>
+                    </div>
+                @elseif ($selectedView['source'] === 'conflict')
+                    <div class="wpr-warning" role="status"><strong>Consultas divergentes ou vínculo não validado</strong>
+                        <p>Há sinais técnicos conflitantes ou uma decisão anterior. O sistema preservou o cadastro e recomenda nova consulta.</p>
                     </div>
                 @endif
 
@@ -949,10 +1036,13 @@ new class extends Component
                     @include('contacts.whatsapp-inline-review')
                 @else
                     <div class="wpr-action-panel">
-                        <h3>Conferir no aplicativo</h3>
-                        <p>Abra a conversa para verificar manualmente. A abertura do link não altera o status e não envia mensagem.</p>
+                        <h3>{{ in_array($selectedView['source'], ['web_found', 'web_not_found'], true) ? 'Resultado do robô já disponível' : 'Conferir no aplicativo' }}</h3>
+                        <p>{{ in_array($selectedView['source'], ['web_found', 'web_not_found'], true) ? 'A conferência manual é opcional para corrigir um resultado. Abrir WhatsApp não envia mensagem.' : 'Abra a conversa para verificar manualmente. A abertura do link não altera o status e não envia mensagem.' }}</p>
                         <a class="wpr-button wpr-button-primary" href="https://wa.me/{{ $selected->e164 }}" target="_blank" rel="noopener noreferrer">↗ Abrir no WhatsApp</a>
                         {{-- EC941_WA_MANUAL_POST: confirmação real por POST, não depende de wire:click. --}}
+                        @if (in_array($selectedView['source'], ['web_found', 'web_not_found'], true))
+                            <details class="wa-web-robot-manual"><summary>Corrigir resultado manualmente (opcional)</summary>
+                        @endif
                         <form method="POST" action="{{ route('contacts.whatsapp.verify-v941', ['phone' => $selected->id]) }}" class="ec941-wa-form">
                             @csrf
                             <label class="wpr-note-label"><span>Observação da conferência (obrigatória para “Não possui”)</span>
@@ -966,7 +1056,7 @@ new class extends Component
                                 <button type="submit" name="status" value="no" class="wpr-button wpr-button-neutral">× Não possui</button>
                             </div>
                         </form>
-                        @if ($selectedStatus !== 'unknown')
+                        @if ($hasManualConfirmation($selected->status, $selected->evidence, $selected->verified_by))
                             <form method="POST" action="{{ route('contacts.whatsapp.verify-v941', ['phone' => $selected->id]) }}">
                                 @csrf <input type="hidden" name="status" value="unknown">
                                 <label class="ec941-confirm"><input type="checkbox" name="confirmed" value="1" required> Confirmo que desejo desfazer a confirmação deste número e dos contatos vinculados.</label>
@@ -974,11 +1064,14 @@ new class extends Component
                                 <button type="submit" class="wpr-clear" onclick="return confirm('Desfazer a confirmação deste telefone e dos contatos vinculados?')">↶ Desfazer confirmação</button>
                             </form>
                         @endif
+                        @if (in_array($selectedView['source'], ['web_found', 'web_not_found'], true))
+                            </details>
+                        @endif
                     </div>
                 @endif
 
                 @if ($selected->verified_at)
-                    <p class="wpr-last-verified">Última confirmação registrada em {{ \Carbon\Carbon::parse($selected->verified_at)->timezone('America/Sao_Paulo')->format('d/m/Y H:i') }}.</p>
+                    <p class="wpr-last-verified">{{ $selectedView['source'] === 'web_found' ? 'Última detecção do robô' : 'Última confirmação registrada' }} em {{ \Carbon\Carbon::parse($selected->verified_at)->timezone('America/Sao_Paulo')->format('d/m/Y H:i') }}.</p>
                 @endif
 
                 <section class="wpr-linked"><div class="wpr-subhead"><h3>Contatos vinculados</h3><span>{{ $fmt((int) $selected->contacts_count) }}</span></div><p class="wpr-muted">A confirmação do número é compartilhada com os registros abaixo. São exibidos até 20 vínculos.</p>
