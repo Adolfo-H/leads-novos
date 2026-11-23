@@ -1,0 +1,97 @@
+{
+  "servico": "LICENCIAMENTO",
+  "versao": "2026-05-25_CORRIGIDA_2026-07-22",
+  "status": "APROVADO",
+  "valores_sao": "LIQUIDOS_ANTES_DOS_TRIBUTOS",
+  "regra_media_mensal": "ROUND_HALF_UP(total_notas_ultimos_12_meses / 12)",
+  "regra_calculo": "FAIXAS_PROGRESSIVAS_MARGINAIS",
+  "faixas": [
+    {
+      "tier": 1,
+      "min": 1,
+      "max": 150,
+      "fixed": 340.58,
+      "unit": 0.0
+    },
+    {
+      "tier": 2,
+      "min": 151,
+      "max": 500,
+      "fixed": 0.0,
+      "unit": 1.43
+    },
+    {
+      "tier": 3,
+      "min": 501,
+      "max": 3000,
+      "fixed": 0.0,
+      "unit": 1.07
+    },
+    {
+      "tier": 4,
+      "min": 3001,
+      "max": 6000,
+      "fixed": 0.0,
+      "unit": 0.83
+    },
+    {
+      "tier": 5,
+      "min": 6001,
+      "max": 10000,
+      "fixed": 0.0,
+      "unit": 0.59
+    },
+    {
+      "tier": 6,
+      "min": 10001,
+      "max": null,
+      "fixed": 0.0,
+      "unit": 0.48
+    }
+  ],
+  "implantacao": {
+    "status": "APROVADO",
+    "regra": "4_X_MENSALIDADE_LIQUIDA",
+    "aplicar_tributos_por_gross_up_separadamente": true
+  },
+  "exemplo_validado_total_3265_em_12_meses": {
+    "media_exata": 272.0833333333333,
+    "media_arredondada": 272,
+    "mensalidade_liquida": 515.04,
+    "mensalidade_final": 580.33,
+    "implantacao_liquida": 2060.16,
+    "implantacao_final": 2321.31,
+    "memoria_faixas": [
+      {
+        "faixa": 1,
+        "quantidade": 150,
+        "subtotal_liquido": 340.58
+      },
+      {
+        "faixa": 2,
+        "quantidade": 122,
+        "subtotal_liquido": 174.46
+      },
+      {
+        "faixa": 3,
+        "quantidade": 0,
+        "subtotal_liquido": 0.0
+      },
+      {
+        "faixa": 4,
+        "quantidade": 0,
+        "subtotal_liquido": 0.0
+      },
+      {
+        "faixa": 5,
+        "quantidade": 0,
+        "subtotal_liquido": 0.0
+      },
+      {
+        "faixa": 6,
+        "quantidade": 0,
+        "subtotal_liquido": 0.0
+      }
+    ]
+  }
+}

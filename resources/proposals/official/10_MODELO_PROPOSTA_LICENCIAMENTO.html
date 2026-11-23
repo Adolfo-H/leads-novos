@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html data-document-kind="proposal" lang="pt-BR"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>{{ID_PROPOSTA_LICENCIAMENTO}}</title><style>
+:root{
+  --ec-teal:#00AD95;--ec-teal-dark:#008E7B;--ec-charcoal:#47464B;
+  --ec-ink:#2F3437;--ec-muted:#6E797A;--ec-gray:#889898;
+  --ec-mint:#EAF7F4;--ec-mint-2:#D7F0EB;--ec-soft:#F6FAF9;
+  --ec-line:#D7E3E1;--ec-white:#FFFFFF;--ec-warn:#FFF4D8;
+}
+*{box-sizing:border-box}
+html{background:#eef4f3}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ec-ink);background:#eef4f3;line-height:1.42;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+img{max-width:100%}
+
+/* Fixed A4 proposal / presentation pages */
+.cover-page,.proposal-page{width:210mm;height:297mm;margin:12px auto;background:#fff;position:relative;overflow:hidden;box-shadow:0 14px 36px rgba(47,52,55,.12);break-after:page;page-break-after:always}
+.cover-page{color:var(--ec-charcoal)}
+.cover-inner{position:relative;z-index:3;height:100%;padding:20mm 17mm 15mm;display:flex;flex-direction:column}
+.cover-logos{display:flex;align-items:flex-start;justify-content:space-between;gap:16mm}
+.cover-logo-ec{width:50mm;height:25mm;display:flex;align-items:flex-start;justify-content:flex-start}
+.cover-logo-client{width:51mm;height:25mm;display:flex;align-items:flex-start;justify-content:flex-end}
+.cover-logo-ec img,.cover-logo-client img{width:100%;height:100%;object-fit:contain}
+.cover-logo-ec img{object-position:left top}.cover-logo-client img{object-position:right top}
+.cover-title{margin-top:35mm;max-width:158mm}
+.cover-rule{width:13mm;height:1.2mm;background:var(--ec-teal);border-radius:999px;margin-bottom:9mm}
+.cover-title .line-1{font-size:31.5pt;line-height:.98;letter-spacing:.02em;font-weight:800;color:var(--ec-charcoal)}
+.cover-title .line-2{font-size:27pt;line-height:1.06;letter-spacing:.025em;font-weight:300;color:var(--ec-teal);margin-top:2.5mm}
+.cover-service{margin-top:11mm;display:flex;align-items:center;gap:6mm;color:var(--ec-charcoal);font-size:12.5pt;max-width:165mm}
+.icon-circle{width:13mm;height:13mm;border-radius:50%;background:var(--ec-mint);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.icon-circle svg{width:6.5mm;height:6.5mm;stroke:var(--ec-teal);fill:none;stroke-width:1.65}
+.cover-badge{display:inline-block;margin-top:5mm;padding:2mm 4mm;border:1px solid var(--ec-mint-2);background:rgba(234,247,244,.72);border-radius:999px;color:var(--ec-teal-dark);font-size:7.8pt;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.cover-meta{margin-top:13mm;width:118mm;border-top:1px solid var(--ec-mint-2)}
+.meta-row{display:grid;grid-template-columns:13mm 1fr;gap:6mm;align-items:center;padding:6mm 0;border-bottom:1px solid var(--ec-mint-2)}
+.meta-icon{width:11mm;height:11mm;border-radius:50%;border:1px solid var(--ec-mint-2);display:flex;align-items:center;justify-content:center}
+.meta-icon svg{width:5.5mm;height:5.5mm;stroke:var(--ec-teal);fill:none;stroke-width:1.55}
+.meta-label{font-size:7.5pt;text-transform:uppercase;letter-spacing:.08em;color:var(--ec-teal-dark);font-weight:800}
+.meta-value{font-size:10.3pt;color:var(--ec-charcoal);font-weight:700;margin-top:1mm;overflow-wrap:anywhere}
+.cover-footer{margin-top:auto;display:grid;grid-template-columns:1.25fr .75fr;gap:8mm;align-items:end;border-top:1px solid var(--ec-mint-2);padding-top:4mm;font-size:7.2pt;color:var(--ec-muted)}
+.cover-footer b{color:var(--ec-charcoal)}.cover-footer .site{text-align:right}
+.cover-watermark{position:absolute;right:-31mm;bottom:3mm;width:111mm;height:111mm;border:10mm solid rgba(0,173,149,.095);border-radius:50%;z-index:1}
+.cover-watermark:after{content:"E";position:absolute;right:11mm;bottom:-6mm;font-size:105pt;line-height:1;font-weight:900;color:rgba(0,173,149,.11)}
+.cover-wave{position:absolute;z-index:2;left:-12mm;right:-10mm;bottom:-13mm;height:58mm;background:linear-gradient(90deg,rgba(234,247,244,.45),rgba(0,173,149,.16));border-radius:60% 50% 0 0/65% 58% 0 0;transform:rotate(-1.5deg)}
+.cover-curve{position:absolute;right:-42mm;top:101mm;width:135mm;height:135mm;border:1.2px solid rgba(0,173,149,.34);border-radius:50%;z-index:1}
+
+.proposal-page{padding:14mm 15mm 17mm}
+.topbar{height:18mm;display:flex;justify-content:space-between;gap:10mm;align-items:flex-start;border-bottom:1.2px solid var(--ec-teal);padding-bottom:4mm;margin-bottom:7mm}
+.topbar img{height:13mm;max-width:46mm;object-fit:contain;object-position:left top}
+.doc-id{text-align:right;max-width:112mm}.doc-id b{display:block;font-size:7.7pt;color:var(--ec-charcoal);overflow-wrap:anywhere;line-height:1.25}.doc-id span{display:block;margin-top:1.2mm;font-size:6.7pt;color:var(--ec-muted)}
+.status{display:inline-block;padding:1mm 2.5mm;border-radius:999px;background:var(--ec-mint);color:var(--ec-teal-dark);font-size:6.3pt;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.section-kicker{font-size:7.2pt;letter-spacing:.1em;text-transform:uppercase;color:var(--ec-teal-dark);font-weight:800;margin-bottom:1.8mm}
+h2{font-size:19pt;line-height:1.13;color:var(--ec-charcoal);margin:0 0 3.5mm}h3{font-size:12pt;color:var(--ec-charcoal);margin:6mm 0 2.5mm;border-left:3px solid var(--ec-teal);padding-left:3mm}
+.lead{font-size:10pt;color:#4e585a;max-width:174mm;margin:0 0 5mm;line-height:1.48}
+.summary-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4.5mm;margin:5mm 0}
+.metric{border:1px solid var(--ec-line);border-radius:11px;padding:4.8mm 5mm;background:#fff;position:relative;overflow:hidden;min-height:27mm}
+.metric:before{content:"";position:absolute;left:0;top:0;bottom:0;width:1.1mm;background:var(--ec-teal)}
+.metric .label{font-size:7pt;text-transform:uppercase;letter-spacing:.07em;color:var(--ec-muted)}
+.metric .value{font-size:17pt;font-weight:800;color:var(--ec-charcoal);margin-top:1.5mm;line-height:1.1;overflow-wrap:anywhere}
+.metric .sub{font-size:7.8pt;color:var(--ec-muted);margin-top:1.2mm;line-height:1.35}
+.metric.highlight{background:linear-gradient(135deg,var(--ec-mint),#fff);border-color:var(--ec-mint-2)}.metric.highlight .value{color:var(--ec-teal-dark)}
+.columns{display:grid;grid-template-columns:1fr 1fr;gap:4.8mm}
+.card{border:1px solid var(--ec-line);border-radius:11px;padding:4.5mm 5mm;background:#fff;break-inside:avoid;min-width:0}
+.card.mint{background:var(--ec-mint);border-color:var(--ec-mint-2)}.card.soft{background:var(--ec-soft)}
+.card h4{margin:0 0 2.4mm;color:var(--ec-charcoal);font-size:10.2pt;line-height:1.25}.card p{margin:0}
+.card ul{margin:0;padding-left:5mm}.card li{margin:0 0 1.5mm;font-size:9.2pt;line-height:1.38}.card li:last-child{margin-bottom:0}
+.icon-title{display:flex;align-items:center;gap:3mm}.dot{width:7px;height:7px;border-radius:50%;background:var(--ec-teal);flex:0 0 auto}
+.callout{border-left:3.5px solid var(--ec-teal);background:var(--ec-mint);padding:3.4mm 4.5mm;border-radius:0 9px 9px 0;margin:4mm 0;break-inside:avoid;font-size:9.2pt;line-height:1.4}.callout.warn{border-color:#D6A74B;background:var(--ec-warn)}.callout strong{color:var(--ec-charcoal)}
+.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:3.6mm;margin:4.5mm 0}
+.flow-step{border:1px solid var(--ec-line);border-radius:10px;padding:4mm;background:#fff;min-height:28mm}
+.flow-step .n{display:inline-flex;width:7.5mm;height:7.5mm;border-radius:50%;align-items:center;justify-content:center;background:var(--ec-teal);color:#fff;font-size:8pt;font-weight:800}
+.flow-step b{display:block;color:var(--ec-charcoal);margin:2.4mm 0 1mm;font-size:9.3pt}.flow-step span{font-size:7.7pt;color:var(--ec-muted);line-height:1.35}
+.price-hero{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin:4.5mm 0 5mm}
+.price-box{border-radius:13px;padding:5.5mm;min-height:31mm;background:var(--ec-teal);color:#fff}.price-box.secondary{background:linear-gradient(135deg,var(--ec-mint),#fff);color:var(--ec-charcoal);border:1px solid var(--ec-mint-2)}
+.price-box .label{font-size:7pt;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.84)}.price-box.secondary .label{color:var(--ec-muted)}
+.price-box .price{font-size:21pt;font-weight:850;margin-top:2.2mm;line-height:1.05}.price-box.secondary .price{color:var(--ec-teal-dark)}
+.price-box .sub{font-size:7.7pt;color:rgba(255,255,255,.84);margin-top:1.5mm}.price-box.secondary .sub{color:var(--ec-muted)}
+table{width:100%;border-collapse:separate;border-spacing:0;margin:3.5mm 0 4.5mm;font-size:7.4pt;border:1px solid var(--ec-line);border-radius:9px;overflow:hidden;break-inside:avoid}
+thead{display:table-header-group}tr{break-inside:avoid}th{background:var(--ec-mint-2);color:var(--ec-charcoal);text-align:left;padding:2.4mm 2mm;font-weight:800;border-bottom:1px solid #b9ddd6;line-height:1.25}
+td{padding:2.25mm 2mm;border-top:1px solid var(--ec-line);vertical-align:top;line-height:1.28}tbody tr:nth-child(even){background:var(--ec-soft)}.total-row td{font-weight:800;background:var(--ec-mint);color:var(--ec-teal-dark)}
+.tax-grid{display:grid;grid-template-columns:1.22fr .78fr;gap:5mm;align-items:start}.formula{font-size:8.5pt;color:var(--ec-muted);background:var(--ec-soft);padding:3.5mm;border-radius:9px;line-height:1.4}
+.conditions{display:grid;grid-template-columns:repeat(3,1fr);gap:3.6mm;margin:4.5mm 0}.condition{background:var(--ec-soft);border:1px solid var(--ec-line);border-radius:9px;padding:3.5mm}.condition b{display:block;color:var(--ec-charcoal);font-size:9pt}.condition span{font-size:7.7pt;color:var(--ec-muted);line-height:1.35}
+.signature{margin-top:7mm;display:grid;grid-template-columns:1fr 1fr;gap:9mm}.signature .person{border-top:1px solid var(--ec-line);padding-top:2.5mm;font-size:8.4pt}.signature b{color:var(--ec-charcoal)}
+.footer{position:absolute;left:15mm;right:15mm;bottom:6mm;display:flex;justify-content:space-between;gap:8mm;border-top:1px solid var(--ec-line);padding-top:2.6mm;font-size:6.6pt;color:var(--ec-muted)}
+.small{font-size:7.5pt;color:var(--ec-muted)}
+.scope-page .card{padding:3.7mm 4.3mm}.scope-page .card li{font-size:8.65pt;line-height:1.32;margin-bottom:1.1mm}.scope-page .flow{margin:3.5mm 0}.scope-page .callout{margin:2.8mm 0 0;padding:2.8mm 4mm;font-size:8.7pt}
+
+/* Contract body - normal document flow, rendered separately from cover */
+.contract-body{font-size:9.8pt;line-height:1.44;color:var(--ec-ink);background:#fff}
+.contract-body h1{font-size:20pt;line-height:1.12;color:var(--ec-charcoal);margin:0 0 5mm;letter-spacing:-.01em}
+.contract-kicker{font-size:7.8pt;text-transform:uppercase;letter-spacing:.1em;font-weight:800;color:var(--ec-teal-dark);margin-bottom:1.5mm}
+.contract-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:4mm;margin:0 0 6mm}
+.contract-card{border:1px solid var(--ec-line);border-radius:9px;padding:4mm;background:var(--ec-soft);break-inside:avoid;min-height:20mm}
+.contract-card .label{font-size:7pt;text-transform:uppercase;letter-spacing:.07em;color:var(--ec-muted)}
+.contract-card .value{font-size:10.5pt;font-weight:800;color:var(--ec-charcoal);margin-top:1mm;overflow-wrap:anywhere;line-height:1.3}
+.parties-box{border:1px solid var(--ec-line);border-left:4px solid var(--ec-teal);border-radius:0 9px 9px 0;padding:4.5mm 5mm;background:#fff;margin:5mm 0 6mm;break-inside:avoid}
+.parties-box p{margin:0 0 2.5mm}.parties-box p:last-child{margin-bottom:0}
+.controladas-box{background:var(--ec-mint);border:1px solid var(--ec-mint-2);border-radius:9px;padding:4.5mm;margin:4mm 0 6mm;break-inside:avoid}.controladas-box h3{margin:0 0 2.5mm;border:0;padding:0;font-size:10.5pt}.controladas-box ul{margin:0;padding-left:5mm}
+.contract-note{background:var(--ec-mint);border-left:4px solid var(--ec-teal);border-radius:0 8px 8px 0;padding:3.7mm 4.5mm;margin:4.5mm 0 5.5mm;break-inside:avoid}
+.legal-heading{margin:6mm 0 2.6mm;padding-top:1mm;break-after:avoid-page;page-break-after:avoid}.legal-heading h2{font-size:11.7pt;line-height:1.22;color:var(--ec-charcoal);margin:0;border-left:3px solid var(--ec-teal);padding-left:3mm}
+.clause{display:grid;grid-template-columns:14mm 1fr;gap:3mm;margin:0 0 2.6mm;orphans:3;widows:3;align-items:start}
+.clause-no{font-weight:800;color:var(--ec-teal-dark)}.clause-text{text-align:justify;hyphens:auto}
+.legal-paragraph{margin:0 0 2.6mm;text-align:justify;orphans:3;widows:3;hyphens:auto}
+.legal-list{margin:0 0 2.6mm 7mm;padding-left:4mm}.legal-list li{margin:0 0 1.3mm;text-align:justify}
+.bank-box{display:grid;grid-template-columns:repeat(2,1fr);gap:2.5mm 8mm;background:var(--ec-soft);border:1px solid var(--ec-line);border-radius:9px;padding:4mm 4.5mm;margin:3.5mm 0 5mm;break-inside:avoid}
+.bank-box div{font-size:9pt}.bank-box b{color:var(--ec-charcoal)}
+.signatures{break-before:page;page-break-before:always;margin-top:0}.signatures h2{font-size:18pt;margin:0 0 7mm;color:var(--ec-charcoal)}
+.signature-grid{display:grid;grid-template-columns:1fr 1fr;gap:15mm 12mm;margin-top:15mm}.signature-line{border-top:1px solid var(--ec-charcoal);padding-top:3mm;min-height:25mm;font-size:9.2pt}.signature-line b{display:block;color:var(--ec-charcoal);font-size:10pt;margin-bottom:1mm}
+.witnesses{margin-top:13mm;border-top:1px solid var(--ec-line);padding-top:5mm}.witness-row{display:grid;grid-template-columns:1fr 1fr;gap:12mm;margin:8mm 0}.witness{border-top:1px solid var(--ec-gray);padding-top:2.5mm;font-size:8.7pt}
+.annex-divider{break-before:page;page-break-before:always;height:235mm;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:1px solid var(--ec-line);border-radius:14px;background:linear-gradient(145deg,#fff,var(--ec-mint));padding:18mm}
+.annex-divider .big{font-size:25pt;font-weight:800;color:var(--ec-charcoal)}.annex-divider .sub{font-size:12.5pt;color:var(--ec-teal-dark);margin-top:4mm;overflow-wrap:anywhere}.annex-divider .desc{font-size:9.2pt;color:var(--ec-muted);max-width:128mm;margin-top:7mm;line-height:1.45}
+
+.screen-nav{display:none}
+@page{size:A4;margin:0}
+@media print{
+  html,body{background:#fff}
+  .cover-page,.proposal-page{margin:0;box-shadow:none}
+  .cover-page:last-child,.proposal-page:last-child{break-after:auto;page-break-after:auto}
+  .screen-nav{display:none!important}
+}
+</style></head><body>
+<section class="cover-page" id="document-cover">
+<div class="cover-inner">
+<div class="cover-logos">
+<div class="cover-logo-ec"><img alt="ExportControl" src="{{LOGO_EXPORTCONTROL_DATA_URI}}"/></div>
+<div class="cover-logo-client"><img alt="Logo do cliente" src="{{LOGO_CLIENTE_DATA_URI}}"/></div>
+</div>
+<div class="cover-title">
+<div class="cover-rule"></div>
+<div class="line-1">PROPOSTA</div>
+<div class="line-2">COMERCIAL</div>
+<div class="cover-service"><span class="icon-circle"><svg aria-hidden="true" viewbox="0 0 24 24"><rect height="13" rx="2" width="18" x="3" y="4"></rect><path d="M8 21h8M12 17v4M8 10l2.5 2.5L16 7"></path></svg></span><span>Licenciamento da Plataforma</span></div>
+<span class="cover-badge">{{STATUS_DOCUMENTO}}</span>
+</div>
+<div class="cover-meta">
+<div class="meta-row"><div class="meta-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c.8-5 3.6-7 8-7s7.2 2 8 7"></path></svg></div><div><div class="meta-label">Cliente</div><div class="meta-value">{{RAZAO_SOCIAL_CLIENTE}}</div></div></div>
+<div class="meta-row"><div class="meta-icon"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M6 2h8l4 4v16H6z"></path><path d="M14 2v5h5M9 12h6M9 16h6"></path></svg></div><div><div class="meta-label">Documento nº</div><div class="meta-value">{{NUMERO_PROPOSTA_LICENCIAMENTO}}</div><div class="small">{{ID_PROPOSTA_LICENCIAMENTO}}</div></div></div>
+</div>
+<div class="cover-footer"><div><b>ExportControl</b><br/>Soluções inteligentes para gestão de exportação.</div><div class="site">exportcontrol.com.br<br/>{{DATA_DOCUMENTO_EXTENSO}}</div></div>
+</div>
+<div class="cover-curve"></div><div class="cover-watermark"></div><div class="cover-wave"></div>
+</section>
+<main id="document-content">
+<section class="proposal-page"><div class="topbar"><img alt="ExportControl" src="{{LOGO_EXPORTCONTROL_DATA_URI}}"/><div class="doc-id"><b>{{ID_PROPOSTA_LICENCIAMENTO}}</b><span><span class="status">{{STATUS_PROPOSTA}}</span> · Toledo/PR · {{DATA_EMISSAO_EXTENSO}}</span></div></div><div class="section-kicker">Resumo executivo</div><h2>Controle contínuo das exportações em uma única plataforma</h2><p class="lead">A proposta considera <strong>{{QTDE_NOTAS_ANUAL}}</strong> documentos fiscais emitidos de <strong>{{PERIODO_REFERENCIA_INICIO}}</strong> a <strong>{{PERIODO_REFERENCIA_FIM}}</strong>. A média mensal, arredondada pelo critério ROUND_HALF_UP, é de <strong>{{MEDIA_MENSAL_NOTAS}} notas</strong>.</p>
+<div class="summary-grid"><div class="metric"><div class="label">Volume dos últimos 12 meses</div><div class="value">{{QTDE_NOTAS_ANUAL}}</div><div class="sub">Base informada pelo cliente</div></div><div class="metric"><div class="label">Média mensal</div><div class="value">{{MEDIA_MENSAL_NOTAS}}</div><div class="sub">{{QTDE_NOTAS_ANUAL}} ÷ 12 = {{MEDIA_MENSAL_EXATA}}</div></div><div class="metric highlight"><div class="label">Mensalidade final</div><div class="value">{{VALOR_MENSAL_FINAL}}</div><div class="sub">Tributos já incorporados</div></div><div class="metric highlight"><div class="label">Implantação final</div><div class="value">{{VALOR_IMPLANTACAO_FINAL}}</div><div class="sub">Investimento único de implantação</div></div></div>
+<div class="columns"><div class="card mint"><div class="icon-title"><span class="dot"></span><h4>Resultados esperados</h4></div><ul><li>Centralização das informações de exportação de filiais e controladas.</li><li>Consultas automáticas aos órgãos reguladores, 24 horas por dia.</li><li>Visibilidade sobre comprovações, saldos e alterações das notas.</li><li>Mais agilidade para auditoria e gestão de riscos.</li></ul></div><div class="card"><h4>Modalidade da solução</h4><ul><li>Software como Serviço (SaaS), acessível por navegador.</li><li>Usuários ilimitados, sem custo adicional.</li><li>Treinamento online e suporte operacional.</li><li>Prazo de disponibilização de até 3 dias úteis após a contratação e o recebimento dos dados necessários.</li></ul></div></div><div class="footer"><span>ExportControl LTDA · exportcontrol.com.br</span><span>{{ID_PROPOSTA_LICENCIAMENTO}}</span></div></section>
+<section class="proposal-page"><div class="topbar"><img alt="ExportControl" src="{{LOGO_EXPORTCONTROL_DATA_URI}}"/><div class="doc-id"><b>{{ID_PROPOSTA_LICENCIAMENTO}}</b><span><span class="status">{{STATUS_PROPOSTA}}</span> · Toledo/PR · {{DATA_EMISSAO_EXTENSO}}</span></div></div><div class="section-kicker">Escopo do serviço</div><h2>O que faz parte do Licenciamento</h2><div class="columns"><div class="card mint"><h4>Itens contemplados</h4><ul><li>Acesso completo e centralizado ao módulo Exportação.</li><li>Criação de usuários ilimitados.</li><li>Manutenção de erros em funcionalidades padrão.</li><li>Treinamento completo em vídeo e orientação contínua.</li><li>Consultas periódicas das notas até sua conclusão e revalidação conforme a regra da plataforma.</li></ul></div><div class="card"><h4>Responsabilidades da ExportControl</h4><ul><li>Disponibilizar a ferramenta em boas condições de uso.</li><li>Atender a contratante nos canais e prazos acordados.</li><li>Orientar os usuários em dúvidas operacionais.</li><li>Preservar a confidencialidade das informações.</li></ul></div><div class="card"><h4>Responsabilidades do cliente</h4><ul><li>Gerenciar usuários e inserir dados de sua competência.</li><li>Fornecer os certificados digitais e-CNPJ A1 e e-CPF A1, quando aplicável.</li><li>Manter dados, acessos e certificados atualizados.</li><li>Disponibilizar informações corretas e compatíveis com as bases oficiais.</li></ul></div><div class="card soft"><h4>Não incluído</h4><ul><li>Novas funcionalidades ou customizações exclusivas.</li><li>Integrações não descritas nesta proposta.</li><li>Ativação do módulo DF-E.</li><li>Atendimento presencial ou escopo adicional sem orçamento específico.</li></ul></div></div><div class="flow"><div class="flow-step"><span class="n">1</span><b>Contratação e dados</b><span>Assinatura, informações e certificados necessários.</span></div><div class="flow-step"><span class="n">2</span><b>Configuração</b><span>Preparação do ambiente e orientação do usuário-chave.</span></div><div class="flow-step"><span class="n">3</span><b>Operação contínua</b><span>Consultas automáticas, suporte e atualização das informações.</span></div></div><div class="callout"><strong>Sem período de teste automático:</strong> qualquer condição de avaliação deverá constar expressamente desta proposta.</div><div class="footer"><span>ExportControl LTDA · exportcontrol.com.br</span><span>{{ID_PROPOSTA_LICENCIAMENTO}}</span></div></section>
+<section class="proposal-page"><div class="topbar"><img alt="ExportControl" src="{{LOGO_EXPORTCONTROL_DATA_URI}}"/><div class="doc-id"><b>{{ID_PROPOSTA_LICENCIAMENTO}}</b><span><span class="status">{{STATUS_PROPOSTA}}</span> · Toledo/PR · {{DATA_EMISSAO_EXTENSO}}</span></div></div><div class="section-kicker">Investimento</div><h2>Formação do valor mensal e da implantação</h2><div class="price-hero"><div class="price-box"><div class="label">Mensalidade final</div><div class="price">{{VALOR_MENSAL_FINAL}}</div><div class="sub">Preço total faturável, com tributos incorporados.</div></div><div class="price-box secondary"><div class="label">Implantação final</div><div class="price">{{VALOR_IMPLANTACAO_FINAL}}</div><div class="sub">Quatro mensalidades líquidas, com gross-up calculado separadamente.</div></div></div><p class="lead">A primeira faixa é uma franquia fixa. Cada faixa seguinte recebe somente a quantidade excedente ao limite anterior.</p><table><thead><tr><th>Faixa</th><th>Min.</th><th>Máx.</th><th>Fixo líquido</th><th>Valor líquido/NF</th><th>NFs aplicadas</th><th>Subtotal líquido</th></tr></thead><tbody><tr><td>1</td><td>{{LIC_F1_MIN}}</td><td>{{LIC_F1_MAX}}</td><td>{{LIC_F1_FIXO_LIQUIDO}}</td><td>{{LIC_F1_UNIT_LIQUIDO}}</td><td>{{LIC_F1_QTD_APLICADA}}</td><td>{{LIC_F1_SUBTOTAL_LIQUIDO}}</td></tr><tr><td>2</td><td>{{LIC_F2_MIN}}</td><td>{{LIC_F2_MAX}}</td><td>{{LIC_F2_FIXO_LIQUIDO}}</td><td>{{LIC_F2_UNIT_LIQUIDO}}</td><td>{{LIC_F2_QTD_APLICADA}}</td><td>{{LIC_F2_SUBTOTAL_LIQUIDO}}</td></tr><tr><td>3</td><td>{{LIC_F3_MIN}}</td><td>{{LIC_F3_MAX}}</td><td>{{LIC_F3_FIXO_LIQUIDO}}</td><td>{{LIC_F3_UNIT_LIQUIDO}}</td><td>{{LIC_F3_QTD_APLICADA}}</td><td>{{LIC_F3_SUBTOTAL_LIQUIDO}}</td></tr><tr><td>4</td><td>{{LIC_F4_MIN}}</td><td>{{LIC_F4_MAX}}</td><td>{{LIC_F4_FIXO_LIQUIDO}}</td><td>{{LIC_F4_UNIT_LIQUIDO}}</td><td>{{LIC_F4_QTD_APLICADA}}</td><td>{{LIC_F4_SUBTOTAL_LIQUIDO}}</td></tr><tr><td>5</td><td>{{LIC_F5_MIN}}</td><td>{{LIC_F5_MAX}}</td><td>{{LIC_F5_FIXO_LIQUIDO}}</td><td>{{LIC_F5_UNIT_LIQUIDO}}</td><td>{{LIC_F5_QTD_APLICADA}}</td><td>{{LIC_F5_SUBTOTAL_LIQUIDO}}</td></tr><tr><td>6</td><td>{{LIC_F6_MIN}}</td><td>{{LIC_F6_MAX}}</td><td>{{LIC_F6_FIXO_LIQUIDO}}</td><td>{{LIC_F6_UNIT_LIQUIDO}}</td><td>{{LIC_F6_QTD_APLICADA}}</td><td>{{LIC_F6_SUBTOTAL_LIQUIDO}}</td></tr><tr class="total-row"><td colspan="5">Total líquido mensal</td><td>{{MEDIA_MENSAL_NOTAS}}</td><td>{{VALOR_MENSAL_LIQUIDO}}</td></tr></tbody></table><div class="callout"><strong>Faturamento:</strong> a implantação será faturada no ato da contratação. A mensalidade será faturada no primeiro dia útil do mês subsequente, com vencimento em {{PRAZO_PAGAMENTO_DIAS}} dias corridos, salvo condição negociada.</div><div class="footer"><span>ExportControl LTDA · exportcontrol.com.br</span><span>{{ID_PROPOSTA_LICENCIAMENTO}}</span></div></section>
+<section class="proposal-page"><div class="topbar"><img alt="ExportControl" src="{{LOGO_EXPORTCONTROL_DATA_URI}}"/><div class="doc-id"><b>{{ID_PROPOSTA_LICENCIAMENTO}}</b><span><span class="status">{{STATUS_PROPOSTA}}</span> · Toledo/PR · {{DATA_EMISSAO_EXTENSO}}</span></div></div><div class="section-kicker">Condições comerciais</div><h2>Tributos, pagamento e validade</h2><div class="tax-grid"><div><table><thead><tr><th>Item</th><th>Alíquota</th><th>Mensalidade</th><th>Implantação</th></tr></thead><tbody><tr><td>Valor líquido</td><td>-</td><td>{{VALOR_MENSAL_LIQUIDO}}</td><td>{{VALOR_IMPLANTACAO_LIQUIDO}}</td></tr><tr><td>ISS</td><td>{{ISS_ALIQUOTA}}</td><td>{{ISS_VALOR_MENSAL}}</td><td>{{ISS_VALOR_IMPLANTACAO}}</td></tr><tr><td>PIS</td><td>{{PIS_ALIQUOTA}}</td><td>{{PIS_VALOR_MENSAL}}</td><td>{{PIS_VALOR_IMPLANTACAO}}</td></tr><tr><td>COFINS</td><td>{{COFINS_ALIQUOTA}}</td><td>{{COFINS_VALOR_MENSAL}}</td><td>{{COFINS_VALOR_IMPLANTACAO}}</td></tr><tr><td>IBS</td><td>{{IBS_ALIQUOTA}}</td><td>{{IBS_VALOR_MENSAL}}</td><td>{{IBS_VALOR_IMPLANTACAO}}</td></tr><tr><td>CBS</td><td>{{CBS_ALIQUOTA}}</td><td>{{CBS_VALOR_MENSAL}}</td><td>{{CBS_VALOR_IMPLANTACAO}}</td></tr><tr class="total-row"><td>Valor final</td><td>{{ALIQUOTA_TOTAL}}</td><td>{{VALOR_MENSAL_FINAL}}</td><td>{{VALOR_IMPLANTACAO_FINAL}}</td></tr></tbody></table></div><div><div class="formula"><strong>Fórmula de gross-up</strong><br/>Valor final = valor líquido ÷ (1 - soma das alíquotas). Eventual diferença de R$ 0,01 é ajustada no maior tributo não nulo.</div><div class="callout warn"><strong>Preço final:</strong> não haverá novo acréscimo tributário ordinário sobre os valores aqui apresentados.</div></div></div><div class="conditions"><div class="condition"><b>Validade</b><span>{{VALIDADE_DIAS}} dias a partir da emissão.</span></div><div class="condition"><b>Pagamento</b><span>{{PRAZO_PAGAMENTO_DIAS}} dias corridos após a NFS-e.</span></div><div class="condition"><b>Disponibilização</b><span>Até 3 dias úteis após assinatura e dados completos.</span></div></div>{{OBSERVACOES_COMERCIAIS_HTML}}<div class="signature"><div class="person"><b>{{RESPONSAVEL_COMERCIAL_NOME}}</b><br/>{{RESPONSAVEL_COMERCIAL_CARGO}}<br/>{{RESPONSAVEL_COMERCIAL_EMAIL}}</div><div class="person"><b>ExportControl LTDA</b><br/>43.386.711/0001-59<br/>exportcontrol.com.br</div></div><div class="footer"><span>ExportControl LTDA · exportcontrol.com.br</span><span>{{ID_PROPOSTA_LICENCIAMENTO}}</span></div></section>
+</main></body></html>

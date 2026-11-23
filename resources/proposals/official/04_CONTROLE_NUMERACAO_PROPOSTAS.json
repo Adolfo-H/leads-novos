@@ -1,0 +1,29 @@
+{
+  "versao": "3.0-2026-07-22",
+  "numero_inicial": 1000,
+  "ultimo_numero_seed": 999,
+  "reinicia_por_ano": false,
+  "escopo": "GLOBAL_PARA_TODOS_OS_SERVICOS",
+  "fonte_primaria_do_estado": "HISTORICO_DOS_CHATS_DO_MESMO_PROJETO",
+  "padrao_busca": "PROPOSTA_COMERCIAL_EC_",
+  "algoritmo": [
+    "Pesquisar todos os chats acessíveis do mesmo Projeto por identificadores de proposta.",
+    "Extrair os números de propostas finais emitidas e ignorar identificadores de rascunho.",
+    "Se nenhum número existir, usar 1000; caso contrário, usar maior número + 1.",
+    "Em lote, reservar números consecutivos na ordem LICENCIAMENTO, ACOMPANHAMENTO, RETROATIVAS.",
+    "Nunca reutilizar número emitido, inclusive recusado, cancelado ou expirado.",
+    "Registrar no final do chat os números emitidos, o último usado e o próximo disponível."
+  ],
+  "ordem_servicos_no_lote": [
+    "LICENCIAMENTO",
+    "ACOMPANHAMENTO",
+    "RETROATIVAS"
+  ],
+  "consumir_numero_quando": "PROPOSTA_FINAL_EMITIDA",
+  "rascunho_incompleto_consumir_numero": false,
+  "revisao_da_mesma_proposta": "MANTER_NUMERO_E_ACRESCENTAR_REVISAO",
+  "novo_escopo_ou_reemissao_apos_expiracao": "CONSUMIR_NOVO_NUMERO",
+  "marcador_de_auditoria_no_chat": "CONTROLE DE NUMERACAO EXPORTCONTROL | Emitidos: {LISTA} | Ultimo: {ULTIMO} | Proximo: {PROXIMO}",
+  "bloqueio": "Se o histórico não estiver acessível ou houver conflito, solicitar o último número confirmado; nunca adivinhar.",
+  "observacao_operacional": "Este arquivo contém a regra e o seed inicial. Em custom GPT isolado, sem memória entre conversas, é necessário usar um Projeto com memória ou um contador externo."
+}

@@ -12,6 +12,7 @@
 .ec68-home .ec68-starter-grid>a:hover{background:#f2fbf8;border-color:#64bca7}
 .ec68-home .ec68-starter-grid>a strong{font-weight:800}.ec68-home .ec68-starter-grid>a small{color:#7392a2}.ec68-home .ec68-starter-grid>a em{margin-top:13px;color:#008779;font-size:12px;font-weight:800;font-style:normal}
 </style>
+{{-- EC_RESPONSES_V23_HOME: numbers include human replies and useful notices, never DSNs. --}}
 {{-- CAMPANHAS_FIGMA_V68_M01 — nova página inicial, integrada ao Livewire real. --}}
 {{-- EC_CAMPAIGN_GROUPED_V1: campanhas originais; rodadas so dentro de cada grupo. --}}
 @php
@@ -52,7 +53,7 @@
         <article class="ec68-stat"><span>Rascunhos</span><strong>{{ $ec68Fmt($counts['drafts']) }}</strong><small>Em preparação, sem envio</small></article>
         <article class="ec68-stat"><span>Fila ativa</span><strong>{{ $ec68Fmt($counts['queue']) }}</strong><small>Pendentes ou reservados para envio</small></article>
         <article class="ec68-stat ec68-stat--accent"><span>Aceitos hoje SMTP</span><strong>{{ $ec68Fmt($counts['sent_today']) }}</strong><small>Aceitação não comprova entrega</small></article>
-        <article class="ec68-stat"><span>Respostas</span><strong>{{ $ec68Fmt($counts['replies']) }}</strong><small>Respostas identificadas</small></article>
+        <article class="ec68-stat"><span>Respostas</span><strong>{{ $ec68Fmt($counts['replies']) }}</strong><small>{{ $counts['replies_human'] }} comerciais · {{ $counts['replies_useful'] }} retornos úteis</small></article>
     </div>
 
     <section class="ec68-card ec68-campaigns" aria-labelledby="ec68-list-title">
@@ -71,11 +72,18 @@
         </div>
         <div class="ec68-table-scroll">
             <table class="ec68-table">
-                <thead><tr><th scope="col">Campanha</th><th scope="col">Status</th><th scope="col">Mensagens por rodada</th><th scope="col">Aceitos SMTP</th><th scope="col">Criada em</th><th scope="col"><span class="ec68-visually-hidden">Ação</span></th></tr></thead>
+                <thead><tr><th scope="col">Campanha</th><th scope="col">Status</th><th scope="col">Mensagens por rodada</th><th scope="col">Aceitos SMTP</th><th scope="col">Respostas</th><th scope="col">Criada em</th><th scope="col"><span class="ec68-visually-hidden">Ação</span></th></tr></thead>
                 <tbody>
                 @forelse ($ec68Rows as $item)
                     @php
                         $ec80Rounds = $item->followupRounds;
+                        $ecV23Human = (int) ($this->listResponseTotals[(int) $item->id]['human'] ?? 0);
+                        $ecV23Useful = (int) ($this->listResponseTotals[(int) $item->id]['useful'] ?? 0);
+                        foreach ($ec80Rounds as $ecV23Round) {
+                            $ecV23Human += (int) ($this->listResponseTotals[(int) $ecV23Round->id]['human'] ?? 0);
+                            $ecV23Useful += (int) ($this->listResponseTotals[(int) $ecV23Round->id]['useful'] ?? 0);
+                        }
+                        $ecV23Total = $ecV23Human + $ecV23Useful;
                         $ec80Plan = $ec80Plans->get((int) $item->id);
                         $ec80RoundCount = $ec80Rounds->count() + 1;
                         $ec80Messages = (int) $item->recipients_count + (int) $ec80Rounds->sum('recipients_count');
@@ -95,12 +103,13 @@
                         <td><span class="ec68-status ec68-status--{{ $ec80Status }}">{{ $ec80StatusLabel }}</span></td>
                         <td>{{ $ec68Fmt($ec80Messages) }} <span class="ec80-subline">mensagens nas rodadas</span></td>
                         <td>{{ $ec68Fmt($ec80Accepted) }}/{{ $ec68Fmt($ec80Messages) }} <span class="ec80-subline">{{ number_format($ec80Rate, 1, ',', '.') }}% de aceites SMTP</span></td>
+                        <td><a class="ec68-link" href="{{ route('campaigns.index', ['campanha' => $item->id, 'aba' => 'replies']) }}">{{ $ec68Fmt($ecV23Total) }} {{ $ecV23Total === 1 ? 'retorno' : 'retornos' }}</a><span class="ec80-subline">{{ $ecV23Human }} comerciais · {{ $ecV23Useful }} úteis</span></td>
                         <td>{{ $item->created_at?->format('d/m/Y') ?? '—' }}</td>
                         <td><a class="ec68-open" href="{{ route('campaigns.index', ['campanha' => $item->id]) }}" aria-label="Abrir campanha {{ $item->name }}">Ver campanha <span aria-hidden="true">›</span></a></td>
                     </tr>
                     @if ($ec80Rounds->isNotEmpty() || $ec80Plan !== null)
                         <tr wire:key="ec80-contents-{{ $item->id }}" class="ec80-rounds-row">
-                            <td colspan="6">
+                            <td colspan="7">
                                 <details class="ec80-rounds-details" data-ec80-history="{{ $item->id }}">
                                     <summary>
                                         <span>Histórico e programação da campanha</span>
@@ -125,9 +134,14 @@
                                             <div class="ec80-round-item ec80-round-item--next">
                                                 <span class="ec80-round-number">{{ (int) $ec80Plan->sent_rounds + 2 }}</span>
                                                 <div><strong>Próximo retorno · {{ (string) $ec80Plan->name }}</strong>
-                                                    <small>+{{ (int) $ec80Plan->delay_days }} dias · {{ $ec80Plan->send_time_local ?: 'horário a definir' }} · {{ (bool) $ec80Plan->automatic ? 'Automático' : 'Somente planejado' }}</small>
+                                                    {{-- EC_FOLLOWUP_LIST_DATE_V3: lê a data real já armazenada, sem consultas adicionais ao banco. --}}
+                                                    @php
+                                                        $ecNextDate = app(\App\Services\Campaigns\CampaignFollowupDates::class)
+                                                            ->dateForRound($ec80Plan, (int) $ec80Plan->sent_rounds + 2);
+                                                    @endphp
+                                                    <small>{{ $ecNextDate?->setTimezone('America/Sao_Paulo')->format('d/m/Y') ?? 'Data ainda não definida' }} · 08:00 (Brasília) · {{ (bool) $ec80Plan->automatic ? 'Automático' : 'Somente planejado' }}</small>
                                                 </div>
-                                                <a href="{{ route('campaigns.index', ['campanha' => $item->id]) }}">Ver programação</a>
+                                                <a href="{{ route('campaigns.index', ['campanha' => $item->id]) }}#ecv5-cronograma">Ver programação</a>
                                             </div>
                                         @endif
                                     </div>
@@ -137,7 +151,7 @@
                         </tr>
                     @endif
                 @empty
-                    <tr><td colspan="6" class="ec68-empty">
+                    <tr><td colspan="7" class="ec68-empty">
                         <strong>{{ $counts['campaigns'] === 0 ? 'Nenhuma campanha criada' : 'Nenhuma campanha neste filtro' }}</strong>
                         <p>{{ $counts['campaigns'] === 0 ? 'Comece selecionando destinatários e preparando um rascunho.' : 'Tente outro nome ou situação.' }}</p>
                         @if ($counts['campaigns'] === 0 && $canManageCampaigns)<a class="ec68-primary" href="{{ route('campaigns.wizard-v93', ['reiniciar' => 1]) }}">Nova campanha</a>@endif

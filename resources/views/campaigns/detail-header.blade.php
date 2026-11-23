@@ -15,7 +15,9 @@
         $ec76Queue = (int) ($stats['pending'] ?? 0)
             + (int) ($stats['reserved'] ?? 0)
             + (int) ($stats['sending'] ?? 0);
-        $ec76Replies = (int) $selected->replies()->count();
+        // EC_RESPONSES_V23_DETAIL: shared count used by the inbox and home.
+        $ec76ReplyTotals = $this->responseTotals;
+        $ec76Replies = $ec76ReplyTotals['total'];
         $ec76Status = (string) $selected->status;
         $ec76StatusLabel = $labels[$ec76Status] ?? 'Em acompanhamento';
         $ec76Progress = min(100, max(0, (int) $progress));
@@ -107,7 +109,7 @@ $ec68Pending = (int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0) 
             <article class="ec76-metric">
                 <span>Respostas</span>
                 <strong>{{ number_format($ec76Replies, 0, ',', '.') }}</strong>
-                <small>Registradas no sistema</small>
+                <small>{{ $ec76ReplyTotals['human'] }} comerciais · {{ $ec76ReplyTotals['useful'] }} úteis</small>
             </article>
         </div>
 

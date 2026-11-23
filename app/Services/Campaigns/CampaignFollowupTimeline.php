@@ -88,9 +88,14 @@ final class CampaignFollowupTimeline
         $scheduledDateValue = $sent === 0 ? data_get($plan, 'first_send_date') : null;
         $scheduledTime = is_string($scheduledTimeValue) ? $scheduledTimeValue : null;
         $scheduledDate = is_string($scheduledDateValue) ? $scheduledDateValue : null;
-        $dueAt = $previous !== null
-            ? app(CampaignFollowupScheduleClock::class)->dueAt($previous, $days, $scheduledTime, $scheduledDate)
-            : null;
+        // EC_CALENDAR_FOLLOWUP_V1: visualizar a mesma data usada pelo executor.
+        $calendar = app(CampaignFollowupDates::class);
+        $datesExplicit = $calendar->isExplicit($plan);
+        $dueAt = $datesExplicit
+            ? $calendar->dateForRound($plan, $sent + 2)
+            : ($previous !== null
+                ? app(CampaignFollowupScheduleClock::class)->dueAt($previous, $days, $scheduledTime, $scheduledDate)
+                : null);
         $displayTz = $scheduledTime !== null ? 'America/Sao_Paulo' : $this->timezone();
 
         // Resultado real da última rodada iniciada ou, antes dela, da campanha original.
@@ -222,6 +227,11 @@ final class CampaignFollowupTimeline
             $state = 'blocked';
             $stateLabel = 'Descadastro HTTPS pendente';
             $stateReason = 'O sistema exige um endereço público seguro para descadastro.';
+        } elseif ($datesExplicit
+            && in_array($calendar->state($plan, $sent + 2, $previous), ['expired', 'missing', 'invalid_previous'], true)) {
+            $state = 'blocked';
+            $stateLabel = 'Data vencida ou inválida — reagendar';
+            $stateReason = 'A rodada não inicia após a janela de 08:00–08:15. Escolha uma nova data e salve antes de retomar.';
         } elseif ($dueAt === null) {
             $state = 'blocked';
             $stateLabel = 'Data ou horario invalidos';
@@ -252,9 +262,10 @@ final class CampaignFollowupTimeline
                 'number' => $number,
                 'label' => $number.'ª rodada',
                 'stage' => $stage,
-                'date' => $stage === 'next' && $dueAt !== null
-                    ? $dueAt->setTimezone($displayTz)->format('d/m/Y')
-                    : null,
+                'date' => $datesExplicit
+                    ? $calendar->dateForRound($plan, $number)?->setTimezone('America/Sao_Paulo')->format('d/m/Y')
+                    : ($stage === 'next' && $dueAt !== null
+                        ? $dueAt->setTimezone($displayTz)->format('d/m/Y') : null),
             ];
         }
 
@@ -265,6 +276,8 @@ final class CampaignFollowupTimeline
             'name' => (string) $plan->name,
             'status' => $status,
             'automatic' => $automatic,
+            'calendar_mode' => $datesExplicit,
+            'total_rounds' => $max + 1,
             'state' => $state,
             'state_label' => $stateLabel,
             'state_reason' => $stateReason,

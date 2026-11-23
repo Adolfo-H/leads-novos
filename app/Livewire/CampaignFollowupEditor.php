@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\EmailCampaign;
 use App\Models\User;
+use App\Services\Campaigns\CampaignFollowupDates;
 use App\Services\Campaigns\CampaignFollowupSettings;
 use App\Services\Campaigns\CampaignFollowupTimeline;
 use Illuminate\Contracts\View\View;
@@ -24,6 +25,9 @@ class CampaignFollowupEditor extends Component
     public int $delayDays = 5;
 
     public int $maxRounds = 2;
+
+    /** @var array<int, string> */
+    public array $roundDates = []; // EC_CALENDAR_FOLLOWUP_V1_1
 
     // Horário opcional: deixar vazio preserva o intervalo exato dos planos antigos.
     public string $sendTimeLocal = '';
@@ -78,6 +82,12 @@ class CampaignFollowupEditor extends Component
             ? (string) (data_get($plan, 'send_time_local') ?: '') : '08:00';
         $this->firstSendDate = $plan !== null
             ? (string) (data_get($plan, 'first_send_date') ?: '') : '';
+        // Somente para exibir o formulario HTTP; nao muda saveChanges() legado.
+        $this->roundDates = $plan !== null
+            ? app(CampaignFollowupDates::class)->dates($plan) : [];
+        if ($plan !== null && $this->firstSendDate !== '' && ! isset($this->roundDates[2])) {
+            $this->roundDates[2] = $this->firstSendDate;
+        }
         $this->subject = $plan !== null ? (string) $plan->subject : 'RE: '.(string) $root->subject;
         $this->body = $plan !== null ? (string) $plan->body : '';
     }

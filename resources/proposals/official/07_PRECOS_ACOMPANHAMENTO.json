@@ -1,0 +1,92 @@
+{
+  "servico": "ACOMPANHAMENTO",
+  "versao": "2026-07-22_CORRIGIDA",
+  "status": "APROVADO",
+  "valores_sao": "LIQUIDOS_ANTES_DOS_TRIBUTOS",
+  "regra_media_mensal": "ROUND_HALF_UP(total_notas_ultimos_12_meses / 12)",
+  "regra_calculo": "FAIXAS_PROGRESSIVAS_MARGINAIS",
+  "exige_licenciamento_ativo": true,
+  "faixas": [
+    {
+      "tier": 1,
+      "min": 1,
+      "max": 150,
+      "fixed": 530.0,
+      "unit": 0.0
+    },
+    {
+      "tier": 2,
+      "min": 151,
+      "max": 500,
+      "fixed": 0.0,
+      "unit": 1.74
+    },
+    {
+      "tier": 3,
+      "min": 501,
+      "max": 3000,
+      "fixed": 0.0,
+      "unit": 1.15
+    },
+    {
+      "tier": 4,
+      "min": 3001,
+      "max": 6000,
+      "fixed": 0.0,
+      "unit": 0.77
+    },
+    {
+      "tier": 5,
+      "min": 6001,
+      "max": 10000,
+      "fixed": 0.0,
+      "unit": 0.47
+    },
+    {
+      "tier": 6,
+      "min": 10001,
+      "max": null,
+      "fixed": 0.0,
+      "unit": 0.33
+    }
+  ],
+  "exemplo_validado_total_6430_em_12_meses": {
+    "media_exata": 535.8333333333334,
+    "media_arredondada": 536,
+    "mensalidade_liquida": 1180.4,
+    "mensalidade_final": 1330.03,
+    "memoria_faixas": [
+      {
+        "faixa": 1,
+        "quantidade": 150,
+        "subtotal_liquido": 530.0
+      },
+      {
+        "faixa": 2,
+        "quantidade": 350,
+        "subtotal_liquido": 609.0
+      },
+      {
+        "faixa": 3,
+        "quantidade": 36,
+        "subtotal_liquido": 41.4
+      },
+      {
+        "faixa": 4,
+        "quantidade": 0,
+        "subtotal_liquido": 0.0
+      },
+      {
+        "faixa": 5,
+        "quantidade": 0,
+        "subtotal_liquido": 0.0
+      },
+      {
+        "faixa": 6,
+        "quantidade": 0,
+        "subtotal_liquido": 0.0
+      }
+    ],
+    "correcao": "R$ 530,00 + 350 x R$ 1,74 + 36 x R$ 1,15 = R$ 1.180,40 líquidos."
+  }
+}

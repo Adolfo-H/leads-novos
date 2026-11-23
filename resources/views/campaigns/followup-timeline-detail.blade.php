@@ -8,7 +8,8 @@
         <div>
             <span class="ecfv4-overline"><span class="ecfv4-live-dot" aria-hidden="true"></span> CONTINUIDADE COMERCIAL · PRÓXIMO E-MAIL</span>
             <h2 id="ecfv4-detail-title">{{ $ecFv4Plan['remaining_followups'] > 0 ? $ecFv4Plan['next_round'].'ª rodada — '.$ecFv4Plan['name'] : 'Sequência concluída' }}</h2>
-            <p>Intervalo: <strong>{{ $ecFv4Plan['days'] }} {{ $ecFv4Plan['days'] === 1 ? 'dia' : 'dias' }}</strong> após a rodada anterior · {{ $ecFv4Plan['sent_followups'] }} de {{ $ecFv4Plan['max_followups'] }} retornos iniciados</p>
+            {{-- EC_FOLLOWUP_DETAIL_DATE_V3: a data aprovada substitui o intervalo estimado. --}}
+            <p>{{ !empty($ecFv4Plan['calendar_mode']) ? 'Próxima data: ' . ($ecFv4Plan['due_datetime'] ?: 'a definir') : 'Previsão: ' . ($ecFv4Plan['due_datetime'] ?: 'a definir') }} · {{ $ecFv4Plan['sent_followups'] }} de {{ $ecFv4Plan['max_followups'] }} retornos iniciados</p>
         </div>
         <span class="ecfv4-pill ecfv4-pill--{{ $ecFv4Plan['state'] }}">{{ $ecFv4Plan['state_label'] }}</span>
     </header>
@@ -25,7 +26,7 @@
             <span>PRÓXIMO CONTATO · DATA PREVISTA</span>
             <strong>{{ $ecFv4Plan['remaining_followups'] > 0 ? ($ecFv4Plan['due_date'] ?: 'A definir') : 'Concluído' }}</strong>
             <div class="ecfv4-date-separator"></div>
-            <div><b>{{ $ecFv4Plan['next_round'] }}ª rodada</b><small>Intervalo de {{ $ecFv4Plan['days'] }} dias</small></div>
+            <div><b>{{ $ecFv4Plan['next_round'] }}ª rodada</b><small>{{ $ecFv4Plan['due_datetime'] ?: 'Data ainda não definida' }}</small></div>
             @if ($ecFv4Plan['eligible_count'] !== null && $ecFv4Plan['remaining_followups'] > 0)
                 <div><b>{{ number_format($ecFv4Plan['eligible_count'], 0, ',', '.') }} contatos</b><small>Potencialmente elegíveis agora</small></div>
             @endif
@@ -48,7 +49,7 @@
         <ol class="ecfv4-rounds" aria-label="Histórico de rodadas da sequência">
             <li class="ecfv4-round is-started"><b>1</b><div><strong>1ª rodada</strong><small>Campanha inicial</small></div></li>
             @foreach ($ecFv4Plan['rounds'] as $ecFv4Round)
-                <li class="ecfv4-round is-{{ $ecFv4Round['stage'] }}"><b>{{ $ecFv4Round['number'] }}</b><div><strong>{{ $ecFv4Round['label'] }}</strong><small>{{ $ecFv4Round['stage'] === 'started' ? 'Envio iniciado' : ($ecFv4Round['date'] ? $ecFv4Round['date'].' · previsto' : '+'.$ecFv4Plan['days'].' dias após a anterior') }}</small></div></li>
+                <li class="ecfv4-round is-{{ $ecFv4Round['stage'] }}"><b>{{ $ecFv4Round['number'] }}</b><div><strong>{{ $ecFv4Round['label'] }}</strong><small>{{ $ecFv4Round['stage'] === 'started' ? 'Envio iniciado' : ($ecFv4Round['date'] ? $ecFv4Round['date'].' · previsto' : 'Data a definir') }}</small></div></li>
             @endforeach
         </ol>
     </div>

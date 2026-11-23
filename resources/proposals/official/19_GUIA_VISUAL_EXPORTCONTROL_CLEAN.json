@@ -1,0 +1,73 @@
+{
+  "versao": "5.0-2026-07-22",
+  "status": "APROVADO",
+  "nome_do_sistema_visual": "EXPORTCONTROL_CLEAN_TEAL_PDF",
+  "referencia_conceitual": "Capa branca, muito respiro, logo ExportControl no topo esquerdo, logo do cliente no topo direito, tipografia cinza-carvão e verde-teal, formas abstratas suaves no canto inferior direito.",
+  "paleta": {
+    "teal_principal": "#00AD95",
+    "teal_escuro": "#008E7B",
+    "cinza_logo": "#889898",
+    "carvao": "#47464B",
+    "texto": "#2F3437",
+    "menta_claro": "#EAF7F4",
+    "menta_intermediario": "#D7F0EB",
+    "fundo_suave": "#F6FAF9",
+    "borda": "#D7E3E1",
+    "branco": "#FFFFFF"
+  },
+  "cores_proibidas_em_grandes_areas": [
+    "#0B2F5B",
+    "#134A8E",
+    "AZUL_MARINHO",
+    "PRETO_PURO"
+  ],
+  "tipografia": {
+    "familia": "Arial, Helvetica, sans-serif",
+    "titulos": "peso 700 ou 800, cor carvão",
+    "segunda_linha_da_capa": "peso 300, verde-teal",
+    "corpo": "9,5 a 11 pt no PDF; nunca reduzir para forçar conteúdo",
+    "identificadores": "8 a 10 pt, quebra permitida sem sobreposição"
+  },
+  "capa": {
+    "formato": "A4 retrato",
+    "fundo": "branco",
+    "logos": "ExportControl no topo esquerdo e cliente no topo direito, sem caixas escuras, sem distorção",
+    "titulo": "PROPOSTA / CONTRATO em carvão; COMERCIAL / modalidade em teal",
+    "elementos": [
+      "linha curta teal",
+      "ícone circular em menta",
+      "dados do cliente e número em bloco leve",
+      "marca d’água EC translúcida",
+      "onda menta no rodapé"
+    ],
+    "restricoes": [
+      "não usar faixa azul escura",
+      "não usar gradiente escuro",
+      "não usar fotografia de fundo",
+      "não rasterizar textos da capa"
+    ]
+  },
+  "paginas_internas": {
+    "cabecalho": "logo pequeno + identificador + linha teal",
+    "titulos": "carvão com acento teal",
+    "cards": "brancos ou menta, bordas suaves, sem sombras pesadas",
+    "tabelas": "cabeçalho menta com texto carvão; linhas alternadas suaves",
+    "valores": "teal sólido ou menta, nunca azul-marinho",
+    "rodape": "linha fina, site e identificador"
+  },
+  "contratos": {
+    "capa": "mesma linguagem das propostas",
+    "corpo": "leitura jurídica sóbria, fundo branco, numeração teal, margens generosas",
+    "quadro_resumo": "partes, proposta, vigência, valores, volume e dependências",
+    "anexo": "proposta aceita anexada integralmente ao PDF do contrato"
+  },
+  "qa_visual": [
+    "logo não distorcida",
+    "nenhuma página vazia",
+    "nenhum marcador {{...}}",
+    "nenhum texto cortado ou sobreposto",
+    "tabelas dentro da largura da página",
+    "todas as páginas renderizadas em PNG e inspecionadas",
+    "PDF pesquisável, não imagem única"
+  ]
+}

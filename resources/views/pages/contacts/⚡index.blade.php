@@ -69,7 +69,7 @@ new class extends Component
             $this->peopleOrigin = $origin;
         }
         $whatsapp = request()->query('wa');
-        if (is_string($whatsapp) && in_array($whatsapp, ['all', 'yes', 'no', 'unknown'], true)) {
+        if (is_string($whatsapp) && in_array($whatsapp, ['all', 'yes', 'no', 'unknown', 'identified'], true)) {
             $this->whatsappFilter = $whatsapp;
         }
         $sort = request()->query('ordem');
@@ -673,6 +673,9 @@ new class extends Component
 @php
     $index = $this->contactIndex;
     $totals = $this->globalSummary;
+    // EC_CONTACTS_GROUP_WA_V1: numero unico da mesma base da Verificacao WhatsApp.
+    // wa_yes do diretorio continua representando contatos confirmados manualmente.
+    $waRegistry = app(\App\Services\Contacts\WhatsappPhoneRegistry::class)->totals();
     $rows = $index->items();
     // EC_WA_PUBLIC_SITES_V10: evidência por número dos contatos desta página (uma consulta; sem N+1).
     $waPublicKeys = [];
@@ -799,9 +802,9 @@ new class extends Component
             </nav>
     </div>
     <section class="c66-metrics" aria-label="Indicadores de contatos">
-        <article class="c66-metric"><span>Contatos no diretório</span><strong>{{ $fmt($totals['all'] ?? null) }}</strong></article>
+        <article class="c66-metric"><span>Contatos no diretório</span><strong>{{ $fmt($totals['all'] ?? null) }}</strong><small>Contatos e canais únicos: filiais iguais agrupadas sem apagar cadastros</small></article>
         <article class="c66-metric"><span>Com e-mail nesta página</span><strong>{{ $fmt(collect($rows)->filter(fn ($row) => filter_var(trim((string) ($row->email ?? '')), FILTER_VALIDATE_EMAIL) !== false)->count()) }}</strong><small>Registros exibidos</small></article>
-        <article class="c66-metric"><span>WhatsApp confirmado</span><strong>{{ $fmt($totals['wa_yes'] ?? null) }}</strong></article>
+        <article class="c66-metric"><span>Com WhatsApp · números únicos</span><strong>{{ $fmt((int) $waRegistry['yes']) }}</strong><small>{{ $fmt($totals['wa_yes'] ?? null) }} contatos com WhatsApp confirmado manualmente; inclui positivos do robô</small></article>
         <article class="c66-metric"><span>Pendentes de verificação</span><strong>{{ $fmt($totals['wa_unknown'] ?? null) }}</strong><small>Estado de verificação cadastrado</small></article>
     </section>
     @if ($selectedKeys !== [])
@@ -942,7 +945,7 @@ new class extends Component
                     </label>
                     <label><span>WhatsApp</span>
                         <select name="wa" wire:model.live="whatsappFilter" aria-label="Filtrar WhatsApp">
-                            <option value="all"@if($whatsappFilter === 'all') selected @endif>Todos</option><option value="yes"@if($whatsappFilter === 'yes') selected @endif>Confirmado</option>
+                            <option value="all"@if($whatsappFilter === 'all') selected @endif>Todos</option><option value="identified"@if($whatsappFilter === 'identified') selected @endif>Com WhatsApp (robô ou manual)</option><option value="yes"@if($whatsappFilter === 'yes') selected @endif>Confirmação manual</option>
                             <option value="no"@if($whatsappFilter === 'no') selected @endif>Não possui</option><option value="unknown"@if($whatsappFilter === 'unknown') selected @endif>Não verificado</option>
                         </select>
                     </label>
@@ -1056,6 +1059,7 @@ new class extends Component
                                 $phone = trim((string) $row->mobile_phone) ?: trim((string) $row->phone);
                                 $phoneLink = ContactDirectory::dialLink($phone);
                                 $wa = (string) $row->whatsapp_status;
+                                $waRobot = (bool) ($row->whatsapp_robot_identified ?? false);
                                 $active = $selected && $selected->source_key === $key;
                             @endphp
                             <tr wire:key="ecc3-row-{{ $key }}" class="{{ $active ? 'is-selected' : '' }}">
@@ -1082,15 +1086,15 @@ new class extends Component
                                     @else
                                         <span class="ecc3-muted">{{ $phone ?: '—' }}</span>
                                     @endif
-                                    <small class="c66-phone-status">{{ match ($wa) { 'yes' => 'WhatsApp confirmado', 'no' => 'Sem WhatsApp', 'none' => 'Sem número', default => 'Não verificado' } }}</small>
+                                    <small class="c66-phone-status">{{ $waRobot ? 'WhatsApp identificado · robô' : match ($wa) { 'yes' => 'WhatsApp confirmado', 'no' => 'Sem WhatsApp', 'none' => 'Sem número', default => 'Não verificado' } }}</small>
                                     @if(isset($waPublicKeys[(string) $row->source_key.'|'.ContactDirectory::digits((string) $row->phone)]) || isset($waPublicKeys[(string) $row->source_key.'|'.ContactDirectory::digits((string) $row->mobile_phone)]))
                                         <small class="wa10-contacts-flag" style="display:inline-block;color:#008e7d;font-size:10px;font-weight:700" title="Encontrado em site empresarial; não comprova conta ativa">WhatsApp divulgado no site</small>
                                     @endif
                                 </td>
                                 <td>
-                                    <span class="ecc3-wa ecc3-wa-{{ $wa }}">
-                                        <span aria-hidden="true">{{ match ($wa) { 'yes' => '●', 'no' => '×', 'none' => '—', default => '◷' } }}</span>
-                                        {{ match ($wa) { 'yes' => 'Confirmado', 'no' => 'Não possui', 'none' => 'Sem número', default => 'Pendente' } }}
+                                    <span class="ecc3-wa ecc3-wa-{{ $waRobot ? 'yes' : $wa }}" title="{{ $waRobot ? 'Identificado tecnicamente pelo robô; não é confirmação manual' : '' }}">
+                                        <span aria-hidden="true">{{ $waRobot ? '●' : match ($wa) { 'yes' => '●', 'no' => '×', 'none' => '—', default => '◷' } }}</span>
+                                        {{ $waRobot ? 'Via robô' : match ($wa) { 'yes' => 'Confirmado', 'no' => 'Não possui', 'none' => 'Sem número', default => 'Pendente' } }}
                                     </span>
                                 </td>
                                 <td><span class="ecc3-source ecc3-source-{{ $row->person_type }}">{{ match ($row->person_type) { 'hubspot' => 'HubSpot', 'receita' => 'Receita', default => 'Manual' } }}</span></td>
@@ -1155,12 +1159,14 @@ new class extends Component
                     @php
                         $abbr = mb_strtoupper(mb_substr(trim((string) $selected->person_name), 0, 1));
                         $primaryStatus = (string) $selected->whatsapp_status;
+                        $inspectorRobot = (bool) ($selected->whatsapp_robot_identified ?? false);
                     @endphp
                     <section class="ecc3-profile-card">
                         <div class="ecc3-profile-row">
                             <span class="ecc3-avatar ecc3-avatar-large">{{ $abbr ?: '?' }}</span>
                             <div class="ecc3-profile-name">
                                 <h3>{{ $selected->person_name }}</h3>
+                                @if($inspectorRobot)<small style="color:#008e7f;font-weight:700">WhatsApp identificado · robô (não confirmado manualmente)</small>@endif
                                 <p>{{ $selected->job_title ?: 'Cargo não informado' }}</p>
                                 <small>{{ $selected->company_label }}</small>
                             </div>

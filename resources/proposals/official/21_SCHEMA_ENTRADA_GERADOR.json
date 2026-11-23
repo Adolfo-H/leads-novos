@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Entrada do Gerador ExportControl V5.2 - Reajustes Comerciais Cumulativos",
+  "type": "object",
+  "required": [
+    "solicitacao"
+  ],
+  "properties": {
+    "solicitacao": {
+      "enum": [
+        "GERAR_PROPOSTA",
+        "GERAR_CONTRATO"
+      ]
+    },
+    "data_emissao": {
+      "type": "string",
+      "format": "date"
+    },
+    "numeros": {
+      "type": "object",
+      "properties": {
+        "LICENCIAMENTO": {
+          "type": "integer",
+          "minimum": 1000
+        },
+        "ACOMPANHAMENTO": {
+          "type": "integer",
+          "minimum": 1000
+        },
+        "RETROATIVAS": {
+          "type": "integer",
+          "minimum": 1000
+        }
+      }
+    },
+    "servicos": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "LICENCIAMENTO",
+          "ACOMPANHAMENTO",
+          "RETROATIVAS"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "cliente": {
+      "type": "object",
+      "required": [
+        "razao_social",
+        "responsavel_principal",
+        "logo"
+      ],
+      "properties": {
+        "razao_social": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nome_fantasia": {
+          "type": "string"
+        },
+        "cnpj": {
+          "type": "string"
+        },
+        "logo": {
+          "type": "string"
+        },
+        "responsavel_principal": {
+          "type": "object",
+          "required": [
+            "nome",
+            "email"
+          ],
+          "properties": {
+            "nome": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            }
+          }
+        },
+        "responsaveis_adicionais": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "nome": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "endereco_completo": {
+          "type": "string"
+        },
+        "cidade_uf": {
+          "type": "string"
+        },
+        "representante_legal": {
+          "type": "object",
+          "properties": {
+            "nome": {
+              "type": "string"
+            },
+            "cpf": {
+              "type": "string"
+            },
+            "cargo": {
+              "type": "string"
+            }
+          }
+        },
+        "email_faturamento_notificacoes": {
+          "type": "string"
+        },
+        "controladas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "razao_social",
+              "cnpj"
+            ],
+            "properties": {
+              "razao_social": {
+                "type": "string"
+              },
+              "cnpj": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "testemunhas": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "properties": {
+              "nome": {
+                "type": "string"
+              },
+              "cpf": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "base_recorrente": {
+      "type": "object",
+      "properties": {
+        "quantidade_total_12_meses": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "inicio": {
+          "type": "string"
+        },
+        "fim": {
+          "type": "string"
+        }
+      }
+    },
+    "retroativas": {
+      "type": "object",
+      "properties": {
+        "quantidade_total": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "inicio": {
+          "type": "string"
+        },
+        "fim": {
+          "type": "string"
+        },
+        "licenciamento_status": {
+          "enum": [
+            "ATIVO",
+            "NAO_ATIVO",
+            "SERA_CONTRATADO_NESTE_PEDIDO"
+          ]
+        },
+        "prazo": {
+          "type": "string"
+        },
+        "tipo_certificado": {
+          "type": "string"
+        }
+      }
+    },
+    "condicoes": {
+      "type": "object",
+      "properties": {
+        "validade_dias": {
+          "type": "integer"
+        },
+        "pagamento_dias": {
+          "type": "integer"
+        },
+        "responsavel_comercial": {
+          "type": "string"
+        },
+        "observacoes": {
+          "type": "string"
+        },
+        "status_documento": {
+          "type": "string"
+        },
+        "revisao": {
+          "type": "string",
+          "description": "Ex.: REV1. Mantém o número original e identifica a revisão."
+        }
+      }
+    },
+    "registro_propostas": {
+      "type": "string"
+    },
+    "aceites": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "LICENCIAMENTO",
+          "ACOMPANHAMENTO",
+          "RETROATIVAS"
+        ]
+      }
+    },
+    "data_aceite": {
+      "type": "string"
+    },
+    "data_assinatura": {
+      "type": "string"
+    },
+    "data_base_precificacao": {
+      "type": "string",
+      "format": "date",
+      "description": "Opcional. Usa esta data para selecionar a tabela reajustada; indicado em REV de propostas antigas para preservar a data de precificação original. Se omitido, usa data_emissao."
+    }
+  }
+}
