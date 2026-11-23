@@ -124,12 +124,27 @@ final class ContactPeopleDirectory
             ->mapWithKeys(static fn (object $row): array => [$row->source_key.'|'.$row->phone_normalized => true])
             ->all();
 
-        $result->through(static function (stdClass $row) use ($checks, $technicalPairs): stdClass {
+        // EC_CONTACTS_GROUP_WA_V1: positivos do robo visiveis sem se passar por
+        // confirmacoes humanas nem sobrescrever o registro da verificacao.
+        $robotPairs = DB::table('whatsapp_phone_sources as s')
+            ->join('whatsapp_phone_numbers as n', 'n.id', '=', 's.phone_id')
+            ->whereIn('s.source_key', $keys)
+            ->where('n.status', 'yes')
+            ->where('n.evidence', 'web_found_unofficial')
+            ->get(['s.source_key', 's.raw_digits'])
+            ->mapWithKeys(static fn (object $row): array => [$row->source_key.'|'.$row->raw_digits => true])
+            ->all();
+
+        $result->through(static function (stdClass $row) use ($checks, $technicalPairs, $robotPairs): stdClass {
             $byField = [];
+            $hasRobot = false;
             foreach (['phone', 'mobile_phone'] as $field) {
                 $digits = ContactDirectory::digits((string) ($row->{$field} ?? ''));
                 if ($digits === '') {
                     continue;
+                }
+                if (isset($robotPairs[$row->source_key.'|'.$digits])) {
+                    $hasRobot = true;
                 }
                 $entry = $checks->get((string) $row->source_key)
                     ?->first(static fn (ContactPhoneVerification $v): bool => $v->phone_normalized === $digits);
@@ -148,6 +163,7 @@ final class ContactPeopleDirectory
                 default => 'unknown',
             };
             $row->phone_statuses = $byField;
+            $row->whatsapp_robot_identified = $hasRobot && $row->whatsapp_status === 'unknown';
             $row->person_name = trim((string) $row->person_name) ?: 'Contato sem nome';
             $row->company_label = trim((string) $row->company_label) ?: 'Sem empresa vinculada';
 
@@ -187,7 +203,7 @@ final class ContactPeopleDirectory
             $whatsapp, $companyKey, $page, $perPage, $order,
         ]);
         // Versão v4 ignora automaticamente os objetos antigos do cache v3.
-        $key = 'prospector:contacts:page:v7:'.hash('sha256', $fingerprint);
+        $key = 'prospector:contacts:page:v8:'.hash('sha256', $fingerprint);
 
         $payload = Cache::remember(
             $key,
@@ -297,7 +313,7 @@ final class ContactPeopleDirectory
             ->selectRaw("('manual:' || CAST(m.id AS VARCHAR)) AS source_key")
             ->selectRaw('m.id AS person_id, m.updated_at AS last_activity_at, m.name AS person_name');
 
-        $receita = ReceitaContactChannels::query()
+        $receita = ContactChannelConsolidation::receita()
             ->selectRaw("('receita:' || CAST(e.uuid AS VARCHAR)) AS source_key")
             ->selectRaw('e.id AS person_id, e.source_updated_at AS last_activity_at')
             ->selectRaw("CASE WHEN e.type = 'matrix' THEN 'Canal Receita — Matriz' ELSE 'Canal Receita — Filial' END AS person_name");
@@ -366,13 +382,13 @@ final class ContactPeopleDirectory
     {
         $calculate = static fn (): int => HubSpotContact::query()->count()
             + CommercialContact::query()->count()
-            + ReceitaContactChannels::query()->count();
+            + ContactChannelConsolidation::receita()->count();
 
         if (app()->runningUnitTests() || app()->environment('testing')) {
             return $calculate();
         }
 
-        return (int) Cache::remember('prospector:contacts:plain-count:v3', 12, $calculate);
+        return (int) Cache::remember('prospector:contacts:plain-count:v4', 12, $calculate);
     }
 
     /**
@@ -399,7 +415,7 @@ final class ContactPeopleDirectory
     {
         $hubspot = HubSpotContact::query()->count();
         $manual = CommercialContact::query()->count();
-        $receita = ReceitaContactChannels::query()->count();
+        $receita = ContactChannelConsolidation::receita()->count();
 
         $phone = self::phoneSql('p.phone');
         $mobile = self::phoneSql('p.mobile_phone');
@@ -457,7 +473,7 @@ final class ContactPeopleDirectory
         // As três origens continuam separadas; canal Receita nunca vira pessoa.
         $hubspot = HubSpotContact::query()->count();
         $manual = CommercialContact::query()->count();
-        $receita = ReceitaContactChannels::query()->count();
+        $receita = ContactChannelConsolidation::receita()->count();
 
         // As restrições adicionais são NECESSÁRIAS, nunca substituem a regra final.
         // Estes mesmos pré-filtros já foram confrontados com a base real.
@@ -473,7 +489,7 @@ final class ContactPeopleDirectory
         $manualPhones = DB::table('commercial_contacts as m')
             ->selectRaw("('manual:' || CAST(m.id AS VARCHAR)) AS source_key")
             ->selectRaw('m.phone AS phone, m.mobile_phone AS mobile_phone');
-        $receitaPhones = ReceitaContactChannels::query()
+        $receitaPhones = ContactChannelConsolidation::receita()
             ->selectRaw("('receita:' || CAST(e.uuid AS VARCHAR)) AS source_key")
             ->selectRaw("NULLIF(TRIM(e.phone_1), '') AS phone, NULLIF(TRIM(e.phone_2), '') AS mobile_phone");
 
@@ -559,15 +575,15 @@ final class ContactPeopleDirectory
     public function totalsCached(): array
     {
         /** @var array{all:int,hubspot:int,manual:int,receita:int,clients:int,deals:int,unlinked:int,wa_yes:int,wa_unknown:int} $totals */
-        $totals = Cache::remember('prospector:contacts:totals:v2', 25, fn (): array => $this->totals());
+        $totals = Cache::remember('prospector:contacts:totals:v3', 25, fn (): array => $this->totals());
 
         return $totals;
     }
 
     public function clearCachedTotals(): void
     {
-        Cache::forget('prospector:contacts:totals:v2');
-        Cache::forget('prospector:contacts:plain-count:v3');
+        Cache::forget('prospector:contacts:totals:v3');
+        Cache::forget('prospector:contacts:plain-count:v4');
         // Invalida os snapshots de página sem precisar apagar chaves por filtro.
         Cache::increment('prospector:contacts:page-version:v3');
     }
@@ -642,7 +658,7 @@ final class ContactPeopleDirectory
 
         // Canais cadastrais de estabelecimento (matriz/filial). São linhas empresariais,
         // não pessoas do HubSpot nem contatos pessoais presumidos.
-        $receita = ReceitaContactChannels::query()
+        $receita = ContactChannelConsolidation::receita($search)
             ->selectRaw("'receita' AS person_type, e.id AS person_id, e.cnpj AS external_id")
             ->selectRaw("('receita:' || CAST(e.uuid AS VARCHAR)) AS source_key")
             ->selectRaw("CASE WHEN e.type = 'matrix' THEN 'Canal Receita — Matriz' ELSE 'Canal Receita — Filial' END AS person_name")
@@ -834,6 +850,13 @@ final class ContactPeopleDirectory
             .'AND (NOT '.$mobilePresent.' OR '.self::confirmationSql($mobile, 'no').'))';
         if ($whatsapp === 'yes') {
             $query->whereRaw($yes);
+        } elseif ($whatsapp === 'identified') {
+            // Com WhatsApp: confirmacoes humanas OU positivos tecnicos por numero
+            // ATUAL da fonte; nunca associar pelo telefone de outra pessoa.
+            // As funcoes abaixo retornam literal-string, validado pelo PHPStan.
+            // Nenhuma parte desta expressao aceita SQL informado pelo usuario.
+            $query->whereRaw('('.$yes.' OR '.self::robotFoundSql($phone)
+                .' OR '.self::robotFoundSql($mobile).')');
         } elseif ($whatsapp === 'no') {
             $query->whereRaw('NOT '.$yes)->whereRaw($allNo);
         } elseif ($whatsapp === 'unknown') {
@@ -916,6 +939,22 @@ final class ContactPeopleDirectory
             ."AND tech_event.result = 'found' "
             .'AND tech_event.checked_at = cv.verified_at '
             .'AND cv.verified_by IS NULL))';
+    }
+
+    /**
+     * Positivo do robo: somente fonte e telefone atuais, nunca por nome.
+     *
+     * @param  literal-string  $digitsSql
+     * @return literal-string
+     */
+    private static function robotFoundSql(string $digitsSql): string
+    {
+        return 'EXISTS (SELECT 1 FROM whatsapp_phone_sources robot_source '
+            .'JOIN whatsapp_phone_numbers robot_number ON robot_number.id = robot_source.phone_id '
+            .'WHERE robot_source.source_key = p.source_key '
+            .'AND robot_source.raw_digits = '.$digitsSql
+            ." AND robot_number.status = 'yes' "
+            ."AND robot_number.evidence = 'web_found_unofficial')";
     }
 
     /**

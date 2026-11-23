@@ -5,12 +5,16 @@ use App\Http\Controllers\Access\AccessInvitationController;
 use App\Http\Controllers\Access\AccessRequestController;
 use App\Http\Controllers\CampaignContactsSelectionController;
 use App\Http\Controllers\CampaignContactsTransferController;
+use App\Http\Controllers\CampaignFollowupCalendarController;
+use App\Http\Controllers\CampaignFollowupCancelNextController;
+use App\Http\Controllers\CampaignFollowupExtensionController;
 use App\Http\Controllers\CampaignIntelligenceController;
 use App\Http\Controllers\CampaignOperationsController;
 use App\Http\Controllers\CampaignProductionReadinessController;
 use App\Http\Controllers\CampaignProspectingController;
 use App\Http\Controllers\CampaignUnsubscribeController;
 use App\Http\Controllers\CampaignWizardController;
+use App\Http\Controllers\EcProposalsController;
 use App\Http\Controllers\HubSpotWebhookController;
 use App\Http\Controllers\WhatsappOperationsHttpController;
 use App\Http\Controllers\WhatsappPairHttpController;
@@ -257,6 +261,21 @@ Route::middleware(['auth', 'verified', 'commercial.workspace', 'commercial.manag
     Route::post('/campanhas/novo-v93/salvar-rascunho', [CampaignWizardController::class, 'save'])->name('campaigns.wizard-v93.save');
 });
 
+// EC_CALENDAR_FOLLOWUP_V1: agendamento explícito e pausa por HTTP, sem SMTP direto.
+Route::middleware(['auth', 'verified', 'commercial.workspace', 'commercial.manager', 'throttle:20,1'])
+    ->group(function (): void {
+        Route::post('/campanhas/{campaign}/programar-rodadas', [CampaignFollowupCalendarController::class, 'save'])
+            ->whereNumber('campaign')->name('campaigns.followup.calendar');
+        Route::post('/campanhas/{campaign}/pausar-rodadas', [CampaignFollowupCalendarController::class, 'pause'])
+            ->whereNumber('campaign')->name('campaigns.followup.pause');
+        // EC_FOLLOWUP_EXTEND_V2: somente uma nova rodada explicitamente autorizada.
+        Route::post('/campanhas/{campaign}/proxima-rodada', [CampaignFollowupExtensionController::class, 'store'])
+            ->whereNumber('campaign')->name('campaigns.followup.extend');
+        // EC_FOLLOWUP_CANCEL_NEXT_V3: cancela somente rodadas ainda não criadas.
+        Route::post('/campanhas/{campaign}/cancelar-proximas-rodadas', [CampaignFollowupCancelNextController::class, 'store'])
+            ->whereNumber('campaign')->name('campaigns.followup.cancel-next');
+    });
+
 /* EC94: ações HTTP autenticadas, reaproveitando o motor original de envios. */
 Route::middleware(['auth', 'verified', 'commercial.workspace', 'commercial.manager'])->group(function (): void {
     Route::post('/campanhas/{campaign}/iniciar-v94', [CampaignOperationsController::class, 'start'])->whereNumber('campaign')->name('campaigns.ops-v94.start');
@@ -272,3 +291,27 @@ Route::middleware(['auth', 'verified', 'commercial.manager', 'throttle:30,1'])
         [WhatsappVerificationController::class, 'store'])
     ->whereNumber('phone')
     ->name('contacts.whatsapp.verify-v941');
+
+/* EC_PROPOSALS_MODULE_V1: HTTP CRUD; nunca envia SMTP nem usa callback Livewire. */
+Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function (): void {
+    Route::get('/propostas', [EcProposalsController::class, 'index'])->name('proposals.index');
+    Route::get('/propostas/nova', [EcProposalsController::class, 'create'])->name('proposals.create');
+    Route::post('/propostas', [EcProposalsController::class, 'store'])->name('proposals.store');
+    Route::get('/propostas/modelos', [EcProposalsController::class, 'templates'])->name('proposals.templates');
+    Route::get('/propostas/precos', [EcProposalsController::class, 'pricing'])->name('proposals.pricing');
+    Route::get('/propostas/importar', [EcProposalsController::class, 'importPage'])->name('proposals.import.page');
+    Route::post('/propostas/importar', [EcProposalsController::class, 'import'])->middleware('throttle:15,1')->name('proposals.import.store');
+    Route::post('/propostas/ajustes', [EcProposalsController::class, 'addAdjustment'])->name('proposals.adjustment');
+    Route::post('/propostas/tributos', [EcProposalsController::class, 'addTaxProfile'])->name('proposals.tax-profile');
+    Route::post('/propostas/tabela', [EcProposalsController::class, 'addPriceVersion'])->name('proposals.price-version');
+    Route::post('/propostas/modelos', [EcProposalsController::class, 'updateTemplate'])->name('proposals.template-update');
+    Route::post('/propostas/numeracao', [EcProposalsController::class, 'reconcile'])->name('proposals.numbering');
+    Route::get('/propostas/{proposal}', [EcProposalsController::class, 'show'])->whereNumber('proposal')->name('proposals.show');
+    Route::get('/propostas/{proposal}/editar', [EcProposalsController::class, 'edit'])->whereNumber('proposal')->name('proposals.edit');
+    Route::put('/propostas/{proposal}', [EcProposalsController::class, 'update'])->whereNumber('proposal')->name('proposals.update');
+    Route::post('/propostas/{proposal}/emitir', [EcProposalsController::class, 'issue'])->whereNumber('proposal')->middleware('throttle:5,1')->name('proposals.issue');
+    Route::post('/propostas/{proposal}/duplicar', [EcProposalsController::class, 'duplicate'])->whereNumber('proposal')->name('proposals.duplicate');
+    Route::post('/propostas/{proposal}/revisar', [EcProposalsController::class, 'revise'])->whereNumber('proposal')->name('proposals.revise');
+    Route::post('/propostas/{proposal}/situacao', [EcProposalsController::class, 'changeStatus'])->whereNumber('proposal')->name('proposals.status');
+    Route::get('/propostas/{proposal}/documentos/{document}', [EcProposalsController::class, 'download'])->whereNumber('proposal')->whereNumber('document')->name('proposals.document');
+});

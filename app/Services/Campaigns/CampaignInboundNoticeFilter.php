@@ -51,6 +51,7 @@ final class CampaignInboundNoticeFilter
     public static function query(): Builder
     {
         return DB::table('email_campaign_inbound_notices')
+            ->whereNull('promoted_to_reply_at')
             ->where(static function (Builder $q): void {
                 $q->whereIn('notice_type', [
                     'absence', 'address_change', 'reply_needs_review', 'auto_reply',

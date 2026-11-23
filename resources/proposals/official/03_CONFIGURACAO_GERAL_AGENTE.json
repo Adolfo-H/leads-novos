@@ -1,0 +1,214 @@
+{
+  "versao": "5.2-2026-10-31-REAJUSTES-CUMULATIVOS",
+  "status_geral": "PRONTO_PARA_PRODUCAO_PDF_CLEAN",
+  "ambiente_recomendado": {
+    "tipo": "CHATGPT_PROJECT_OU_GPT_COM_ANALISE_DE_DADOS",
+    "requisitos": [
+      "memória/referência ao histórico para numeração",
+      "execução Python ou ferramenta equivalente para renderização",
+      "acesso aos arquivos-fonte do pacote"
+    ],
+    "modo_instantaneo": "USAR_INSTRUCOES_RESUMIDAS + GERADOR_DETERMINISTICO + TEMPLATES_HTML; não improvisar layout."
+  },
+  "empresa_fornecedora": {
+    "razao_social": "EXPORTCONTROL LTDA",
+    "cnpj": "43.386.711/0001-59",
+    "endereco": "Rua Alexandre Fleming, nº 2194, Ed. Charles Darwin, BIOPARK, Toledo/PR",
+    "site": "https://exportcontrol.com.br",
+    "responsavel_comercial_padrao": "Natan Kainak",
+    "contatos_exibidos": [
+      {
+        "nome": "Iago Barros",
+        "cargo": "Gerente Comercial",
+        "telefone": "(44) 9 9720-8778",
+        "emails": [
+          "iagomiguel@live.com",
+          "iago@exportcontrol.com.br"
+        ]
+      },
+      {
+        "nome": "Natan Kainak",
+        "cargo": "Coordenador Comercial",
+        "telefone": "(44) 9 9185-3575",
+        "emails": [
+          "natan@exportcontrol.com.br"
+        ]
+      },
+      {
+        "nome": "Adolfo Heerdt",
+        "cargo": "Assistente Comercial",
+        "telefone": "(44) 9 9102-6597",
+        "emails": [
+          "adolfo@exportcontrol.com.br"
+        ]
+      }
+    ],
+    "dados_bancarios": {
+      "banco": "Banco Cooperativo Sicredi S.A. (748)",
+      "agencia": "0704",
+      "conta": "62166 6",
+      "pix_cnpj": "43.386.711/0001-59"
+    },
+    "foro": "Toledo/PR"
+  },
+  "arquivos": {
+    "manual_juridico": "PROMPT COMPLETO - AGENDE JURIDICO.docx",
+    "manual_operacional": "02_PROMPT_DETALHADO_AGENTE_PROPOSTAS_CONTRATOS.docx",
+    "instrucoes_projeto": "01_INSTRUCOES_DO_AGENTE_ATE_8000_CARACTERES.txt",
+    "descricao_agente": "24_CONFIGURACAO_DO_AGENTE.json",
+    "numeracao": "04_CONTROLE_NUMERACAO_PROPOSTAS.json",
+    "tributos": "05_TRIBUTOS_ATUAIS.json",
+    "precos": {
+      "LICENCIAMENTO": "06_PRECOS_LICENCIAMENTO.json",
+      "ACOMPANHAMENTO": "07_PRECOS_ACOMPANHAMENTO.json",
+      "RETROATIVAS": "08_PRECOS_RETROATIVAS.json"
+    },
+    "entrada_chat": "09_MODELO_DADOS_PARA_CHAT.txt",
+    "guia_visual": "19_GUIA_VISUAL_EXPORTCONTROL_CLEAN.json",
+    "gerador": "20_GERADOR_DOCUMENTOS_EXPORTCONTROL.py",
+    "schema_entrada": "21_SCHEMA_ENTRADA_GERADOR.json",
+    "modelos": {
+      "LICENCIAMENTO": {
+        "proposta": "10_MODELO_PROPOSTA_LICENCIAMENTO.html",
+        "contrato": "11_MODELO_CONTRATO_LICENCIAMENTO.html"
+      },
+      "ACOMPANHAMENTO": {
+        "proposta": "12_MODELO_PROPOSTA_ACOMPANHAMENTO.html",
+        "contrato": "13_MODELO_CONTRATO_ACOMPANHAMENTO.html"
+      },
+      "RETROATIVAS": {
+        "proposta": "14_MODELO_PROPOSTA_RETROATIVAS.html",
+        "contrato": "15_MODELO_CONTRATO_RETROATIVAS.html"
+      }
+    },
+    "portfolio": "16_MODELO_APRESENTACAO_PROPOSTAS.html",
+    "logo_exportcontrol": "18_LOGO_EXPORTCONTROL.jpg",
+    "referencia_visual": "25_REFERENCIA_VISUAL_CAPA_CLEAN.png",
+    "reajustes_anuais": "26_CONTROLE_REAJUSTES_ANUAIS.json"
+  },
+  "entregas_obrigatorias": {
+    "proposta": [
+      "PDF separado por serviço",
+      "HTML de apresentação autônomo para o cliente, contendo resumo e propostas completas"
+    ],
+    "lote_2_ou_3_servicos": [
+      "PDF separado por serviço",
+      "PDF consolidado com resumo e propostas completas",
+      "HTML de apresentação autônomo para o cliente"
+    ],
+    "contrato": [
+      "PDF separado por proposta aceita",
+      "proposta aceita integralmente como Anexo I"
+    ],
+    "formatos_nao_entregar_por_padrao": [
+      "DOCX",
+      "HTML individual de contrato",
+      "HTML individual de proposta (exceto quando solicitado ou incluído no pacote de fontes)"
+    ],
+    "fonte_editavel": "O HTML de apresentação é entregável obrigatório. Os HTMLs individuais permanecem como fontes técnicas e integram o ZIP de auditoria quando solicitado."
+  },
+  "pipeline_pdf": {
+    "origem_visual": "HTML_AUTONOMO_COM_CSS_INLINE",
+    "renderizador_primario": "CHROMIUM_HEADLESS_VIA_PLAYWRIGHT",
+    "renderizador_fallback": "WEASYPRINT",
+    "propostas": "HTML -> PDF A4 com páginas explícitas",
+    "contratos": "capa HTML + corpo jurídico paginado + mesclagem com proposta aceita",
+    "qa": [
+      "validar dados",
+      "preencher marcadores",
+      "renderizar PDF",
+      "renderizar PDF em PNG",
+      "inspecionar todas as páginas",
+      "corrigir e repetir"
+    ]
+  },
+  "padroes": {
+    "moeda": "BRL",
+    "validade_proposta_dias": 30,
+    "prazo_pagamento_dias_corridos": 10,
+    "media_mensal": "TOTAL_ULTIMOS_12_MESES_DIVIDIDO_POR_12_E_ROUND_HALF_UP_AO_INTEIRO",
+    "faixas": "PROGRESSIVAS_MARGINAIS",
+    "precos_json": "LIQUIDOS_ANTES_DOS_TRIBUTOS",
+    "proposta_cliente": "VALOR_FINAL_COM_TRIBUTOS_EMBUTIDOS",
+    "ordem_servicos_no_lote": [
+      "LICENCIAMENTO",
+      "ACOMPANHAMENTO",
+      "RETROATIVAS"
+    ],
+    "formato_id_proposta": {
+      "LICENCIAMENTO": "PROPOSTA_COMERCIAL_EC_{ANO}_{NUMERO}_LICENCIAMENTO",
+      "ACOMPANHAMENTO": "PROPOSTA_COMERCIAL_EC_{ANO}_{NUMERO}_ACOMP",
+      "RETROATIVAS": "PROPOSTA_COMERCIAL_EC_{ANO}_{NUMERO}_RETROATIVAS"
+    },
+    "formato_id_contrato": {
+      "LICENCIAMENTO": "CONTRATO_EC_{ANO}_{NUMERO}_LICENCIAMENTO",
+      "ACOMPANHAMENTO": "CONTRATO_EC_{ANO}_{NUMERO}_ACOMP",
+      "RETROATIVAS": "CONTRATO_EC_{ANO}_{NUMERO}_RETROATIVAS"
+    },
+    "reajustes_anuais": "ARQUIVO_CENTRAL_26; ACUMULATIVOS; TODAS_AS_FAIXAS_E_SERVICOS; PROPOSTAS_NOVAS_POR_DATA",
+    "arredondamento_reajuste": "ROUND_HALF_UP_2_CASAS_EM_CADA_PRECO_A_CADA_EVENTO"
+  },
+  "dados_minimos_proposta": {
+    "comuns": [
+      "serviços",
+      "razão social",
+      "responsável principal",
+      "e-mail",
+      "logo do cliente"
+    ],
+    "recorrentes": [
+      "total de notas dos últimos 12 meses",
+      "início e fim do período"
+    ],
+    "retroativas": [
+      "total de notas do período",
+      "início e fim",
+      "situação do Licenciamento"
+    ],
+    "não_exigir": [
+      "CNPJ",
+      "nome fantasia",
+      "endereço",
+      "representante legal"
+    ]
+  },
+  "dados_adicionais_contrato": [
+    "serviços/números aceitos",
+    "data do aceite",
+    "nome fantasia",
+    "CNPJ",
+    "endereço completo",
+    "representante legal",
+    "CPF",
+    "cargo",
+    "e-mail de faturamento/notificações",
+    "controladas",
+    "data de assinatura/início",
+    "testemunhas opcionais"
+  ],
+  "regras_servicos": {
+    "LICENCIAMENTO": {
+      "implantacao": "4_X_MENSALIDADE_LIQUIDA",
+      "periodo_teste_padrao": false,
+      "prazo_disponibilizacao_dias_uteis": 3
+    },
+    "ACOMPANHAMENTO": {
+      "exige_licenciamento_ativo": true,
+      "usa_mesma_media_do_licenciamento_no_mesmo_lote": true
+    },
+    "RETROATIVAS": {
+      "usar_quantidade_total_sem_divisao": true,
+      "adicional_sem_licenciamento": "CONFORME_08_PRECOS_RETROATIVAS.json"
+    }
+  },
+  "bloqueios": [
+    "histórico de numeração indisponível",
+    "logo ausente",
+    "tabela não aprovada",
+    "alíquota inválida",
+    "aceite ambíguo",
+    "marcadores pendentes",
+    "PDF sem inspeção visual",
+    "controle de reajustes ausente, não aprovado, inválido ou com evento inválido"
+  ]
+}

@@ -127,17 +127,27 @@ final class CampaignAutomaticFollowups
             // O plano legado mantém N x 24h; um horário configurado usa DIAS DE
             // CALENDÁRIO em São Paulo (ex.: terça 17h42 + 3 dias = sexta 08h).
             // O bloqueio por respostas/DSN/descadastro continua após este gate.
-            $scheduledTime = data_get($plan, 'send_time_local');
-            $scheduledDate = (int) $plan->sent_rounds === 0
-                ? data_get($plan, 'first_send_date') : null;
-            $dueAt = app(CampaignFollowupScheduleClock::class)->dueAt(
-                $previous,
-                (int) $plan->delay_days,
-                is_string($scheduledTime) ? $scheduledTime : null,
-                is_string($scheduledDate) ? $scheduledDate : null,
-            );
-            if ($dueAt === null || $dueAt->greaterThan(CarbonImmutable::now('UTC'))) {
-                return false;
+            // EC_CALENDAR_FOLLOWUP_V1: datas escolhidas nunca fazem catch-up
+            // quando o computador volta a ligar ou o IMAP volta atrasado.
+            $calendar = app(CampaignFollowupDates::class);
+            if ($calendar->isExplicit($plan)) {
+                if ($calendar->state($plan, (int) $plan->sent_rounds + 2, $previous) !== 'ready') {
+                    return false;
+                }
+            } else {
+                // Planos anteriores continuam usando a regra histórica.
+                $scheduledTime = data_get($plan, 'send_time_local');
+                $scheduledDate = (int) $plan->sent_rounds === 0
+                    ? data_get($plan, 'first_send_date') : null;
+                $dueAt = app(CampaignFollowupScheduleClock::class)->dueAt(
+                    $previous,
+                    (int) $plan->delay_days,
+                    is_string($scheduledTime) ? $scheduledTime : null,
+                    is_string($scheduledDate) ? $scheduledDate : null,
+                );
+                if ($dueAt === null || $dueAt->greaterThan(CarbonImmutable::now('UTC'))) {
+                    return false;
+                }
             }
 
             $source = EmailCampaignRecipient::query()

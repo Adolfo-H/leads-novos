@@ -4,6 +4,7 @@ namespace App\Services\Campaigns;
 
 use App\Models\EmailCampaign;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -15,13 +16,13 @@ use Illuminate\Validation\ValidationException;
 final class CampaignFollowupSettings
 {
     /**
-     * @param  array{name:string,delay_days:int|string,max_rounds:int|string,subject:string,body:string,send_time_local?:string|null,first_send_date?:string|null}  $fields
+     * @param  array{name:string,delay_days:int|string,max_rounds:int|string,subject:string,body:string,send_time_local?:string|null,first_send_date?:string|null,send_dates?:array<int|string,string|null>}  $fields
      */
     public function save(User $actor, int $campaignId, array $fields, ?int $preferredPlanId = null): int
     {
         abort_unless($actor->isCommercialManager(), 403);
 
-        /** @var array{name:string,delay_days:int,max_rounds:int,subject:string,body:string,send_time_local?:string|null,first_send_date?:string|null} $valid */
+        /** @var array{name:string,delay_days:int,max_rounds:int,subject:string,body:string,send_time_local?:string|null,first_send_date?:string|null,send_dates?:array<int|string,string|null>} $valid */
         $valid = Validator::make($fields, [
             'name' => ['required', 'string', 'min:3', 'max:150'],
             'delay_days' => ['required', 'integer', 'min:1', 'max:90'],
@@ -30,6 +31,8 @@ final class CampaignFollowupSettings
             'body' => ['required', 'string', 'min:10', 'max:12000'],
             'send_time_local' => ['nullable', 'date_format:H:i'],
             'first_send_date' => ['nullable', 'date_format:Y-m-d'],
+            'send_dates' => ['sometimes', 'array'],
+            'send_dates.*' => ['nullable', 'date_format:Y-m-d'], // EC_CALENDAR_FOLLOWUP_V1
         ])->validate();
         if (! empty($valid['first_send_date']) && empty($valid['send_time_local'])) {
             throw ValidationException::withMessages([
@@ -73,6 +76,45 @@ final class CampaignFollowupSettings
                 throw ValidationException::withMessages(['flow' => 'O planejamento solicitado não está mais disponível.']);
             }
 
+            // EC_CALENDAR_FOLLOWUP_V1: nunca deduzir uma data futura por intervalo.
+            $explicitDates = array_key_exists('send_dates', $valid);
+            $calendarDates = [];
+            if ($explicitDates) {
+                $calendar = app(CampaignFollowupDates::class);
+                $calendarDates = $plan !== null ? $calendar->dates($plan) : [];
+                // Dentro de array_key_exists(), a chave obrigatoriamente existe.
+                // Evita nullCoalesce.offset no PHPStan sem mudar a semantica.
+                $inputDates = $valid['send_dates'];
+                $started = (int) ($plan->sent_rounds ?? 0);
+                $previousDate = null;
+                $now = CarbonImmutable::now('UTC');
+                for ($round = $started + 2; $round <= (int) $valid['max_rounds'] + 1; $round++) {
+                    $date = $inputDates[$round] ?? null;
+                    if (! is_string($date) || ($dateAt = $calendar->at($date)) === null) {
+                        throw ValidationException::withMessages([
+                            'round_dates' => 'Escolha a data da '.$round.'ª rodada (08:00, Brasília).',
+                        ]);
+                    }
+                    if ($dateAt->lessThanOrEqualTo($now)) {
+                        throw ValidationException::withMessages([
+                            'round_dates' => 'A data da '.$round.'ª rodada já passou. Escolha uma data futura.',
+                        ]);
+                    }
+                    if ($previousDate !== null && ! $dateAt->greaterThan($previousDate)) {
+                        throw ValidationException::withMessages([
+                            'round_dates' => 'As datas das rodadas devem ser crescentes.',
+                        ]);
+                    }
+                    $calendarDates[$round] = $date;
+                    $previousDate = $dateAt;
+                }
+                foreach (array_keys($calendarDates) as $round) {
+                    if ($round > (int) $valid['max_rounds'] + 1) {
+                        unset($calendarDates[$round]);
+                    }
+                }
+            }
+
             $attrs = [
                 'name' => trim($valid['name']),
                 'subject' => trim($valid['subject']),
@@ -84,6 +126,11 @@ final class CampaignFollowupSettings
                 'max_rounds' => (int) $valid['max_rounds'],
                 'updated_at' => now('UTC'),
             ];
+            if ($explicitDates) {
+                $attrs['send_dates'] = json_encode($calendarDates, JSON_THROW_ON_ERROR);
+                $attrs['send_time_local'] = '08:00';
+                $attrs['first_send_date'] = null;
+            }
 
             if ($plan !== null) {
                 if ((int) $valid['max_rounds'] < (int) $plan->sent_rounds) {
@@ -91,7 +138,8 @@ final class CampaignFollowupSettings
                 }
                 $attrs += [
                     'automatic' => true,
-                    'status' => (string) $plan->status === 'paused' ? 'paused' : 'active',
+                    'status' => (int) $valid['max_rounds'] === (int) $plan->sent_rounds
+                        ? 'finished' : ((string) $plan->status === 'paused' ? 'paused' : 'active'),
                     'last_campaign_id' => (int) ($plan->last_campaign_id ?: $root->id),
                     'automatic_authorized_at' => $plan->automatic_authorized_at ?: now('UTC'),
                 ];
@@ -156,6 +204,23 @@ final class CampaignFollowupSettings
             $gate = DB::table('email_campaign_dispatch_gates')->where('id', 1)->lockForUpdate()->first();
             if ($gate === null) {
                 throw ValidationException::withMessages(['flow' => 'Trava global de envio não encontrada.']);
+            }
+            // EC_CALENDAR_FOLLOWUP_V1: retomar exige data futura explicita.
+            if (! $paused) {
+                $row = DB::table('email_campaign_sequences')->where('id', $planId)
+                    ->where('email_campaign_id', $rootId)->where('automatic', true)->first();
+                if ($row !== null && (int) $row->sent_rounds < (int) $row->max_rounds) {
+                    $calendar = app(CampaignFollowupDates::class);
+                    if (! $calendar->isExplicit($row) && (int) $row->sent_rounds > 0) {
+                        throw ValidationException::withMessages(['flow' => 'Antes de retomar a próxima rodada, salve uma data explícita.']);
+                    }
+                    if ($calendar->isExplicit($row)) {
+                        $next = $calendar->dateForRound($row, (int) $row->sent_rounds + 2);
+                        if ($next === null || ! $next->greaterThan(CarbonImmutable::now('UTC'))) {
+                            throw ValidationException::withMessages(['flow' => 'A data já venceu. Reagende para um novo dia antes de retomar.']);
+                        }
+                    }
+                }
             }
             $sourceStatus = $paused ? 'active' : 'paused';
             DB::table('email_campaign_sequences')->where('id', $planId)

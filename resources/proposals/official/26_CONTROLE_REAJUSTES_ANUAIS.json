@@ -1,0 +1,42 @@
+{
+  "versao": "2026-10-31-1",
+  "status": "APROVADO",
+  "nome": "CONTROLE_CENTRAL_DE_REAJUSTES_COMERCIAIS_EXPORTCONTROL",
+  "politica": "REAJUSTES_CUMULATIVOS_SUCESSIVOS",
+  "abrangencia": "TODOS_OS_SERVICOS_E_TODAS_AS_FAIXAS",
+  "servicos_abrangidos": [
+    "LICENCIAMENTO",
+    "ACOMPANHAMENTO",
+    "RETROATIVAS"
+  ],
+  "base_imutavel": {
+    "LICENCIAMENTO": "06_PRECOS_LICENCIAMENTO.json",
+    "ACOMPANHAMENTO": "07_PRECOS_ACOMPANHAMENTO.json",
+    "RETROATIVAS": "08_PRECOS_RETROATIVAS.json"
+  },
+  "politica_aplicacao": {
+    "data_de_referencia": "DATA_EMISSAO_DA_PROPOSTA",
+    "data_especial_para_revisoes": "data_base_precificacao (se informada; para manter tabela de precos da emissao original)",
+    "incluir_eventos_com_vigencia": "MENOR_OU_IGUAL_A_DATA_DE_REFERENCIA",
+    "ordem": "DATA_CRESCENTE_E_ORDEM_NO_ARRAY_PARA_EVENTOS_DA_MESMA_DATA",
+    "calculo": "APLICAR_CADA_REAJUSTE_SEPARADAMENTE_SOBRE_PRECOS_JA_REAJUSTADOS",
+    "arredondamento": "ROUND_HALF_UP_A_2_CASAS_EM_CADA_PRECO_FIXO_OU_UNITARIO_APOS_CADA_EVENTO",
+    "campos": "fixed E unit DE TODAS_AS_FAIXAS; implantacao_sem_licenciamento.valor_liquido DA RETROATIVAS",
+    "licenciamento_implantacao": "4_X_MENSALIDADE_LIQUIDA_CALCULADA_COM_FAIXAS_REAJUSTADAS",
+    "acompanhamento": "MENSALIDADE_LIQUIDA_CALCULADA_COM_FAIXAS_REAJUSTADAS",
+    "propostas_anteriores": "NAO_RECALCULAR_OU_ALTERAR_PROPOSTAS_EMITIDAS_ANTES_DA_VIGENCIA",
+    "contratos_existentes": "NAO_ALTERAR_AUTOMATICAMENTE_CONTRATOS_JA_ACEITOS_OU_ASSINADOS",
+    "novos_ajustes": "APENAS_ACRESCENTAR_NOVOS_EVENTOS_APROVADOS_SEM_ALTERAR_EVENTOS_HISTORICOS_OU_PRECOS_BASE",
+    "tributos": "TRIBUTOS_NAO_SAO_REAJUSTES; APLICAR_GROSS_UP_APOS_CALCULO_DO_PRECO_LIQUIDO"
+  },
+  "reajustes": [
+    {
+      "id": "EC-REAJUSTE-2026-11-01-01",
+      "vigencia_inicio": "2026-11-01",
+      "percentual": 6.5,
+      "status": "APROVADO",
+      "motivo": "Reposição da inflação e recomposição preventiva diante do impacto econômico esperado da Reforma Tributária.",
+      "observacao_interna": "Decisão comercial informada em 31/10/2026. Aplicar a todas as faixas e à implantação específica das Consultas Retroativas em propostas com data-base de precificação a partir de 01/11/2026. Não alterar as alíquotas tributárias por este registro."
+    }
+  ]
+}

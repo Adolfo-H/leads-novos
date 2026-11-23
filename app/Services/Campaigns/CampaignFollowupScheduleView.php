@@ -84,6 +84,13 @@ final class CampaignFollowupScheduleView
             }
         }
 
+        // EC_CALENDAR_FOLLOWUP_V1: cronograma visível com as datas escolhidas.
+        $calendar = app(CampaignFollowupDates::class);
+        $datesExplicit = $calendar->isExplicit($plan);
+        if ($datesExplicit) {
+            $dueAt = $calendar->dateForRound($plan, $sent + 2);
+        }
+
         $eligible = ($previousCompleted && $remaining > 0)
             ? $this->eligibleRecipientCount($rootId, (int) $previous->id)
             : null;
@@ -130,6 +137,11 @@ final class CampaignFollowupScheduleView
             $state = 'blocked';
             $stateLabel = 'Descadastro HTTPS pendente';
             $stateReason = 'O sistema exige um endereço público seguro para descadastro.';
+        } elseif ($datesExplicit
+            && in_array($calendar->state($plan, $sent + 2, $previous), ['expired', 'missing', 'invalid_previous'], true)) {
+            $state = 'blocked';
+            $stateLabel = 'Data vencida ou inválida — reagendar';
+            $stateReason = 'Não inicia após as 08:15; escolha uma data futura.';
         } elseif ($dueAt !== null && $dueAt->greaterThan(CarbonImmutable::now('UTC'))) {
             $state = 'scheduled';
             $stateLabel = 'Próxima rodada programada';
@@ -148,9 +160,10 @@ final class CampaignFollowupScheduleView
                 'number' => $number,
                 'label' => $number.'ª rodada',
                 'stage' => $stage,
-                'date' => $stage === 'next' && $dueAt !== null
-                    ? $dueAt->setTimezone($this->timezone())->format('d/m/Y')
-                    : null,
+                'date' => $datesExplicit
+                    ? $calendar->dateForRound($plan, $number)?->setTimezone('America/Sao_Paulo')->format('d/m/Y')
+                    : ($stage === 'next' && $dueAt !== null
+                        ? $dueAt->setTimezone($this->timezone())->format('d/m/Y') : null),
             ];
         }
 
@@ -160,6 +173,8 @@ final class CampaignFollowupScheduleView
             'root_name' => (string) ($root->name ?? 'Campanha original'),
             'name' => (string) $plan->name,
             'status' => $status,
+            'calendar_mode' => $datesExplicit,
+            'total_rounds' => $max + 1,
             'state' => $state,
             'state_label' => $stateLabel,
             'state_reason' => $stateReason,

@@ -43,7 +43,7 @@
                     @if ($ecV6Finished)
                         {{ $ecFv4Row['sent_followups'] }}/{{ $ecFv4Row['max_followups'] }} follow-up(s) iniciados
                     @else
-                        {{ $ecFv4Row['next_round'] }}ª rodada · +{{ $ecFv4Row['days'] }} dias
+                        {{ $ecFv4Row['next_round'] }}ª rodada · {{ $ecFv4Row['due_datetime'] ?: 'Data ainda não definida' }}
                     @endif
                 </div>
             </div>
@@ -74,9 +74,18 @@
                 </div>
                 <p class="ecfv4-home-reason">{{ $ecFv4Row['state_reason'] }}</p>
             </div>
-            <button type="button" class="ecfv4-home-action" wire:click="openCampaign({{ $ecV6Finished && (int) $ecFv4Row['sent_followups'] > 0 ? (int) $ecFv4Row['latest_campaign_id'] : (int) $ecFv4Row['root_id'] }})" wire:loading.attr="disabled" wire:target="openCampaign">
+            {{-- EC_FOLLOWUP_HOME_HTTP_V3: navegacao GET nativa, sem depender de Livewire. --}}
+            @php
+                // Mantem o acesso direto ao resultado real da ultima rodada quando ja concluida.
+                // Para a proxima rodada, abre o cronograma da campanha original.
+                $ecFv4TargetCampaign = $ecV6Finished && (int) $ecFv4Row['sent_followups'] > 0
+                    ? (int) ($ecFv4Row['latest_campaign_id'] ?: $ecFv4Row['root_id'])
+                    : (int) $ecFv4Row['root_id'];
+            @endphp
+            <a class="ecfv4-home-action" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center"
+                href="{{ route('campaigns.index', ['campanha' => $ecFv4TargetCampaign]) }}#ecv5-cronograma">
                 {{ $ecV6Finished && (int) $ecFv4Row['sent_followups'] > 0 ? 'Abrir '.$ecFv4Row['last_round_number'].'ª rodada' : 'Ver mensagem e cronograma' }} <span aria-hidden="true">→</span>
-            </button>
+            </a>
         </article>
     @empty
         <div class="ecfv4-home-empty">

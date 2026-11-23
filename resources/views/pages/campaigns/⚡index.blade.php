@@ -7,6 +7,7 @@ use App\Models\EmailCampaignReply;
 use App\Models\EmailCampaignTestMessage;
 use App\Models\User;
 use App\Services\Campaigns\CampaignAudience;
+use App\Services\Campaigns\CampaignResponseFeed;
 use App\Services\Campaigns\CampaignContent;
 use App\Services\Campaigns\CampaignSequencePlanner;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +73,8 @@ new class extends Component
     public int $campaignTablePage = 1;
 
     public int $recipientPage = 1;
+
+    public int $responsePage = 1;
 
     // EC_CAMPAIGNS_FOLLOWUP_V294: segunda rodada só gera rascunho.
     public int $followUpDays = 5;
@@ -144,6 +147,10 @@ new class extends Component
                 $recipientPage = request()->query('pagina');
                 if (is_string($recipientPage) && preg_match('/^[1-9][0-9]{0,4}$/D', $recipientPage) === 1) {
                     $this->recipientPage = min(10000, (int) $recipientPage);
+                }
+                $responsePage = request()->query('paginaRespostas');
+                if (is_string($responsePage) && preg_match('/^[1-9][0-9]{0,4}$/D', $responsePage) === 1) {
+                    $this->responsePage = min(10000, (int) $responsePage);
                 }
                 $bouncePage = request()->query('paginaDevolucoes');
                 if (is_string($bouncePage) && preg_match('/^[1-9][0-9]{0,4}$/D', $bouncePage) === 1) {
@@ -259,16 +266,35 @@ new class extends Component
         return $query->limit(40)->get();
     }
 
+    /** EC_RESPONSES_V23_INDEX: batch counts across roots and their rounds. */
+    #[Computed]
+    public function listResponseTotals(): array
+    {
+        $this->assertManager();
+        $ids = [];
+        foreach ($this->campaigns as $campaign) {
+            $ids[] = (int) $campaign->id;
+            foreach ($campaign->followupRounds as $round) {
+                $ids[] = (int) $round->id;
+            }
+        }
+
+        return app(CampaignResponseFeed::class)->totalsForCampaigns($ids);
+    }
+
     #[Computed]
     public function overview(): array
     {
         $this->assertManager();
+        $responseTotals = app(CampaignResponseFeed::class)->globalTotals();
 
         return [
             'campaigns' => EmailCampaign::query()->whereNull('followup_root_campaign_id')->count(),
             'active' => EmailCampaign::query()->where('status', 'running')->count(),
             'sent' => EmailCampaignRecipient::query()->where('status', 'sent')->count(),
-            'replies' => EmailCampaignRecipient::query()->whereNotNull('replied_at')->count(),
+            'replies' => $responseTotals['total'],
+            'replies_human' => $responseTotals['human'],
+            'replies_useful' => $responseTotals['useful'],
             'bounces' => EmailCampaignBounce::query()->whereNotNull('email_campaign_recipient_id')->count(),
             'pending' => EmailCampaignRecipient::query()->whereIn('status', ['pending', 'reserved'])->count(),
             'queue' => EmailCampaignRecipient::query()
@@ -326,6 +352,26 @@ new class extends Component
             ->where('email_campaign_id', $this->selectedCampaignId ?? 0)
             ->with(['bounces' => static fn ($query) => $query->orderByDesc('id')])
             ->orderBy('id')->paginate(15, ['*'], 'recipientPage', $this->recipientPage);
+    }
+
+    /** @return array{total:int,human:int,useful:int} */
+    #[Computed]
+    public function responseTotals(): array
+    {
+        $this->assertManager();
+
+        return app(CampaignResponseFeed::class)->campaignTotals($this->selectedCampaignId ?? 0);
+    }
+
+    /** @return LengthAwarePaginator<int, object> */
+    #[Computed]
+    public function combinedResponses(): LengthAwarePaginator
+    {
+        $this->assertManager();
+
+        return app(CampaignResponseFeed::class)->paginate(
+            $this->selectedCampaignId ?? 0, '', $this->responsePage, 15,
+        );
     }
 
     #[Computed]
@@ -698,7 +744,8 @@ new class extends Component
         $this->recipientPage = 1;
         $this->bouncePage = 1;
         $this->bounceFilter = 'all';
-        unset($this->selectedCampaign, $this->recipientStats, $this->recipients, $this->replies, $this->bounceSummary, $this->campaignBounces, $this->followUpPlans);
+        $this->responsePage = 1;
+        unset($this->selectedCampaign, $this->recipientStats, $this->recipients, $this->replies, $this->responseTotals, $this->combinedResponses, $this->bounceSummary, $this->campaignBounces, $this->followUpPlans);
     }
 
     public function editDraft(int $id): void
@@ -1085,7 +1132,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-blue">▤</span><div><small>Rascunhos</small><strong>{{ number_format($counts['drafts'], 0, ',', '.') }}</strong><span>Aguardando preparação</span></div></div>
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-amber">◷</span><div><small>Na fila ativa</small><strong>{{ number_format($counts['queue'], 0, ',', '.') }}</strong><span>Aguardando envio real</span></div></div>
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-cyan">➤</span><div><small>Aceitos hoje</small><strong>{{ number_format($counts['sent_today'], 0, ',', '.') }}</strong><span>Pelo servidor SMTP</span></div></div>
-        <div class="ecm2-stat"><span class="ecm2-stat-icon is-green">↩</span><div><small>Respostas</small><strong>{{ number_format($counts['replies'], 0, ',', '.') }}</strong><span>Registradas pelo IMAP</span></div></div>
+        <div class="ecm2-stat"><span class="ecm2-stat-icon is-green">↩</span><div><small>Respostas</small><strong>{{ number_format($counts['replies'], 0, ',', '.') }}</strong><span>{{ $counts['replies_human'] }} comerciais · {{ $counts['replies_useful'] }} retornos úteis</span></div></div>
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-amber">!</span><div><small>Devoluções</small><strong>{{ number_format($counts['bounces'], 0, ',', '.') }}</strong><span>Relatórios comerciais correlacionados</span></div></div>
         <div class="ecm2-stat"><span class="ecm2-stat-icon is-red">!</span><div><small>Não confirmados</small><strong>{{ number_format($counts['uncertain'], 0, ',', '.') }}</strong><span>Conferir tentativas</span></div></div>
     </section>
@@ -1348,7 +1395,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                     <div class="ecm2-detail-stats">
                         <div><small>Destinatários</small><strong>{{ number_format($totalCount, 0, ',', '.') }}</strong></div>
                         <div><small>Aceitos SMTP</small><strong>{{ number_format($sentCount, 0, ',', '.') }}</strong></div>
-                        <div><small>Respostas</small><strong>{{ number_format((int) $selected->replies()->count(), 0, ',', '.') }}</strong></div>
+                        <div><small>Respostas</small><strong>{{ number_format($this->responseTotals['total'], 0, ',', '.') }}</strong><small>{{ $this->responseTotals['human'] }} comerciais · {{ $this->responseTotals['useful'] }} úteis</small></div>
                         <div><small>Na fila</small><strong>{{ number_format((int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0), 0, ',', '.') }}</strong></div>
                     </div>
                     {{-- EC_CAMPAIGN_TABS_VISUAL_V9012: mantém links HTTP da V90.9, restaura abas V76 sem depender do build Vite. --}}
@@ -1430,7 +1477,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                     </style>
                     <nav class="ecm2-tabs" id="ec9012-tabs" aria-label="Conteúdo da campanha">
                         @foreach (['overview' => 'Visão geral', 'recipients' => 'Destinatários', 'bounces' => 'Devoluções', 'message' => 'Mensagem', 'replies' => 'Respostas'] as $tabKey => $tabLabel)
-                            <a href="{{ route('campaigns.index', ['campanha' => $selected->id, 'aba' => $tabKey]) }}" class="{{ $detailTab === $tabKey ? 'is-active' : '' }}" @if ($detailTab === $tabKey) aria-current="page" @endif>{{ $tabLabel }} @if ($tabKey === 'replies' && $selected->replies()->count() > 0)<span>{{ $selected->replies()->count() }}</span>@elseif ($tabKey === 'bounces' && $this->bounceSummary['total'] > 0)<span>{{ $this->bounceSummary['total'] }}</span>@endif</a>
+                            <a href="{{ route('campaigns.index', ['campanha' => $selected->id, 'aba' => $tabKey]) }}" class="{{ $detailTab === $tabKey ? 'is-active' : '' }}" @if ($detailTab === $tabKey) aria-current="page" @endif>{{ $tabLabel }} @if ($tabKey === 'replies' && $this->responseTotals['total'] > 0)<span>{{ $this->responseTotals['total'] }}</span>@elseif ($tabKey === 'bounces' && $this->bounceSummary['total'] > 0)<span>{{ $this->bounceSummary['total'] }}</span>@endif</a>
                         @endforeach
                     </nav>
                     @if ($detailTab === 'overview')
@@ -1451,10 +1498,10 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                             @else
                                 <div class="ecm2-information"><strong>Histórico preservado</strong><p>Consulte os destinatários e as respostas sem modificar os registros de envio existentes.</p></div>
                             @endif
-                            @if ($selected->replies()->exists())
+                            @if ($this->responseTotals['total'] > 0)
                                 <div class="ecm2-response-head"><strong>Respostas recentes</strong><a class="ecm2-text-action" href="{{ route('campaigns.index', ['campanha' => $selected->id, 'aba' => 'replies']) }}">Ver todas →</a></div>
-                                @foreach ($this->replies->take(3) as $reply)
-                                    <div class="ecm2-recent-reply"><span aria-hidden="true">↩</span><div><strong>{{ $reply->from_email }}</strong><small>{{ $reply->subject ?: 'Sem assunto' }}</small></div><time>{{ \App\Support\CampaignLocalTime::format($reply->getRawOriginal('received_at'), '') }}</time></div>
+                                @foreach (app(\App\Services\Campaigns\CampaignResponseFeed::class)->paginate((int) $selected->id, '', 1, 3) as $reply)
+                                    <div class="ecm2-recent-reply"><span aria-hidden="true">↩</span><div><strong>{{ $reply->from_email }}</strong><small>{{ $reply->subject ?: 'Sem assunto' }} · {{ $reply->entry_kind === 'human' ? 'Comercial' : 'Retorno útil' }}</small></div><time>{{ \App\Support\CampaignLocalTime::format($reply->received_at, '') }}</time></div>
                                 @endforeach
                             @endif
                         </div>
@@ -1539,14 +1586,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                     @elseif ($detailTab === 'message')
                         <div class="ecm2-message-tab"><div class="ecm2-preview-label">Mensagem salva · somente leitura</div><div class="ecm2-mail-preview"><div>De: {{ $selected->from_name }} &lt;{{ $selected->from_address }}&gt;</div><div>Assunto: <strong>{{ $selected->subject }}</strong></div><p>{{ $selected->body }}</p></div><p>As variáveis são substituídas por contato no envio. O descadastro é adicionado a cada mensagem comercial.</p></div>
                     @elseif ($detailTab === 'replies')
-                        <div class="ecm2-table-wrap"><table class="ecm2-table"><thead><tr><th>Remetente</th><th>Assunto recebido</th><th>Data</th></tr></thead><tbody>
-                            @forelse ($this->replies as $reply)
-                                <tr wire:key="ecm2-reply-{{ $reply->id }}"><td><strong>{{ $reply->from_email }}</strong></td><td>{{ $reply->subject ?: '(sem assunto)' }}</td><td>{{ \App\Support\CampaignLocalTime::format($reply->getRawOriginal('received_at')) }}</td></tr>
-                            @empty
-                                <tr><td colspan="3" class="ecm2-empty-cell">Nenhuma resposta identificada pelo IMAP até agora.</td></tr>
-                            @endforelse
-                        </tbody></table></div>
-                        @include('campaigns.inbound-notices')
+                        @include('campaigns.responses-combined-campaign')
                     @endif
                     {{-- EC_CAMPAIGNS_UNIFIED_V90: única configuração de follow-up, depois dos indicadores e respostas. --}}
                 </section>

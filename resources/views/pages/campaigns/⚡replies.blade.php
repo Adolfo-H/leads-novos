@@ -4,6 +4,7 @@ use App\Models\EmailCampaignReply;
 use App\Models\EmailCampaignSuppression;
 use App\Services\Campaigns\CampaignImapHealth;
 use App\Services\Campaigns\CampaignInboundNoticeFilter;
+use App\Services\Campaigns\CampaignInboundReplyReview;
 use Illuminate\Database\Query\Builder;
 use App\Models\EmailCampaignTestMessage;
 use App\Models\User;
@@ -17,8 +18,10 @@ new class extends Component
 {
     use WithPagination;
 
-    public string $kind = 'commercial';
+    // EC_RESPONSES_V23_REPLIES: unified inbox is the default; filters remain intact.
+    public string $kind = 'all';
     public ?int $selectedId = null;
+    public ?int $reviewNoticeId = null;
     public string $search = '';
 
     public function mount(): void
@@ -35,11 +38,13 @@ new class extends Component
     public function chooseKind(string $kind): void
     {
         $this->ensureManager();
-        abort_unless(in_array($kind, ['commercial', 'pilot', 'suppressed', 'notices'], true), 422);
+        abort_unless(in_array($kind, ['all', 'commercial', 'pilot', 'suppressed', 'notices'], true), 422);
         $this->kind = $kind;
         $this->selectedId = null;
+        $this->reviewNoticeId = null;
         $this->resetPage('replyPage');
         $this->resetPage('noticePage');
+        $this->resetPage('paginaRespostas');
         $this->resetPage('unsubscribedPage');
         unset($this->selected, $this->conversations);
     }
@@ -50,9 +55,11 @@ new class extends Component
         $this->search = mb_substr(trim($this->search), 0, 100);
         $this->resetPage('replyPage');
         $this->resetPage('noticePage');
+        $this->resetPage('paginaRespostas');
         $this->resetPage('unsubscribedPage');
         $this->selectedId = null;
-        unset($this->selected, $this->conversations);
+        $this->reviewNoticeId = null;
+        unset($this->selected, $this->conversations, $this->inboundNotices);
     }
 
     /** @return LengthAwarePaginator<int, EmailCampaignSuppression> */
@@ -90,6 +97,55 @@ new class extends Component
     {
         $this->ensureManager();
         unset($this->imapStatus);
+    }
+
+    /** Only a manager can change the commercial response history. */
+    private function ensureNoticeManager(): void
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof User && $user->isCommercialManager(), 403);
+    }
+
+    public function requestNoticeReview(int $noticeId): void
+    {
+        $this->ensureNoticeManager();
+        abort_unless(CampaignInboundNoticeFilter::query()
+            ->where('id', $noticeId)
+            ->where('notice_type', 'reply_needs_review')
+            ->whereIn('link_method', ['sender_only', 'reference_exact'])
+            ->exists(), 404);
+        $this->reviewNoticeId = $noticeId;
+        $this->resetErrorBag();
+    }
+
+    public function cancelNoticeReview(): void
+    {
+        $this->ensureNoticeManager();
+        $this->reviewNoticeId = null;
+        $this->resetErrorBag();
+    }
+
+    public function confirmNoticeHuman(CampaignInboundReplyReview $review): void
+    {
+        $this->ensureNoticeManager();
+        abort_if($this->reviewNoticeId === null, 422);
+        $noticeId = $this->reviewNoticeId;
+        $address = (string) \Illuminate\Support\Facades\DB::table('email_campaign_inbound_notices')
+            ->where('id', $noticeId)->value('from_email');
+        $confirmed = $review->confirm($noticeId, (int) auth()->id());
+        $this->reviewNoticeId = null;
+        unset($this->inboundNotices, $this->conversations, $this->selected);
+        if (! $confirmed) {
+            $this->addError('noticeReview', 'Não foi possível confirmar esta mensagem. Confira a associação e tente novamente.');
+
+            return;
+        }
+        $this->kind = 'commercial';
+        $this->search = $address;
+        $this->selectedId = null;
+        $this->resetPage('replyPage');
+        $this->resetPage('noticePage');
+        session()->flash('noticeReviewSuccess', 'Resposta humana confirmada. Ela agora aparece nas respostas comerciais e não receberá novo follow-up automático.');
     }
 
     #[Computed]
@@ -140,6 +196,26 @@ new class extends Component
             ->paginate(14, ['*'], 'noticePage');
     }
 
+    /** @return array{total:int,human:int,useful:int} */
+    #[Computed]
+    public function globalResponseTotals(): array
+    {
+        $this->ensureManager();
+
+        return app(\App\Services\Campaigns\CampaignResponseFeed::class)->globalTotals();
+    }
+
+    /** @return LengthAwarePaginator<int, object> */
+    #[Computed]
+    public function allResponses(): LengthAwarePaginator
+    {
+        $this->ensureManager();
+
+        return app(\App\Services\Campaigns\CampaignResponseFeed::class)->paginate(
+            null, $this->search, $this->getPage('paginaRespostas'), 14,
+        );
+    }
+
     #[Computed]
     public function selected(): EmailCampaignReply|EmailCampaignTestMessage|null
     {
@@ -183,6 +259,10 @@ new class extends Component
     {{-- EC_CAMPAIGNS_UNIFIED_V90 --}}
     @include('campaigns.workspace-context')
     @include('campaigns.replies-health')
+    @include('campaigns.inbound-notices-style')
+    @if (session()->has('noticeReviewSuccess'))
+        <div class="ec-v22" role="status"><div class="ec-v22-alert">{{ session('noticeReviewSuccess') }}</div></div>
+    @endif
     <section class="ec69-reply-filter-card" aria-label="Encontre uma conversa">
         <h2>Encontre uma conversa</h2>
         <div class="ec69-reply-filter-grid">
@@ -194,6 +274,7 @@ new class extends Component
             <div class="ec69-filter-field">
                 <span>Categoria</span>
                 <div class="ec69-reply-categories" role="group" aria-label="Tipo de resposta">
+                    <button type="button" wire:click="chooseKind('all')" class="{{ $kind === 'all' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'all' ? 'true' : 'false' }}">Todas</button>
                     <button type="button" wire:click="chooseKind('commercial')" class="{{ $kind === 'commercial' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'commercial' ? 'true' : 'false' }}">Comerciais</button>
                     <button type="button" wire:click="chooseKind('notices')" class="{{ $kind === 'notices' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'notices' ? 'true' : 'false' }}">Retornos úteis</button>
                     <button type="button" wire:click="chooseKind('pilot')" class="{{ $kind === 'pilot' ? 'is-active' : '' }}" aria-pressed="{{ $kind === 'pilot' ? 'true' : 'false' }}">Respostas de teste</button>
@@ -204,7 +285,9 @@ new class extends Component
         </div>
     </section>
     {{-- EC77_REPLIES: filtros de respostas e opt-out no mesmo módulo, sem remover os dados históricos. --}}
-    @if ($kind === 'notices')
+    @if ($kind === 'all')
+        @include('campaigns.responses-combined-global')
+    @elseif ($kind === 'notices')
         @include('campaigns.inbound-notices-global')
     @elseif ($kind === 'suppressed')
         @include('campaigns.unsubscribed')

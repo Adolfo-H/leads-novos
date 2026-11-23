@@ -1,0 +1,43 @@
+{
+  "versao": "2026-07-22",
+  "status": "ATIVO",
+  "instrucoes_de_atualizacao": "Quando uma alíquota mudar, substitua somente o percentual correspondente. Não criar perfis, anos ou períodos.",
+  "metodo": "GROSS_UP_POR_DENTRO",
+  "aliquotas_percentuais": {
+    "ISS": 2.0,
+    "PIS": 1.65,
+    "COFINS": 7.6,
+    "IBS": 0.0,
+    "CBS": 0.0
+  },
+  "formula": {
+    "aliquota_total_percentual": "ISS + PIS + COFINS + IBS + CBS",
+    "valor_final_nota_fiscal": "valor_liquido / (1 - aliquota_total_percentual/100)",
+    "tributos_embutidos": "valor_final_nota_fiscal - valor_liquido",
+    "valor_individual_do_tributo": "valor_final_exato * aliquota_do_tributo/100"
+  },
+  "validacoes": [
+    "Alíquotas devem ser numéricas e maiores ou iguais a zero.",
+    "A soma deve ser menor que 100%.",
+    "Não aplicar tributos novamente sobre valor já final."
+  ],
+  "arredondamento": {
+    "criterio": "ROUND_HALF_UP",
+    "valor_final_casas": 2,
+    "calculo_interno": "PRECISAO_COMPLETA",
+    "ajuste_centavos": "Ajustar no tributo não nulo de maior valor."
+  },
+  "exemplo_valor_liquido_1000": {
+    "valor_liquido": 1000.0,
+    "aliquota_total_percentual": 11.25,
+    "tributos": {
+      "ISS": 22.54,
+      "PIS": 18.59,
+      "COFINS": 85.63,
+      "IBS": 0.0,
+      "CBS": 0.0
+    },
+    "tributos_embutidos": 126.76,
+    "valor_final_nota_fiscal": 1126.76
+  }
+}

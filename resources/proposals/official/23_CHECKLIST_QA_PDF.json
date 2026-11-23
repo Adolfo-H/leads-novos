@@ -1,0 +1,45 @@
+{
+  "versao": "5.1-2026-07-22-REV1",
+  "antes_do_calculo": [
+    "tabelas com status APROVADO",
+    "alíquotas numéricas, não negativas e soma inferior a 100%",
+    "volume e período preenchidos",
+    "logo legível",
+    "número confirmado pelo histórico"
+  ],
+  "antes_da_renderizacao": [
+    "todos os marcadores substituídos",
+    "nenhum dado de outro cliente",
+    "identificadores corretos",
+    "condições especiais aplicadas",
+    "texto jurídico integral",
+    "HTML de apresentação contém resumo e propostas completas na ordem correta"
+  ],
+  "qa_visual": [
+    "PDF A4",
+    "capa branca clean teal",
+    "logos sem distorção",
+    "texto pesquisável",
+    "nenhuma página vazia",
+    "nenhum corte ou sobreposição",
+    "tabelas dentro da página",
+    "fonte legível",
+    "rodapés corretos",
+    "nenhuma folha quase em branco gerada por overflow",
+    "HTML de apresentação abre offline e mantém navegação funcional"
+  ],
+  "contratos": [
+    "aceite inequívoco",
+    "dados jurídicos completos",
+    "valores iguais à proposta",
+    "proposta aceita anexada integralmente",
+    "assinaturas e testemunhas conferidas"
+  ],
+  "entrega": [
+    "links dos PDFs",
+    "link do HTML de apresentação",
+    "memória de cálculo",
+    "premissas e pendências",
+    "controle de numeração atualizado"
+  ]
+}

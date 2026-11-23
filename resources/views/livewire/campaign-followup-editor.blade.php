@@ -1,4 +1,4 @@
-<div class="ecv5" data-ec-followup-editor="v5" wire:poll.60s>
+<div class="ecv5" id="ecv5-cronograma" data-ec-followup-editor="v5" wire:poll.60s>
 <style>
     [data-ec-followup-editor="v5"] .ecv6-detail-result { margin: 14px 0; padding: 18px 20px; border: 1px solid #9cdbcb; border-radius: 13px; background: #eaf8f3; }
     [data-ec-followup-editor="v5"] .ecv6-detail-result.is-warning { border-color: #edc58a; background: #fff8e9; }
@@ -35,14 +35,14 @@
             <div class="ecv5-next">
                 <span>{{ (int) $schedule['remaining_followups'] === 0 ? 'ÚLTIMA RODADA' : 'PRÓXIMO E-MAIL PREVISTO' }}</span>
                 <strong>{{ (int) $schedule['remaining_followups'] === 0 ? $schedule['last_round_number'].'ª rodada — resultado SMTP' : ($schedule['due_datetime'] ?: 'Após conclusão') }}</strong>
-                <b>{{ (int) $schedule['remaining_followups'] === 0 ? $schedule['sent_followups'].' de '.$schedule['max_followups'].' follow-up(s) iniciados' : ($schedule['next_round'].'ª rodada · '.$schedule['days'].' dias '.($schedule['send_time_local'] ? 'de calendário, às '.$schedule['send_time_local'] : 'exatos, após o último envio concluído (legado)')) }}</b>
+                <b>{{ (int) $schedule['remaining_followups'] === 0 ? $schedule['sent_followups'] + 1 .' rodadas no total' : ($schedule['calendar_mode'] ? ($schedule['next_round'].'ª rodada · data definida pelo gestor, 08:00') : ($schedule['next_round'].'ª rodada · '.$schedule['days'].' dias')) }}</b>
                 <div class="ecv5-next-info">
                     @if ((int) $schedule['remaining_followups'] === 0 && (int) $schedule['sent_followups'] > 0)
                         <div><span>Aceitos pelo SMTP</span><strong>{{ $schedule['accepted_smtp_count'] }} de {{ $schedule['latest_total_count'] }}</strong></div>
                     @else
                         <div><span>Contatos potencialmente elegíveis</span><strong>{{ $schedule['eligible_count'] === null ? 'A calcular' : number_format((int) $schedule['eligible_count'], 0, ',', '.') }}</strong></div>
                     @endif
-                    <div><span>Retornos iniciados</span><strong>{{ $schedule['sent_followups'] }} / {{ $schedule['max_followups'] }}</strong></div>
+                    <div><span>Rodadas realizadas / previstas</span><strong>{{ $schedule['sent_followups'] + 1 }} / {{ $schedule['max_followups'] + 1 }}</strong></div>
                 </div>
                 <small>{{ (int) $schedule['remaining_followups'] === 0 ? 'O processamento da última rodada já começou. A aceitação SMTP não garante entrega na caixa de entrada.' : 'Este é o horário previsto para INICIAR os envios, não para entregar todas as mensagens. A fila respeita janela e cotas SMTP.' }}</small>
             </div>
@@ -102,54 +102,72 @@
             <div class="ecv5-section-head">
                 <div><h3 id="ecv5-settings-title">{{ $root->status === 'draft' ? 'Planejar próximos e-mails antes do envio' : 'Ajustar os próximos envios' }}</h3><p>Revise todas as opções e clique em salvar para autorizar as futuras rodadas. Alterar um campo não dispara e-mails.</p></div>
                 @if($schedule && $schedule['automatic'] && in_array($schedule['status'], ['active','paused'], true))
-                    <button type="button" class="ecv5-pause" wire:click="togglePause" wire:loading.attr="disabled" wire:target="togglePause">
-                        {{ $schedule['status'] === 'paused' ? 'Retomar próximas rodadas' : 'Pausar próximas rodadas' }}
-                    </button>
+                    <form method="POST" action="{{ route('campaigns.followup.pause', ['campaign' => $root->id]) }}">
+                        @csrf
+                        <input type="hidden" name="paused" value="{{ $schedule['status'] === 'paused' ? '0' : '1' }}">
+                        <button type="submit" class="ecv5-pause">{{ $schedule['status'] === 'paused' ? 'Retomar próximas rodadas' : 'Pausar próximas rodadas' }}</button>
+                    </form>
                 @endif
             </div>
-            <form wire:submit="saveChanges" class="ecv5-form">
-                <label><span>Nome do acompanhamento</span><input type="text" wire:model="name" maxlength="150" minlength="3" required></label>
+            {{-- EC_CALENDAR_FOLLOWUP_V1: formulario HTTP real; nao depende do Livewire. --}}
+            @if(session('followup_calendar_ok'))
+                <p class="ecv5-feedback is-success" role="status">{{ session('followup_calendar_ok') }}</p>
+            @endif
+            <form method="POST" action="{{ route('campaigns.followup.calendar', ['campaign' => $root->id]) }}" class="ecv5-form">
+                @csrf
+                <label><span>Nome do acompanhamento</span><input type="text" name="name" value="{{ old('name', $name) }}" maxlength="150" minlength="3" required></label>
                 <div class="ecv5-form-cols">
-                    <label><span>Intervalo entre rodadas</span>
-                        <select wire:model="delayDays">
-                            @foreach([3,4,5,7,10,14] as $days)<option value="{{ $days }}">{{ $days }} dias</option>@endforeach
-                            @if(! in_array($delayDays, [3,4,5,7,10,14], true))<option value="{{ $delayDays }}">{{ $delayDays }} dias</option>@endif
+                    <label><span>Total de rodadas (incluindo a primeira)</span>
+                        <select name="total_rounds" required>
+                            @foreach([2,3,4,5] as $total)
+                                @if($total >= (int) (($schedule['sent_followups'] ?? 0) + 1))
+                                    <option value="{{ $total }}" @selected((int) old('total_rounds', $schedule !== null ? (int) $schedule['max_followups'] + 1 : 2) === $total)>{{ $total }} rodadas no total · {{ $total - 1 }} retorno(s)</option>
+                                @endif
+                            @endforeach
                         </select>
+                        <small>Ex.: 2 rodadas = primeiro e-mail + somente 1 retorno. Para terminar na segunda, selecione 2.</small>
                     </label>
-                    <label><span>Quantidade de e-mails adicionais</span>
-                        <select wire:model="maxRounds">
-                            <option value="1">1 · Segunda rodada</option>
-                            <option value="2">2 · Até terceira rodada</option>
-                            <option value="3">3 · Até quarta rodada</option>
-                            <option value="4">4 · Até quinta rodada</option>
-                        </select>
-                    </label>
+                    <div class="ecv5-read-only" style="padding:12px 15px;border:1px solid #b9e0d7;border-radius:8px;background:#eef9f5">
+                        <strong>Horário fixo: 08:00 (Brasília)</strong>
+                        <p>O sistema inicia no dia escolhido, somente entre 08:00 e 08:15. Se perder a janela, não dispara atrasado: exige nova data.</p>
+                    </div>
                 </div>
                 <div class="ecv5-form-cols">
-                    <label><span>Hora de início de cada rodada (Brasília)</span>
-                        <input type="time" wire:model="sendTimeLocal" step="60">
-                        <small>Deixe vazio para manter a programação antiga (dias exatos a partir da hora do último envio). Informe 08:00 para iniciar às oito horas na data calculada.</small>
-                    </label>
-                    <label><span>Data exata do próximo disparo (opcional)</span>
-                        <input type="date" wire:model="firstSendDate">
-                        <small>Vale somente para a 2ª rodada. Em branco: data do último envio + intervalo em dias de calendário.</small>
-                    </label>
+                    @foreach([2,3,4,5] as $round)
+                        <label><span>Data da {{ $round }}ª rodada {{ (int) ($schedule['sent_followups'] ?? 0) >= $round - 1 ? '· já iniciada' : '' }}</span>
+                            <input type="date" name="round_dates[{{ $round }}]" value="{{ old('round_dates.'.$round, $roundDates[$round] ?? '') }}" {{ (int) ($schedule['sent_followups'] ?? 0) >= $round - 1 ? 'readonly' : '' }}>
+                            <small>{{ (int) ($schedule['sent_followups'] ?? 0) >= $round - 1 ? 'Histórico preservado. Não será reenviada.' : 'Preencha se incluir esta rodada no total acima.' }}</small>
+                            @error('round_dates.'.$round)<small class="ecv5-error">{{ $message }}</small>@enderror
+                        </label>
+                    @endforeach
                 </div>
-                <p class="ecv5-read-only">{{ $root->status === 'draft' ? 'A segunda rodada só poderá começar depois que a campanha inicial for concluída. Os intervalos são contados a partir da conclusão real, não da criação do rascunho.' : 'Se uma programação já estiver vencida, o agendador poderá iniciar a próxima rodada, sujeito às verificações de segurança.' }}</p>
-                <label><span>Assunto das próximas rodadas</span><input type="text" wire:model="subject" maxlength="180" minlength="3" required></label>
-                <label><span>Mensagem das próximas rodadas</span><textarea rows="5" wire:model="body" maxlength="12000" minlength="10" required></textarea></label>
+                <p class="ecv5-read-only">A campanha inicial conta como 1ª rodada. Cada retorno precisa de uma data selecionada. Se o notebook ou IMAP estiver offline às 08h, não haverá disparo automático fora da janela; será necessário reagendar.</p>
+                <label><span>Assunto dos próximos retornos</span><input type="text" name="subject" value="{{ old('subject', $subject) }}" maxlength="180" minlength="3" required></label>
+                <label><span>Mensagem dos próximos retornos</span><textarea rows="5" name="body" maxlength="12000" minlength="10" required>{{ old('body', $body) }}</textarea></label>
                 <div class="ecv5-save-row">
-                    <span>As próximas rodadas usam o assunto e a mensagem definidos acima, no intervalo escolhido. Respostas, descadastros e falhas impedem novas tentativas aos contatos afetados.</span>
-                    <button type="submit" class="ecv5-save" wire:loading.attr="disabled" wire:target="saveChanges">Salvar programação dos próximos e-mails</button>
+                    <span>Salvar não envia e-mails. Respostas comerciais, descadastros, devoluções e SMTP incerto continuam bloqueando novos contatos.</span>
+                    <button type="submit" class="ecv5-save">Salvar datas e quantidade de rodadas</button>
                 </div>
-                @foreach(['name','delayDays','maxRounds','sendTimeLocal','firstSendDate','subject','body'] as $field)
+                @foreach(['name','total_rounds','round_dates','subject','body','flow'] as $field)
                     @error($field)<p class="ecv5-error" role="alert">{{ $message }}</p>@enderror
                 @endforeach
-                <p class="ecv5-feedback {{ $saved ? 'is-success' : '' }}" role="status">{{ $feedback }}</p>
+                {{-- EC_CALENDAR_FOLLOWUP_V1_2: preserva feedback do saveChanges() legado
+                     chamado por Livewire e dos testes anteriores. O POST HTTP
+                     independente continua mostrando seu proprio flash acima. --}}
+                @if ($feedback !== '')
+                    <p class="ecv5-feedback {{ $saved ? 'is-success' : '' }}" role="status">{{ $feedback }}</p>
+                @endif
             </form>
         </section>
     @elseif(! $canEdit)
         <p class="ecv5-read-only">Somente gestores podem editar a programação. A visualização está disponível para consulta.</p>
     @endif
-    <p class="ecv5-footer">A execução é automática quando autorizada no ambiente, o IMAP estiver atualizado e houver destinatários elegíveis. Respostas, descadastros, devoluções e envios incertos impedem novas tentativas para os contatos afetados.</p>
+    {{-- EC_FOLLOWUP_EXTEND_V2: prolongar uma sequência concluída requer nova autorização. --}}
+    {{-- EC_FOLLOWUP_CANCEL_NEXT_V3: cancelamento por POST sem mexer nos envios iniciados. --}}
+    @include('campaigns.followup-extend')
+    @if(session('followup_cancel_ok'))
+        <p class="ecv5-feedback is-success" role="status">{{ session('followup_cancel_ok') }}</p>
+    @endif
+    @include('campaigns.followup-cancel-next')
+    <p class="ecv5-footer">O envio automático exige data explícita e ocorre às 08:00 na janela autorizada, com IMAP saudável e destinatários elegíveis. Rodadas anteriores permanecem no histórico. Tentativas incertas não são reenviadas.</p>
 </div>

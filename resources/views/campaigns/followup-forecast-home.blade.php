@@ -26,14 +26,15 @@
                         <span class="ecfv3-state ecfv3-state--{{ $ecFv3Plan['state'] }}">{{ $ecFv3Plan['state_label'] }}</span>
                     </div>
                     <p><span>Assunto:</span> {{ $ecFv3Plan['subject'] }}</p>
-                    <small>A cada {{ $ecFv3Plan['days'] }} {{ $ecFv3Plan['days'] === 1 ? 'dia' : 'dias' }} após o término da rodada anterior
+                    {{-- EC_FOLLOWUP_DATE_HOME_V3: hora e data, sem +dias na nova programação. --}}
+                    <small>{{ $ecFv3Plan['due_date'] ? 'Próxima previsão: '.$ecFv3Plan['due_date'].' às 08:00' : 'Data da próxima rodada não definida' }}
                         · {{ $ecFv3Plan['sent_followups'] }} de {{ $ecFv3Plan['max_followups'] }} retornos iniciados
                         @if ($ecFv3Plan['eligible_count'] !== null)
                             · {{ $ecFv3Plan['eligible_count'] }} {{ $ecFv3Plan['eligible_count'] === 1 ? 'contato elegível' : 'contatos elegíveis' }} no momento
                         @endif
                     </small>
                 </div>
-                <button type="button" class="ecfv3-home__action" wire:click="openCampaign({{ $ecFv3Plan['root_id'] }})" wire:loading.attr="disabled" wire:target="openCampaign">Ver programação e mensagem <span aria-hidden="true">→</span></button>
+                <a class="ecfv3-home__action" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center" href="{{ route('campaigns.index', ['campanha' => (int) $ecFv3Plan['root_id']]) }}#ecv5-cronograma">Ver programação e mensagem <span aria-hidden="true">→</span></a>
             </article>
         @endforeach
     </div>

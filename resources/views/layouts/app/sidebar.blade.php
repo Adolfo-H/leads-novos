@@ -19,6 +19,7 @@
                 'companies.*',
                 'contacts.*',
                 'campaigns.*',
+                'proposals.*',
                 'imports.*',
                 'leads.*',
                 'profile.edit',
@@ -181,6 +182,15 @@
                     >
                         Campanhas de E-mail
                     </flux:sidebar.item>
+                    {{-- EC_PROPOSALS_MODULE_V1: área de propostas, sem navegação Livewire obrigatória. --}}
+                    <flux:sidebar.item
+                        icon="document-text"
+                        :href="route('proposals.index')"
+                        :current="request()->routeIs('proposals.*')"
+                        class="ec-nav-item"
+                    >
+                        Propostas Comerciais
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             @endif
 
@@ -241,6 +251,7 @@
             request()->routeIs('contacts.whatsapp') => 'Verificação WhatsApp',
             request()->routeIs('contacts.*') => 'Contatos',
             request()->routeIs('campaigns.*') => 'Campanhas',
+            request()->routeIs('proposals.*') => 'Propostas Comerciais',
             request()->routeIs('imports.*') => 'Importações',
             request()->routeIs(
                 'profile.edit',
@@ -259,7 +270,7 @@
 
         <div class="ec-topbar-context">
 
-            @unless (request()->routeIs('leads.index', 'leads.management', 'companies.show', 'prospecting.*', 'access.requests.*', 'contacts.whatsapp', 'campaigns.*'))
+            @unless (request()->routeIs('leads.index', 'leads.management', 'companies.show', 'prospecting.*', 'proposals.*', 'access.requests.*', 'contacts.whatsapp', 'campaigns.*'))
                 <span class="ec-topbar-eyebrow">
                     ExportControl
                 </span>
