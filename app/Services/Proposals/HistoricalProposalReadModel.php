@@ -32,6 +32,14 @@ final class HistoricalProposalReadModel
             $base->where(function ($query) use ($pattern): void {
                 $query->whereRaw('lower(ec_proposals.client_name) like ?', [$pattern])
                     ->orWhereRaw('lower(hist.title) like ?', [$pattern])
+                    ->orWhereRaw('lower(hist.responsible_name) like ?', [$pattern])
+                    ->orWhereRaw('lower(hist.responsible_email) like ?', [$pattern])
+                    ->orWhereRaw('lower(hist.recipient_email) like ?', [$pattern])
+                    ->orWhereRaw('lower(ec_proposals.client_contact) like ?', [$pattern])
+                    ->orWhereRaw('lower(ec_proposals.sales_responsible) like ?', [$pattern])
+                    ->orWhereRaw('lower(ec_proposals.client_email) like ?', [$pattern])
+                    ->orWhereLike('hist.evidence->identity_v3->client_legal_name', $pattern)
+                    ->orWhereLike('hist.evidence->identity_v3->recipient_name', $pattern)
                     ->orWhereRaw('lower(hist.historic_number) like ?', [$pattern])
                     ->orWhereRaw('lower(ec_proposals.legacy_code) like ?', [$pattern]);
             });

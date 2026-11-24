@@ -11,8 +11,8 @@
             <div class="cardhead"><div><h2>1. Cliente e responsável</h2><small>Dados mínimos do modelo ExportControl</small></div><span class="tag draft">{{ $proposal ? 'Rascunho #'.$proposal->id : 'Novo rascunho' }}</span></div>
             <div class="formgrid">
                 <label class="full">Razão social *<input required name="client_name" maxlength="220" value="{{ $fill('client_name') }}" placeholder="Empresa cliente"></label>
-                <label>Responsável principal<input name="client_contact" maxlength="160" value="{{ $fill('client_contact') }}" placeholder="Nome do contato"></label>
-                <label>E-mail do responsável<input type="email" name="client_email" maxlength="200" value="{{ $fill('client_email') }}"></label>
+                <label>Contato do cliente<input name="client_contact" maxlength="160" value="{{ $fill('client_contact') }}" placeholder="Nome do contato"></label>
+                <label>E-mail do destinatário (cliente)<input type="email" name="client_email" maxlength="200" value="{{ $fill('client_email') }}"></label>
                 <label>CNPJ (opcional nesta etapa)<input name="client_cnpj" value="{{ $fill('client_cnpj') }}"></label>
                 <label>Logo do cliente — PNG/JPG<input type="file" name="client_logo" accept="image/png,image/jpeg"><small>{{ $proposal?->client_logo_path ? 'Logo já anexado; envie outro para substituir.' : 'Obrigatório somente para a emissão do PDF.' }}</small></label>
                 <label class="full">Vínculo com empresa HubSpot (somente espelho local)
@@ -52,7 +52,7 @@
             <div class="formgrid" style="margin-top:12px">
                 <label>Validade (dias)<input type="number" min="1" max="365" required name="validity_days" value="{{ $fill('validity_days',30) }}"></label>
                 <label>Pagamento (dias corridos)<input type="number" min="1" max="365" required name="payment_days" value="{{ $fill('payment_days',10) }}"></label>
-                <label class="full">Responsável comercial ExportControl<input name="sales_responsible" value="{{ $fill('sales_responsible') }}" placeholder="Escolha um nome cadastrado no gerador oficial"></label>
+                <label class="full">Responsável pela proposta (ExportControl)<input name="sales_responsible" value="{{ $fill('sales_responsible') }}" placeholder="Escolha um nome cadastrado no gerador oficial"></label>
                 <label class="full">Observações da proposta<textarea name="notes" maxlength="4000" rows="4" placeholder="Esclarecimentos específicos de escopo, prazos e negociação">{{ $fill('notes') }}</textarea></label>
             </div>
             <div class="divider"></div>

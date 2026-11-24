@@ -1,6 +1,6 @@
 <x-proposals.shell title="Propostas Comerciais" subtitle="Crie, acompanhe e consulte todas as propostas, valores e documentos no mesmo lugar.">
 
-@if(auth()->user() instanceof \App\Models\User && auth()->user()->isCommercialManager() && !request()->boolean('visao_original') && \Illuminate\Support\Facades\Schema::hasTable('ec_proposal_history_metadata'))
+@if(auth()->user() instanceof \App\Models\User && auth()->user()->isCommercialManager() && \Illuminate\Support\Facades\Schema::hasTable('ec_proposal_history_metadata'))
 @include('proposals.historical.index')
 @else
 

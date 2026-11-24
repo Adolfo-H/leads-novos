@@ -6,7 +6,7 @@
         if ($ecHistoricalVar instanceof \App\Models\EcProposal) { $ecHistoricalRecord = $ecHistoricalVar; break; }
     }
 @endphp
-@if(auth()->user() instanceof \App\Models\User && auth()->user()->isCommercialManager() && !request()->boolean('visao_original') && \Illuminate\Support\Facades\Schema::hasTable('ec_proposal_history_metadata') && $ecHistoricalRecord instanceof \App\Models\EcProposal && $ecHistoricalRecord->origin === 'imported')
+@if(auth()->user() instanceof \App\Models\User && auth()->user()->isCommercialManager() && \Illuminate\Support\Facades\Schema::hasTable('ec_proposal_history_metadata') && $ecHistoricalRecord instanceof \App\Models\EcProposal && $ecHistoricalRecord->origin === 'imported')
 @include('proposals.historical.show', ['histProposal' => $ecHistoricalRecord])
 @else
 
@@ -35,6 +35,15 @@
                 @if($snap && ! empty($snap['items']))
                     <div class="summary"><div class="line"><span>Mensalidade final</span><strong>{{ $br($snap['monthly_final'] ?? null) }}</strong></div><div class="line"><span>Implantação e avulsos</span><strong>{{ $br($snap['one_time_final'] ?? null) }}</strong></div></div>
                     @foreach((array)$snap['items'] as $code=>$item)
+                    <div class="summary" style="margin-top:12px">
+                        <div class="line"><span>Serviço</span><strong>{{ $code }}</strong></div>
+                        <div class="line"><span>Base do cálculo (documentos)</span><strong>{{ isset($item['quantity']) ? number_format((float) $item['quantity'],0,',','.') : '—' }}</strong></div>
+                        <div class="line"><span>Mensalidade</span><strong>{{ $code === 'RETROATIVAS' ? 'Não se aplica' : $br($item['monthly'] ?? null) }}</strong></div>
+                        <div class="line"><span>Implantação</span><strong>{{ $br($item['implementation'] ?? null) }}</strong></div>
+                        <div class="line"><span>Valor pontual do serviço</span><strong>{{ $code === 'RETROATIVAS' ? $br($item['one_time'] ?? null) : 'Não se aplica' }}</strong></div>
+                        <div class="line"><span>Valor líquido do serviço</span><strong>{{ $br($item['net'] ?? null) }}</strong></div>
+                        <div class="line"><span>Tributos do serviço</span><strong>{{ $br($item['tax_total'] ?? null) }}</strong></div>
+                    </div>
                     <details style="margin-top:12px"><summary class="link">{{ $code }} · {{ $br($item['final']??null) }} — Ver memória de faixas</summary><div class="table-wrap" style="margin-top:8px"><table><thead><tr><th>Faixa</th><th>Qtd aplicada</th><th>Fixo líquido</th><th>Unitário líquido</th><th>Subtotal</th></tr></thead><tbody>@foreach((array)($item['tiers'] ?? []) as $tier)<tr><td>{{ $tier['min'] }}–{{ $tier['max']??'∞' }}</td><td>{{ $tier['applied'] }}</td><td>{{ $br($tier['fixed']) }}</td><td>{{ $br($tier['unit']) }}</td><td>{{ $br($tier['subtotal']) }}</td></tr>@endforeach</tbody></table></div></details>
                     @endforeach
                 @else <div class="help">Ainda sem cotação. Informe volumes e serviços aprovados, ou consulte o PDF histórico original.</div>@endif
@@ -49,12 +58,37 @@
         </div>
         <aside class="grid" style="align-content:start">
             <div class="card"><h2>Informações comerciais</h2><div class="divider"></div><div class="list">
-                <div class="listrow"><span>Responsável</span><b>{{ $proposal->client_contact ?: 'Pendente' }}</b></div>
-                <div class="listrow"><span>E-mail</span><b>{{ $proposal->client_email ?: 'Pendente' }}</b></div>
+                <div class="listrow"><span>Responsável pela proposta (ExportControl)</span><b>{{ $proposal->sales_responsible ?: 'Não informado no cadastro' }}</b></div>
+                @php
+                    $ecNativeSalesEmail = null;
+                    $ecNativeConfigPath = resource_path('proposals/official/03_CONFIGURACAO_GERAL_AGENTE.json');
+                    if ($proposal->sales_responsible && is_readable($ecNativeConfigPath)) {
+                        $ecNativeConfig = json_decode((string) file_get_contents($ecNativeConfigPath), true);
+                        $ecNativeContacts = $ecNativeConfig['empresa_fornecedora']['contatos_exibidos'] ?? [];
+                        $ecNativeMatches = [];
+                        foreach ($ecNativeContacts as $ecNativeContact) {
+                            if (mb_strtolower(trim((string) ($ecNativeContact['nome'] ?? ''))) === mb_strtolower(trim((string) $proposal->sales_responsible))) {
+                                foreach (($ecNativeContact['emails'] ?? []) as $ecNativeMail) {
+                                    if (is_string($ecNativeMail) && filter_var($ecNativeMail, FILTER_VALIDATE_EMAIL) && str_ends_with(mb_strtolower($ecNativeMail), '@exportcontrol.com.br')) { $ecNativeMatches[] = $ecNativeMail; }
+                                }
+                            }
+                        }
+                        $ecNativeMatches = array_values(array_unique($ecNativeMatches));
+                        if (count($ecNativeMatches) === 1) { $ecNativeSalesEmail = $ecNativeMatches[0]; }
+                    }
+                @endphp
+                <div class="listrow"><span>E-mail comercial (cadastro atual)</span><b>{{ $ecNativeSalesEmail ?: 'Não identificado' }}</b></div>
+                <div class="listrow"><span>Contato do cliente</span><b>{{ $proposal->client_contact ?: 'Pendente' }}</b></div>
+                <div class="listrow"><span>E-mail indicado do destinatário</span><b>{{ $proposal->client_email ?: 'Pendente' }}</b></div>
                 <div class="listrow"><span>Emissão</span><b>{{ $proposal->issued_on?->format('d/m/Y') ?: 'Não emitida' }}</b></div>
                 <div class="listrow"><span>Pagamento</span><b>{{ $proposal->payment_days }} dias</b></div>
                 <div class="listrow"><span>Validade</span><b>{{ $proposal->validity_days }} dias</b></div>
             </div><p class="sub" style="margin-top:12px">{{ $proposal->notes ?: 'Sem observações adicionais' }}</p></div>
+            <div class="card"><h2>Empresa e negócio · HubSpot</h2><div class="divider"></div><div class="list">
+                <div class="listrow"><span>Empresa no HubSpot</span><b>{{ $company?->name ?: 'Não vinculada' }}</b></div>
+                <div class="listrow"><span>Negócio associado</span><b>{{ $deal?->name ?: 'Não vinculado' }}</b></div>
+                <div class="listrow"><span>Etapa atual no espelho</span><b>{{ $deal?->stage_label ?: 'Não identificada' }}</b></div>
+            </div><p class="sub" style="margin-top:10px">O andamento do CRM não substitui o registro formal de aceite.</p></div>
             @if($canManage && in_array($proposal->status,['draft','generation_failed'],true))
             <div class="card"><h2>{{ $proposal->status === 'generation_failed' ? 'Reprocessar PDF (mesmos números)' : 'Emitir proposta oficial' }}</h2><p class="sub">Exige dados e logo completos, precificação aprovada e numeração conciliada. Nenhum e-mail será enviado.</p>
                 <form method="POST" action="{{ route('proposals.issue',$proposal) }}" style="margin-top:13px">@csrf<label class="choice"><input type="checkbox" name="confirm_issue" value="1" required>Confirmo revisão comercial, dados e documento.</label><button class="btn primary" type="submit" style="margin-top:10px">{{ $proposal->status==='generation_failed'?'Reprocessar documentos':'Emitir PDF e reservar números' }}</button></form>

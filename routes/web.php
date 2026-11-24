@@ -15,6 +15,7 @@ use App\Http\Controllers\CampaignProspectingController;
 use App\Http\Controllers\CampaignUnsubscribeController;
 use App\Http\Controllers\CampaignWizardController;
 use App\Http\Controllers\EcProposalsController;
+use App\Http\Controllers\HistoricalProposalCrmController;
 use App\Http\Controllers\HubSpotWebhookController;
 use App\Http\Controllers\WhatsappOperationsHttpController;
 use App\Http\Controllers\WhatsappPairHttpController;
@@ -307,6 +308,7 @@ Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function 
     Route::post('/propostas/modelos', [EcProposalsController::class, 'updateTemplate'])->name('proposals.template-update');
     Route::post('/propostas/numeracao', [EcProposalsController::class, 'reconcile'])->name('proposals.numbering');
     Route::get('/propostas/{proposal}', [EcProposalsController::class, 'show'])->whereNumber('proposal')->name('proposals.show');
+    Route::post('/propostas/{proposal}/conciliar-historico', [HistoricalProposalCrmController::class, 'confirm'])->whereNumber('proposal')->middleware('throttle:30,1')->name('proposals.history-crm.confirm');
     Route::get('/propostas/{proposal}/editar', [EcProposalsController::class, 'edit'])->whereNumber('proposal')->name('proposals.edit');
     Route::put('/propostas/{proposal}', [EcProposalsController::class, 'update'])->whereNumber('proposal')->name('proposals.update');
     Route::post('/propostas/{proposal}/emitir', [EcProposalsController::class, 'issue'])->whereNumber('proposal')->middleware('throttle:5,1')->name('proposals.issue');
