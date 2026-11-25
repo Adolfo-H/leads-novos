@@ -144,8 +144,27 @@ $ec68Pending = (int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0) 
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </summary>
             <dl>
-                <div><dt>Remetente</dt><dd>{{ $selected->from_address ?: 'Não configurado' }}</dd></div>
-                <div><dt>Respostas para</dt><dd>{{ $selected->reply_to ?: 'Não configurado' }}</dd></div>
+                {{-- EC_DEDICATED_PROBE_V2_2 --}}
+                @php
+                    $ecDedicatedState = \App\Services\Campaigns\DualCampaignSenders::state();
+                    $ecDedicatedAssigned = $selected->getAttribute('sender_mode') === 'dual';
+                    $ecDedicatedPreview = $selected->status === 'draft' && $ecDedicatedState['enabled'];
+                @endphp
+                @if ($ecDedicatedAssigned || $ecDedicatedPreview)
+                    <div><dt>Remetentes dedicados</dt><dd>publicidade@exportcontrol.com.br<br>propaganda@exportcontrol.com.br
+                        @if ($ecDedicatedAssigned)
+                            @foreach (\App\Services\Campaigns\DualCampaignSenders::KEYS as $ecSenderKey)
+                                <br><small>{{ ucfirst($ecSenderKey) }}: {{ $selected->recipients()->where('sender_profile', $ecSenderKey)->count() }} atribuídos</small>
+                            @endforeach
+                        @else
+                            <br><small>Prévia — atribuição realizada somente na aprovação.</small>
+                        @endif
+                    </dd></div>
+                    <div><dt>Respostas para</dt><dd>A própria caixa remetente de cada destinatário.</dd></div>
+                @else
+                    <div><dt>Remetente</dt><dd>{{ $selected->from_address ?: 'Não configurado' }}</dd></div>
+                    <div><dt>Respostas para</dt><dd>{{ $selected->reply_to ?: 'Não configurado' }}</dd></div>
+                @endif
                 <div><dt>Identificação</dt><dd>Campanha #{{ $selected->id }}</dd></div>
                 <div><dt>Criada em</dt><dd>{{ $selected->created_at?->format('d/m/Y H:i') ?? '—' }}</dd></div>
             </dl>

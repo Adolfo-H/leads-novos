@@ -11,6 +11,8 @@ use App\Services\Campaigns\CampaignDispatcher;
 use App\Services\Campaigns\CampaignSendPolicy;
 use App\Services\Campaigns\CampaignSequenceGuard;
 use App\Services\Campaigns\CampaignUnsubscribeLink;
+use App\Services\Campaigns\DedicatedCampaignProbe;
+use App\Services\Campaigns\DualCampaignSenders;
 use App\Services\Campaigns\UnsubscribeToken;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -112,6 +114,12 @@ class SendEmailCampaignRecipient implements ShouldQueue
                 return null;
             }
 
+            if (! DualCampaignSenders::canSend($row, $campaign)) {
+                $row->update(['status' => 'pending', 'reserved_at' => null, 'reservation_token' => null]);
+
+                return null;
+            }
+
             // Sem janela global: a seguranca do envio depende das cotas, da
             // autorizacao, do status, do opt-out e dos demais guards acima.
             $policy = app(CampaignSendPolicy::class)->effective();
@@ -128,7 +136,16 @@ class SendEmailCampaignRecipient implements ShouldQueue
                 ->whereNotNull('attempted_at')
                 ->where('attempted_at', '>=', $utcNow->copy()->subDay())
                 ->count();
-            if ($hourAttempts >= $hourLimit || $dayAttempts >= $dayLimit) {
+            $minuteLimitReached = false;
+            if ($campaign->getAttribute('sender_mode') === 'dual') {
+                $minuteLimit = max(1, min((int) config('campaign_mail.smtp_approved_per_tick', 5), $policy['tick']));
+                $minuteAttempts = EmailCampaignRecipient::query()->where('attempted_at', '>=', $utcNow->copy()->subMinute())->count();
+                $minuteAttempts += DedicatedCampaignProbe::attemptsSince($utcNow->copy()->subMinute());
+                $hourAttempts += DedicatedCampaignProbe::attemptsSince($utcNow->copy()->subHour());
+                $dayAttempts += DedicatedCampaignProbe::attemptsSince($utcNow->copy()->subDay());
+                $minuteLimitReached = $minuteAttempts >= $minuteLimit;
+            }
+            if ($hourAttempts >= $hourLimit || $dayAttempts >= $dayLimit || $minuteLimitReached) {
                 $row->update([
                     'status' => 'pending',
                     'reserved_at' => null,
@@ -154,9 +171,12 @@ class SendEmailCampaignRecipient implements ShouldQueue
             return;
         }
 
+        $senderKey = (string) $recipient->getAttribute('sender_profile');
+        $senderAddress = $senderKey !== '' ? (string) $recipient->getAttribute('sender_address') : null;
         try {
             $campaign = $recipient->campaign;
-            $domain = parse_url('https://'.(string) config('campaign_mail.from_address'), PHP_URL_HOST);
+            $mailer = $senderKey !== '' ? DualCampaignSenders::mailer($senderKey) : (string) config('campaign_mail.mailer', 'smtp');
+            $domain = parse_url('https://'.($senderAddress ?? (string) config('campaign_mail.from_address')), PHP_URL_HOST);
             $domain = is_string($domain) && $domain !== '' ? $domain : 'exportcontrol.com.br';
             $msgId = (string) Str::uuid().'@'.$domain;
             $recipient->update(['message_id' => $msgId]);
@@ -164,9 +184,9 @@ class SendEmailCampaignRecipient implements ShouldQueue
             $subject = $renderer->render($campaign->subject, $recipient);
             $body = $renderer->render($campaign->body, $recipient);
 
-            Mail::mailer((string) config('campaign_mail.mailer', 'smtp'))
+            Mail::mailer($mailer)
                 ->to($recipient->email)
-                ->send(new ProspectorCampaignMessage($subject, $body, $unsubscribe, $msgId));
+                ->send(new ProspectorCampaignMessage($subject, $body, $unsubscribe, $msgId, false, $senderAddress));
 
             $recipient->update([
                 'status' => 'sent',
@@ -174,7 +194,11 @@ class SendEmailCampaignRecipient implements ShouldQueue
                 'error_message' => null,
             ]);
         } catch (Throwable $exception) {
-            report($exception);
+            if ($senderKey !== '') {
+                DualCampaignSenders::halt();
+            } else {
+                report($exception);
+            }
             $recipient->update([
                 'status' => 'uncertain',
                 'error_message' => mb_substr(

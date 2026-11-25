@@ -51,10 +51,13 @@
                         </div>
                         <h3 class="ec-v22-subject">{{ $ecEntry->subject ?: 'Sem assunto' }}</h3>
                         <p class="ec-v22-email">De: {{ $ecEntry->from_email }}</p>
+                        {{-- EC_REPLY_MAILBOX_V2_3 --}}
+                        <p class="ec-v22-email">Recebido em: <strong>{{ $ecEntry->mailbox ?: 'Não registrada' }}</strong></p>
+                        @if ($ecEntry->recorded_sender)<p class="ec-v22-email">Envio original (registrado): {{ $ecEntry->recorded_sender }}</p>@endif
                         <div class="ec-v22-foot">
                             @if ($ecIsHuman)
                                 <span>Resposta humana registrada</span>
-                                <a href="{{ route('campaigns.replies') }}">Abrir caixa de respostas</a>
+                                <a href="{{ route('campaigns.replies', ['resposta' => (int) $ecEntry->row_id]) }}">Abrir resposta</a>
                             @elseif ($ecEntry->notice_type === 'reply_needs_review')
                                 <span>Confira o conteúdo no Outlook</span>
                                 <a href="{{ route('campaigns.replies') }}">Revisar em Respostas</a>
@@ -101,7 +104,7 @@
         @foreach ($ecV23Unlinked as $ecV23Notice)
             <article class="ec-v22-item" wire:key="ec-v23-unlinked-{{ $ecV23Notice->id }}">
                 <div class="ec-v22-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr((string) $ecV23Notice->from_email, 0, 1)) }}</div>
-                <div class="ec-v22-body"><div class="ec-v22-meta"><span class="ec-v22-pill ec-v22-pill--address">E-mail alterado · revisar vínculo</span><time class="ec-v22-timestamp">{{ \App\Support\CampaignLocalTime::format($ecV23Notice->received_at, '—') }}</time></div><h3 class="ec-v22-subject">{{ $ecV23Notice->subject }}</h3><p class="ec-v22-email">De: {{ $ecV23Notice->from_email }}</p><div class="ec-v22-foot"><span>Conferir no Outlook antes de qualquer atualização de contato</span></div></div>
+                <div class="ec-v22-body"><div class="ec-v22-meta"><span class="ec-v22-pill ec-v22-pill--address">E-mail alterado · revisar vínculo</span><time class="ec-v22-timestamp">{{ \App\Support\CampaignLocalTime::format($ecV23Notice->received_at, '—') }}</time></div><h3 class="ec-v22-subject">{{ $ecV23Notice->subject }}</h3><p class="ec-v22-email">De: {{ $ecV23Notice->from_email }}</p><p class="ec-v22-email">Recebido em: {{ $ecV23Notice->mailbox ?: 'Não registrada' }}</p><div class="ec-v22-foot"><span>Conferir no Outlook antes de qualquer atualização de contato</span></div></div>
             </article>
         @endforeach
     </div>

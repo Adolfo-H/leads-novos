@@ -54,6 +54,12 @@
                     </div>
                     <h3 class="ec-v22-subject">{{ $notice->subject ?: 'Sem assunto' }}</h3>
                     <p class="ec-v22-email">De: {{ $notice->from_email }}</p>
+                    {{-- EC_REPLY_MAILBOX_V2_3 --}}
+                    <p class="ec-v22-email">Recebido em: <strong>{{ $notice->mailbox ?: 'Não registrada' }}</strong></p>
+                    @if (auth()->user()?->isCommercialManager() && $notice->email_campaign_recipient_id !== null)
+                        <button type="button" class="ec-v22-button" wire:click="readNoticeBody({{ (int) $notice->id }})" wire:loading.attr="disabled">Ler retorno completo</button>
+                        @if ($noticeBodyId === (int) $notice->id && $noticeBody !== null)<pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ $noticeBody }}</pre>@endif
+                    @endif
                     <div class="ec-v22-foot">
                         <a href="{{ route('campaigns.index', ['campanha' => $notice->email_campaign_id, 'aba' => 'replies']) }}" wire:navigate>{{ $campaignNames[(int) $notice->email_campaign_id] ?? ('Campanha #'.$notice->email_campaign_id) }}</a>
                         <span>{{ $noticeLinks[$notice->link_method] ?? 'Vínculo a conferir' }}</span>
@@ -111,7 +117,7 @@
             <div class="ec-v22-body">
                 <div class="ec-v22-meta"><span class="ec-v22-pill ec-v22-pill--address">E-mail alterado · verificar</span><span class="ec-v22-timestamp">{{ \App\Support\CampaignLocalTime::format($ecV22Notice->received_at, 'Data indisponível') }}</span></div>
                 <h3 class="ec-v22-subject">{{ $ecV22Notice->subject }}</h3>
-                <p class="ec-v22-email">De: {{ $ecV22Notice->from_email }}</p>
+                <p class="ec-v22-email">De: {{ $ecV22Notice->from_email }}</p><p class="ec-v22-email">Recebido em: {{ $ecV22Notice->mailbox ?: 'Não registrada' }}</p>
                 <div class="ec-v22-foot">
                     @if ($ecV22Notice->candidate_campaign_id !== null)
                         <a href="{{ route('campaigns.index', ['campanha' => $ecV22Notice->candidate_campaign_id, 'aba' => 'replies']) }}" wire:navigate>Campanha #{{ $ecV22Notice->candidate_campaign_id }} (possível)</a>

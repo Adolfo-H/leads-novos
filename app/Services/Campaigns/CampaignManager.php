@@ -257,6 +257,8 @@ final class CampaignManager
                 throw ValidationException::withMessages(['campaign' => 'Não há destinatários habilitados.']);
             }
 
+            DualCampaignSenders::prepare($locked);
+
             $locked->forceFill([
                 'status' => 'running',
                 'approved_by' => $user->id,
@@ -318,6 +320,7 @@ final class CampaignManager
                 throw ValidationException::withMessages(['campaign' => 'Envios reais estão desabilitados.']);
             }
 
+            DualCampaignSenders::checkResume($locked);
             $locked->update(['status' => 'running']);
         });
     }
@@ -356,6 +359,7 @@ final class CampaignManager
     public function sendTest(User $user, string $subject, string $body): void
     {
         abort_unless($user->isCommercialManager(), 403);
+        DualCampaignSenders::checkLegacyTest();
         if (! config('campaign_mail.enabled')) {
             throw ValidationException::withMessages(['campaign' => 'Habilite CAMPAIGN_MAIL_ENABLED=true para testar o SMTP.']);
         }

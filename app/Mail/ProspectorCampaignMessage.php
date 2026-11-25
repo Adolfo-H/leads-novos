@@ -16,16 +16,17 @@ class ProspectorCampaignMessage extends Mailable
         public ?string $unsubscribeUrl = null,
         public ?string $trackingMessageId = null,
         public bool $isTest = false,
+        public ?string $senderAddress = null,
     ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
             from: new Address(
-                (string) config('campaign_mail.from_address'),
+                $this->senderAddress ?? (string) config('campaign_mail.from_address'),
                 (string) config('campaign_mail.from_name', 'ExportControl'),
             ),
-            replyTo: [(string) config('campaign_mail.reply_to')],
+            replyTo: [$this->senderAddress ?? (string) config('campaign_mail.reply_to')],
             subject: $this->mailSubject,
             using: [function (Email $email): void {
                 if ($this->trackingMessageId !== null) {

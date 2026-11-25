@@ -17,6 +17,9 @@ final class CampaignHumanReplies
     public function send(User $user, EmailCampaignReply $reply, string $body, string $requestId): int
     {
         abort_unless($user->isCommercialManager(), 403);
+        if (DualCampaignSenders::state()['enabled'] || DualCampaignSenders::state()['blocked']) {
+            throw ValidationException::withMessages(['reply' => 'Responda pela caixa original no Outlook. O envio de respostas legado não usa as novas contas.']);
+        }
         if (! config('campaign_mail.live_enabled') || ! config('campaign_mail.reply_send_enabled', false)) {
             throw ValidationException::withMessages(['reply' => 'Envio de respostas bloqueado até homologação comercial e habilitação explícita.']);
         }

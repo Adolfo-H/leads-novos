@@ -40,6 +40,11 @@ final class CampaignDispatcher
                 throw new LogicException('Campaign dispatch quota gate is missing.');
             }
 
+            $senderState = DualCampaignSenders::state();
+            if ($senderState['blocked'] || ($senderState['enabled'] && (! DualCampaignSenders::ready() || DedicatedCampaignProbe::inProgress()))) {
+                return [];
+            }
+
             $policy = $policyService->effective();
             $hour = max(1, min((int) config('campaign_mail.smtp_approved_per_hour', 100), $policy['hour']));
             $day = max(1, min((int) config('campaign_mail.smtp_approved_per_day', 500), $policy['day']));
@@ -69,7 +74,23 @@ final class CampaignDispatcher
                         });
                 })->count();
 
+            if ($senderState['enabled']) {
+                $hourUsed += DedicatedCampaignProbe::attemptsSince($hourCutoff);
+                $dayUsed += DedicatedCampaignProbe::attemptsSince($dayCutoff);
+            }
             $globallyAvailable = min($tick, max(0, $hour - $hourUsed), max(0, $day - $dayUsed));
+            if ($senderState['enabled']) {
+                $minuteCutoff = $utcNow->copy()->subMinute();
+                $minuteUsed = EmailCampaignRecipient::query()
+                    ->where(static function ($query) use ($minuteCutoff): void {
+                        $query->where('attempted_at', '>=', $minuteCutoff)
+                            ->orWhere(static function ($query) use ($minuteCutoff): void {
+                                $query->where('status', 'reserved')->where('reserved_at', '>=', $minuteCutoff);
+                            });
+                    })->count();
+                $minuteUsed += DedicatedCampaignProbe::attemptsSince($minuteCutoff);
+                $globallyAvailable = min($globallyAvailable, max(0, $tick - $minuteUsed));
+            }
             if ($globallyAvailable === 0) {
                 return [];
             }
@@ -78,6 +99,7 @@ final class CampaignDispatcher
             // bloqueie outras campanhas ativas. Mantém a ordem histórica por ID.
             $campaigns = EmailCampaign::query()
                 ->where('status', 'running')
+                ->when($senderState['enabled'], static fn ($query) => $query->where('sender_mode', 'dual'))
                 ->whereHas('recipients', static fn ($query) => $query->where('status', 'pending'))
                 ->orderBy('id')->lockForUpdate()->get(['id']);
 

@@ -87,6 +87,8 @@ new class extends Component
 
     @include('campaigns.module-nav')
 
+    @include('campaigns.sender-profiles-preparation')
+
     @if (session('policy_success'))
         <div class="ec22-success" role="status">{{ session('policy_success') }}</div>
     @endif

@@ -96,24 +96,27 @@ final class CampaignResponseFeed
         $perPage = max(1, min($perPage, 50));
         $term = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], mb_substr(trim($search), 0, 100));
 
+        // EC_REPLY_MAILBOX_V2_3
         $human = DB::table('email_campaign_replies')
-            ->selectRaw("'human' AS entry_kind, id AS row_id, email_campaign_id, from_email, subject, received_at, NULL AS notice_type, NULL AS link_method, NULL AS requires_review")
+            ->selectRaw("'human' AS entry_kind, id AS row_id, email_campaign_id, from_email, subject, received_at, NULL AS notice_type, NULL AS link_method, NULL AS requires_review, mailbox, email_campaign_recipient_id, (SELECT COALESCE(NULLIF(cr.sender_address, ''), NULLIF(c.from_address, '')) FROM email_campaign_recipients cr LEFT JOIN email_campaigns c ON c.id = cr.email_campaign_id WHERE cr.id = email_campaign_replies.email_campaign_recipient_id) AS recorded_sender")
             ->when($campaignId !== null, static fn (Builder $q) => $q->where('email_campaign_id', $campaignId))
             ->when($term !== '', static function (Builder $q) use ($term): void {
                 $q->where(static function (Builder $where) use ($term): void {
                     $where->where('from_email', 'like', '%'.$term.'%')
-                        ->orWhere('subject', 'like', '%'.$term.'%');
+                        ->orWhere('subject', 'like', '%'.$term.'%')
+                        ->orWhere('mailbox', 'like', '%'.$term.'%');
                 });
             });
 
         if ($this->noticeTableExists()) {
             $notices = $this->usefulNotices()
-                ->selectRaw("'notice' AS entry_kind, id AS row_id, email_campaign_id, from_email, subject, received_at, notice_type, link_method, requires_review")
+                ->selectRaw("'notice' AS entry_kind, id AS row_id, email_campaign_id, from_email, subject, received_at, notice_type, link_method, requires_review, mailbox, email_campaign_recipient_id, (SELECT COALESCE(NULLIF(cr.sender_address, ''), NULLIF(c.from_address, '')) FROM email_campaign_recipients cr LEFT JOIN email_campaigns c ON c.id = cr.email_campaign_id WHERE cr.id = email_campaign_inbound_notices.email_campaign_recipient_id) AS recorded_sender")
                 ->when($campaignId !== null, static fn (Builder $q) => $q->where('email_campaign_id', $campaignId))
                 ->when($term !== '', static function (Builder $q) use ($term): void {
                     $q->where(static function (Builder $where) use ($term): void {
                         $where->where('from_email', 'like', '%'.$term.'%')
-                            ->orWhere('subject', 'like', '%'.$term.'%');
+                            ->orWhere('subject', 'like', '%'.$term.'%')
+                            ->orWhere('mailbox', 'like', '%'.$term.'%');
                     });
                 });
             $human->unionAll($notices);

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\EmailCampaign;
 use App\Models\User;
 use App\Services\Campaigns\CampaignManager;
+use App\Services\Campaigns\DedicatedCampaignProbe;
+use App\Services\Campaigns\DualCampaignSenders;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -42,6 +44,20 @@ final class CampaignOperationsController extends Controller
             'campanha' => $campaign->getKey(),
             'aba' => $tab,
         ], false).'#email-teste';
+
+        $dedicatedState = DualCampaignSenders::state();
+        if ($dedicatedState['enabled'] || $dedicatedState['blocked']) {
+            $request->validate(['sender_profile' => ['required', 'in:publicidade,propaganda'], 'dedicated_test_confirm' => ['required', 'accepted']]);
+            try {
+                app(DedicatedCampaignProbe::class)->send($user, $campaign, (string) $request->input('sender_profile'));
+
+                return redirect()->to($back)->with('campaigns_test_ok', 'Diagnóstico aceito pelo SMTP. Confira o remetente, Reply-To e recebimento na caixa de teste. Nenhum destinatário comercial utilizado.');
+            } catch (ValidationException $exception) {
+                $message = collect($exception->errors())->flatten()->first() ?: 'Diagnóstico bloqueado.';
+
+                return redirect()->to($back)->with('campaigns_test_error', $message);
+            }
+        }
 
         // Evita falso sucesso com transporte de simulação/Mailpit.
         // A confirmação real depende do servidor SMTP configurado.
