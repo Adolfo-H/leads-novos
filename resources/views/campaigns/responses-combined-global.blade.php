@@ -27,6 +27,7 @@
         @if ($search !== '')<span class="ec-v23-stat"><strong>{{ $ecV23Entries->total() }}</strong> encontrados na pesquisa</span>@endif
     </div>
     <p class="ec-v23-disclaimer">O número total representa mensagens registradas, não contatos únicos nem respostas humanas. Devoluções técnicas e avisos sem vínculo confirmado não são contabilizados.</p>
+    @error('reply')<p role="alert" class="ec-v22-alert">{{ $message }}</p>@enderror
     @if ($ecV23Entries->isEmpty())
         <div class="ec-v22-empty"><strong>{{ $search !== '' ? 'Nenhuma conversa encontrada' : 'Nenhuma resposta encontrada' }}</strong><p>{{ $search !== '' ? 'Tente buscar por outro remetente ou assunto.' : 'As respostas de campanhas aparecerão aqui.' }}</p></div>
     @else
@@ -47,14 +48,19 @@
                         <div class="ec-v22-meta"><span class="ec-v22-pill ec-v22-pill--{{ $ecBadge }}">{{ $ecLabel }}</span><time class="ec-v22-timestamp">{{ \App\Support\CampaignLocalTime::format($ecEntry->received_at, '—') }}</time></div>
                         <h3 class="ec-v22-subject">{{ $ecEntry->subject ?: 'Sem assunto' }}</h3>
                         <p class="ec-v22-email">De: {{ $ecEntry->from_email }}</p>
+                        {{-- EC_REPLY_MAILBOX_V2_3 --}}
+                        <p class="ec-v22-email">Recebido em: <strong>{{ $ecEntry->mailbox ?: 'Não registrada' }}</strong></p>
+                        @if ($ecEntry->recorded_sender)<p class="ec-v22-email">Envio original (registrado): {{ $ecEntry->recorded_sender }}</p>@endif
                         <div class="ec-v22-foot">
                             <a href="{{ route('campaigns.index', ['campanha' => $ecEntry->email_campaign_id, 'aba' => 'replies']) }}">{{ $ecV23Names[(int) $ecEntry->email_campaign_id] ?? ('Campanha #'.$ecEntry->email_campaign_id) }}</a>
                             @if ($ecIsHuman)
-                                <button type="button" class="ec-v23-link-button" wire:click="chooseKind('commercial')">Ver em Comerciais</button>
+                                <button type="button" class="ec-v23-link-button" wire:click="openCommercialReply({{ (int) $ecEntry->row_id }})">Abrir resposta</button>
                             @else
                                 <button type="button" class="ec-v23-link-button" wire:click="chooseKind('notices')">Ver em Retornos úteis</button>
+                                @if (auth()->user()?->isCommercialManager() && $ecEntry->email_campaign_recipient_id !== null)<button type="button" class="ec-v23-link-button" wire:click="readNoticeBody({{ (int) $ecEntry->row_id }})" wire:loading.attr="disabled">Ler retorno</button>@endif
                             @endif
                         </div>
+                        @if (!$ecIsHuman && $noticeBodyId === (int) $ecEntry->row_id && $noticeBody !== null)<pre style="white-space:pre-wrap;overflow-wrap:anywhere">{{ $noticeBody }}</pre>@endif
                     </div>
                 </article>
             @endforeach

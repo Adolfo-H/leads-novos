@@ -33,6 +33,8 @@ final class CampaignInbox
             $cursor->uid_validity = $validity;
             $matched = 0;
             $noticeTableReady = Schema::hasTable('email_campaign_inbound_notices');
+            // EC_REPLY_MAILBOX_V2_3: compatible during the additive migration.
+            $testMailboxReady = Schema::hasColumn('email_campaign_test_messages', 'reply_mailbox');
             foreach ($batch['messages'] as $message) {
                 $uid = (int) ($message['uid'] ?? 0);
                 // EC_CAMPAIGNS_V7_DSN: antes dos filtros de auto-resposta.
@@ -82,6 +84,20 @@ final class CampaignInbox
                     continue;
                 }
                 // EC_TRACKED_IMAP_TEST_V1: testes isolados das métricas comerciais.
+                // Reprocessing only enriches an existing test when its identity AND
+                // previously recorded UID/UIDVALIDITY match. No second reply count.
+                if ($testMailboxReady) {
+                    $oldTest = EmailCampaignTestMessage::query()->where('test_to', $from)
+                        ->whereIn('message_id', $messageIds)->whereNotNull('replied_at')
+                        ->whereNull('reply_mailbox')->where('reply_uid_validity', $validity)
+                        ->where('reply_imap_uid', $uid)->first();
+                    if ($oldTest !== null) {
+                        $expectedBox = CampaignReplyMailbox::dedicatedTestAddress((string) $oldTest->message_id, (int) $oldTest->email_campaign_id);
+                        if ($expectedBox === null || $mailbox === $expectedBox) {
+                            $oldTest->update(['reply_mailbox' => $mailbox]);
+                        }
+                    }
+                }
                 $tracked = EmailCampaignTestMessage::query()
                     ->where('test_to', $from)
                     ->whereIn('message_id', $messageIds)
@@ -95,6 +111,9 @@ final class CampaignInbox
                         'reply_uid_validity' => $validity,
                         'reply_imap_uid' => $uid,
                     ]);
+                    if ($testMailboxReady) {
+                        $tracked->update(['reply_mailbox' => $mailbox]);
+                    }
                     $matched++;
 
                     continue;
@@ -128,6 +147,14 @@ final class CampaignInbox
             $cursor->last_uid = max((int) ($cursor->last_uid ?? 0), $lastUid);
             $cursor->last_synced_at = now('UTC');
             $cursor->save();
+
+            // EC_DUAL_IMAP_V2_1: preserve the UTC offset for dedicated cursors.
+            // Query builder bypasses Eloquent's offset-stripping date format.
+            if (in_array($mailbox, ['publicidade@exportcontrol.com.br', 'propaganda@exportcontrol.com.br'], true)) {
+                DB::table('email_campaign_inbox_cursors')->where('mailbox', $mailbox)->update([
+                    'last_synced_at' => now('UTC')->toIso8601String(),
+                ]);
+            }
 
             return $matched;
         });

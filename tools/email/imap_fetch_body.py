@@ -11,6 +11,7 @@ import re
 import ssl
 import sys
 from email import policy
+from email.utils import parseaddr
 from html.parser import HTMLParser
 
 MAX_BYTES = 131072
@@ -62,6 +63,35 @@ def plain_body(msg):
     return value[:MAX_CHARS]
 
 
+# EC_REPLY_MAILBOX_V2_3
+class MailboxIdentityMismatch(RuntimeError):
+    pass
+
+
+class MailboxValidityMismatch(RuntimeError):
+    pass
+
+
+class MessageUnavailable(RuntimeError):
+    pass
+
+
+class NoTextBody(RuntimeError):
+    pass
+
+
+def verify_identity(msg, cfg):
+    expected_from = str(cfg.get("expected_from") or "").strip().lower()
+    expected_reference = str(cfg.get("expected_reference") or "").strip().strip("<>")
+    actual_from = parseaddr(str(msg.get("From", "")))[1].strip().lower()
+    if expected_from and actual_from != expected_from:
+        raise MailboxIdentityMismatch()
+    if expected_reference:
+        refs = " ".join(str(msg.get(name, "")) for name in ("In-Reply-To", "References"))
+        if expected_reference not in re.findall(r"<([^<>\s]+)>", refs):
+            raise MailboxIdentityMismatch()
+
+
 def main():
     cfg = json.load(sys.stdin)
     host = str(cfg.get("host", ""))
@@ -85,18 +115,19 @@ def main():
         info = data[0].decode("ascii", "ignore") if status == "OK" and data else ""
         match = re.search(r"UIDVALIDITY\s+(\d+)", info)
         if match is None or match.group(1) != expected:
-            raise RuntimeError("A identificacao da caixa IMAP mudou; resposta nao sera lida")
+            raise MailboxValidityMismatch()
         status, response = imap.uid("FETCH", str(uid), f"(BODY.PEEK[]<0.{MAX_BYTES}> RFC822.SIZE)")
         if status != "OK":
             raise RuntimeError("Falha ao ler UID especifico")
         chunks = [item[1] for item in response if isinstance(item, tuple) and isinstance(item[1], bytes)]
         if not chunks:
-            raise RuntimeError("Mensagem nao encontrada para UID registrado")
+            raise MessageUnavailable()
         raw = chunks[0][:MAX_BYTES]
         msg = email.message_from_bytes(raw, policy=policy.default)
+        verify_identity(msg, cfg)
         body = plain_body(msg)
         if not body:
-            raise RuntimeError("Mensagem sem corpo textual disponivel")
+            raise NoTextBody()
         print(json.dumps({"body": body, "truncated": len(raw) >= MAX_BYTES}, ensure_ascii=False))
         imap.logout()
 

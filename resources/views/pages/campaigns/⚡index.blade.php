@@ -1624,8 +1624,13 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
             @elseif ($screen === 'detail' && $selected)
                 <section class="ecm2-context-card"><header><h2>Detalhes da campanha</h2><span class="ecm2-pill is-{{ $selected->status }}">{{ $labels[$selected->status] ?? $selected->status }}</span></header>
                     <div class="ecm2-key-value"><span>Criada em</span><strong>{{ \App\Support\CampaignLocalTime::format($selected->getRawOriginal('created_at'), '') }}</strong></div>
-                    <div class="ecm2-key-value"><span>Remetente</span><strong>{{ $selected->from_address }}</strong></div>
-                    <div class="ecm2-key-value"><span>Respostas para</span><strong>{{ $selected->reply_to }}</strong></div>
+                    @if ($selected->getAttribute('sender_mode') === 'dual' || ($selected->status === 'draft' && \App\Services\Campaigns\DualCampaignSenders::state()['enabled']))
+                        <div class="ecm2-key-value"><span>Remetentes</span><strong>Publicidade e Propaganda</strong></div>
+                        <div class="ecm2-key-value"><span>Respostas para</span><strong>Caixa atribuída ao destinatário</strong></div>
+                    @else
+                        <div class="ecm2-key-value"><span>Remetente</span><strong>{{ $selected->from_address }}</strong></div>
+                        <div class="ecm2-key-value"><span>Respostas para</span><strong>{{ $selected->reply_to }}</strong></div>
+                    @endif
                     <div class="ecm2-key-value"><span>Destinatários</span><strong>{{ $totalCount }}</strong></div>
                     <div class="ecm2-key-value"><span>Aprovada em</span><strong>{{ \App\Support\CampaignLocalTime::format($selected->getRawOriginal('approved_at')) }}</strong></div>
                 </section>
@@ -1643,6 +1648,25 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                                 {{ session('campaigns_test_error') }}
                             </div>
                         @endif
+                        @php
+                            $ecProbeState = \App\Services\Campaigns\DualCampaignSenders::state();
+                        @endphp
+                        @if ($ecProbeState['enabled'] || $ecProbeState['blocked'])
+                            <p>Diagnóstico interno: uma mensagem por conta, somente para <strong>{{ config('campaign_mail.test_to') ?: 'Não configurado' }}</strong>. Não usa a lista comercial.</p>
+                            @if ($selected->status === 'draft' && ! $ecProbeState['blocked'])
+                                <form method="POST" action="{{ route('campaigns.email-test', ['campaign' => $selected->id], false) }}" style="display:grid;gap:10px;margin:0">
+                                    @csrf
+                                    <input type="hidden" name="aba" value="{{ $detailTab }}">
+                                    <label><input type="checkbox" name="dedicated_test_confirm" value="1" required> Confirmo que o destino é minha caixa de teste autorizada.</label>
+                                    @foreach (\App\Services\Campaigns\DualCampaignSenders::KEYS as $ecProbeKey)
+                                        <button type="submit" name="sender_profile" value="{{ $ecProbeKey }}" class="ecm2-btn ecm2-btn-muted" @disabled(! config('campaign_mail.enabled') || ! \App\Services\Campaigns\DualCampaignSenders::ready() || ! filter_var((string) config('campaign_mail.test_to'), FILTER_VALIDATE_EMAIL))>Enviar teste por {{ ucfirst($ecProbeKey) }}</button>
+                                    @endforeach
+                                </form>
+                                <small>Sem repetição no mesmo rascunho. Limite de dois diagnósticos por hora, dentro das cotas globais.</small>
+                            @else
+                                <p>Diagnóstico indisponível: use um rascunho e confira o bloqueio SMTP.</p>
+                            @endif
+                        @else
                         <form method="POST" action="{{ route('campaigns.email-test', ['campaign' => $selected->id], false) }}" style="margin:0;display:block;">
                             @csrf
                             <input type="hidden" name="aba" value="{{ $detailTab }}">
@@ -1660,6 +1684,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                             <div class="ecm2-alert-note" role="alert">O SMTP de teste está desativado. A liberação do teste não exige ativar o envio comercial.</div>
                         @elseif (! filter_var((string) config('campaign_mail.test_to'), FILTER_VALIDATE_EMAIL))
                             <div class="ecm2-alert-note" role="alert">Configure um endereço válido em CAMPAIGN_MAIL_TEST_TO.</div>
+                        @endif
                         @endif
                     </div>
                 </section>

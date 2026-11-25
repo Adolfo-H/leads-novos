@@ -23,10 +23,33 @@ new class extends Component
     public ?int $selectedId = null;
     public ?int $reviewNoticeId = null;
     public string $search = '';
+    // EC_REPLY_MAILBOX_V2_3: read-only linked notices.
+    public ?int $noticeBodyId = null;
+    public ?string $noticeBody = null;
 
     public function mount(): void
     {
         $this->ensureManager();
+        $id = filter_var(request()->query('resposta'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (is_int($id) && EmailCampaignReply::query()->whereKey($id)->exists()) {
+            $this->openCommercialReply($id);
+        }
+    }
+
+    public function openCommercialReply(int $id): void
+    {
+        $this->chooseKind('commercial');
+        $this->open($id);
+    }
+
+    public function readNoticeBody(int $id, CampaignReplyReader $reader): void
+    {
+        $this->ensureNoticeManager();
+        $this->noticeBodyId = null;
+        $this->noticeBody = null;
+        $this->resetErrorBag('reply');
+        $this->noticeBody = $reader->readNotice($id);
+        $this->noticeBodyId = $id;
     }
 
     private function ensureManager(): void
@@ -42,6 +65,8 @@ new class extends Component
         $this->kind = $kind;
         $this->selectedId = null;
         $this->reviewNoticeId = null;
+        $this->noticeBodyId = null;
+        $this->noticeBody = null;
         $this->resetPage('replyPage');
         $this->resetPage('noticePage');
         $this->resetPage('paginaRespostas');
@@ -59,6 +84,8 @@ new class extends Component
         $this->resetPage('unsubscribedPage');
         $this->selectedId = null;
         $this->reviewNoticeId = null;
+        $this->noticeBodyId = null;
+        $this->noticeBody = null;
         unset($this->selected, $this->conversations, $this->inboundNotices);
     }
 
@@ -171,7 +198,8 @@ new class extends Component
             ->when($term !== '', static function ($query) use ($term): void {
                 $query->where(static function ($filter) use ($term): void {
                     $filter->where('from_email', 'like', '%'.$term.'%')
-                        ->orWhere('subject', 'like', '%'.$term.'%');
+                        ->orWhere('subject', 'like', '%'.$term.'%')
+                        ->orWhere('mailbox', 'like', '%'.$term.'%');
                 });
             })
             ->with(['campaign', 'recipient'])
@@ -189,7 +217,8 @@ new class extends Component
             ->when($term !== '', static function (Builder $query) use ($term): void {
                 $query->where(static function (Builder $filter) use ($term): void {
                     $filter->where('from_email', 'like', '%'.$term.'%')
-                        ->orWhere('subject', 'like', '%'.$term.'%');
+                        ->orWhere('subject', 'like', '%'.$term.'%')
+                        ->orWhere('mailbox', 'like', '%'.$term.'%');
                 });
             })
             ->orderByDesc('received_at')
@@ -269,7 +298,7 @@ new class extends Component
             <label class="ec69-filter-field">
                 <span>Pesquisa</span>
                 <input type="search" wire:model.live.debounce.400ms="search" placeholder="Remetente ou assunto" maxlength="100" autocomplete="off" aria-label="Buscar respostas">
-                <small>Pesquise por e-mail ou assunto da mensagem</small>
+                <small>Pesquise pelo e-mail, caixa de recebimento ou assunto (testes: remetente e assunto).</small>
             </label>
             <div class="ec69-filter-field">
                 <span>Categoria</span>
@@ -287,7 +316,9 @@ new class extends Component
     {{-- EC77_REPLIES: filtros de respostas e opt-out no mesmo módulo, sem remover os dados históricos. --}}
     @if ($kind === 'all')
         @include('campaigns.responses-combined-global')
+        <div class="ec-v22" style="margin-top:14px"><p>Diagnósticos internos ficam separados das métricas comerciais.</p><button type="button" class="ec-v23-link-button" wire:click="chooseKind('pilot')">Ver respostas de teste ({{ \App\Models\EmailCampaignTestMessage::query()->whereNotNull('replied_at')->count() }})</button></div>
     @elseif ($kind === 'notices')
+        @error('reply')<p role="alert" class="ec-v22-alert">{{ $message }}</p>@enderror
         @include('campaigns.inbound-notices-global')
     @elseif ($kind === 'suppressed')
         @include('campaigns.unsubscribed')
@@ -307,7 +338,7 @@ new class extends Component
                         $subject = $kind === 'pilot' ? (string) ($entry->reply_subject ?: 'Resposta ao teste') : (string) ($entry->subject ?: 'Sem assunto');
                         $when = $kind === 'pilot' ? $entry->replied_at : $entry->received_at;
                     @endphp
-                    <button type="button" wire:key="ec21-reply-{{ $kind }}-{{ $entry->id }}" wire:click="open({{ $entry->id }})" class="ec21-inbox-item {{ $selectedId === $entry->id ? 'is-selected' : '' }}" aria-pressed="{{ $selectedId === $entry->id ? 'true' : 'false' }}"><span class="ec21-avatar">{{ mb_strtoupper(mb_substr($sender ?: '?', 0, 1)) }}</span><span class="ec21-inbox-copy"><strong>{{ $sender }}</strong><span>{{ $subject }}</span><small>Campanha: {{ $entry->campaign?->name ?: ('#'.(string) $entry->email_campaign_id.' · cadastro indisponível') }}</small>@if($kind === 'commercial')@if(isset($ec90ReplyCompanies[(int)$entry->id]))<small class="ec90-reply-company">{{ $ec90ReplyCompanies[(int)$entry->id]['label'] }}</small>@endif @endif</span><time datetime="{{ $when?->toIso8601String() }}">{{ $when?->format('d/m H:i') }}</time></button>
+                    <button type="button" wire:key="ec21-reply-{{ $kind }}-{{ $entry->id }}" wire:click="open({{ $entry->id }})" class="ec21-inbox-item {{ $selectedId === $entry->id ? 'is-selected' : '' }}" aria-pressed="{{ $selectedId === $entry->id ? 'true' : 'false' }}"><span class="ec21-avatar">{{ mb_strtoupper(mb_substr($sender ?: '?', 0, 1)) }}</span><span class="ec21-inbox-copy"><strong>{{ $sender }}</strong><span>{{ $subject }}</span><small>Recebido em: {{ $kind === 'pilot' ? \App\Services\Campaigns\CampaignReplyMailbox::testMailboxLabel($entry) : ($entry->mailbox ?: 'Não registrada') }}</small><small>Campanha: {{ $entry->campaign?->name ?: ('#'.(string) $entry->email_campaign_id.' · cadastro indisponível') }}</small>@if($kind === 'commercial')@if(isset($ec90ReplyCompanies[(int)$entry->id]))<small class="ec90-reply-company">{{ $ec90ReplyCompanies[(int)$entry->id]['label'] }}</small>@endif @endif</span><time datetime="{{ $when?->toIso8601String() }}">{{ $when?->format('d/m H:i') }}</time></button>
                 @empty
                     <div class="ec21-inbox-empty"><span aria-hidden="true">✉</span><h3>{{ $search !== '' ? 'Nenhuma conversa encontrada' : 'Nenhuma resposta nesta categoria' }}</h3><p>{{ $search !== '' ? 'Tente outro e-mail ou assunto.' : 'Quando uma pessoa responder, a conversa vinculada aparecerá aqui.' }}</p></div>
                 @endforelse
@@ -326,8 +357,10 @@ new class extends Component
                     $ec90SelectedCompanies = $test ? [] : app(\App\Services\Campaigns\CampaignReplyCompany::class)->forReplies([$entry]);
                     $ec90Company = $ec90SelectedCompanies[(int)$entry->id] ?? null;
                 @endphp
-                <header class="ec21-reader-heading"><div><span class="ec21-eyebrow">MENSAGEM RECEBIDA</span><h3>{{ $subject ?: 'Sem assunto' }}</h3><p>Campanha vinculada: <strong>{{ $entry->campaign?->name ?: ('#'.(string) $entry->email_campaign_id.' · não localizada') }}</strong>@if($entry->campaign) <a href="{{ route('campaigns.index') }}" wire:navigate>Ver campanhas</a> @endif</p></div><span class="ec21-tag">{{ $test ? 'Teste piloto' : 'Comercial' }}</span></header>
-                <div class="ec21-reader-person"><span class="ec21-avatar">{{ mb_strtoupper(mb_substr($sender ?: '?', 0, 1)) }}</span><div><strong>{{ $sender }}</strong><small>Resposta de e-mail registrada no Prospector</small></div><time datetime="{{ $when?->toIso8601String() }}">{{ $when?->format('d/m/Y H:i') }}</time></div>
+                <header class="ec21-reader-heading"><div><span class="ec21-eyebrow">MENSAGEM RECEBIDA</span><h3>{{ $subject ?: 'Sem assunto' }}</h3><p>Campanha vinculada: <strong>{{ $entry->campaign?->name ?: ('#'.(string) $entry->email_campaign_id.' · não localizada') }}</strong>@if($entry->campaign) <a href="{{ route('campaigns.index') }}" wire:navigate>Ver campanhas</a> @endif</p></div><span class="ec21-tag">{{ $test ? 'Resposta de teste' : 'Comercial' }}</span></header>
+                <div class="ec21-reader-person"><span class="ec21-avatar">{{ mb_strtoupper(mb_substr($sender ?: '?', 0, 1)) }}</span><div><strong>{{ $sender }}</strong><small>Recebido em: {{ $test ? \App\Services\Campaigns\CampaignReplyMailbox::testMailboxLabel($entry) : ($entry->mailbox ?: 'Não registrada') }}</small>
+                    @php $ecReplySentBy = $test ? \App\Services\Campaigns\CampaignReplyMailbox::dedicatedTestAddress((string) $entry->message_id, (int) $entry->email_campaign_id) : ($entry->recipient?->getAttribute('sender_address') ?: $entry->campaign?->from_address); @endphp
+                    @if ($ecReplySentBy)<small>Envio original: {{ $ecReplySentBy }}</small>@endif</div><time datetime="{{ $when?->toIso8601String() }}">{{ $when?->format('d/m/Y H:i') }}</time></div>
                 @if ($ec90Company !== null)
                     <div class="ec90-reply-context" aria-label="Empresa do remetente">
                         <strong>{{ $ec90Company['label'] }}</strong>
@@ -339,6 +372,7 @@ new class extends Component
                         </div>
                     </div>
                 @endif
+                @error('reply')<div role="alert" class="ec21-note">{{ $message }}</div>@enderror
                 @if ($body !== null)
                     @php
                         $chunks = preg_split('/(?=^\s*(?:-{4,}|De:\s|From:\s|Em\s.+escreveu:|On\s.+wrote:))/mi', (string) $body, 2);

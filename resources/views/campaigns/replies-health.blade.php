@@ -7,6 +7,12 @@
             <span data-state="{{ $ec77Health['state'] }}">{{ $ec77Health['label'] }}</span>
         </div>
         <small>Caixa IMAP monitorada: {{ config('campaign_mail.imap_username') ?: 'Não configurada' }} · Última sincronização: {{ $ec77Health['last_sync_at'] ?? 'Nunca registrada' }} · Respostas comerciais: {{ $ec77Health['campaign_replies'] }} · Testes rastreados: {{ $ec77Health['tracked_replies'] }}</small>
+        {{-- EC_REPLY_MAILBOX_V2_3: each cursor is independently checked; no network call in the view. --}}
+        @if (\App\Services\Campaigns\DualCampaignSenders::state()['enabled'])
+            @foreach (\App\Services\Campaigns\DualCampaignSenders::KEYS as $ecMailboxKey)
+                <small style="display:block">{{ $ecMailboxKey }}@exportcontrol.com.br · {{ \App\Services\Campaigns\DualCampaignSenders::inboxReady($ecMailboxKey) ? 'Sincronização recente' : 'Sincronização pendente ou atrasada' }}</small>
+            @endforeach
+        @endif
         @if ($ec77Health['state'] !== 'healthy')
             <p>As respostas chegam à caixa de e-mail, mas só aparecem aqui quando o leitor IMAP da conta de resposta está configurado e sincronizando.</p>
         @else

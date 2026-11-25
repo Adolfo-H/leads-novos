@@ -69,6 +69,14 @@ final class CampaignAutomaticFollowups
 
         // Sem IMAP sincronizado não sabemos se uma pessoa respondeu.
         // Isso exige CAMPAIGN_IMAP_ENABLED e sincronização efetiva.
+        $senderState = DualCampaignSenders::state();
+        if ($senderState['blocked']) {
+            return false;
+        }
+        if ($senderState['enabled']) {
+            return DualCampaignSenders::ready();
+        }
+
         return app(CampaignImapHealth::class)->snapshot()['state'] === 'healthy';
     }
 
@@ -110,6 +118,10 @@ final class CampaignAutomaticFollowups
             $root = EmailCampaign::query()->find((int) $plan->email_campaign_id);
             $previous = EmailCampaign::query()->find((int) ($plan->last_campaign_id ?: $plan->email_campaign_id));
             if ($root === null || $previous === null || $root->status === 'canceled') {
+                return false;
+            }
+            $senderState = DualCampaignSenders::state();
+            if ($senderState['blocked'] || ($senderState['enabled'] && $root->getAttribute('sender_mode') !== 'dual')) {
                 return false;
             }
             if ($previous->status === 'canceled') {

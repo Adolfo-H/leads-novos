@@ -23,6 +23,7 @@ final class CampaignTrackedTest
     public function send(User $user, EmailCampaign $campaign): EmailCampaignTestMessage
     {
         abort_unless($user->isCommercialManager(), 403);
+        DualCampaignSenders::checkLegacyTest();
 
         if ($campaign->status !== 'draft') {
             throw ValidationException::withMessages([

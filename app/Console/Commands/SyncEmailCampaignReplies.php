@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\EmailCampaignBounce;
 use App\Models\EmailCampaignInboxCursor;
 use App\Services\Campaigns\CampaignInbox;
+use App\Services\Campaigns\DualCampaignSenders;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
@@ -12,7 +13,7 @@ use Symfony\Component\Process\Process;
 class SyncEmailCampaignReplies extends Command
 {
     // EC77_RECOVERY_OPTIONS: recuperação manual de cabeçalhos recentes, sem envio.
-    protected $signature = 'campaigns:sync-replies {--backfill-days=0 : Recuperar respostas recentes (1 a 14 dias)} {--backfill-max=150 : Máximo de cabeçalhos recentes (10 a 300)}';
+    protected $signature = 'campaigns:sync-replies {--backfill-days=0 : Recuperar respostas recentes (1 a 14 dias)} {--backfill-max=150 : Máximo de cabeçalhos recentes (10 a 300)} {--profile= : Caixa dedicada (publicidade ou propaganda)}';
 
     protected $description = 'Importa cabeçalhos de respostas IMAP relacionadas a envios do Prospector';
 
@@ -24,8 +25,34 @@ class SyncEmailCampaignReplies extends Command
             return self::SUCCESS;
         }
 
-        $mailbox = (string) config('campaign_mail.imap_username');
-        if ($mailbox === '' || ! config('campaign_mail.imap_password')) {
+        $profileKey = trim((string) $this->option('profile'));
+        if ($profileKey !== '') {
+            return $this->syncMailbox($inbox, $profileKey);
+        }
+
+        $result = $this->syncMailbox($inbox, '');
+        if ((int) $this->option('backfill-days') === 0 && DualCampaignSenders::state()['enabled']) {
+            foreach (DualCampaignSenders::KEYS as $key) {
+                if ($this->syncMailbox($inbox, $key) !== self::SUCCESS) {
+                    $result = self::FAILURE;
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    private function syncMailbox(CampaignInbox $inbox, string $profileKey): int
+    {
+        $profile = $profileKey === '' ? null : DualCampaignSenders::profile($profileKey);
+        if ($profileKey !== '' && $profile === null) {
+            $this->error('Caixa dedicada inválida ou incompleta.');
+
+            return self::FAILURE;
+        }
+        $mailbox = $profile['imap_username'] ?? (string) config('campaign_mail.imap_username');
+        $password = $profile['imap_password'] ?? (string) config('campaign_mail.imap_password');
+        if ($mailbox === '' || $password === '') {
             $this->error('Credenciais IMAP ausentes. Verifique o .env local (não compartilhe senhas).');
 
             return self::FAILURE;
@@ -39,11 +66,11 @@ class SyncEmailCampaignReplies extends Command
         }
         $cursor = EmailCampaignInboxCursor::query()->where('mailbox', $mailbox)->first();
         $input = [
-            'host' => (string) config('campaign_mail.imap_host'),
-            'port' => (int) config('campaign_mail.imap_port', 993),
+            'host' => $profile['imap_host'] ?? (string) config('campaign_mail.imap_host'),
+            'port' => $profile['imap_port'] ?? (int) config('campaign_mail.imap_port', 993),
             'username' => $mailbox,
-            'password' => (string) config('campaign_mail.imap_password'),
-            'folder' => (string) config('campaign_mail.imap_folder', 'INBOX'),
+            'password' => $password,
+            'folder' => $profileKey !== '' ? 'INBOX' : (string) config('campaign_mail.imap_folder', 'INBOX'),
             'since_uid' => (int) ($cursor->last_uid ?? 0),
             'known_validity' => (string) ($cursor->uid_validity ?? ''),
             'limit' => $backfillDays > 0 ? $backfillMax : 60,
@@ -96,7 +123,9 @@ class SyncEmailCampaignReplies extends Command
 
             return self::SUCCESS;
         } catch (\Throwable $exception) {
-            report($exception);
+            if ($profileKey === '') {
+                report($exception);
+            }
             $this->error('Erro na sincronização IMAP: '.class_basename($exception).'.');
 
             return self::FAILURE;

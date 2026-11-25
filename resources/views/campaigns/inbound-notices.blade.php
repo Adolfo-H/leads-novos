@@ -47,7 +47,7 @@
                 <div class="ec-v22-body">
                     <div class="ec-v22-meta"><span class="ec-v22-pill ec-v22-pill--{{ $ecV22Type }}">{{ $ecInboundLabels[$ecNotice->notice_type] ?? 'Retorno para revisão' }}</span><span class="ec-v22-timestamp">{{ \App\Support\CampaignLocalTime::format($ecNotice->received_at, 'Data indisponível') }}</span></div>
                     <h4 class="ec-v22-subject">{{ $ecNotice->subject ?: 'Sem assunto' }}</h4>
-                    <p class="ec-v22-email">De: {{ $ecNotice->from_email }}</p>
+                    <p class="ec-v22-email">De: {{ $ecNotice->from_email }}</p>{{-- EC_REPLY_MAILBOX_V2_3 --}}<p class="ec-v22-email">Recebido em: {{ $ecNotice->mailbox ?: 'Não registrada' }}</p>
                     <div class="ec-v22-foot"><span>{{ $ecInboundMatches[$ecNotice->link_method] ?? 'Conferir vínculo' }}</span></div>
                     @if ($ecNotice->notice_type === 'reply_needs_review')
                         <div class="ec-v22-actions"><a class="ec-v22-button" href="{{ route('campaigns.replies') }}" wire:navigate>Revisar na caixa geral</a></div>
@@ -74,7 +74,7 @@
         @foreach ($ecV22Unlinked as $ecV22Notice)
         <article class="ec-v22-item" wire:key="ec-v22-campaign-unlinked-{{ $ecV22Notice->id }}">
             <div class="ec-v22-avatar" aria-hidden="true">{{ mb_strtoupper(mb_substr((string) $ecV22Notice->from_email, 0, 1)) }}</div>
-            <div class="ec-v22-body"><div class="ec-v22-meta"><span class="ec-v22-pill ec-v22-pill--address">E-mail alterado · conferir</span><span class="ec-v22-timestamp">{{ \App\Support\CampaignLocalTime::format($ecV22Notice->received_at, 'Data indisponível') }}</span></div><h4 class="ec-v22-subject">{{ $ecV22Notice->subject }}</h4><p class="ec-v22-email">De: {{ $ecV22Notice->from_email }}</p></div>
+            <div class="ec-v22-body"><div class="ec-v22-meta"><span class="ec-v22-pill ec-v22-pill--address">E-mail alterado · conferir</span><span class="ec-v22-timestamp">{{ \App\Support\CampaignLocalTime::format($ecV22Notice->received_at, 'Data indisponível') }}</span></div><h4 class="ec-v22-subject">{{ $ecV22Notice->subject }}</h4><p class="ec-v22-email">De: {{ $ecV22Notice->from_email }}</p><p class="ec-v22-email">Recebido em: {{ $ecV22Notice->mailbox ?: 'Não registrada' }}</p></div>
         </article>
         @endforeach
     </div>
