@@ -27,7 +27,7 @@ final class CampaignContactTransfer
 
         $expected = [];
         foreach ($selected as $rawKey) {
-            if (! is_string($rawKey) || preg_match('/^(?:(?:hubspot|manual):[0-9]+|receita:[0-9a-fA-F-]{36})$/D', $rawKey) !== 1
+            if (! is_string($rawKey) || preg_match('/^(?:(?:hubspot|manual):[0-9]+|receita:[0-9a-fA-F-]{36}|import:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/D', $rawKey) !== 1
                 || isset($expected[$rawKey])) {
                 throw ValidationException::withMessages([
                     'recipients' => 'A seleção contém contato repetido ou identificação inválida. Atualize a lista.',

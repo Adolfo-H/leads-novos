@@ -30,7 +30,7 @@ final class DedicatedCampaignProbe
             ->where('attempted_at', '>=', $cutoff)->count();
     }
 
-    public function send(User $user, EmailCampaign $campaign, string $key): void
+    public function send(User $user, EmailCampaign $campaign, string $key, ?string $requestId = null): void
     {
         abort_unless($user->isCommercialManager(), 403);
         $profile = DualCampaignSenders::profile($key);
@@ -40,7 +40,11 @@ final class DedicatedCampaignProbe
             throw ValidationException::withMessages(['campaign' => 'Configure um endereço de teste autorizado, diferente das caixas remetentes.']);
         }
 
-        $messageId = self::PREFIX.$campaign->id.'-'.$key.'@exportcontrol.com.br';
+        if ($requestId !== null && preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/Di', $requestId) !== 1) {
+            throw ValidationException::withMessages(['campaign' => 'Identificador de teste inválido. Atualize a página.']);
+        }
+        $suffix = $requestId === null ? '' : '-'.strtolower($requestId);
+        $messageId = self::PREFIX.$campaign->id.'-'.$key.$suffix.'@exportcontrol.com.br';
         $test = DB::transaction(static function () use ($user, $campaign, $to, $messageId): EmailCampaignTestMessage {
             $gate = DB::table('email_campaign_dispatch_gates')->where('id', 1)->lockForUpdate()->first();
             $state = DualCampaignSenders::state();
@@ -55,13 +59,11 @@ final class DedicatedCampaignProbe
                 throw ValidationException::withMessages(['campaign' => 'Use um rascunho e aguarde o encerramento das tentativas em andamento. Não há reenvio de diagnóstico incerto.']);
             }
             if (EmailCampaignTestMessage::query()->where('message_id', $messageId)->exists()) {
-                throw ValidationException::withMessages(['campaign' => 'Esta caixa já foi testada neste rascunho. Confira o resultado recebido; não repita a tentativa.']);
+                throw ValidationException::withMessages(['campaign' => 'Esta solicitação de teste já foi registrada. Confira o resultado; para um novo teste, atualize a página.']);
             }
             $now = now('UTC');
-            // Limite próprio de diagnóstico: no máximo dois testes dedicados por hora no sistema.
-            if (self::attemptsSince($now->copy()->subHour()) >= 2) {
-                throw ValidationException::withMessages(['campaign' => 'Limite de dois diagnósticos por hora atingido.']);
-            }
+            // The additional fixed two/hour ceiling is removed for internal diagnostics only.
+            // The following approved GLOBAL rolling quotas, serialization and hold remain mandatory.
             $limits = app(CampaignSendPolicy::class)->effective();
             foreach (['tick' => $now->copy()->subMinute(), 'hour' => $now->copy()->subHour(), 'day' => $now->copy()->subDay()] as $unit => $cutoff) {
                 $used = EmailCampaignRecipient::query()->where('attempted_at', '>=', $cutoff)->count()

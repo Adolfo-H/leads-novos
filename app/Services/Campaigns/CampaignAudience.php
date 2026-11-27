@@ -7,6 +7,7 @@ use App\Services\Contacts\ReceitaContactChannels;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 use stdClass;
 
@@ -52,7 +53,7 @@ final class CampaignAudience
      * @param  list<string>  $keys
      * @return list<array{source_key:string,email:string,normalized_email:string,contact_name:string,company_name:string,job_title:string,suppressed:bool}>
      */
-    public function resolve(array $keys): array
+    public function resolve(array $keys, ?int $importOwnerId = null): array
     {
         $cap = max(1, min(1000, (int) config('campaign_mail.max_recipients', 100)));
         $keys = array_values(array_unique($keys));
@@ -68,6 +69,24 @@ final class CampaignAudience
             ->whereIn('source_key', $keys)
             ->get(['source_key', 'email', 'person_name', 'company_name', 'job_title'])
             ->keyBy('source_key');
+
+        // Imported contacts never appear in the general directory / bulk filtered selection.
+        // Only reviewed records owned by the current commercial manager can resolve.
+        $importKeys = array_values(array_filter($keys, static fn (string $key): bool => preg_match('/^import:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/D', $key) === 1));
+        if ($importKeys !== []) {
+            $ownerId = $importOwnerId ?? (int) auth()->id();
+            if ($ownerId > 0 && Schema::hasTable('email_campaign_import_contacts')) {
+                $ids = array_map(static fn (string $key): string => substr($key, 7), $importKeys);
+                $imports = DB::table('email_campaign_import_contacts')
+                    ->where('owner_id', $ownerId)->whereIn('id', $ids)
+                    ->whereNotNull('reviewed_at')->whereNotNull('permission_reference')
+                    ->selectRaw("('import:' || CAST(id AS VARCHAR)) AS source_key")
+                    ->addSelect(['email', 'person_name', 'company_name', 'job_title'])->get();
+                foreach ($imports as $person) {
+                    $people->put((string) $person->source_key, $person);
+                }
+            }
+        }
 
         $eligible = [];
         $usedEmails = [];

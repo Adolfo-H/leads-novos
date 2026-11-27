@@ -1,5 +1,7 @@
 <?php
 
+// EC_PROPOSALS_V27
+
 namespace App\Http\Controllers;
 
 use App\Models\EcProposal;
@@ -51,13 +53,18 @@ final class EcProposalsController extends Controller
             ->orderBy('name')->limit(20)->get(['id', 'name', 'hubspot_id']);
         $services = DB::table('ec_proposal_templates')->orderBy('id')->get();
 
-        return compact('companies', 'services', 'q');
+        $numbering = DB::table('ec_proposal_numbering')->where('id', 1)->first();
+
+        return compact('companies', 'services', 'q', 'numbering');
     }
 
     public function index(Request $request): View
     {
         $this->workspace($request);
-        $query = EcProposal::query();
+        // EC_ATTACHMENT_V29: attachment acceptance is a commercial projection, not a formal signature.
+        $attachment = "EXISTS (SELECT 1 FROM ec_proposal_events AS e29 WHERE e29.proposal_id = ec_proposals.id AND e29.event = 'crm_attachment_acceptance_v29')";
+        $accepted = "(ec_proposals.status = 'accepted' OR (ec_proposals.status IN ('imported','issued','sent','partially_accepted') AND ".$attachment.'))';
+        $query = EcProposal::query()->select('ec_proposals.*')->selectRaw('CASE WHEN '.$attachment.' THEN 1 ELSE 0 END AS attachment_accepted_v29');
         $search = mb_substr(trim((string) $request->query('q', '')), 0, 100);
         if ($search !== '') {
             $query->where(static function ($q) use ($search): void {
@@ -68,7 +75,14 @@ final class EcProposalsController extends Controller
         }
         $status = (string) $request->query('status', 'all');
         if (in_array($status, ['draft', 'issued', 'sent', 'accepted', 'partially_accepted', 'declined', 'imported', 'generation_failed'], true)) {
-            $query->where('status', $status);
+            if ($status === 'accepted') {
+                $query->whereRaw($accepted);
+            } else {
+                $query->where('status', $status);
+                if (in_array($status, ['issued', 'sent'], true)) {
+                    $query->whereRaw('NOT ('.$attachment.')');
+                }
+            }
         }
         $service = (string) $request->query('service', 'all');
         if (in_array($service, ProposalPricing::ALL, true)) {
@@ -82,8 +96,8 @@ final class EcProposalsController extends Controller
         $counts = [
             'total' => EcProposal::query()->count(),
             'draft' => EcProposal::query()->where('status', 'draft')->count(),
-            'issued' => EcProposal::query()->whereIn('status', ['issued', 'sent'])->count(),
-            'accepted' => EcProposal::query()->where('status', 'accepted')->count(),
+            'issued' => EcProposal::query()->whereIn('status', ['issued', 'sent'])->whereRaw('NOT ('.$attachment.')')->count(),
+            'accepted' => EcProposal::query()->whereRaw($accepted)->count(),
         ];
 
         return view('proposals.index', compact('list', 'counts', 'search', 'status', 'service', 'year'));
@@ -124,6 +138,10 @@ final class EcProposalsController extends Controller
             'service_codes.*' => ['required', 'string', Rule::in(ProposalPricing::ALL)],
             'price_date' => ['required', 'date_format:Y-m-d'],
             'recurring_total' => ['nullable', 'integer', 'min:1', 'max:100000000'],
+            'dfe_cnpj_count' => ['nullable', 'integer', 'min:1', 'max:350'],
+            'dfe_total' => ['nullable', 'integer', 'min:0', 'max:100000000'],
+            'nfse_cnpj_count' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'nfse_total' => ['nullable', 'integer', 'min:1', 'max:100000000'],
             'recurring_from' => ['nullable', 'date_format:Y-m-d'],
             'recurring_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:recurring_from'],
             'retro_total' => ['nullable', 'integer', 'min:1', 'max:100000000'],
@@ -206,6 +224,7 @@ final class EcProposalsController extends Controller
         $attrs = $proposal->only([
             'client_name', 'client_contact', 'client_email', 'client_cnpj', 'company_id',
             'hubspot_company_id', 'hubspot_deal_id', 'recurring_total', 'retro_total',
+            'dfe_cnpj_count', 'dfe_total', 'nfse_cnpj_count', 'nfse_total',
             'license_status', 'retro_deadline', 'validity_days', 'payment_days',
             'sales_responsible', 'notes',
         ]);
@@ -296,7 +315,9 @@ final class EcProposalsController extends Controller
     {
         $this->manager($request);
 
-        return view('proposals.import');
+        $numbering = DB::table('ec_proposal_numbering')->where('id', 1)->first();
+
+        return view('proposals.import', compact('numbering'));
     }
 
     public function import(Request $request, ProposalWorkflow $workflow): RedirectResponse
@@ -366,12 +387,15 @@ final class EcProposalsController extends Controller
     public function pricing(Request $request): View
     {
         $this->workspace($request);
-        $versions = DB::table('ec_proposal_price_versions')->orderBy('service')->orderByDesc('effective_from')->get();
+        $versions = DB::table('ec_proposal_price_versions')->orderBy('service')->orderByDesc('effective_from')->orderByDesc('id')->get();
         $adjustments = DB::table('ec_proposal_adjustments')->orderByDesc('effective_from')->get();
         $taxes = DB::table('ec_proposal_tax_profiles')->orderByDesc('effective_from')->get();
         $numbering = DB::table('ec_proposal_numbering')->where('id', 1)->first();
 
-        return view('proposals.pricing', compact('versions', 'adjustments', 'taxes', 'numbering'));
+        $priceDate = now('America/Sao_Paulo')->toDateString();
+        $priceTables = app(ProposalPricing::class)->tables($priceDate);
+
+        return view('proposals.pricing', compact('versions', 'adjustments', 'taxes', 'numbering', 'priceDate', 'priceTables'));
     }
 
     public function addAdjustment(Request $request): RedirectResponse
@@ -426,7 +450,7 @@ final class EcProposalsController extends Controller
             'service' => ['required', Rule::in(ProposalPricing::OFFICIAL)],
             'version' => ['required', 'string', 'max:100'],
             'effective_from' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
-            'tiers' => ['required', 'array', 'min:5', 'max:6'],
+            'tiers' => ['required', 'array', 'min:5', 'max:8'],
             'tiers.*.fixed' => ['required', 'numeric', 'min:0', 'max:999999'],
             'tiers.*.unit' => ['required', 'numeric', 'min:0', 'max:999999'],
             'special_implementation' => ['nullable', 'numeric', 'min:0', 'max:999999'],
@@ -443,6 +467,9 @@ final class EcProposalsController extends Controller
             throw ValidationException::withMessages(['tiers' => 'A estrutura das faixas oficiais não pode ser alterada sem novo modelo.']);
         }
         foreach ($base['faixas'] as $i => &$tier) {
+            if ($data['service'] === 'DFE' && (float) $data['tiers'][$i]['unit'] !== 0.0) {
+                throw ValidationException::withMessages(['tiers' => 'DF-e usa valor fixo por faixa, sem tarifa unitária.']);
+            }
             $tier['fixed'] = (string) $data['tiers'][$i]['fixed'];
             $tier['unit'] = (string) $data['tiers'][$i]['unit'];
         }

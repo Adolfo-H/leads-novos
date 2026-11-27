@@ -1,0 +1,15 @@
+{
+  "servico": "DFE", "versao": "2026-11-01_BASE_EC1057", "status": "APROVADO",
+  "valores_sao": "LIQUIDOS_ANTES_DOS_TRIBUTOS", "regra_calculo": "FIXO_POR_FAIXA_CNPJ",
+  "fonte": "EC 2026/1057, p. 3 e 5: base já inclui ajuste de 10% de 10/10/2025; aplicar evento de 01/11/2026 uma única vez",
+  "faixas": [
+    {"tier":1,"min":0,"max":10,"fixed":"165.00","unit":"0.00","xml_reference":500},
+    {"tier":2,"min":11,"max":50,"fixed":"275.00","unit":"0.00","xml_reference":1000},
+    {"tier":3,"min":51,"max":100,"fixed":"385.00","unit":"0.00","xml_reference":2000},
+    {"tier":4,"min":101,"max":150,"fixed":"495.00","unit":"0.00","xml_reference":4000},
+    {"tier":5,"min":151,"max":200,"fixed":"715.00","unit":"0.00","xml_reference":8000},
+    {"tier":6,"min":201,"max":250,"fixed":"935.00","unit":"0.00","xml_reference":16000},
+    {"tier":7,"min":251,"max":300,"fixed":"1320.00","unit":"0.00","xml_reference":32000},
+    {"tier":8,"min":301,"max":350,"fixed":"1980.00","unit":"0.00","xml_reference":64000}
+  ]
+}

@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Services\Campaigns\CampaignInstitutionalSignature;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
@@ -24,7 +25,9 @@ class ProspectorCampaignMessage extends Mailable
         return new Envelope(
             from: new Address(
                 $this->senderAddress ?? (string) config('campaign_mail.from_address'),
-                (string) config('campaign_mail.from_name', 'ExportControl'),
+                CampaignInstitutionalSignature::dedicatedAddress($this->senderAddress) !== null
+                    ? CampaignInstitutionalSignature::DISPLAY_NAME
+                    : (string) config('campaign_mail.from_name', 'ExportControl'),
             ),
             replyTo: [$this->senderAddress ?? (string) config('campaign_mail.reply_to')],
             subject: $this->mailSubject,
@@ -52,6 +55,7 @@ class ProspectorCampaignMessage extends Mailable
                 'messageBody' => $this->mailBody,
                 'unsubscribeUrl' => $this->unsubscribeUrl,
                 'isTest' => $this->isTest,
+                'institutionalSenderAddress' => CampaignInstitutionalSignature::dedicatedAddress($this->senderAddress),
             ],
         );
     }

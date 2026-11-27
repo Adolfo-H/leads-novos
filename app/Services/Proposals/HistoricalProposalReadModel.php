@@ -13,10 +13,11 @@ final class HistoricalProposalReadModel
     public function listing(Request $request): array
     {
         $base = EcProposal::query()->leftJoin('ec_proposal_history_metadata as hist', 'hist.proposal_id', '=', 'ec_proposals.id');
-        // Formal workflow remains unchanged. Historic status is a separate projection.
-        $accepted = "(ec_proposals.status = 'accepted' OR (ec_proposals.origin = 'imported' AND hist.commercial_status = 'accepted_crm'))";
+        // EC_ATTACHMENT_V29: prior CRM inference is not proof of a matching attachment.
+        $attachment = "(EXISTS (SELECT 1 FROM ec_proposal_events AS v29 WHERE v29.proposal_id = ec_proposals.id AND v29.event = 'crm_attachment_acceptance_v29'))";
+        $accepted = "(ec_proposals.status = 'accepted' OR (ec_proposals.status IN ('imported','issued','sent','partially_accepted') AND ".$attachment.'))';
         $draft = "(ec_proposals.origin <> 'imported' AND ec_proposals.status = 'draft')";
-        $sent = "((ec_proposals.origin = 'imported' AND ec_proposals.status <> 'accepted' AND coalesce(hist.commercial_status, 'sent_history') <> 'accepted_crm') OR (ec_proposals.origin <> 'imported' AND ec_proposals.status IN ('issued','sent')))";
+        $sent = "((ec_proposals.origin = 'imported' AND ec_proposals.status <> 'accepted' OR ec_proposals.origin <> 'imported' AND ec_proposals.status IN ('issued','sent')) AND NOT ".$attachment.')';
         $counts = [
             'total' => (clone $base)->count('ec_proposals.id'),
             'draft' => (clone $base)->whereRaw($draft)->count('ec_proposals.id'),
@@ -62,7 +63,7 @@ final class HistoricalProposalReadModel
                     ->orWhereYear('ec_proposals.issued_on', $year);
             });
         }
-        $page = $base->select('ec_proposals.*')->addSelect([
+        $page = $base->select('ec_proposals.*')->selectRaw('CASE WHEN '.$attachment.' THEN 1 ELSE 0 END AS hist_attachment_accepted')->addSelect([
             'hist.title as hist_title', 'hist.document_name as hist_document_name', 'hist.historic_year as hist_year',
             'hist.historic_number as hist_number', 'hist.issued_on as hist_issued_on', 'hist.responsible_name as hist_responsible_name',
             'hist.responsible_email as hist_responsible_email', 'hist.monthly_amount as hist_monthly_amount', 'hist.one_time_amount as hist_one_time_amount',

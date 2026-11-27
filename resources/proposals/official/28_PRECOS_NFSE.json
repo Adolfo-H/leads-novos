@@ -1,0 +1,13 @@
+{
+  "servico": "NFSE", "versao": "2026-11-01_BASE_EC1058", "status": "APROVADO",
+  "valores_sao": "LIQUIDOS_ANTES_DOS_TRIBUTOS", "regra_calculo": "FAIXAS_PROGRESSIVAS_MARGINAIS",
+  "fonte": "APRESENTACAO_PREVIA_MM_BELA_DFE_NFSE de 19/11/2026, tabela base; EC 2026/1058 p. 3 e 5, tabela reajustada",
+  "faixas": [
+    {"tier":1,"min":1,"max":150,"fixed":"150.00","unit":"0.00"},
+    {"tier":2,"min":151,"max":500,"fixed":"0.00","unit":"0.35"},
+    {"tier":3,"min":501,"max":3000,"fixed":"0.00","unit":"0.20"},
+    {"tier":4,"min":3001,"max":6000,"fixed":"0.00","unit":"0.18"},
+    {"tier":5,"min":6001,"max":10000,"fixed":"0.00","unit":"0.15"},
+    {"tier":6,"min":10001,"max":null,"fixed":"0.00","unit":"0.10"}
+  ]
+}

@@ -1,5 +1,7 @@
 <?php
 
+// EC_PROPOSALS_V27
+
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -55,5 +57,6 @@ final class EcProposalCatalogSeeder extends Seeder
             'rates' => json_encode($tax['aliquotas_percentuais'], JSON_THROW_ON_ERROR),
             'approved' => true, 'created_at' => now(), 'updated_at' => now(),
         ]);
+        $this->call(EcProposalAdditionalCatalogSeeder::class);
     }
 }

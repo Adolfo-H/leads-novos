@@ -26,7 +26,13 @@ final class CampaignManager
             throw ValidationException::withMessages(['campaign' => 'Somente rascunhos podem ser editados.']);
         }
 
-        $candidates = app(CampaignAudience::class)->resolve($keys);
+        $importKeys = array_values(array_filter($keys, static fn (string $key): bool => str_starts_with($key, 'import:')));
+        $candidates = $importKeys === []
+            ? app(CampaignAudience::class)->resolve($keys)
+            : app(CampaignAudience::class)->resolve($keys, (int) $user->id);
+        if (array_diff($importKeys, array_column($candidates, 'source_key')) !== []) {
+            throw ValidationException::withMessages(['recipients' => 'Há destinatários importados sem revisão válida ou duplicados. Revise a seleção.']);
+        }
         if ($candidates === []) {
             throw ValidationException::withMessages(['recipients' => 'Selecione ao menos um contato com e-mail válido.']);
         }
@@ -257,6 +263,8 @@ final class CampaignManager
                 throw ValidationException::withMessages(['campaign' => 'Não há destinatários habilitados.']);
             }
 
+            // Imported rows must retain their reviewed local identity and address.
+            app(CampaignImportedRecipientGuard::class)->assertReviewed($locked);
             DualCampaignSenders::prepare($locked);
 
             $locked->forceFill([

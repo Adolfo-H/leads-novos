@@ -76,10 +76,7 @@ $ec68Pending = (int) ($stats['pending'] ?? 0) + (int) ($stats['reserved'] ?? 0) 
                     </form>
                 @endif
                 @if (in_array($selected->status, ['draft', 'running', 'paused'], true))
-                    <form method="POST" action="{{ route('campaigns.ops-v94.cancel', ['campaign' => $selected->id]) }}" onsubmit="return window.confirm('Cancelar esta campanha? E-mails já enviados não podem ser desfeitos.')">
-                        @csrf
-                        <button type="submit" class="ec68-danger-button">Cancelar campanha</button>
-                    </form>
+                    @include('campaigns.cancel-confirmation-v25')
                 @endif
             @endif
             <a class="ec76-btn ec76-btn-neutral" href="{{ route('campaigns.index') }}">Voltar às campanhas</a>

@@ -37,6 +37,7 @@
                         @foreach (['all' => 'Todos', 'hubspot' => 'HubSpot', 'manual' => 'Cadastro manual', 'receita' => 'Receita Federal'] as $key => $title)
                             <button type="submit" form="v93-selection-form" name="next_origin" value="{{ $key }}" class="{{ $origin === $key ? 'active' : '' }}" aria-pressed="{{ $origin === $key ? 'true' : 'false' }}">{{ $title }}</button>
                         @endforeach
+                        <a href="{{ route('campaigns.import-v27.show', ['wizard_id' => $wizardId]) }}" class="v93-btn" style="color:#007d70;border-color:#96d9ce;background:#edf9f6" data-ec-import-v27>⇧ Importar lista</a>
                     </nav>
                     <form id="v93-selection-form" method="POST" action="{{ route('campaigns.wizard-v93.selection') }}" class="v93-selection-form">
                         @csrf
@@ -168,9 +169,10 @@
                         @csrf
                         <input type="hidden" name="wizard_id" value="{{ $wizardId }}">
                         <label>Nome interno da campanha<input type="text" name="name" maxlength="180" required value="{{ old('name', $state['name'] ?? '') }}" placeholder="Ex.: Apresentação ExportControl"></label>
-                        <label>Assunto do e-mail<input type="text" name="subject" maxlength="180" required value="{{ old('subject', $state['subject'] ?? '') }}"></label>
-                        <label>Mensagem<textarea name="body" rows="16" maxlength="12000" required>{{ old('body', $state['body'] ?? '') }}</textarea></label>
-                        <p class="v93-hint">Pode usar os marcadores &#123;&#123;primeiro_nome&#125;&#125;, &#123;&#123;nome&#125;&#125; e &#123;&#123;empresa&#125;&#125;.</p>
+                        <label>Assunto do e-mail<input type="text" name="subject" maxlength="180" required onfocus="this.form.dataset.ecV25Field='subject'" value="{{ old('subject', $state['subject'] ?? '') }}"></label>
+                        <label>Mensagem<textarea name="body" rows="11" maxlength="12000" required onfocus="this.form.dataset.ecV25Field='body'">{{ old('body', $state['body'] ?? '') }}</textarea></label>
+                        @include('campaigns.message-variables-v25')
+                        @include('campaigns.institutional-signature-preview', ['signatureCampaign' => null])
                         <div class="v93-footer"><a href="{{ route('campaigns.wizard-v93', ['wizard_id' => $wizardId]) }}" class="v93-btn v93-btn-quiet">← Voltar aos contatos</a><button type="submit" class="v93-btn v93-btn-primary">Continuar para ritmo →</button></div>
                     </form>
                 </section>
@@ -179,15 +181,18 @@
         @elseif ($step === 'ritmo')
             <div class="v93-layout">
                 <section class="v93-card">
-                    <div class="v93-card-head"><div><h2>Ritmo e revisão</h2><p>Defina a duração desejada; o servidor respeitará os limites autorizados do SMTP.</p></div></div>
+                    <div class="v93-card-head"><div><h2>Ritmo e revisão</h2><p>Confira a previsão de processamento segundo os limites globais vigentes. Uma cadência própria é opcional.</p></div></div>
                     <form method="POST" action="{{ route('campaigns.wizard-v93.pace') }}" class="v93-editor">
                         @csrf
                         <input type="hidden" name="wizard_id" value="{{ $wizardId }}">
-                        <label>Janela planejada de envio<select name="hours" required>
+                        <label>Modo de ritmo<select name="hours" required aria-describedby="ec-v25-pace-help">
+                            <option value="0" @selected((int) ($state['hours'] ?? 0) === 0)>Automático — limites globais</option>
                             @foreach ([1,2,4,8,12,24] as $hour)
-                                <option value="{{ $hour }}" @selected((int)($state['hours'] ?? 8) === $hour)>{{ $hour }} {{ $hour === 1 ? 'hora' : 'horas' }}</option>
+                                <option value="{{ $hour }}" @selected((int)($state['hours'] ?? 0) === $hour)>{{ $hour }} {{ $hour === 1 ? 'hora' : 'horas' }}</option>
                             @endforeach
                         </select></label>
+                        <small id="ec-v25-pace-help" style="color:#51727b;font-size:12px">Automático usa a capacidade global disponível. Escolha uma duração apenas se quiser impor uma cadência própria mais restritiva.</small>
+                        @include('campaigns.timing-preview-v25')
                         <div class="v93-note">Salvar um rascunho não envia e-mails. A aprovação de envio continua no fluxo protegido do Prospector.</div>
                         <div class="v93-footer"><a href="{{ route('campaigns.wizard-v93', ['wizard_id' => $wizardId, 'passo'=>'mensagem']) }}" class="v93-btn v93-btn-quiet">← Voltar à mensagem</a><button type="submit" class="v93-btn v93-btn-primary">Revisar rascunho →</button></div>
                     </form>
@@ -198,8 +203,10 @@
             <div class="v93-layout">
                 <section class="v93-card">
                     <div class="v93-card-head"><div><h2>Revise antes de salvar</h2><p>Confirme a lista e o texto. Nada será disparado automaticamente.</p></div></div>
-                    <dl class="v93-review"><dt>Campanha</dt><dd>{{ $state['name'] ?? '' }}</dd><dt>Assunto</dt><dd>{{ $state['subject'] ?? '' }}</dd><dt>Destinatários</dt><dd>{{ count($expected) }} endereços</dd><dt>Janela planejada</dt><dd>{{ $state['hours'] ?? 8 }} horas</dd></dl>
+                    <dl class="v93-review"><dt>Campanha</dt><dd>{{ $state['name'] ?? '' }}</dd><dt>Assunto</dt><dd>{{ $state['subject'] ?? '' }}</dd><dt>Destinatários</dt><dd>{{ count($expected) }} endereços</dd><dt>Modo de ritmo</dt><dd>{{ (int) ($state['hours'] ?? 0) === 0 ? 'Automático — limites globais' : ((int) $state['hours']).' horas (cadência própria)' }}</dd></dl>
+                    @include('campaigns.timing-preview-v25')
                     <div class="v93-message-preview">{{ $state['body'] ?? '' }}</div>
+                    @include('campaigns.institutional-signature-preview', ['signatureCampaign' => null])
                     <div class="v93-footer"><a href="{{ route('campaigns.wizard-v93', ['wizard_id' => $wizardId, 'passo'=>'mensagem']) }}" class="v93-btn v93-btn-quiet">← Editar mensagem</a>
                         <form method="POST" action="{{ route('campaigns.wizard-v93.save') }}">@csrf<input type="hidden" name="wizard_id" value="{{ $wizardId }}"><button type="submit" class="v93-btn v93-btn-primary">Salvar rascunho (sem enviar)</button></form>
                     </div>

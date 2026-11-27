@@ -27,7 +27,11 @@ it('separa o aceite CRM do fluxo formal e filtra o histÃ³rico pelo nome e serviÃ
         'commercial_status' => 'accepted_crm', 'extraction_status' => 'extracted',
         'crm_match' => 'exact_code', 'evidence' => '{}', 'updated_at' => now(),
     ]);
+    // EC_ATTACHMENT_V29: previous CRM classification alone is not attachment proof.
     $model = app(HistoricalProposalReadModel::class);
+    expect($model->listing(Request::create('/propostas', 'GET', ['hist_status' => 'accepted']))['counts']['accepted'])->toBe(0);
+    DB::table('ec_proposal_events')->insert(['proposal_id' => $p->id, 'event' => 'crm_attachment_acceptance_v29', 'metadata' => '{}', 'created_at' => now()]);
+
     $result = $model->listing(Request::create('/propostas', 'GET', [
         'hist_status' => 'accepted', 'hist_service' => 'NFSE', 'hist_year' => '2024', 'hist_q' => '305',
     ]));

@@ -10,7 +10,7 @@
             .ec-mail-card { width: 100% !important; max-width: 100% !important; }
             .ec-mail-pad { padding-left: 20px !important; padding-right: 20px !important; }
             .ec-mail-stack { display: block !important; width: 100% !important; max-width: 100% !important; }
-            .ec-mail-signature { width: 175px !important; max-width: 100% !important; height: auto !important; }
+            .ec-mail-signature { width: 155px !important; max-width: 100% !important; height: auto !important; }
             .ec-mail-signature-text { padding-top: 12px !important; padding-left: 0 !important; }
         }
     </style>
@@ -20,9 +20,6 @@
     $source = trim((string) ($messageBody ?? ''));
     $blocks = preg_split('/\R\s*\R/u', $source) ?: [];
     $blocks = array_values(array_filter(array_map('trim', $blocks), static fn (string $value): bool => $value !== ''));
-    $whatsappUrl = 'https://wa.me/5544991026597?text='.rawurlencode(
-        'Olá, Adolfo! Recebi seu e-mail da ExportControl e gostaria de conversar sobre exportações.'
-    );
 @endphp
 <body style="margin:0;padding:0;width:100%;background-color:#edf3f4;color:#173c43;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%">
     <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;color:#edf3f4">
@@ -65,20 +62,7 @@
                     </tr>
                     <tr>
                         <td class="ec-mail-pad" bgcolor="#ffffff" style="padding:5px 28px 21px;background-color:#ffffff">
-                            <table role="presentation" border="0" cellspacing="0" cellpadding="0" width="100%" style="width:100%;border-collapse:collapse;border-top:1px solid #d8e7e8">
-                                <tr>
-                                    <td class="ec-mail-stack" width="34%" valign="middle" style="padding-top:16px;width:34%;vertical-align:middle">
-                                        <img class="ec-mail-signature" src="{{ $message->embed(public_path('images/exportcontrol-assinatura-adolfo.jpg')) }}" alt="Assinatura de Adolfo Heerdt — ExportControl" width="175" border="0" style="display:block;width:175px;max-width:100%;height:auto;border:0;border-radius:6px">
-                                    </td>
-                                    <td class="ec-mail-stack ec-mail-signature-text" width="66%" valign="middle" style="width:66%;padding:16px 0 0 13px;vertical-align:middle;font-family:Arial,Helvetica,sans-serif;overflow-wrap:anywhere">
-                                        <p style="margin:0 0 3px;font-size:16px;font-weight:700;line-height:1.25;color:#173c43">Adolfo Heerdt</p>
-                                        <p style="margin:0 0 7px;font-size:11px;line-height:1.3;color:#298780;font-weight:700">ASSISTENTE COMERCIAL · EXPORTCONTROL</p>
-                                        <p style="margin:0 0 5px;font-size:12px;line-height:1.35"><a href="mailto:adolfo@exportcontrol.com.br" style="color:#36565c;text-decoration:none">adolfo@exportcontrol.com.br</a></p>
-                                        <p style="margin:0 0 7px;font-size:12px;line-height:1.35;color:#36565c">(44) 99102-6597</p>
-                                        <p style="margin:0;font-size:12px;line-height:1.5"><a href="{{ $whatsappUrl }}" style="color:#087c70;text-decoration:underline;font-weight:700">Conversar pelo WhatsApp</a></p>
-                                    </td>
-                                </tr>
-                            </table>
+                            @include('mail.campaign-institutional-signature')
                         </td>
                     </tr>
                     @if ($unsubscribeUrl)

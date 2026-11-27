@@ -8,7 +8,7 @@
         <div class="card kpi"><label>Propostas cadastradas</label><strong>{{ number_format($counts['total'],0,',','.') }}</strong><small>Inclui histórico importado</small></div>
         <div class="card kpi"><label>Rascunhos</label><strong>{{ number_format($counts['draft'],0,',','.') }}</strong><small>Em preparação</small></div>
         <div class="card kpi"><label>Emitidas / enviadas</label><strong>{{ number_format($counts['issued'],0,',','.') }}</strong><small>Documentos salvos</small></div>
-        <div class="card kpi"><label>Aceitas</label><strong>{{ number_format($counts['accepted'],0,',','.') }}</strong><small>Aceite registrado pelo gestor</small></div>
+        <div class="card kpi"><label>Aceitas</label><strong>{{ number_format($counts['accepted'],0,',','.') }}</strong><small>Aceite formal ou anexo idêntico</small></div>
     </div>
     <section class="card">
         <div class="cardhead"><div><h2>Todas as propostas</h2><small>Histórico preservado, sem recalcular valores antigos</small></div><a href="{{ route('proposals.import.page') }}" class="btn">Importar PDF antigo</a></div>
@@ -27,7 +27,7 @@
                 <td><a class="link" href="{{ route('proposals.show',$item) }}">{{ $item->client_name }}</a><small style="display:block">{{ $item->client_email ?: 'Responsável não informado' }}</small></td>
                 <td>{{ implode(' + ', (array) ($item->service_codes ?? [])) }}</td>
                 <td class="amount">{{ $item->monthly_final !== null ? 'R$ '.number_format((float)$item->monthly_final,2,',','.') : 'A calcular' }}</td>
-                <td><span class="tag {{ $item->status }}">{{ ['draft'=>'Rascunho','issued'=>'Emitida','sent'=>'Enviada','accepted'=>'Aceita','partially_accepted'=>'Aceite parcial','declined'=>'Recusada','imported'=>'Importada','generation_failed'=>'Erro de PDF','generating'=>'Gerando'][ $item->status ] ?? $item->status }}</span></td>
+                {{-- EC_ATTACHMENT_V29 --}}<td>@if($item->status !== 'accepted' && in_array($item->status,['imported','issued','sent','partially_accepted'],true) && $item->getAttribute('attachment_accepted_v29'))<span class="tag accepted">Aceita por anexo</span>@else<span class="tag {{ $item->status }}">{{ ['draft'=>'Rascunho','issued'=>'Emitida','sent'=>'Enviada','accepted'=>'Aceita','partially_accepted'=>'Aceite parcial','declined'=>'Recusada','imported'=>'Importada','generation_failed'=>'Erro de PDF','generating'=>'Gerando'][ $item->status ] ?? $item->status }}</span>@endif</td>
                 <td>{{ $item->updated_at?->format('d/m/Y H:i') }}</td>
                 <td><a class="link" href="{{ route('proposals.show', $item) }}">Ver detalhes</a></td>
             </tr>
