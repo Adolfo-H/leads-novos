@@ -1,3 +1,4 @@
+{{-- EC_PROPOSALS_V27 --}}
 <x-proposals.shell title="Proposta comercial" subtitle="Detalhes, valores e documentos preservados por versão.">
 
 @php
@@ -10,6 +11,8 @@
 @include('proposals.historical.show', ['histProposal' => $ecHistoricalRecord])
 @else
 
+    {{-- EC_ATTACHMENT_V29 --}}
+    @include('proposals.attachment-evidence-v29',['attachmentProposalId'=>$proposal->id])
     @php
         $br = static fn($value) => $value === null ? '—' : 'R$ '.number_format((float)$value,2,',','.');
         $numbers = (array) ($proposal->proposal_numbers ?? []);
@@ -37,9 +40,9 @@
                     @foreach((array)$snap['items'] as $code=>$item)
                     <div class="summary" style="margin-top:12px">
                         <div class="line"><span>Serviço</span><strong>{{ $code }}</strong></div>
-                        <div class="line"><span>Base do cálculo (documentos)</span><strong>{{ isset($item['quantity']) ? number_format((float) $item['quantity'],0,',','.') : '—' }}</strong></div>
+                        <div class="line"><span>Base do cálculo ({{ $code==='DFE' ? 'CNPJs' : ($code==='NFSE' ? 'NFS-e/mês' : 'documentos') }})</span><strong>{{ isset($item['quantity']) ? number_format((float) $item['quantity'],0,',','.') : '—' }}</strong></div>
                         <div class="line"><span>Mensalidade</span><strong>{{ $code === 'RETROATIVAS' ? 'Não se aplica' : $br($item['monthly'] ?? null) }}</strong></div>
-                        <div class="line"><span>Implantação</span><strong>{{ $br($item['implementation'] ?? null) }}</strong></div>
+                        <div class="line"><span>Implantação</span><strong>{{ ($item['implementation_state']??'')==='not_priced' ? 'Não definida na tabela' : $br($item['implementation'] ?? null) }}</strong></div>
                         <div class="line"><span>Valor pontual do serviço</span><strong>{{ $code === 'RETROATIVAS' ? $br($item['one_time'] ?? null) : 'Não se aplica' }}</strong></div>
                         <div class="line"><span>Valor líquido do serviço</span><strong>{{ $br($item['net'] ?? null) }}</strong></div>
                         <div class="line"><span>Tributos do serviço</span><strong>{{ $br($item['tax_total'] ?? null) }}</strong></div>

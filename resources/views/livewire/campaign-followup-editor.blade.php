@@ -51,7 +51,8 @@
                 <div class="ecv5-mail-subject"><span>ASSUNTO</span><strong>{{ $schedule['subject'] }}</strong></div>
                 <div class="ecv5-mail-body"><span>CORPO DO E-MAIL</span><p>{{ \Illuminate\Support\Str::limit($schedule['body'], 230) }}</p></div>
                 <details><summary>Ver a mensagem inteira</summary><div>{{ $schedule['body'] }}</div></details>
-                <small>Remetente: {{ $schedule['from_address'] ?: 'Não configurado' }} · A personalização é aplicada por contato no envio.</small>
+                <small>Remetente: @if (\App\Services\Campaigns\CampaignInstitutionalSignature::usesDedicatedPreview($root)){{ \App\Services\Campaigns\CampaignInstitutionalSignature::previewFrom($root) }} — a mesma caixa do envio original, quando atribuída.@else{{ $schedule['from_address'] ?: 'Não configurado' }}@endif · A personalização é aplicada por contato no envio.</small>
+                @include('campaigns.institutional-signature-preview', ['signatureCampaign' => $root])
             </div>
         </div>
         @if ((int) $schedule['sent_followups'] > 0)
@@ -142,8 +143,9 @@
                     @endforeach
                 </div>
                 <p class="ecv5-read-only">A campanha inicial conta como 1ª rodada. Cada retorno precisa de uma data selecionada. Se o notebook ou IMAP estiver offline às 08h, não haverá disparo automático fora da janela; será necessário reagendar.</p>
-                <label><span>Assunto dos próximos retornos</span><input type="text" name="subject" value="{{ old('subject', $subject) }}" maxlength="180" minlength="3" required></label>
-                <label><span>Mensagem dos próximos retornos</span><textarea rows="5" name="body" maxlength="12000" minlength="10" required>{{ old('body', $body) }}</textarea></label>
+                <label><span>Assunto dos próximos retornos</span><input type="text" name="subject" value="{{ old('subject', $subject) }}" maxlength="180" minlength="3" required onfocus="this.form.dataset.ecV25Field='subject'"></label>
+                <label><span>Mensagem dos próximos retornos</span><textarea rows="5" name="body" maxlength="12000" minlength="10" required onfocus="this.form.dataset.ecV25Field='body'">{{ old('body', $body) }}</textarea></label>
+                @include('campaigns.message-variables-v25')
                 <div class="ecv5-save-row">
                     <span>Salvar não envia e-mails. Respostas comerciais, descadastros, devoluções e SMTP incerto continuam bloqueando novos contatos.</span>
                     <button type="submit" class="ecv5-save">Salvar datas e quantidade de rodadas</button>

@@ -965,7 +965,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
     public function appendTemplateVariable(string $token): void
     {
         $this->assertCampaignManager();
-        abort_unless(in_array($token, ['nome', 'primeiro_nome', 'empresa', 'cargo'], true), 422);
+        abort_unless(in_array($token, ['nome', 'primeiro_nome', 'empresa', 'cargo', 'saudacao'], true), 422);
         $this->body .= ($this->body === '' || str_ends_with($this->body, "\n") ? '' : ' ').'{{'.$token.'}}';
     }
 
@@ -1328,7 +1328,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                                 <header class="ec22-card-head"><div><h2>Escreva sua mensagem</h2><p>Defina o nome interno, o assunto e o conteúdo.</p></div></header>
                                 <div class="ec22-input"><label for="ec22-campaign-name">Nome interno da campanha</label><input id="ec22-campaign-name" type="text" wire:model.blur="name" maxlength="180" placeholder="Ex.: Apresentação ExportControl">@error('name')<small role="alert">{{ $message }}</small>@enderror</div>
                                 <div class="ec22-input"><label for="ec22-subject">Assunto do e-mail</label><input id="ec22-subject" type="text" wire:model.live.debounce.400ms="subject" maxlength="180" placeholder="Escreva um assunto claro...">@error('subject')<small role="alert">{{ $message }}</small>@enderror</div>
-                                <div class="ec22-token-row"><strong>Personalizar:</strong>@foreach (['primeiro_nome' => 'Primeiro nome', 'nome' => 'Nome', 'empresa' => 'Empresa', 'cargo' => 'Cargo'] as $token => $caption)<button type="button" wire:click="appendTemplateVariable(@js($token))" title="Inserir {{ $caption }} ao final da mensagem">&#123;&#123;{{ $token }}&#125;&#125;</button>@endforeach</div>
+                                <div class="ec22-token-row"><strong>Personalizar:</strong>@foreach (['saudacao' => 'Saudação automática', 'primeiro_nome' => 'Primeiro nome', 'nome' => 'Nome', 'empresa' => 'Empresa', 'cargo' => 'Cargo'] as $token => $caption)<button type="button" wire:click="appendTemplateVariable(@js($token))" title="Inserir {{ $caption }} ao final da mensagem">&#123;&#123;{{ $token }}&#125;&#125;</button>@endforeach</div>
                                 <div class="ec22-input"><label for="ec22-body">Mensagem</label><textarea id="ec22-body" rows="15" maxlength="12000" wire:model.live.debounce.500ms="body" placeholder="Escreva aqui sua mensagem personalizada..."></textarea><small>Editor de texto simples, sem HTML. {{ mb_strlen($body) }}/12.000 caracteres.</small>@error('body')<small role="alert">{{ $message }}</small>@enderror</div>
                                 <div class="ec22-quick-templates"><strong>Usar modelo:</strong><button type="button" wire:click="applyTemplate('initial')">Vendas para tradings</button><button type="button" wire:click="applyTemplate('direct')">Exportação direta</button><button type="button" wire:click="applyTemplate('followup')">Retomada</button><button type="button" wire:click="applyTemplate('meeting')">Agendamento</button></div>
                                 @if ($errors->any())<div class="ec22-error" role="alert"><strong>Não foi possível avançar. Confira os campos:</strong><ul>@foreach ($errors->all() as $messageError)<li>{{ $messageError }}</li>@endforeach</ul></div>@endif
@@ -1336,10 +1336,12 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                             <aside class="ec22-card ec22-preview-card">
                                 <header class="ec22-card-head"><div><h2>Pré-visualização</h2><p>Exemplo de como o texto aparecerá ao destinatário.</p></div></header>
                                 @php
-                                    $ec22PreviewBody = strtr((string) $body, ['{{primeiro_nome}}' => 'João', '{{nome}}' => 'João Exemplo', '{{empresa}}' => 'Empresa Exemplo', '{{cargo}}' => 'Responsável']);
-                                    $ec22PreviewSubject = strtr((string) $subject, ['{{primeiro_nome}}' => 'João', '{{nome}}' => 'João Exemplo', '{{empresa}}' => 'Empresa Exemplo', '{{cargo}}' => 'Responsável']);
+                                    $ec22PreviewBody = strtr((string) $body, ['{{saudacao}}' => 'Olá, João!', '{{primeiro_nome}}' => 'João', '{{nome}}' => 'João Exemplo', '{{empresa}}' => 'Empresa Exemplo', '{{cargo}}' => 'Responsável']);
+                                    $ec22PreviewSubject = strtr((string) $subject, ['{{saudacao}}' => 'Olá, João!', '{{primeiro_nome}}' => 'João', '{{nome}}' => 'João Exemplo', '{{empresa}}' => 'Empresa Exemplo', '{{cargo}}' => 'Responsável']);
                                 @endphp
-                                <div class="ec22-email-paper"><div class="ec22-email-headers"><div><span>De:</span> {{ config('campaign_mail.from_address') ?: 'Conta de envio não configurada' }}</div><div><span>Para:</span> contato@empresa.example (exemplo)</div><div><span>Assunto:</span> {{ $ec22PreviewSubject ?: '(sem assunto)' }}</div></div><div class="ec22-email-body">{{ $ec22PreviewBody ?: 'Escreva uma mensagem para visualizar a prévia.' }}</div></div>
+                                <div class="ec22-email-paper"><div class="ec22-email-headers"><div><span>De:</span> {{ \App\Services\Campaigns\CampaignInstitutionalSignature::previewFrom() }}</div><div><span>Para:</span> contato@empresa.example (exemplo)</div><div><span>Assunto:</span> {{ $ec22PreviewSubject ?: '(sem assunto)' }}</div></div><div class="ec22-email-body">{{ $ec22PreviewBody ?: 'Escreva uma mensagem para visualizar a prévia.' }}</div>
+                                    @include('campaigns.institutional-signature-preview', ['signatureCampaign' => null])
+                                </div>
                                 <div class="ec22-tip"><strong>Antes de enviar</strong><p>Use um assunto direto, revise as variáveis e envie um teste para a sua caixa. O link de descadastro é gerado pelo sistema.</p></div>
                             </aside>
                         </div>
@@ -1365,7 +1367,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                         </div>
                         <section class="ec22-card ec22-review-card">
                             <header class="ec22-card-head"><div><h2>Revisão final</h2><p>Confira antes de salvar ou solicitar o envio.</p></div><button type="button" class="ec22-button ec22-button-outline" wire:click="goToComposerStep('message')">Editar mensagem</button></header>
-                            <div class="ec22-review-grid"><div><span>Campanha</span><strong>{{ $name ?: '(sem nome)' }}</strong></div><div><span>Destinatários selecionados</span><strong>{{ count($audienceKeys) }}</strong></div><div><span>Remetente</span><strong>{{ config('campaign_mail.from_address') ?: 'Não configurado' }}</strong></div><div><span>Assunto</span><strong>{{ $subject ?: '(sem assunto)' }}</strong></div></div>
+                            <div class="ec22-review-grid"><div><span>Campanha</span><strong>{{ $name ?: '(sem nome)' }}</strong></div><div><span>Destinatários selecionados</span><strong>{{ count($audienceKeys) }}</strong></div><div><span>Remetente</span><strong>{{ \App\Services\Campaigns\CampaignInstitutionalSignature::previewFrom() }}</strong></div><div><span>Assunto</span><strong>{{ $subject ?: '(sem assunto)' }}</strong></div></div>
                             @include('campaigns.review-recipients')
                             <div class="ec22-test-block ec73-test-block" data-ec73-test-block>
                                 <div class="ec73-test-content">
@@ -1584,7 +1586,9 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                             <p class="ec29-bounce-note">Cada linha é um relatório DSN correlacionado; o mesmo endereço pode ter mais de um retorno. Testes piloto são excluídos destes totais. Endereço inválido pode bloquear disparos futuros; caixa cheia e bloqueio por política exigem acompanhamento.</p>
                         </div>
                     @elseif ($detailTab === 'message')
-                        <div class="ecm2-message-tab"><div class="ecm2-preview-label">Mensagem salva · somente leitura</div><div class="ecm2-mail-preview"><div>De: {{ $selected->from_name }} &lt;{{ $selected->from_address }}&gt;</div><div>Assunto: <strong>{{ $selected->subject }}</strong></div><p>{{ $selected->body }}</p></div><p>As variáveis são substituídas por contato no envio. O descadastro é adicionado a cada mensagem comercial.</p></div>
+                        <div class="ecm2-message-tab"><div class="ecm2-preview-label">Mensagem salva · somente leitura</div><div class="ecm2-mail-preview"><div>De: @if (\App\Services\Campaigns\CampaignInstitutionalSignature::usesDedicatedPreview($selected)){{ \App\Services\Campaigns\CampaignInstitutionalSignature::previewFrom($selected) }}@else{{ $selected->from_name }} &lt;{{ $selected->from_address }}&gt;@endif</div><div>Assunto: <strong>{{ $selected->subject }}</strong></div><p>{{ $selected->body }}</p>
+                            @include('campaigns.institutional-signature-preview', ['signatureCampaign' => $selected])
+                        </div><p>As variáveis são substituídas por contato no envio. O descadastro é adicionado a cada mensagem comercial.</p></div>
                     @elseif ($detailTab === 'replies')
                         @include('campaigns.responses-combined-campaign')
                     @endif
@@ -1614,7 +1618,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                     <div class="ecm2-check"><span>○</span><div><strong>Teste e revisão</strong><small>Envie um teste para sua própria caixa</small></div><button type="button" wire:click="goToComposerStep('review')">Abrir</button></div>
                 </section>
                 <section class="ecm2-context-card"><header><h2>Servidor de envio</h2></header>
-                    <div class="ecm2-key-value"><span>Remetente</span><strong>{{ config('campaign_mail.from_address') }}</strong></div>
+                    <div class="ecm2-key-value"><span>Remetente</span><strong>{{ \App\Services\Campaigns\CampaignInstitutionalSignature::previewFrom() }}</strong></div>
                     <div class="ecm2-key-value"><span>Teste</span><strong>{{ config('campaign_mail.test_to') }}</strong></div>
                     <div class="ecm2-context-divider"></div>
                     <div class="ecm2-key-value"><span>Limite por hora</span><strong>{{ config('campaign_mail.per_hour') }}</strong></div>
@@ -1652,20 +1656,7 @@ session()->flash('campaign_success', 'Rascunho salvo. Nenhum e-mail foi enviado.
                             $ecProbeState = \App\Services\Campaigns\DualCampaignSenders::state();
                         @endphp
                         @if ($ecProbeState['enabled'] || $ecProbeState['blocked'])
-                            <p>Diagnóstico interno: uma mensagem por conta, somente para <strong>{{ config('campaign_mail.test_to') ?: 'Não configurado' }}</strong>. Não usa a lista comercial.</p>
-                            @if ($selected->status === 'draft' && ! $ecProbeState['blocked'])
-                                <form method="POST" action="{{ route('campaigns.email-test', ['campaign' => $selected->id], false) }}" style="display:grid;gap:10px;margin:0">
-                                    @csrf
-                                    <input type="hidden" name="aba" value="{{ $detailTab }}">
-                                    <label><input type="checkbox" name="dedicated_test_confirm" value="1" required> Confirmo que o destino é minha caixa de teste autorizada.</label>
-                                    @foreach (\App\Services\Campaigns\DualCampaignSenders::KEYS as $ecProbeKey)
-                                        <button type="submit" name="sender_profile" value="{{ $ecProbeKey }}" class="ecm2-btn ecm2-btn-muted" @disabled(! config('campaign_mail.enabled') || ! \App\Services\Campaigns\DualCampaignSenders::ready() || ! filter_var((string) config('campaign_mail.test_to'), FILTER_VALIDATE_EMAIL))>Enviar teste por {{ ucfirst($ecProbeKey) }}</button>
-                                    @endforeach
-                                </form>
-                                <small>Sem repetição no mesmo rascunho. Limite de dois diagnósticos por hora, dentro das cotas globais.</small>
-                            @else
-                                <p>Diagnóstico indisponível: use um rascunho e confira o bloqueio SMTP.</p>
-                            @endif
+                            @include('campaigns.dedicated-probes-v25')
                         @else
                         <form method="POST" action="{{ route('campaigns.email-test', ['campaign' => $selected->id], false) }}" style="margin:0;display:block;">
                             @csrf

@@ -3,6 +3,7 @@
     $histDocs = \Illuminate\Support\Facades\DB::table('ec_proposal_documents')->where('proposal_id',$histProposal->id)->whereIn('kind',['historical_pdf','historical_original'])->orderBy('id')->get(['id','original_name','mime','bytes']);
     $histSvc = \App\Services\Proposals\HistoricalProposalReadModel::labels($histInfo?->services ?? $histProposal->service_codes);
     $histEvidence = json_decode($histInfo?->evidence ?? '{}',true) ?: [];
+    $reviewV24 = ($histEvidence['review_v24']['version'] ?? null) === 24 ? $histEvidence['review_v24'] : (($histEvidence['review_v23']['version'] ?? null) === 23 ? $histEvidence['review_v23'] : (($histEvidence['review_v22']['version'] ?? null) === 22 ? $histEvidence['review_v22'] : (($histEvidence['review_v21']['version'] ?? null) === 21 ? $histEvidence['review_v21'] : (($histEvidence['review_v20']['version'] ?? null) === 20 ? $histEvidence['review_v20'] : (($histEvidence['review_v19']['version'] ?? null) === 19 ? $histEvidence['review_v19'] : (($histEvidence['review_v18']['version'] ?? null) === 18 ? $histEvidence['review_v18'] : (($histEvidence['review_v17']['version'] ?? null) === 17 ? $histEvidence['review_v17'] : (($histEvidence['review_v16']['version'] ?? null) === 16 ? $histEvidence['review_v16'] : (($histEvidence['review_v15']['version'] ?? null) === 15 ? $histEvidence['review_v15'] : (($histEvidence['review_v14']['version'] ?? null) === 14 ? $histEvidence['review_v14'] : []))))))))));
     $finance = $histEvidence['finance_v2'] ?? [];
     $reviewV13 = $histEvidence['review_v13'] ?? [];
     $priceV13 = $reviewV13['price'] ?? [];
@@ -41,7 +42,9 @@
     $servicesText = implode(', ', array_map(fn($code) => $bundle && $code === 'ACOMPANHAMENTO' ? 'Acompanhamento retroativo' : ($serviceNames[$code] ?? $code), $histSvc));
     $title = $histInfo?->title ?: ($histDocs->first()?->original_name ?: 'Proposta histórica');
     $formal = $histProposal->status === 'accepted';
-    $crmAccepted = $histInfo?->commercial_status === 'accepted_crm';
+    // EC_ATTACHMENT_V29
+    $crmAccepted = in_array($histProposal->status,['imported','issued','sent','partially_accepted'],true) && \App\Services\Proposals\ProposalAttachmentAcceptanceV29::verified((int) $histProposal->id);
+    $priorCrmV29 = !$crmAccepted && $histInfo?->commercial_status === 'accepted_crm';
     $monthly = $histInfo?->monthly_amount;
     $auditV11 = $histEvidence['audit_v11'] ?? [];
     $monthlyAuditV11 = $auditV11['monthly'] ?? [];
@@ -68,19 +71,23 @@
     if ($useV13Price && isset($priceV13['one_time'])) { $onceText = \App\Services\Proposals\HistoricalProposalReadModel::money($priceV13['one_time']); }
 
 @endphp
+@include('proposals.attachment-evidence-v29',['attachmentProposalId'=>$histProposal->id])
 @include('proposals.historical.styles-v2')
 <div class="ecp-history">
     <div class="ecp-detail-top">
         <div>
             <a class="ecp-link" href="{{ url('/propostas') }}">← Todas as propostas</a>
             <div class="ecp-detail-title">{{ str_replace('_',' ',(string)$title) }}</div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="ecp-chip {{ $formal || $crmAccepted ? 'ecp-chip-accepted' : 'ecp-chip-sent' }}">{{ $formal ? 'Aceita formalmente' : ($crmAccepted ? 'Aceita no CRM' : 'Emitida / enviada') }}</span><span class="ecp-sub">{{ $identity['client_legal_name'] ?? $histProposal->client_name }} @if(!empty($numberV10['document_number'])) · EC {{ $numberV10['document_number'] }} @elseif($histInfo?->historic_number) · EC {{ $histInfo->historic_year }} / {{ $histInfo->historic_number }} @endif</span></div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="ecp-chip {{ $formal || $crmAccepted ? 'ecp-chip-accepted' : 'ecp-chip-sent' }}">{{ $formal ? 'Aceita formalmente' : ($crmAccepted ? 'Aceita por anexo' : ($priorCrmV29 ? 'Aceite anterior · conferir anexo' : 'Emitida / enviada')) }}</span><span class="ecp-sub">{{ $reviewV24['client'] ?? $identity['client_legal_name'] ?? $histProposal->client_name }} @if($reviewV24) · {{ $reviewV24['cover_number'] === 'Não informado' ? 'Sem numeração na capa' : 'EC '.$reviewV24['cover_number'] }} @elseif(!empty($numberV10['document_number'])) · EC {{ $numberV10['document_number'] }} @elseif($histInfo?->historic_number) · EC {{ $histInfo->historic_year }} / {{ $histInfo->historic_number }} @endif</span></div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
             @if($histDocs->first())<a class="ecp-btn ecp-btn-primary" href="{{ route('proposals.document',[$histProposal,$histDocs->first()->id]) }}">Baixar documento original</a>@endif
             <form method="POST" action="{{ route('proposals.duplicate',$histProposal) }}">@csrf<button type="submit" class="ecp-btn">Duplicar como novo</button></form>
         </div>
     </div>
+    @if($reviewV24)
+        @include('proposals.historical.review-detail-v24')
+    @else
     @if($packageV12)
         @include('proposals.historical.billing-summary-v12')
     @elseif($useV13Price)
@@ -204,6 +211,7 @@
         @if(empty($conditions))<p class="ecp-note">Condições não identificadas de forma estruturada. Consulte o original.</p>@endif
         @if(!empty($conditions['observacoes']))<div class="ecp-note ecp-spaced"><h3 style="margin-bottom:5px">Observações comerciais</h3>{{ $conditions['observacoes'] }}</div>@endif
     </section>
+    @endif {{-- revisão documental V16; demais propostas usam o fluxo V13 --}}
     @include('proposals.historical.crm-v4')
     <section class="ecp-panel">
         <div class="ecp-head"><h2>Documentos originais</h2></div>

@@ -1,5 +1,7 @@
 <?php
 
+// EC_PROPOSALS_V27
+
 namespace App\Services\Proposals;
 
 use App\Models\EcProposal;
@@ -36,7 +38,9 @@ final class ProposalWorkflow
         $quote = null;
         $official = array_diff($services, ProposalPricing::OFFICIAL) === [];
         $hasVolumes = (! array_intersect($services, ['LICENCIAMENTO', 'ACOMPANHAMENTO']) || (int) ($values['recurring_total'] ?? 0) > 0)
-            && (! in_array('RETROATIVAS', $services, true) || (int) ($values['retro_total'] ?? 0) > 0);
+            && (! in_array('RETROATIVAS', $services, true) || (int) ($values['retro_total'] ?? 0) > 0)
+            && (! in_array('DFE', $services, true) || ((int) ($values['dfe_cnpj_count'] ?? 0) > 0 && isset($values['dfe_total'])))
+            && (! in_array('NFSE', $services, true) || ((int) ($values['nfse_cnpj_count'] ?? 0) > 0 && (int) ($values['nfse_total'] ?? 0) > 0));
         if ($official && $hasVolumes) {
             $quote = app(ProposalPricing::class)->quote($values);
         }
@@ -54,6 +58,10 @@ final class ProposalWorkflow
             'recurring_from' => ($values['recurring_from'] ?? null) ?: null,
             'recurring_to' => ($values['recurring_to'] ?? null) ?: null,
             'retro_total' => ($values['retro_total'] ?? null) ?: null,
+            'dfe_cnpj_count' => in_array('DFE', $services, true) ? ($values['dfe_cnpj_count'] ?? null) : null,
+            'dfe_total' => in_array('DFE', $services, true) ? ($values['dfe_total'] ?? null) : null,
+            'nfse_cnpj_count' => in_array('NFSE', $services, true) ? ($values['nfse_cnpj_count'] ?? null) : null,
+            'nfse_total' => in_array('NFSE', $services, true) ? ($values['nfse_total'] ?? null) : null,
             'retro_from' => ($values['retro_from'] ?? null) ?: null,
             'retro_to' => ($values['retro_to'] ?? null) ?: null,
             'license_status' => (string) ($values['license_status'] ?? 'NAO_ATIVO'),
@@ -150,6 +158,10 @@ final class ProposalWorkflow
                     'price_date' => self::formatDate($locked->price_date, 'Y-m-d'),
                     'recurring_total' => $locked->recurring_total,
                     'retro_total' => $locked->retro_total,
+                    'dfe_cnpj_count' => $locked->getAttribute('dfe_cnpj_count'),
+                    'dfe_total' => $locked->getAttribute('dfe_total'),
+                    'nfse_cnpj_count' => $locked->getAttribute('nfse_cnpj_count'),
+                    'nfse_total' => $locked->getAttribute('nfse_total'),
                     'license_status' => $locked->license_status,
                 ]);
                 if ($locked->parent_id !== null) {
@@ -200,7 +212,7 @@ final class ProposalWorkflow
     {
         $services = (array) ($proposal->service_codes ?? []);
         if ($services === [] || array_diff($services, ProposalPricing::OFFICIAL) !== []) {
-            throw ValidationException::withMessages(['proposal' => 'DF-e/NFS-e ainda aguardam modelos e preços aprovados para emissão automática.']);
+            throw ValidationException::withMessages(['proposal' => 'Selecione serviços com modelos e preços aprovados.']);
         }
         if (! filter_var($proposal->client_email, FILTER_VALIDATE_EMAIL) || trim((string) $proposal->client_contact) === '') {
             throw ValidationException::withMessages(['proposal' => 'Informe nome e e-mail do responsável principal.']);
@@ -212,6 +224,12 @@ final class ProposalWorkflow
             (int) $proposal->recurring_total < 1 || ! $proposal->recurring_from || ! $proposal->recurring_to
         )) {
             throw ValidationException::withMessages(['proposal' => 'Informe volume e período dos últimos 12 meses.']);
+        }
+        if (in_array('DFE', $services, true) && ((int) $proposal->getAttribute('dfe_cnpj_count') < 1 || (int) $proposal->getAttribute('dfe_cnpj_count') > 350 || $proposal->getAttribute('dfe_total') === null)) {
+            throw ValidationException::withMessages(['proposal' => 'Informe de 1 a 350 CNPJs e o volume anual de DF-e.']);
+        }
+        if (in_array('NFSE', $services, true) && ((int) $proposal->getAttribute('nfse_cnpj_count') < 1 || (int) $proposal->getAttribute('nfse_total') < 6)) {
+            throw ValidationException::withMessages(['proposal' => 'Informe CNPJs e volume anual de NFS-e com média arredondada positiva.']);
         }
         if (in_array('RETROATIVAS', $services, true) && (
             (int) $proposal->retro_total < 1 || ! $proposal->retro_from || ! $proposal->retro_to
@@ -301,11 +319,16 @@ final class ProposalWorkflow
             File::ensureDirectoryExists($out);
             $inputPath = $working.'/input.json';
             file_put_contents($inputPath, json_encode($input, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
-            $process = new Process([
-                'python3', $source.'/20_GERADOR_DOCUMENTOS_EXPORTCONTROL.py',
-                '--input', $inputPath, '--out', $out,
-            ], $working);
-            $process->setTimeout(180);
+            $hasNewServices = array_intersect($services, ['DFE', 'NFSE']) !== [];
+            if ($hasNewServices) {
+                $input['snapshot_v27'] = $quote;
+                file_put_contents($inputPath, json_encode($input, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+            }
+            $command = $hasNewServices
+                ? ['python3', resource_path('proposals/bin/render_v27.py'), '--input', $inputPath, '--out', $out, '--source', $source]
+                : ['python3', $source.'/20_GERADOR_DOCUMENTOS_EXPORTCONTROL.py', '--input', $inputPath, '--out', $out];
+            $process = new Process($command, $working);
+            $process->setTimeout($hasNewServices ? 360 : 180);
             $process->run();
             if (! $process->isSuccessful()) {
                 throw new \RuntimeException('Gerador oficial: '.mb_substr($process->getErrorOutput(), 0, 600));
@@ -394,6 +417,7 @@ final class ProposalWorkflow
                 'recurring_total', 'recurring_from', 'recurring_to', 'retro_total', 'retro_from',
                 'retro_to', 'license_status', 'retro_deadline', 'validity_days',
                 'payment_days', 'sales_responsible', 'notes', 'price_date',
+                'dfe_cnpj_count', 'dfe_total', 'nfse_cnpj_count', 'nfse_total',
             ]);
             $values['parent_id'] = $parentId;
             $values['revision'] = $max + 1;

@@ -1,5 +1,7 @@
 <?php
 
+// EC_PROPOSALS_V27
+
 namespace App\Services\Proposals;
 
 use Illuminate\Support\Facades\DB;
@@ -8,7 +10,9 @@ use Symfony\Component\Process\Process;
 
 final class ProposalPricing
 {
-    public const OFFICIAL = ['LICENCIAMENTO', 'ACOMPANHAMENTO', 'RETROATIVAS'];
+    public const LEGACY = ['LICENCIAMENTO', 'ACOMPANHAMENTO', 'RETROATIVAS'];
+
+    public const OFFICIAL = ['LICENCIAMENTO', 'ACOMPANHAMENTO', 'RETROATIVAS', 'DFE', 'NFSE'];
 
     public const ALL = ['LICENCIAMENTO', 'ACOMPANHAMENTO', 'RETROATIVAS', 'DFE', 'NFSE'];
 
@@ -22,6 +26,9 @@ final class ProposalPricing
                 ->where('effective_from', '<=', $date)
                 ->orderByDesc('effective_from')->orderByDesc('id')->first();
             if ($row === null) {
+                if (! in_array($service, self::LEGACY, true)) {
+                    continue;
+                }
                 throw ValidationException::withMessages(['prices' => 'Tabela aprovada indisponível: '.$service]);
             }
             $prices[$service] = json_decode((string) $row->configuration, true, 512, JSON_THROW_ON_ERROR);
@@ -49,7 +56,7 @@ final class ProposalPricing
             'adjustments' => [
                 'versao' => 'PROSPECTOR_DATABASE', 'status' => 'APROVADO',
                 'abrangencia' => 'TODOS_OS_SERVICOS_E_TODAS_AS_FAIXAS',
-                'servicos_abrangidos' => self::OFFICIAL,
+                'servicos_abrangidos' => self::LEGACY,
                 'reajustes' => $events,
             ],
             'rates' => json_decode((string) $tax->rates, true, 512, JSON_THROW_ON_ERROR),
@@ -65,18 +72,45 @@ final class ProposalPricing
         /** @var list<string> $services */
         $services = array_values(array_unique(array_filter((array) ($fields['service_codes'] ?? []), 'is_string')));
         if ($services === [] || array_diff($services, self::OFFICIAL) !== []) {
-            throw ValidationException::withMessages(['service_codes' => 'A geração automática está aprovada somente para Licenciamento, Acompanhamento e Retroativas.']);
+            throw ValidationException::withMessages(['service_codes' => 'Selecione serviços com modelo e tabela aprovados.']);
         }
         $date = (string) ($fields['price_date'] ?? now('America/Sao_Paulo')->toDateString());
         $settings = $this->configuration($date);
+        foreach (array_intersect($services, ['DFE', 'NFSE']) as $service) {
+            $template = DB::table('ec_proposal_templates')->where('service', $service)->where('ready_to_issue', true)->first();
+            if ($template === null || ! isset($settings['prices'][$service]) || ! is_file(resource_path('proposals/official/'.(string) $template->source_file))) {
+                throw ValidationException::withMessages(['service_codes' => 'Modelo ou tabela indisponível na data-base: '.$service]);
+            }
+        }
         $input = array_merge($settings, [
             'services' => $services,
             'price_date' => $date,
             'recurring_total' => (int) ($fields['recurring_total'] ?? 0),
             'retro_total' => (int) ($fields['retro_total'] ?? 0),
+            'dfe_cnpj_count' => $fields['dfe_cnpj_count'] ?? null,
+            'dfe_total' => $fields['dfe_total'] ?? null,
+            'nfse_cnpj_count' => $fields['nfse_cnpj_count'] ?? null,
+            'nfse_total' => $fields['nfse_total'] ?? null,
             'license_status' => (string) ($fields['license_status'] ?? 'NAO_ATIVO'),
         ]);
-        $script = resource_path('proposals/bin/quote.py');
+        $result = $this->runCalculator($input);
+        $result['pricing_config'] = $settings;
+
+        return $result;
+    }
+
+    /** @return array<string, mixed> */
+    public function tables(string $date): array
+    {
+        return $this->runCalculator(array_merge($this->configuration($date), ['price_date' => $date, 'mode' => 'tables']));
+    }
+
+    /** @param array<string, mixed> $input
+     * @return array<string, mixed>
+     */
+    private function runCalculator(array $input): array
+    {
+        $script = resource_path('proposals/bin/quote_v27.py');
         $process = new Process(['python3', $script], base_path());
         $process->setInput(json_encode($input, JSON_THROW_ON_ERROR));
         $process->setTimeout(20);
@@ -88,7 +122,6 @@ final class ProposalPricing
                     ? $result['error'] : 'Falha na calculadora oficial. Confira Python e as tabelas de preços.',
             ]);
         }
-        $result['pricing_config'] = $settings;
 
         return $result;
     }

@@ -10,6 +10,35 @@ use InvalidArgumentException;
 /** Cadência por campanha; apenas limita a fila, nunca amplia o teto SMTP global. */
 final class CampaignPacing
 {
+    public const AUTOMATIC = 0;
+
+    /** Use global quotas for a draft only. Never retune a running campaign. */
+    public function useGlobal(EmailCampaign $campaign): void
+    {
+        DB::transaction(static function () use ($campaign): void {
+            $gate = DB::table('email_campaign_dispatch_gates')->where('id', 1)->lockForUpdate()->first();
+            if ($gate === null) {
+                throw new \LogicException('Campaign dispatch quota gate is missing.');
+            }
+            $draft = EmailCampaign::query()->whereKey($campaign->getKey())->lockForUpdate()->firstOrFail();
+            if ($draft->status !== 'draft') {
+                throw new InvalidArgumentException('Somente rascunhos podem alterar a cadência.');
+            }
+            DB::table('email_campaign_pacing_v90')->where('email_campaign_id', $draft->getKey())->delete();
+        });
+    }
+
+    /** Preserve the chosen pace when reopening an existing draft. */
+    public function plannedHours(int $campaignId): int
+    {
+        if (! Schema::hasTable('email_campaign_pacing_v90')) {
+            return self::AUTOMATIC;
+        }
+        $hours = (int) DB::table('email_campaign_pacing_v90')->where('email_campaign_id', $campaignId)->value('duration_hours');
+
+        return in_array($hours, [1, 2, 4, 8, 12, 24], true) ? $hours : self::AUTOMATIC;
+    }
+
     public function save(EmailCampaign $campaign, int $hours): void
     {
         if (! in_array($hours, [1, 2, 4, 8, 12, 24], true)) {

@@ -70,7 +70,7 @@ final class CampaignWizardController extends Controller
                 'name' => (string) $draft->name,
                 'subject' => (string) $draft->subject,
                 'body' => (string) $draft->body,
-                'hours' => '8',
+                'hours' => (string) app(CampaignPacing::class)->plannedHours((int) $draft->id),
             ];
         }
 
@@ -92,7 +92,7 @@ final class CampaignWizardController extends Controller
                 'name' => '',
                 'subject' => $subject,
                 'body' => $body,
-                'hours' => '8',
+                'hours' => '0',
             ];
         }
         $request->session()->put($this->sessionKey($wizardId), $state);
@@ -303,7 +303,7 @@ final class CampaignWizardController extends Controller
         $wizardId = $this->wizardId($request);
         $data = $request->validate([
             'wizard_id' => ['nullable', 'uuid'],
-            'hours' => ['required', 'integer', 'in:1,2,4,8,12,24'],
+            'hours' => ['required', 'integer', 'in:0,1,2,4,8,12,24'],
         ]);
         $state = $this->state($request, $wizardId);
         if ($this->expected($state) === [] || mb_strlen(trim((string) ($state['body'] ?? ''))) < 10) {
@@ -344,7 +344,12 @@ final class CampaignWizardController extends Controller
             : null;
         // V94: atualiza o mesmo rascunho, sem duplicar destinatários/campanhas.
         $campaign = $manager->saveDraft($actor, $fields, $keys, $editing);
-        $pacing->save($campaign, (int) ($state['hours'] ?? 8));
+        $hours = (int) ($state['hours'] ?? CampaignPacing::AUTOMATIC);
+        if ($hours === CampaignPacing::AUTOMATIC) {
+            $pacing->useGlobal($campaign);
+        } else {
+            $pacing->save($campaign, $hours);
+        }
         $request->session()->forget($this->sessionKey($wizardId));
         $request->session()->forget($this->transferSessionKey($wizardId));
 

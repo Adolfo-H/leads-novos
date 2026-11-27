@@ -1,3 +1,4 @@
+{{-- EC_PROPOSALS_V27 --}}
 <x-proposals.shell :title="$title" subtitle="Escolha o cliente, serviços e volumes; salve o rascunho e revise o preço antes da emissão.">
     @php
         $servicesSelected = (array) old('service_codes', $proposal?->service_codes ?? ['LICENCIAMENTO']);
@@ -33,11 +34,15 @@
             <h2>2. Serviços e volumes</h2><p class="sub">É possível reunir mais de um serviço na mesma apresentação. Cada proposta final receberá número próprio.</p>
             <div class="options" style="margin:12px 0 15px">
                 @foreach($services as $service)
-                <label class="choice {{ $service->ready_to_issue ? '' : 'disabled' }}"><input type="checkbox" name="service_codes[]" value="{{ $service->service }}" @checked(in_array($service->service,$servicesSelected,true))><span><strong>{{ $service->name }}</strong><small>{{ $service->ready_to_issue ? 'Tabela e modelo oficial aprovados' : 'Cadastro/arquivo disponível; emissão ainda não habilitada' }}</small></span></label>
+                <label class="choice {{ $service->ready_to_issue ? '' : 'disabled' }}"><input type="checkbox" name="service_codes[]" value="{{ $service->service }}" @checked(in_array($service->service,$servicesSelected,true))><span><strong>{{ $service->name }}</strong><small>{{ $service->ready_to_issue ? 'Tabela e modelo oficial aprovados' : 'Modelo ou tabela indisponível' }}</small></span></label>
                 @endforeach
             </div>
             <div class="formgrid">
-                <label>Total de notas nos últimos 12 meses<input type="number" name="recurring_total" min="1" value="{{ $fill('recurring_total') }}"><small>Licenciamento/Acompanhamento: média = total ÷ 12 (meio para cima).</small></label>
+                <label>Licenciamento/Acompanhamento — notas nos últimos 12 meses<input type="number" name="recurring_total" min="1" value="{{ $fill('recurring_total') }}"><small>Licenciamento/Acompanhamento: média = total ÷ 12 (meio para cima).</small></label>
+                <label>DF-e — CNPJs monitorados<input type="number" name="dfe_cnpj_count" min="1" max="350" value="{{ $fill('dfe_cnpj_count') }}"><small>Preço fixo por faixa de CNPJs; não por volume de XMLs.</small></label>
+                <label>DF-e — documentos nos últimos 12 meses<input type="number" name="dfe_total" min="0" max="100000000" value="{{ $fill('dfe_total') }}"><small>Referência informativa, sem cobrança presumida de excedentes.</small></label>
+                <label>NFS-e — CNPJs monitorados<input type="number" name="nfse_cnpj_count" min="1" max="100000" value="{{ $fill('nfse_cnpj_count') }}"></label>
+                <label>NFS-e — documentos nos últimos 12 meses<input type="number" name="nfse_total" min="1" max="100000000" value="{{ $fill('nfse_total') }}"><small>Média mensal arredondada; faixas progressivas marginais.</small></label>
                 <label>Data-base da precificação<input type="date" required name="price_date" value="{{ $fmtDate($fill('price_date', now('America/Sao_Paulo')->toDateString())) }}"><small>Reajustes aprovados vigentes até essa data.</small></label>
                 <label>Período recorrente — início<input type="date" name="recurring_from" value="{{ $fmtDate($fill('recurring_from')) }}"></label>
                 <label>Período recorrente — fim<input type="date" name="recurring_to" value="{{ $fmtDate($fill('recurring_to')) }}"></label>
@@ -65,9 +70,9 @@
                     @php $quote = $proposal->price_snapshot; @endphp
                     <div class="summary"><small>Mensalidade total (com tributos)</small><strong class="amount">R$ {{ number_format((float)($quote['monthly_final']??0),2,',','.') }}</strong><div class="line"><span>Implantação + avulsos</span><b>R$ {{ number_format((float)($quote['one_time_final']??0),2,',','.') }}</b></div></div>
                     <p class="sub" style="margin-top:10px">Memória de cálculo disponível no detalhe. Atualize o rascunho para recalcular.</p>
-                @else <div class="help">Informe serviços e volumes para visualizar uma cotação oficial. DF-e e NFS-e aguardam modelo e tabela aprovados.</div>@endif
+                @else <div class="help">Informe os serviços e respectivos volumes; salve o rascunho para calcular valores líquidos, reajustes e tributos.</div>@endif
             </div>
-            <div class="card"><h3>Sequência e proteção</h3><div class="list" style="margin-top:12px"><div class="listrow">Rascunho <span class="tag">Sem número</span></div><div class="listrow">Revisão de dados <span class="tag">Editável</span></div><div class="listrow">Emissão <span class="tag">Gestor</span></div><div class="listrow">PDF original <span class="tag">Arquivo privado</span></div></div><p class="sub" style="margin-top:10px">A numeração global permanece bloqueada até conciliar o histórico.</p></div>
+            <div class="card"><h3>Sequência e proteção</h3><div class="list" style="margin-top:12px"><div class="listrow">Rascunho <span class="tag">Sem número</span></div><div class="listrow">Revisão de dados <span class="tag">Editável</span></div><div class="listrow">Emissão <span class="tag">Gestor</span></div><div class="listrow">PDF original <span class="tag">Arquivo privado</span></div></div><p class="sub" style="margin-top:10px">@if($numbering?->reconciled_at) Numeração conciliada. Próximo número disponível: {{ $numbering->next_number }}. @else A numeração global permanece bloqueada até conciliar o histórico. @endif</p></div>
         </aside>
     </div>
     <form action="{{ request()->routeIs('proposals.edit') ? route('proposals.edit',$proposal) : route('proposals.create') }}" id="ecp-company-find" method="GET"></form>

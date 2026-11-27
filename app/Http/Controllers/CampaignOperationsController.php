@@ -47,9 +47,9 @@ final class CampaignOperationsController extends Controller
 
         $dedicatedState = DualCampaignSenders::state();
         if ($dedicatedState['enabled'] || $dedicatedState['blocked']) {
-            $request->validate(['sender_profile' => ['required', 'in:publicidade,propaganda'], 'dedicated_test_confirm' => ['required', 'accepted']]);
+            $request->validate(['sender_profile' => ['required', 'in:publicidade,propaganda'], 'dedicated_test_confirm' => ['required', 'accepted'], 'dedicated_test_request' => ['nullable', 'uuid']]);
             try {
-                app(DedicatedCampaignProbe::class)->send($user, $campaign, (string) $request->input('sender_profile'));
+                app(DedicatedCampaignProbe::class)->send($user, $campaign, (string) $request->input('sender_profile'), $request->filled('dedicated_test_request') ? (string) $request->input('dedicated_test_request') : null);
 
                 return redirect()->to($back)->with('campaigns_test_ok', 'Diagnóstico aceito pelo SMTP. Confira o remetente, Reply-To e recebimento na caixa de teste. Nenhum destinatário comercial utilizado.');
             } catch (ValidationException $exception) {

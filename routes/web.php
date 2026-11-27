@@ -8,6 +8,7 @@ use App\Http\Controllers\CampaignContactsTransferController;
 use App\Http\Controllers\CampaignFollowupCalendarController;
 use App\Http\Controllers\CampaignFollowupCancelNextController;
 use App\Http\Controllers\CampaignFollowupExtensionController;
+use App\Http\Controllers\CampaignImportController;
 use App\Http\Controllers\CampaignIntelligenceController;
 use App\Http\Controllers\CampaignOperationsController;
 use App\Http\Controllers\CampaignProductionReadinessController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\CampaignWizardController;
 use App\Http\Controllers\EcProposalsController;
 use App\Http\Controllers\HistoricalProposalCrmController;
 use App\Http\Controllers\HubSpotWebhookController;
+use App\Http\Controllers\ProposalExtrasV28Controller;
 use App\Http\Controllers\WhatsappOperationsHttpController;
 use App\Http\Controllers\WhatsappPairHttpController;
 use App\Http\Controllers\WhatsappVerificationController;
@@ -253,6 +255,12 @@ Route::middleware(['auth', 'verified', 'commercial.workspace', 'commercial.manag
 /* EC_CAMPAIGNS_V93: nova criação HTTP independente de Livewire, sem SMTP automático. */
 Route::middleware(['auth', 'verified', 'commercial.workspace', 'commercial.manager'])->group(function (): void {
     Route::get('/campanhas/novo-v93', [CampaignWizardController::class, 'index'])->name('campaigns.wizard-v93');
+    // EC_CAMPAIGN_IMPORT_V27 — private preview, manager-only, no send routes.
+    Route::get('/campanhas/importar-destinatarios', [CampaignImportController::class, 'show'])->name('campaigns.import-v27.show');
+    Route::post('/campanhas/importar-destinatarios/arquivo', [CampaignImportController::class, 'upload'])->middleware('throttle:10,1')->name('campaigns.import-v27.upload');
+    Route::post('/campanhas/importar-destinatarios/mapear', [CampaignImportController::class, 'mapping'])->name('campaigns.import-v27.mapping');
+    Route::post('/campanhas/importar-destinatarios/adicionar', [CampaignImportController::class, 'add'])->name('campaigns.import-v27.add');
+    Route::post('/campanhas/importar-destinatarios/descartar', [CampaignImportController::class, 'discard'])->name('campaigns.import-v27.discard');
     Route::post('/campanhas/novo-v93/selecionar', [CampaignWizardController::class, 'selection'])->name('campaigns.wizard-v93.selection');
     Route::post('/campanhas/novo-v93/adicionar-filtrados', [CampaignWizardController::class, 'addFiltered'])->name('campaigns.wizard-v93.filtered');
     Route::post('/campanhas/novo-v93/remover', [CampaignWizardController::class, 'remove'])->name('campaigns.wizard-v93.remove');
@@ -299,6 +307,10 @@ Route::middleware(['auth', 'verified', 'commercial.workspace'])->group(function 
     Route::get('/propostas/nova', [EcProposalsController::class, 'create'])->name('proposals.create');
     Route::post('/propostas', [EcProposalsController::class, 'store'])->name('proposals.store');
     Route::get('/propostas/modelos', [EcProposalsController::class, 'templates'])->name('proposals.templates');
+    // EC_PROPOSALS_V28: private previews and local CRM reconciliation.
+    Route::get('/propostas/modelos/{service}/pdf', [ProposalExtrasV28Controller::class, 'modelPdf'])->name('proposals.model-pdf-v28');
+    Route::get('/propostas/cobertura-hubspot', [ProposalExtrasV28Controller::class, 'coverage'])->name('proposals.crm-coverage-v28');
+    Route::post('/propostas/cobertura-hubspot/conciliar', [ProposalExtrasV28Controller::class, 'reconcile'])->middleware('throttle:5,1')->name('proposals.crm-reconcile-v28');
     Route::get('/propostas/precos', [EcProposalsController::class, 'pricing'])->name('proposals.pricing');
     Route::get('/propostas/importar', [EcProposalsController::class, 'importPage'])->name('proposals.import.page');
     Route::post('/propostas/importar', [EcProposalsController::class, 'import'])->middleware('throttle:15,1')->name('proposals.import.store');
